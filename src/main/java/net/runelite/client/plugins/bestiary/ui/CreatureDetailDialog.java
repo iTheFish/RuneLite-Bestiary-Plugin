@@ -2,6 +2,7 @@ package net.runelite.client.plugins.bestiary.ui;
 
 import net.runelite.client.plugins.bestiary.model.BestiaryCollection;
 import net.runelite.client.plugins.bestiary.model.CapturedCreature;
+import net.runelite.client.plugins.bestiary.model.CreatureRarity;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 
@@ -14,6 +15,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * MODELESS dialog showing capture history for one NPC+rarity combination.
@@ -24,8 +26,11 @@ public class CreatureDetailDialog extends JDialog {
     private static final DateTimeFormatter DATE_FMT =
             DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm").withZone(ZoneId.systemDefault());
 
-    private static final String[] SORT_OPTIONS = {
+    private static final String[] SORT_OPTIONS_SINGLE = {
         "Newest first", "Oldest first", "Quality (high)", "Quality (low)", "By region"
+    };
+    private static final String[] SORT_OPTIONS_MULTI = {
+        "By Rarity", "Newest first", "Oldest first", "Quality (high)", "Quality (low)", "By region"
     };
 
     /** Ensures only one dialog is open at a time. */
@@ -34,6 +39,7 @@ public class CreatureDetailDialog extends JDialog {
     private final List<CapturedCreature> captures;
     private final BestiaryCollection collection;
     private final JPanel listPanel;
+    private final boolean multiRarity;
 
     public CreatureDetailDialog(Window owner, List<CapturedCreature> captures,
                                 BestiaryCollection collection) {
@@ -47,43 +53,57 @@ public class CreatureDetailDialog extends JDialog {
 
         this.captures   = captures;
         this.collection = collection;
+        this.multiRarity = captures.stream().map(c -> c.rarity).distinct().count() > 1;
 
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setResizable(false);
 
         CapturedCreature sample = captures.get(0);
 
+        // Use rarest rarity for border/accent when showing multiple rarities
+        CreatureRarity accentRarity = multiRarity
+                ? captures.stream().map(c -> c.rarity)
+                        .max(Comparator.comparingInt(Enum::ordinal)).orElse(sample.rarity)
+                : sample.rarity;
+
         JPanel root = new JPanel(new BorderLayout(0, 8));
         root.setBackground(ColorScheme.DARK_GRAY_COLOR);
         root.setBorder(new EmptyBorder(12, 12, 12, 12));
 
-        // Header: NPC name + rarity + capture count
+        // Header
         JPanel header = new JPanel(new BorderLayout(0, 2));
         header.setOpaque(false);
         header.setBorder(BorderFactory.createCompoundBorder(
-                new MatteBorder(0, 4, 0, 0, sample.rarity.displayColor),
+                new MatteBorder(0, 4, 0, 0, accentRarity.displayColor),
                 new EmptyBorder(4, 8, 4, 0)));
 
-        JLabel titleLabel = new JLabel(sample.npcName + " — " + sample.rarity.label
-                + " (" + captures.size() + " capture" + (captures.size() == 1 ? "" : "s") + ")");
+        String titleText = multiRarity
+                ? sample.npcName + " (" + captures.size() + " capture" + (captures.size() == 1 ? "" : "s") + ")"
+                : sample.npcName + " — " + sample.rarity.label
+                        + " (" + captures.size() + " capture" + (captures.size() == 1 ? "" : "s") + ")";
+        JLabel titleLabel = new JLabel(titleText);
         titleLabel.setFont(FontManager.getRunescapeBoldFont());
         titleLabel.setForeground(Color.WHITE);
 
         String combatText = sample.npcCombatLevel > 0 ? "Combat level " + sample.npcCombatLevel : "Non-combat";
-        JLabel subLabel = new JLabel(combatText);
+        String subText    = multiRarity ? "All rarities  ·  " + combatText : combatText;
+        JLabel subLabel = new JLabel(subText);
         subLabel.setFont(FontManager.getRunescapeSmallFont());
-        subLabel.setForeground(sample.rarity.displayColor);
+        subLabel.setForeground(accentRarity.displayColor);
 
         header.add(titleLabel, BorderLayout.NORTH);
         header.add(subLabel,   BorderLayout.CENTER);
 
         // Sort control
+        String[] sortOpts    = multiRarity ? SORT_OPTIONS_MULTI : SORT_OPTIONS_SINGLE;
+        String   defaultSort = multiRarity ? "By Rarity" : "Newest first";
+
         JPanel sortRow = new JPanel(new BorderLayout(6, 0));
         sortRow.setOpaque(false);
         JLabel sortLabel = new JLabel("Sort:");
         sortLabel.setFont(FontManager.getRunescapeSmallFont());
         sortLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-        JComboBox<String> sortBox = new JComboBox<>(SORT_OPTIONS);
+        JComboBox<String> sortBox = new JComboBox<>(sortOpts);
         sortBox.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         sortBox.setForeground(Color.WHITE);
         sortBox.setFont(FontManager.getRunescapeSmallFont());
@@ -95,7 +115,7 @@ public class CreatureDetailDialog extends JDialog {
         listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
         listPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-        buildList("Newest first");
+        buildList(defaultSort);
         sortBox.addActionListener(e -> buildList((String) sortBox.getSelectedItem()));
 
         JScrollPane scroll = new JScrollPane(listPanel);
@@ -127,36 +147,79 @@ public class CreatureDetailDialog extends JDialog {
     }
 
     private void buildList(String sortMode) {
-        List<CapturedCreature> sorted = new ArrayList<>(captures);
-        switch (sortMode) {
-            case "Newest first":
-                sorted.sort(Comparator.comparing((CapturedCreature c) -> c.captureTime).reversed());
-                break;
-            case "Oldest first":
-                sorted.sort(Comparator.comparing(c -> c.captureTime));
-                break;
-            case "Quality (high)":
-                sorted.sort(Comparator.comparingInt((CapturedCreature c) -> c.quality.overallRating()).reversed());
-                break;
-            case "Quality (low)":
-                sorted.sort(Comparator.comparingInt(c -> c.quality.overallRating()));
-                break;
-            case "By region":
-                sorted.sort(Comparator.comparing(c -> c.regionName));
-                break;
-            default:
-                sorted.sort(Comparator.comparing((CapturedCreature c) -> c.captureTime).reversed());
-        }
-
         listPanel.removeAll();
-        for (int i = 0; i < sorted.size(); i++) {
-            listPanel.add(buildCaptureRow(sorted.get(i), i + 1));
-            if (i < sorted.size() - 1) {
+
+        if ("By Rarity".equals(sortMode)) {
+            // Group by rarity MYTHIC→COMMON, newest-first within each group
+            CreatureRarity[] order = {
+                CreatureRarity.MYTHIC, CreatureRarity.LEGENDARY, CreatureRarity.EPIC,
+                CreatureRarity.RARE,   CreatureRarity.UNCOMMON,  CreatureRarity.COMMON
+            };
+            int rowIndex = 1;
+            for (CreatureRarity r : order) {
+                List<CapturedCreature> group = captures.stream()
+                        .filter(c -> c.rarity == r)
+                        .sorted(Comparator.comparing((CapturedCreature c) -> c.captureTime).reversed())
+                        .collect(Collectors.toList());
+                if (group.isEmpty()) continue;
+                listPanel.add(buildRarityHeader(r, group.size()));
+                listPanel.add(Box.createVerticalStrut(2));
+                for (CapturedCreature c : group) {
+                    listPanel.add(buildCaptureRow(c, rowIndex++));
+                    listPanel.add(Box.createVerticalStrut(4));
+                }
                 listPanel.add(Box.createVerticalStrut(4));
             }
+        } else {
+            List<CapturedCreature> sorted = new ArrayList<>(captures);
+            switch (sortMode) {
+                case "Newest first":
+                    sorted.sort(Comparator.comparing((CapturedCreature c) -> c.captureTime).reversed());
+                    break;
+                case "Oldest first":
+                    sorted.sort(Comparator.comparing(c -> c.captureTime));
+                    break;
+                case "Quality (high)":
+                    sorted.sort(Comparator.comparingInt((CapturedCreature c) -> c.quality.overallRating()).reversed());
+                    break;
+                case "Quality (low)":
+                    sorted.sort(Comparator.comparingInt(c -> c.quality.overallRating()));
+                    break;
+                case "By region":
+                    sorted.sort(Comparator.comparing(c -> c.regionName));
+                    break;
+                default:
+                    sorted.sort(Comparator.comparing((CapturedCreature c) -> c.captureTime).reversed());
+            }
+            for (int i = 0; i < sorted.size(); i++) {
+                listPanel.add(buildCaptureRow(sorted.get(i), i + 1));
+                if (i < sorted.size() - 1) listPanel.add(Box.createVerticalStrut(4));
+            }
         }
+
         listPanel.revalidate();
         listPanel.repaint();
+    }
+
+    private JPanel buildRarityHeader(CreatureRarity rarity, int count) {
+        JPanel header = new JPanel(new BorderLayout(8, 0));
+        header.setBackground(new Color(35, 35, 35));
+        header.setBorder(BorderFactory.createCompoundBorder(
+                new MatteBorder(0, 3, 0, 0, rarity.displayColor),
+                new EmptyBorder(4, 8, 4, 8)));
+        header.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
+
+        JLabel label = new JLabel("● " + rarity.label.toUpperCase());
+        label.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        label.setForeground(rarity.displayColor);
+
+        JLabel cnt = new JLabel(count + " capture" + (count == 1 ? "" : "s"), SwingConstants.RIGHT);
+        cnt.setFont(FontManager.getRunescapeSmallFont());
+        cnt.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+
+        header.add(label, BorderLayout.WEST);
+        header.add(cnt,   BorderLayout.EAST);
+        return header;
     }
 
     private JPanel buildCaptureRow(CapturedCreature c, int index) {

@@ -31,8 +31,9 @@ public class CollectionTab extends JPanel {
     private final JComboBox<String> sortOrder;
     private final JPanel cardContainer;
 
-    private enum ViewMode { GROUPED, INDIVIDUAL, MONSTER }
+    private enum ViewMode { GROUPED, INDIVIDUAL }
     private ViewMode viewMode = ViewMode.GROUPED;
+    private boolean  byMonster = false;
 
     // Sort options available in both modes
     private static final String[] SORT_OPTIONS = {
@@ -80,54 +81,79 @@ public class CollectionTab extends JPanel {
         filterRow.add(rarityFilter);
         filterRow.add(sortOrder);
 
-        // --- Grouped / Individual / Monster toggle ---
-        JPanel toggleRow = new JPanel(new GridLayout(1, 3, 0, 0));
+        // --- Main toggle: Grouped / Individual ---
+        JPanel toggleRow = new JPanel(new GridLayout(1, 2, 0, 0));
         toggleRow.setOpaque(false);
 
         JToggleButton groupedBtn    = new JToggleButton("Grouped");
         JToggleButton individualBtn = new JToggleButton("Individual");
-        JToggleButton monsterBtn    = new JToggleButton("By Monster");
 
         styleToggleButton(groupedBtn,    true);
         styleToggleButton(individualBtn, false);
-        styleToggleButton(monsterBtn,    false);
 
         ButtonGroup btnGroup = new ButtonGroup();
         btnGroup.add(groupedBtn);
         btnGroup.add(individualBtn);
-        btnGroup.add(monsterBtn);
         groupedBtn.setSelected(true);
 
+        toggleRow.add(groupedBtn);
+        toggleRow.add(individualBtn);
+
+        // --- Sub-toggle (Grouped only): By Rarity / By Monster ---
+        JPanel subToggleRow = new JPanel(new GridLayout(1, 2, 0, 0));
+        subToggleRow.setOpaque(false);
+
+        JToggleButton byRarityBtn  = new JToggleButton("By Rarity");
+        JToggleButton byMonsterBtn = new JToggleButton("By Monster");
+
+        styleToggleButton(byRarityBtn,  true);
+        styleToggleButton(byMonsterBtn, false);
+
+        ButtonGroup subGroup = new ButtonGroup();
+        subGroup.add(byRarityBtn);
+        subGroup.add(byMonsterBtn);
+        byRarityBtn.setSelected(true);
+
+        subToggleRow.add(byRarityBtn);
+        subToggleRow.add(byMonsterBtn);
+
+        // Action listeners
         groupedBtn.addActionListener(e -> {
             viewMode = ViewMode.GROUPED;
             styleToggleButton(groupedBtn,    true);
             styleToggleButton(individualBtn, false);
-            styleToggleButton(monsterBtn,    false);
+            subToggleRow.setVisible(true);
             rebuildCards();
         });
         individualBtn.addActionListener(e -> {
             viewMode = ViewMode.INDIVIDUAL;
             styleToggleButton(groupedBtn,    false);
             styleToggleButton(individualBtn, true);
-            styleToggleButton(monsterBtn,    false);
+            subToggleRow.setVisible(false);
             sortOrder.setSelectedItem("Newest first");
             rebuildCards();
         });
-        monsterBtn.addActionListener(e -> {
-            viewMode = ViewMode.MONSTER;
-            styleToggleButton(groupedBtn,    false);
-            styleToggleButton(individualBtn, false);
-            styleToggleButton(monsterBtn,    true);
+        byRarityBtn.addActionListener(e -> {
+            byMonster = false;
+            styleToggleButton(byRarityBtn,  true);
+            styleToggleButton(byMonsterBtn, false);
+            rebuildCards();
+        });
+        byMonsterBtn.addActionListener(e -> {
+            byMonster = true;
+            styleToggleButton(byRarityBtn,  false);
+            styleToggleButton(byMonsterBtn, true);
             rebuildCards();
         });
 
-        toggleRow.add(groupedBtn);
-        toggleRow.add(individualBtn);
-        toggleRow.add(monsterBtn);
+        JPanel togglesPanel = new JPanel(new BorderLayout(0, 2));
+        togglesPanel.setOpaque(false);
+        togglesPanel.add(toggleRow,    BorderLayout.NORTH);
+        togglesPanel.add(subToggleRow, BorderLayout.SOUTH);
 
-        controls.add(searchBar,  BorderLayout.NORTH);
-        controls.add(filterRow,  BorderLayout.CENTER);
-        controls.add(toggleRow,  BorderLayout.SOUTH);
+        controls.add(searchBar,    BorderLayout.NORTH);
+        controls.add(filterRow,    BorderLayout.CENTER);
+        controls.add(togglesPanel, BorderLayout.SOUTH);
 
         // --- Card container ---
         cardContainer = new JPanel();
@@ -172,10 +198,10 @@ public class CollectionTab extends JPanel {
             empty.setAlignmentX(Component.CENTER_ALIGNMENT);
             empty.setBorder(new EmptyBorder(20, 0, 0, 0));
             cardContainer.add(empty);
+        } else if (viewMode == ViewMode.GROUPED && byMonster) {
+            buildMonsterView(filtered, selectedSort);
         } else if (viewMode == ViewMode.GROUPED) {
             buildGroupedView(filtered, selectedSort);
-        } else if (viewMode == ViewMode.MONSTER) {
-            buildMonsterView(filtered, selectedSort);
         } else {
             buildIndividualView(filtered, selectedSort);
         }
