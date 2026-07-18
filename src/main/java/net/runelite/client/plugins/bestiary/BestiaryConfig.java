@@ -3,11 +3,21 @@ package net.runelite.client.plugins.bestiary;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.ConfigSection;
 import net.runelite.client.config.Range;
 import net.runelite.client.plugins.bestiary.model.ChatNotifyMode;
+import net.runelite.client.plugins.bestiary.model.DevRarityOverride;
 
 @ConfigGroup("bestiary")
 public interface BestiaryConfig extends Config {
+
+    @ConfigSection(
+            name = "Developer Tools",
+            description = "Testing options — leave off for normal play",
+            position = 20,
+            closedByDefault = true
+    )
+    String devSection = "devSection";
 
     @ConfigItem(
             keyName = "captureEnabled",
@@ -114,11 +124,35 @@ public interface BestiaryConfig extends Config {
     @ConfigItem(
             keyName = "chatNotifyMode",
             name = "Chat Notification Mode",
-            description = "Verbose: one message per capture with quality score (prevents duplicates). "
-                        + "Batched: accumulates captures over 30s and posts a count.",
+            description = "Verbose: one message per capture with kill# (prevents duplicates). "
+                        + "Batched: accumulates captures over 30s then posts a count.",
             position = 10
     )
     default ChatNotifyMode chatNotifyMode() {
         return ChatNotifyMode.VERBOSE;
+    }
+
+    // --- Developer section ---
+
+    @ConfigItem(
+            keyName = "devForceRarity",
+            name = "Force Rarity",
+            description = "When set, every capture will be assigned this rarity instead of a random roll.",
+            position = 21,
+            section = "devSection"
+    )
+    default DevRarityOverride devForceRarity() {
+        return DevRarityOverride.NONE;
+    }
+
+    @ConfigItem(
+            keyName = "devForceCaptureRate",
+            name = "Force 100% Capture Rate",
+            description = "Every kill triggers a capture attempt that always succeeds.",
+            position = 22,
+            section = "devSection"
+    )
+    default boolean devForceCaptureRate() {
+        return false;
     }
 }

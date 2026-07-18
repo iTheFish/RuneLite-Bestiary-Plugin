@@ -3,6 +3,7 @@ package net.runelite.client.plugins.bestiary.service;
 import net.runelite.client.plugins.bestiary.model.BestiaryCollection;
 import net.runelite.client.plugins.bestiary.model.CapturedCreature;
 import net.runelite.client.plugins.bestiary.util.InstantAdapter;
+import net.runelite.client.plugins.bestiary.util.RegionNames;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.Getter;
@@ -83,6 +84,7 @@ public class BestiaryDataService {
             progressionState.unlockedAchievements = java.util.EnumSet.noneOf(net.runelite.client.plugins.bestiary.model.Achievement.class);
         }
 
+        migrateRegionNames();
         progressionService.init(progressionState, collection);
         log.info("Bestiary loaded: {} captures", collection.totalCaptures());
     }
@@ -111,6 +113,15 @@ public class BestiaryDataService {
         pendingSave = executor.schedule(this::writePendingToDisk, SAVE_DELAY_SECS, TimeUnit.SECONDS);
     }
 
+    /** Permanently deletes all capture and progression data. */
+    public void wipeCollection() {
+        collection       = new BestiaryCollection();
+        progressionState = new ProgressionService.ProgressionState();
+        progressionService.init(progressionState, collection);
+        saveNow();
+        log.info("Bestiary collection wiped");
+    }
+
     // --- Mutators (call from client thread) ---
 
     public void addCapture(CapturedCreature c) {
@@ -128,6 +139,27 @@ public class BestiaryDataService {
     }
 
     // --- Internal ---
+
+    /** Upgrades captures that stored raw "Region N" IDs before RegionNames existed. */
+    private void migrateRegionNames() {
+        boolean dirty = false;
+        for (CapturedCreature c : collection.creatures) {
+            if (c.regionName != null && c.regionName.startsWith("Region ")) {
+                try {
+                    int id = Integer.parseInt(c.regionName.substring(7).trim());
+                    String resolved = RegionNames.get(id);
+                    if (!resolved.equals(c.regionName)) {
+                        c.regionName = resolved;
+                        dirty = true;
+                    }
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+        if (dirty) {
+            scheduleSave();
+        }
+    }
 
     private void snapshotAndWrite() {
         pendingCollectionJson = gson.toJson(collection);

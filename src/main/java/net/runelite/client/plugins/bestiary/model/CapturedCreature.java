@@ -27,8 +27,8 @@ public class CapturedCreature {
     /** UTC epoch second when the capture occurred. */
     public final Instant captureTime;
 
-    /** Human-readable area name derived from the player's WorldPoint. */
-    public final String regionName;
+    /** Human-readable area name derived from the player's WorldPoint. Mutable so migrations can fix old "Region N" values. */
+    public String regionName;
 
     /** The player's Capture Level at the moment this creature was caught. */
     public final int captureLevel;

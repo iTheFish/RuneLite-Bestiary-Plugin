@@ -4,6 +4,7 @@ import net.runelite.client.plugins.bestiary.BestiaryConfig;
 import net.runelite.client.plugins.bestiary.model.CapturedCreature;
 import net.runelite.client.plugins.bestiary.model.CreatureQuality;
 import net.runelite.client.plugins.bestiary.model.CreatureRarity;
+import net.runelite.client.plugins.bestiary.model.DevRarityOverride;
 import net.runelite.client.plugins.bestiary.util.RarityRoller;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.NPC;
@@ -55,7 +56,7 @@ public class CaptureService {
             return Optional.empty();
         }
 
-        double catchRate = calculateCatchRate(captureLevel);
+        double catchRate = config.devForceCaptureRate() ? 1.0 : calculateCatchRate(captureLevel);
         double roll      = rng.nextDouble();
 
         log.debug("Capture roll for {}: roll={} catchRate={}", npc.getName(),
@@ -65,7 +66,10 @@ public class CaptureService {
             return Optional.empty();
         }
 
-        CreatureRarity  rarity  = RarityRoller.roll(rng);
+        DevRarityOverride forceRarity = config.devForceRarity();
+        CreatureRarity rarity = (forceRarity != null && forceRarity != DevRarityOverride.NONE)
+                ? CreatureRarity.fromLabel(forceRarity.name())
+                : RarityRoller.roll(rng);
         CreatureQuality quality = RarityRoller.generateQuality(rarity, rng);
 
         CapturedCreature creature = CapturedCreature.builder()

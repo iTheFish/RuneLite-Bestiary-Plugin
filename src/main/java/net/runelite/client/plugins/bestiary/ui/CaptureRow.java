@@ -15,35 +15,37 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * A compact 38px row representing a single capture, used in Individual view mode.
- * Clicking opens the full capture history dialog for that NPC+rarity.
+ * Compact row representing a single capture in Individual view mode.
  */
 public class CaptureRow extends JPanel {
 
-    private static final int    ROW_HEIGHT = 38;
-    private static final Color  ROW_BG     = ColorScheme.DARKER_GRAY_COLOR;
-    private static final Color  ROW_HOVER  = new Color(55, 55, 55);
+    private static final int   ROW_HEIGHT = 46;
+    private static final Color ROW_BG     = ColorScheme.DARKER_GRAY_COLOR;
+    private static final Color ROW_HOVER  = new Color(55, 55, 55);
     private static final DateTimeFormatter DATE_FMT =
             DateTimeFormatter.ofPattern("dd MMM HH:mm").withZone(ZoneId.systemDefault());
 
     public CaptureRow(CapturedCreature capture, BestiaryCollection collection) {
-        setLayout(new BorderLayout(6, 0));
+        setLayout(new BorderLayout(8, 0));
         setBackground(ROW_BG);
         setBorder(BorderFactory.createCompoundBorder(
                 new MatteBorder(0, 4, 0, 0, capture.rarity.displayColor),
-                new EmptyBorder(4, 8, 4, 8)));
+                new EmptyBorder(6, 8, 6, 8)));
         setMaximumSize(new Dimension(Integer.MAX_VALUE, ROW_HEIGHT));
         setPreferredSize(new Dimension(200, ROW_HEIGHT));
 
-        // Left: NPC name (bold) + combat level
-        JPanel left = new JPanel(new GridLayout(2, 1, 0, 1));
+        // Left: NPC name (bold, clipped) + combat level
+        JPanel left = new JPanel(new GridLayout(2, 1, 0, 2));
         left.setOpaque(false);
 
-        JLabel nameLabel = new JLabel(capture.npcName);
+        String displayName = capture.npcName.length() > 18
+                ? capture.npcName.substring(0, 17) + "…"
+                : capture.npcName;
+        JLabel nameLabel = new JLabel(displayName);
         nameLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         nameLabel.setForeground(Color.WHITE);
 
-        String levelText = capture.npcCombatLevel > 0 ? "Lvl " + capture.npcCombatLevel : "Non-combat";
+        String levelText = capture.npcCombatLevel > 0 ? "Lvl " + capture.npcCombatLevel : "Non-cb";
         JLabel levelLabel = new JLabel(levelText);
         levelLabel.setFont(FontManager.getRunescapeSmallFont());
         levelLabel.setForeground(ColorScheme.MEDIUM_GRAY_COLOR);
@@ -51,8 +53,8 @@ public class CaptureRow extends JPanel {
         left.add(nameLabel);
         left.add(levelLabel);
 
-        // Right: rarity dot + quality | region | date
-        JPanel right = new JPanel(new GridLayout(2, 1, 0, 1));
+        // Right: rarity label + compact stats line
+        JPanel right = new JPanel(new GridLayout(2, 1, 0, 2));
         right.setOpaque(false);
 
         JLabel rarityLabel = new JLabel("● " + capture.rarity.label, SwingConstants.RIGHT);
@@ -60,8 +62,9 @@ public class CaptureRow extends JPanel {
         rarityLabel.setForeground(capture.rarity.displayColor);
 
         int q = capture.quality.overallRating();
-        String info = "Q:" + q + "  " + shorten(capture.regionName) + "  " + DATE_FMT.format(capture.captureTime);
-        JLabel infoLabel = new JLabel(info, SwingConstants.RIGHT);
+        String region = shorten(capture.regionName, 10);
+        String date   = DATE_FMT.format(capture.captureTime);
+        JLabel infoLabel = new JLabel("Q:" + q + " · " + region + " · " + date, SwingConstants.RIGHT);
         infoLabel.setFont(FontManager.getRunescapeSmallFont());
         infoLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 
@@ -71,12 +74,11 @@ public class CaptureRow extends JPanel {
         add(left,  BorderLayout.CENTER);
         add(right, BorderLayout.EAST);
 
-        // Click: open detail dialog for the full NPC+rarity group
         addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 List<CapturedCreature> group = collection.creatures.stream()
-                        .filter(c -> c.npcId == capture.npcId && c.rarity == capture.rarity)
+                        .filter(c -> c.npcName.equals(capture.npcName) && c.rarity == capture.rarity)
                         .collect(Collectors.toList());
                 new CreatureDetailDialog(
                         SwingUtilities.getWindowAncestor(CaptureRow.this),
@@ -97,9 +99,8 @@ public class CaptureRow extends JPanel {
         });
     }
 
-    /** Truncates a region name to fit the compact row. */
-    private static String shorten(String name) {
-        if (name == null || name.isEmpty()) return "Unknown";
-        return name.length() > 14 ? name.substring(0, 13) + "…" : name;
+    private static String shorten(String name, int max) {
+        if (name == null || name.isEmpty()) return "?";
+        return name.length() > max ? name.substring(0, max - 1) + "…" : name;
     }
 }

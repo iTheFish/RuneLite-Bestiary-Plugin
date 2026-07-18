@@ -182,7 +182,7 @@ public class CollectionTab extends JPanel {
     private void buildGroupedView(List<CapturedCreature> filtered, String selectedSort) {
         // Group by npcId+rarity
         Map<String, List<CapturedCreature>> byNpcRarity = filtered.stream()
-                .collect(Collectors.groupingBy(c -> c.npcId + ":" + c.rarity.ordinal()));
+                .collect(Collectors.groupingBy(c -> c.npcName + ":" + c.rarity.ordinal()));
 
         List<Map.Entry<String, List<CapturedCreature>>> entries = new ArrayList<>(byNpcRarity.entrySet());
         sortEntries(entries, selectedSort);

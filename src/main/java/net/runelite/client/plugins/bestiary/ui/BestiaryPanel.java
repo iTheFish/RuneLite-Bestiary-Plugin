@@ -73,8 +73,45 @@ public class BestiaryPanel extends PluginPanel {
         tabs.addTab("Progress",   progressTab);
         tabs.addTab("Info",       infoTab);
 
-        add(header, BorderLayout.NORTH);
-        add(tabs,   BorderLayout.CENTER);
+        add(header,          BorderLayout.NORTH);
+        add(tabs,            BorderLayout.CENTER);
+        add(buildWipeBtn(),  BorderLayout.SOUTH);
+    }
+
+    private JButton buildWipeBtn() {
+        JButton btn = new JButton("Reset Collection");
+        btn.setFont(FontManager.getRunescapeSmallFont());
+        btn.setBackground(new Color(80, 20, 20));
+        btn.setForeground(new Color(220, 100, 100));
+        btn.setBorderPainted(false);
+        btn.setFocusPainted(false);
+        btn.setToolTipText("Permanently delete all captures and progression");
+        btn.addActionListener(e -> confirmWipe());
+        return btn;
+    }
+
+    private void confirmWipe() {
+        int first = JOptionPane.showConfirmDialog(
+                this,
+                "This will permanently delete ALL capture history, kill counts,\n"
+              + "XP, levels, and achievements.\n\nThis cannot be undone. Continue?",
+                "Reset Collection",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+        if (first != JOptionPane.YES_OPTION) return;
+
+        int total = dataService.getCollection().totalCaptures();
+        int second = JOptionPane.showConfirmDialog(
+                this,
+                "FINAL WARNING: " + total + " capture" + (total == 1 ? "" : "s")
+              + " will be permanently erased.\n\nAre you absolutely sure?",
+                "Confirm Reset",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+        if (second != JOptionPane.YES_OPTION) return;
+
+        dataService.wipeCollection();
+        refresh();
     }
 
     /**
