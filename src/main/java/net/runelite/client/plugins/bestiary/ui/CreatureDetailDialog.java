@@ -120,7 +120,7 @@ public class CreatureDetailDialog extends JDialog {
         sortBox.addActionListener(e -> buildList((String) sortBox.getSelectedItem()));
 
         JScrollPane scroll = new JScrollPane(listPanel);
-        scroll.setPreferredSize(new Dimension(400, Math.min(captures.size() * 92 + 16, 520)));
+        scroll.setPreferredSize(new Dimension(400, Math.min(captures.size() * 100 + 16, 540)));
         scroll.setBorder(null);
         scroll.getViewport().setBackground(ColorScheme.DARK_GRAY_COLOR);
 
@@ -277,7 +277,8 @@ public class CreatureDetailDialog extends JDialog {
 
     /**
      * Renders six labelled progress bars (STR/SPD/END/INT/STL/VIT) for a single capture.
-     * Height is fixed at 24px: ~13px bar + ~11px label.
+     * Bar shows the numeric value centred in white; label sits below in larger text.
+     * Total height 36px: ~20px bar + ~16px label.
      */
     private static JPanel buildStatBars(CreatureQuality q, Color accent) {
         JPanel p = new JPanel() {
@@ -293,39 +294,54 @@ public class CreatureDetailDialog extends JDialog {
                 int[] vals = {q.strength, q.speed, q.endurance,
                               q.intelligence, q.stealth, q.vitality};
                 String[] labs = {"STR", "SPD", "END", "INT", "STL", "VIT"};
-                int n    = vals.length;
-                int w    = getWidth();
-                int h    = getHeight();
-                int gap  = 4;
-                int barH = h - 11;
-                int slotW = (w - gap * (n - 1)) / n;
+                int n      = vals.length;
+                int w      = getWidth();
+                int h      = getHeight();
+                int gap    = 4;
+                int labelH = 14;
+                int barH   = h - labelH - 2;
+                int slotW  = (w - gap * (n - 1)) / n;
 
-                g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(8.5f));
-                FontMetrics fm = g2.getFontMetrics();
+                Font numFont   = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 10f);
+                Font labelFont = FontManager.getRunescapeSmallFont();
 
                 for (int i = 0; i < n; i++) {
                     int x    = i * (slotW + gap);
                     int fill = Math.round(slotW * vals[i] / 100f);
 
+                    // Background
                     g2.setColor(new Color(30, 30, 30));
-                    g2.fillRoundRect(x, 0, slotW, barH, 3, 3);
+                    g2.fillRoundRect(x, 0, slotW, barH, 4, 4);
 
+                    // Fill
                     if (fill > 0) {
                         g2.setColor(new Color(accent.getRed(), accent.getGreen(),
-                                accent.getBlue(), 190));
-                        g2.fillRoundRect(x, 0, fill, barH, 3, 3);
+                                accent.getBlue(), 200));
+                        g2.fillRoundRect(x, 0, fill, barH, 4, 4);
                     }
 
+                    // Value number centred in bar slot
+                    String numStr = String.valueOf(vals[i]);
+                    g2.setFont(numFont);
+                    FontMetrics nfm = g2.getFontMetrics();
+                    g2.setColor(Color.WHITE);
+                    int nx = x + (slotW - nfm.stringWidth(numStr)) / 2;
+                    int ny = (barH + nfm.getAscent() - nfm.getDescent()) / 2;
+                    g2.drawString(numStr, nx, ny);
+
+                    // Label below bar
+                    g2.setFont(labelFont);
+                    FontMetrics lfm = g2.getFontMetrics();
                     g2.setColor(ColorScheme.LIGHT_GRAY_COLOR);
-                    int lx = x + (slotW - fm.stringWidth(labs[i])) / 2;
-                    g2.drawString(labs[i], lx, h - 1);
+                    int lx = x + (slotW - lfm.stringWidth(labs[i])) / 2;
+                    g2.drawString(labs[i], lx, h - 2);
                 }
                 g2.dispose();
             }
         };
         p.setOpaque(false);
-        p.setPreferredSize(new Dimension(0, 24));
-        p.setMinimumSize(new Dimension(0, 24));
+        p.setPreferredSize(new Dimension(0, 36));
+        p.setMinimumSize(new Dimension(0, 36));
         return p;
     }
 }
