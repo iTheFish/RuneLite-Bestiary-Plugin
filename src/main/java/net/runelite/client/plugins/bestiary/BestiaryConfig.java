@@ -4,6 +4,7 @@ import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.Range;
+import net.runelite.client.plugins.bestiary.model.ChatNotifyMode;
 
 @ConfigGroup("bestiary")
 public interface BestiaryConfig extends Config {
@@ -108,5 +109,16 @@ public interface BestiaryConfig extends Config {
     )
     default boolean captureXpEnabled() {
         return true;
+    }
+
+    @ConfigItem(
+            keyName = "chatNotifyMode",
+            name = "Chat Notification Mode",
+            description = "Verbose: one message per capture with quality score (prevents duplicates). "
+                        + "Batched: accumulates captures over 30s and posts a count.",
+            position = 10
+    )
+    default ChatNotifyMode chatNotifyMode() {
+        return ChatNotifyMode.VERBOSE;
     }
 }

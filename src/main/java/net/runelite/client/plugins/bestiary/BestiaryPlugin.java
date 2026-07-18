@@ -2,6 +2,7 @@ package net.runelite.client.plugins.bestiary;
 
 import net.runelite.client.plugins.bestiary.model.Achievement;
 import net.runelite.client.plugins.bestiary.model.CapturedCreature;
+import net.runelite.client.plugins.bestiary.model.ChatNotifyMode;
 import net.runelite.client.plugins.bestiary.model.CreatureRarity;
 import net.runelite.client.plugins.bestiary.service.BestiaryDataService;
 import net.runelite.client.plugins.bestiary.service.CaptureService;
@@ -9,6 +10,7 @@ import net.runelite.client.plugins.bestiary.service.KillTracker;
 import net.runelite.client.plugins.bestiary.service.ProgressionService;
 import net.runelite.client.plugins.bestiary.ui.BestiaryOverlay;
 import net.runelite.client.plugins.bestiary.ui.BestiaryPanel;
+import net.runelite.client.plugins.bestiary.util.RegionNames;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
@@ -36,8 +38,13 @@ import javax.inject.Inject;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @PluginDescriptor(
@@ -52,6 +59,7 @@ public class BestiaryPlugin extends Plugin {
     @Inject private ClientToolbar clientToolbar;
     @Inject private ChatMessageManager chatMessageManager;
     @Inject private OverlayManager overlayManager;
+    @Inject private ScheduledExecutorService executor;
 
     @Inject private KillTracker killTracker;
     @Inject private CaptureService captureService;
@@ -62,6 +70,10 @@ public class BestiaryPlugin extends Plugin {
     @Inject private BestiaryOverlay overlay;
 
     private NavigationButton navButton;
+
+    // Batched notification state (accessed only on executor thread)
+    private final Map<String, Integer> batchCounts  = new HashMap<>();
+    private final Map<String, ScheduledFuture<?>> batchFutures = new HashMap<>();
 
     // --- Lifecycle ---
 
@@ -88,6 +100,13 @@ public class BestiaryPlugin extends Plugin {
         overlayManager.remove(overlay);
         clientToolbar.removeNavigation(navButton);
         navButton = null;
+
+        // Cancel any pending batched notifications
+        executor.execute(() -> {
+            batchFutures.values().forEach(f -> f.cancel(false));
+            batchFutures.clear();
+            batchCounts.clear();
+        });
 
         log.info("Bestiary plugin stopped");
     }
@@ -164,14 +183,21 @@ public class BestiaryPlugin extends Plugin {
 
             List<Achievement> newAchievements = progressionService.recordCapture(creature, config.captureXpEnabled());
 
-            // Notifications
+            // Chat notification
             if (config.notifyOnCapture()) {
                 boolean shouldNotify = !config.notifyRareOnly()
                         || creature.rarity.ordinal() >= CreatureRarity.RARE.ordinal();
                 if (shouldNotify) {
-                    notifyCapture(creature);
+                    if (config.chatNotifyMode() == ChatNotifyMode.BATCHED) {
+                        // Submit to executor so batch maps are only touched on one thread
+                        executor.execute(() -> accumulateBatch(creature));
+                    } else {
+                        // Verbose: include quality so identical captures produce unique messages
+                        notifyCapture(creature);
+                    }
                 }
             }
+
             for (Achievement a : newAchievements) {
                 sendChatMessage("Achievement unlocked: " + a.title + " - " + a.description,
                         ChatColorType.HIGHLIGHT);
@@ -181,7 +207,34 @@ public class BestiaryPlugin extends Plugin {
         });
     }
 
+    /** Accumulates a capture for batched chat notification. Called on executor thread. */
+    private void accumulateBatch(CapturedCreature creature) {
+        String key = creature.rarity.label + " " + creature.npcName;
+        batchCounts.merge(key, 1, Integer::sum);
+
+        // Cancel any existing scheduled flush for this key
+        ScheduledFuture<?> existing = batchFutures.remove(key);
+        if (existing != null) existing.cancel(false);
+
+        // Schedule a new flush 30s from now
+        final String rarity = creature.rarity.label;
+        final String name   = creature.npcName;
+        ScheduledFuture<?> future = executor.schedule(() -> {
+            Integer count = batchCounts.remove(key);
+            batchFutures.remove(key);
+            if (count != null && count > 0) {
+                String msg = count > 1
+                        ? count + "x " + rarity + " " + name + " captured!"
+                        : rarity + " " + name + " captured!";
+                sendChatMessage(msg, ChatColorType.HIGHLIGHT);
+            }
+        }, 30, TimeUnit.SECONDS);
+
+        batchFutures.put(key, future);
+    }
+
     private void notifyCapture(CapturedCreature creature) {
+        int quality = creature.quality.overallRating();
         String message = new ChatMessageBuilder()
                 .append(ChatColorType.HIGHLIGHT)
                 .append("You captured a ")
@@ -189,7 +242,7 @@ public class BestiaryPlugin extends Plugin {
                 .append(ChatColorType.HIGHLIGHT)
                 .append(creature.npcName)
                 .append(ChatColorType.NORMAL)
-                .append("!")
+                .append("! (Quality: " + quality + ")")
                 .build();
         chatMessageManager.queue(QueuedMessage.builder()
                 .type(ChatMessageType.GAMEMESSAGE)
@@ -208,18 +261,11 @@ public class BestiaryPlugin extends Plugin {
                 .build());
     }
 
-    /**
-     * Resolves a human-readable area name from a WorldPoint.
-     * Phase 1: uses the region ID as a placeholder.
-     * Phase 4: replace with a full region name lookup table.
-     */
     private String resolveRegionName(WorldPoint location) {
         if (location == null) return "Unknown";
-        int regionId = location.getRegionID();
-        return "Region " + regionId;
+        return RegionNames.get(location.getRegionID());
     }
 
-    /** 16\u00c3\u201416 orange square placeholder icon for the nav button. */
     @Provides
     BestiaryConfig provideConfig(ConfigManager configManager) {
         return configManager.getConfig(BestiaryConfig.class);
@@ -236,4 +282,3 @@ public class BestiaryPlugin extends Plugin {
         return icon;
     }
 }
-

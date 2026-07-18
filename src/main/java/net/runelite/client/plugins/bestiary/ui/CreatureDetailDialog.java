@@ -16,17 +16,38 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Modal dialog showing the capture history for one NPC + rarity combination.
- * All captures in the list share the same npcId and rarity.
+ * MODELESS dialog showing capture history for one NPC+rarity combination.
+ * Only one instance can be visible at a time — opening a new one disposes the previous.
  */
 public class CreatureDetailDialog extends JDialog {
 
     private static final DateTimeFormatter DATE_FMT =
             DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm").withZone(ZoneId.systemDefault());
 
+    private static final String[] SORT_OPTIONS = {
+        "Newest first", "Oldest first", "Quality (high)", "Quality (low)", "By region"
+    };
+
+    /** Ensures only one dialog is open at a time. */
+    private static CreatureDetailDialog current;
+
+    private final List<CapturedCreature> captures;
+    private final BestiaryCollection collection;
+    private final JPanel listPanel;
+
     public CreatureDetailDialog(Window owner, List<CapturedCreature> captures,
                                 BestiaryCollection collection) {
         super(owner, "Bestiary Detail", ModalityType.MODELESS);
+
+        // Close any existing detail dialog before opening a new one
+        if (current != null && current.isShowing()) {
+            current.dispose();
+        }
+        current = this;
+
+        this.captures   = captures;
+        this.collection = collection;
+
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setResizable(false);
 
@@ -36,15 +57,14 @@ public class CreatureDetailDialog extends JDialog {
         root.setBackground(ColorScheme.DARK_GRAY_COLOR);
         root.setBorder(new EmptyBorder(12, 12, 12, 12));
 
-        // Header: NPC name + rarity
+        // Header: NPC name + rarity + capture count
         JPanel header = new JPanel(new BorderLayout(0, 2));
         header.setOpaque(false);
-        header.setBorder(new MatteBorder(0, 4, 0, 0, sample.rarity.displayColor));
         header.setBorder(BorderFactory.createCompoundBorder(
                 new MatteBorder(0, 4, 0, 0, sample.rarity.displayColor),
                 new EmptyBorder(4, 8, 4, 0)));
 
-        JLabel titleLabel = new JLabel(sample.npcName + " \u2014 " + sample.rarity.label
+        JLabel titleLabel = new JLabel(sample.npcName + " — " + sample.rarity.label
                 + " (" + captures.size() + " capture" + (captures.size() == 1 ? "" : "s") + ")");
         titleLabel.setFont(FontManager.getRunescapeBoldFont());
         titleLabel.setForeground(Color.WHITE);
@@ -57,42 +77,86 @@ public class CreatureDetailDialog extends JDialog {
         header.add(titleLabel, BorderLayout.NORTH);
         header.add(subLabel,   BorderLayout.CENTER);
 
-        // Capture list (newest first)
-        List<CapturedCreature> sorted = new ArrayList<>(captures);
-        sorted.sort(Comparator.comparing((CapturedCreature c) -> c.captureTime).reversed());
+        // Sort control
+        JPanel sortRow = new JPanel(new BorderLayout(6, 0));
+        sortRow.setOpaque(false);
+        JLabel sortLabel = new JLabel("Sort:");
+        sortLabel.setFont(FontManager.getRunescapeSmallFont());
+        sortLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+        JComboBox<String> sortBox = new JComboBox<>(SORT_OPTIONS);
+        sortBox.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        sortBox.setForeground(Color.WHITE);
+        sortBox.setFont(FontManager.getRunescapeSmallFont());
+        sortRow.add(sortLabel, BorderLayout.WEST);
+        sortRow.add(sortBox,   BorderLayout.CENTER);
 
-        JPanel listPanel = new JPanel();
+        // Capture list
+        listPanel = new JPanel();
         listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
         listPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
+        buildList("Newest first");
+        sortBox.addActionListener(e -> buildList((String) sortBox.getSelectedItem()));
+
+        JScrollPane scroll = new JScrollPane(listPanel);
+        scroll.setPreferredSize(new Dimension(400, Math.min(captures.size() * 72 + 16, 420)));
+        scroll.setBorder(null);
+        scroll.getViewport().setBackground(ColorScheme.DARK_GRAY_COLOR);
+
+        // Footer: kill / capture summary
+        int kills    = collection.getKillCount(sample.npcId);
+        int totalCap = collection.getCaptureCount(sample.npcId);
+        String ratio = kills > 0 ? "1 in " + Math.round((double) kills / Math.max(1, totalCap)) : "—";
+        JLabel footer = new JLabel(String.format(
+                "Total kills: %,d  |  All captures: %d  |  Kill ratio: %s", kills, totalCap, ratio));
+        footer.setFont(FontManager.getRunescapeSmallFont());
+        footer.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+
+        JPanel centerBlock = new JPanel(new BorderLayout(0, 4));
+        centerBlock.setOpaque(false);
+        centerBlock.add(sortRow, BorderLayout.NORTH);
+        centerBlock.add(scroll,  BorderLayout.CENTER);
+
+        root.add(header,      BorderLayout.NORTH);
+        root.add(centerBlock, BorderLayout.CENTER);
+        root.add(footer,      BorderLayout.SOUTH);
+
+        setContentPane(root);
+        pack();
+        setLocationRelativeTo(owner);
+    }
+
+    private void buildList(String sortMode) {
+        List<CapturedCreature> sorted = new ArrayList<>(captures);
+        switch (sortMode) {
+            case "Newest first":
+                sorted.sort(Comparator.comparing((CapturedCreature c) -> c.captureTime).reversed());
+                break;
+            case "Oldest first":
+                sorted.sort(Comparator.comparing(c -> c.captureTime));
+                break;
+            case "Quality (high)":
+                sorted.sort(Comparator.comparingInt((CapturedCreature c) -> c.quality.overallRating()).reversed());
+                break;
+            case "Quality (low)":
+                sorted.sort(Comparator.comparingInt(c -> c.quality.overallRating()));
+                break;
+            case "By region":
+                sorted.sort(Comparator.comparing(c -> c.regionName));
+                break;
+            default:
+                sorted.sort(Comparator.comparing((CapturedCreature c) -> c.captureTime).reversed());
+        }
+
+        listPanel.removeAll();
         for (int i = 0; i < sorted.size(); i++) {
             listPanel.add(buildCaptureRow(sorted.get(i), i + 1));
             if (i < sorted.size() - 1) {
                 listPanel.add(Box.createVerticalStrut(4));
             }
         }
-
-        JScrollPane scroll = new JScrollPane(listPanel);
-        scroll.setPreferredSize(new Dimension(380, Math.min(sorted.size() * 70 + 16, 400)));
-        scroll.setBorder(null);
-        scroll.getViewport().setBackground(ColorScheme.DARK_GRAY_COLOR);
-
-        // Footer: kill/capture summary
-        int kills    = collection.getKillCount(sample.npcId);
-        int totalCap = collection.getCaptureCount(sample.npcId);
-        String ratio = kills > 0 ? "1 in " + Math.round((double) kills / Math.max(1, totalCap)) : "\u2014";
-        JLabel footer = new JLabel(String.format(
-                "Total kills: %,d  \u00b7  All captures: %d  \u00b7  Kill ratio: %s", kills, totalCap, ratio));
-        footer.setFont(FontManager.getRunescapeSmallFont());
-        footer.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-
-        root.add(header, BorderLayout.NORTH);
-        root.add(scroll, BorderLayout.CENTER);
-        root.add(footer, BorderLayout.SOUTH);
-
-        setContentPane(root);
-        pack();
-        setLocationRelativeTo(owner);
+        listPanel.revalidate();
+        listPanel.repaint();
     }
 
     private JPanel buildCaptureRow(CapturedCreature c, int index) {
@@ -100,7 +164,7 @@ public class CreatureDetailDialog extends JDialog {
         row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         row.setBorder(new EmptyBorder(7, 10, 7, 10));
 
-        // Top line: quality badge + score on left, date on right
+        // Top line: quality badge + date
         JPanel topLine = new JPanel(new BorderLayout());
         topLine.setOpaque(false);
 
@@ -120,7 +184,7 @@ public class CreatureDetailDialog extends JDialog {
         topLine.add(qualLabel, BorderLayout.WEST);
         topLine.add(dateLabel, BorderLayout.EAST);
 
-        // Bottom line: location on left, kill number on right
+        // Bottom line: region + kill number
         JPanel botLine = new JPanel(new BorderLayout());
         botLine.setOpaque(false);
 

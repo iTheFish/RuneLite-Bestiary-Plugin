@@ -1,6 +1,9 @@
 package net.runelite.client.plugins.bestiary.ui;
 
+import net.runelite.client.plugins.bestiary.model.BestiaryCollection;
 import net.runelite.client.plugins.bestiary.model.CreatureRarity;
+import net.runelite.client.plugins.bestiary.service.BestiaryDataService;
+import net.runelite.client.plugins.bestiary.service.ProgressionService;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 
@@ -8,13 +11,28 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
 import java.awt.*;
+import java.text.NumberFormat;
+import java.util.Locale;
 
 public class InfoTab extends JPanel {
 
     private static final Color ORANGE = new Color(255, 165, 0);
     private static final Color GREEN  = new Color(80, 200, 80);
+    private static final NumberFormat FMT = NumberFormat.getNumberInstance(Locale.UK);
 
-    public InfoTab() {
+    private final BestiaryDataService dataService;
+    private final ProgressionService progressionService;
+
+    // Live stat labels
+    private final JLabel speciesVal  = statValue("0");
+    private final JLabel capturesVal = statValue("0");
+    private final JLabel levelVal    = statValue("1");
+    private final JLabel killsVal    = statValue("0");
+
+    public InfoTab(BestiaryDataService dataService, ProgressionService progressionService) {
+        this.dataService        = dataService;
+        this.progressionService = progressionService;
+
         setLayout(new BorderLayout());
         setBackground(ColorScheme.DARK_GRAY_COLOR);
 
@@ -23,133 +41,198 @@ public class InfoTab extends JPanel {
         content.setBackground(ColorScheme.DARK_GRAY_COLOR);
         content.setBorder(new EmptyBorder(6, 6, 6, 6));
 
-        content.add(section("Overview",
-                "Bestiary tracks every creature you kill and gives you a chance "
-              + "to capture them. Captured creatures are logged in your Collection "
-              + "with quality scores, locations, and rarity tiers."));
+        // Live stats strip
+        content.add(buildStatsStrip());
+        content.add(Box.createVerticalStrut(10));
 
+        // Rarity quick-reference table
+        content.add(buildRarityTable());
+        content.add(Box.createVerticalStrut(10));
+
+        // Slim info tiles
+        content.add(buildInfoTiles());
         content.add(Box.createVerticalStrut(8));
 
-        content.add(section("Capture System",
-                "On every kill a random roll is made against your capture rate. "
-              + "Base rate is set in the plugin config (default 10%, up to 100%). "
-              + "Each capture gets a quality score (0-100) based on the creature's "
-              + "combat stats. Higher quality = rarer roll."));
-
-        content.add(Box.createVerticalStrut(8));
-
-        content.add(raritySection());
-
-        content.add(Box.createVerticalStrut(8));
-
-        content.add(section("XP & Levels",
-                "You earn XP on every kill and bonus XP on successful captures. "
-              + "Capture Level ranges from 1-100 and is shown in the Progress tab. "
-              + "Rarer captures award more XP via a rarity multiplier. "
-              + "Capture XP bonus can be toggled off in config."));
-
-        content.add(Box.createVerticalStrut(8));
-
-        content.add(section("Collection Tab",
-                "Cards are grouped by creature AND rarity - Goblin Uncommon and "
-              + "Goblin Rare are separate entries. Click any card to open a full "
-              + "capture history: quality score, location, date, and which kill "
-              + "triggered the capture."));
-
-        content.add(Box.createVerticalStrut(8));
-
-        content.add(section("Progress Tab",
-                "Shows your Capture Level, XP progress bar, and all achievements. "
-              + "Achievements unlock automatically when you meet their criteria "
-              + "(species count, kill count, level milestones, rarity captures)."));
-
-        content.add(Box.createVerticalStrut(8));
-
-        content.add(section("Overlay & Animation",
-                "A capture notification appears at the top-centre of the game "
-              + "window on each catch. Enable 'Show Capture Animation' in config "
-              + "for a pokeball-style shake animation on every kill attempt. "
-              + "'Animate Misses' shows the animation even on failed captures."));
-
-        content.add(Box.createVerticalStrut(8));
-
-        content.add(tipRow("Tip: Set Base Capture Rate to 100% in config to test the plugin quickly."));
+        // Dev tip
+        content.add(tipRow("Tip: Set Base Capture Rate to 100% in config to test instantly."));
 
         JScrollPane scroll = new JScrollPane(content);
         scroll.setBorder(null);
         scroll.getViewport().setBackground(ColorScheme.DARK_GRAY_COLOR);
         scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-
         add(scroll, BorderLayout.CENTER);
+
+        refresh();
     }
 
-    private JPanel section(String title, String body) {
-        JPanel panel = new JPanel(new BorderLayout(0, 4));
-        panel.setOpaque(false);
-        panel.setAlignmentX(LEFT_ALIGNMENT);
-        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
-        panel.setBorder(BorderFactory.createCompoundBorder(
+    public void refresh() {
+        BestiaryCollection col = dataService.getCollection();
+        speciesVal.setText(String.valueOf(col.uniqueSpeciesCount()));
+        capturesVal.setText(FMT.format(col.totalCaptures()));
+        levelVal.setText(String.valueOf(progressionService.getLevel()));
+        killsVal.setText(FMT.format(col.totalKills()));
+    }
+
+    // -------------------------------------------------------------------------
+    // Live stats strip  (4 boxes in one row)
+    // -------------------------------------------------------------------------
+
+    private JPanel buildStatsStrip() {
+        JPanel strip = new JPanel(new GridLayout(1, 4, 4, 0));
+        strip.setOpaque(false);
+        strip.setMaximumSize(new Dimension(Integer.MAX_VALUE, 52));
+        strip.setAlignmentX(LEFT_ALIGNMENT);
+
+        strip.add(statBox("Species",  speciesVal));
+        strip.add(statBox("Captures", capturesVal));
+        strip.add(statBox("Level",    levelVal));
+        strip.add(statBox("Kills",    killsVal));
+
+        return strip;
+    }
+
+    private static JPanel statBox(String labelText, JLabel valueLabel) {
+        JPanel box = new JPanel(new GridLayout(2, 1, 0, 2));
+        box.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        box.setBorder(BorderFactory.createCompoundBorder(
+                new MatteBorder(0, 2, 0, 0, ORANGE),
+                new EmptyBorder(4, 6, 4, 6)));
+
+        JLabel label = new JLabel(labelText, SwingConstants.CENTER);
+        label.setFont(FontManager.getRunescapeSmallFont());
+        label.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+
+        valueLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        box.add(valueLabel);
+        box.add(label);
+        return box;
+    }
+
+    private static JLabel statValue(String text) {
+        JLabel l = new JLabel(text, SwingConstants.CENTER);
+        l.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD).deriveFont(13f));
+        l.setForeground(ORANGE);
+        return l;
+    }
+
+    // -------------------------------------------------------------------------
+    // Rarity quick-reference table
+    // -------------------------------------------------------------------------
+
+    private JPanel buildRarityTable() {
+        JPanel outer = new JPanel(new BorderLayout(0, 4));
+        outer.setOpaque(false);
+        outer.setAlignmentX(LEFT_ALIGNMENT);
+        outer.setBorder(BorderFactory.createCompoundBorder(
                 new MatteBorder(0, 3, 0, 0, ORANGE),
                 new EmptyBorder(3, 8, 3, 0)));
 
-        JLabel titleLabel = new JLabel(title);
-        titleLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
-        titleLabel.setForeground(ORANGE);
-
-        JTextArea bodyText = new JTextArea(body);
-        bodyText.setFont(FontManager.getRunescapeSmallFont());
-        bodyText.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-        bodyText.setBackground(ColorScheme.DARK_GRAY_COLOR);
-        bodyText.setEditable(false);
-        bodyText.setLineWrap(true);
-        bodyText.setWrapStyleWord(true);
-        bodyText.setBorder(null);
-        bodyText.setFocusable(false);
-
-        panel.add(titleLabel, BorderLayout.NORTH);
-        panel.add(bodyText,   BorderLayout.CENTER);
-        return panel;
-    }
-
-    private JPanel raritySection() {
-        JPanel panel = new JPanel(new BorderLayout(0, 4));
-        panel.setOpaque(false);
-        panel.setAlignmentX(LEFT_ALIGNMENT);
-        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
-        panel.setBorder(BorderFactory.createCompoundBorder(
-                new MatteBorder(0, 3, 0, 0, ORANGE),
-                new EmptyBorder(3, 8, 3, 0)));
-
-        JLabel title = new JLabel("Rarity Tiers (lowest to highest)");
+        JLabel title = new JLabel("Rarity Tiers");
         title.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         title.setForeground(ORANGE);
 
+        // Header row
         JPanel rows = new JPanel();
         rows.setLayout(new BoxLayout(rows, BoxLayout.Y_AXIS));
         rows.setOpaque(false);
 
+        JPanel headerRow = tableRow("Rarity", "Chance", "XP mult", ColorScheme.MEDIUM_GRAY_COLOR);
+        rows.add(headerRow);
+
         for (CreatureRarity r : CreatureRarity.values()) {
-            int pct = (int) Math.round(r.probability * 100);
-            String pctStr = pct > 0 ? pct + "%" : "<1%";
-            JLabel row = new JLabel(
-                    "● " + r.label + "  —  ~" + pctStr + " of captures  ("
-                    + (int) r.xpMultiplier + "x XP)");
-            row.setFont(FontManager.getRunescapeSmallFont());
-            row.setForeground(r.displayColor);
-            rows.add(row);
+            double pct = r.probability * 100;
+            String pctStr = pct >= 1.0
+                    ? String.format("%.0f%%", pct)
+                    : String.format("%.1f%%", pct);
+            String xpStr = (int) r.xpMultiplier + "x";
+            rows.add(tableRow("● " + r.label, pctStr, xpStr, r.displayColor));
         }
 
-        panel.add(title, BorderLayout.NORTH);
-        panel.add(rows,  BorderLayout.CENTER);
-        return panel;
+        outer.add(title, BorderLayout.NORTH);
+        outer.add(rows,  BorderLayout.CENTER);
+        return outer;
     }
 
-    private JPanel tipRow(String text) {
+    private static JPanel tableRow(String col1, String col2, String col3, Color color) {
+        JPanel row = new JPanel(new GridLayout(1, 3, 0, 0));
+        row.setOpaque(false);
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 16));
+
+        JLabel l1 = new JLabel(col1);
+        JLabel l2 = new JLabel(col2, SwingConstants.CENTER);
+        JLabel l3 = new JLabel(col3, SwingConstants.RIGHT);
+
+        for (JLabel l : new JLabel[]{l1, l2, l3}) {
+            l.setFont(FontManager.getRunescapeSmallFont());
+            l.setForeground(color);
+        }
+
+        row.add(l1);
+        row.add(l2);
+        row.add(l3);
+        return row;
+    }
+
+    // -------------------------------------------------------------------------
+    // Slim info tiles (term | definition layout)
+    // -------------------------------------------------------------------------
+
+    private JPanel buildInfoTiles() {
+        JPanel outer = new JPanel(new BorderLayout(0, 4));
+        outer.setOpaque(false);
+        outer.setAlignmentX(LEFT_ALIGNMENT);
+        outer.setBorder(BorderFactory.createCompoundBorder(
+                new MatteBorder(0, 3, 0, 0, ORANGE),
+                new EmptyBorder(3, 8, 3, 0)));
+
+        JLabel title = new JLabel("How It Works");
+        title.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        title.setForeground(ORANGE);
+
+        JPanel tiles = new JPanel();
+        tiles.setLayout(new BoxLayout(tiles, BoxLayout.Y_AXIS));
+        tiles.setOpaque(false);
+
+        tiles.add(tile("Capture",    "Random roll on each kill vs. your capture rate (config)"));
+        tiles.add(tile("Quality",    "0-100 score from NPC combat stats at time of capture"));
+        tiles.add(tile("XP",         "Kill XP = max(10, combatLvl*10); captures multiply by rarity"));
+        tiles.add(tile("Level",      "Capture Level 1-100 shown in Progress tab"));
+        tiles.add(tile("Overlay",    "Top-centre notification; pokeball animation optional"));
+        tiles.add(tile("Collection", "Grouped by NPC + rarity; Individual shows every capture"));
+        tiles.add(tile("Batch chat", "Batched mode: 3x Uncommon Goblin captured! after 30s idle"));
+        tiles.add(tile("Reset",      "Delete ~/.runelite/bestiary/collection.json to reset all data"));
+
+        outer.add(title, BorderLayout.NORTH);
+        outer.add(tiles, BorderLayout.CENTER);
+        return outer;
+    }
+
+    private static JPanel tile(String term, String definition) {
+        JPanel row = new JPanel(new BorderLayout(6, 0));
+        row.setOpaque(false);
+        row.setBorder(new EmptyBorder(2, 0, 2, 0));
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+
+        JLabel termLabel = new JLabel(term);
+        termLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        termLabel.setForeground(Color.WHITE);
+        termLabel.setPreferredSize(new Dimension(70, 14));
+
+        JLabel defLabel = new JLabel("<html><body style='width:120px'>" + definition + "</body></html>");
+        defLabel.setFont(FontManager.getRunescapeSmallFont());
+        defLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+
+        row.add(termLabel, BorderLayout.WEST);
+        row.add(defLabel,  BorderLayout.CENTER);
+        return row;
+    }
+
+    private static JPanel tipRow(String text) {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setOpaque(false);
         panel.setAlignmentX(LEFT_ALIGNMENT);
-        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
         panel.setBorder(BorderFactory.createCompoundBorder(
                 new MatteBorder(0, 3, 0, 0, GREEN),
                 new EmptyBorder(3, 8, 3, 0)));

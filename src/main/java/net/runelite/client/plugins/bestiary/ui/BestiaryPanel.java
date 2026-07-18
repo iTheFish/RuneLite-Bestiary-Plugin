@@ -25,6 +25,7 @@ public class BestiaryPanel extends PluginPanel {
     private final JLabel statsLabel;
     private CollectionTab collectionTab;
     private ProgressTab progressTab;
+    private InfoTab infoTab;
 
     @Inject
     public BestiaryPanel(BestiaryDataService dataService, ProgressionService progressionService) {
@@ -63,13 +64,14 @@ public class BestiaryPanel extends PluginPanel {
         // Tabs
         collectionTab = new CollectionTab(dataService);
         progressTab   = new ProgressTab(progressionService);
+        infoTab       = new InfoTab(dataService, progressionService);
 
         JTabbedPane tabs = new JTabbedPane();
         tabs.setBackground(ColorScheme.DARK_GRAY_COLOR);
         tabs.setForeground(Color.WHITE);
         tabs.addTab("Collection", collectionTab);
         tabs.addTab("Progress",   progressTab);
-        tabs.addTab("Info",       new InfoTab());
+        tabs.addTab("Info",       infoTab);
 
         add(header, BorderLayout.NORTH);
         add(tabs,   BorderLayout.CENTER);
@@ -86,6 +88,7 @@ public class BestiaryPanel extends PluginPanel {
 
         collectionTab.refresh();
         progressTab.refresh();
+        infoTab.refresh();
     }
 }
 

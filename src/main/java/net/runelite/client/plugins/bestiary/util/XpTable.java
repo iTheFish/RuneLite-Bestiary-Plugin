@@ -1,9 +1,18 @@
 package net.runelite.client.plugins.bestiary.util;
 
 /**
- * Maps between Capture Level (1\u00e2\u20ac"100) and cumulative XP using an OSRS-style
- * formula: Points(L) = floor((L + 300 * 2^(L/7)) / 4).
+ * Maps between Capture Level (1-100) and cumulative XP.
+ *
+ * Uses the official OSRS XP formula: Points(L) = floor((L + 300 * 2^(L/7)) / 4).
  * XP required for level L = sum of Points(1) to Points(L-1).
+ *
+ * Generates values identical to the OSRS in-game skill table. Spot-check:
+ *   Level  2 =         83 XP
+ *   Level 10 =      1,154 XP
+ *   Level 50 =    101,333 XP
+ *   Level 75 =  1,210,421 XP
+ *   Level 99 = 13,034,431 XP
+ * Level 100 cap continues the curve beyond the standard OSRS table.
  */
 public final class XpTable {
 
