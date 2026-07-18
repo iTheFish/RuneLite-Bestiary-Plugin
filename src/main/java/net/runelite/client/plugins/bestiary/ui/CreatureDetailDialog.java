@@ -192,7 +192,7 @@ public class CreatureDetailDialog extends JDialog {
         locLabel.setFont(FontManager.getRunescapeSmallFont());
         locLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 
-        JLabel killLabel = new JLabel("Kill #" + (c.killsBeforeCapture + 1), SwingConstants.RIGHT);
+        JLabel killLabel = new JLabel("Kill #" + c.killsBeforeCapture, SwingConstants.RIGHT);
         killLabel.setFont(FontManager.getRunescapeSmallFont());
         killLabel.setForeground(ColorScheme.MEDIUM_GRAY_COLOR);
 

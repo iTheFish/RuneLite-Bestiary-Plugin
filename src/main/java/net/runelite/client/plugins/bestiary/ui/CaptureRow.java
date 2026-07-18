@@ -15,64 +15,63 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Compact row representing a single capture in Individual view mode.
+ * Compact two-row row representing a single capture in Individual view mode.
+ * Top: NPC name (left) | rarity (right)
+ * Bot: combat level (left) | Q + region + date (right)
  */
 public class CaptureRow extends JPanel {
 
-    private static final int   ROW_HEIGHT = 46;
+    private static final int   ROW_HEIGHT = 50;
     private static final Color ROW_BG     = ColorScheme.DARKER_GRAY_COLOR;
     private static final Color ROW_HOVER  = new Color(55, 55, 55);
     private static final DateTimeFormatter DATE_FMT =
             DateTimeFormatter.ofPattern("dd MMM HH:mm").withZone(ZoneId.systemDefault());
 
     public CaptureRow(CapturedCreature capture, BestiaryCollection collection) {
-        setLayout(new BorderLayout(8, 0));
+        setLayout(new GridLayout(2, 1, 0, 3));
         setBackground(ROW_BG);
         setBorder(BorderFactory.createCompoundBorder(
                 new MatteBorder(0, 4, 0, 0, capture.rarity.displayColor),
-                new EmptyBorder(6, 8, 6, 8)));
+                new EmptyBorder(5, 8, 5, 8)));
         setMaximumSize(new Dimension(Integer.MAX_VALUE, ROW_HEIGHT));
         setPreferredSize(new Dimension(200, ROW_HEIGHT));
 
-        // Left: NPC name (bold, clipped) + combat level
-        JPanel left = new JPanel(new GridLayout(2, 1, 0, 2));
-        left.setOpaque(false);
+        // Top row: NPC name left | rarity right
+        JPanel topRow = new JPanel(new BorderLayout(4, 0));
+        topRow.setOpaque(false);
 
-        String displayName = capture.npcName.length() > 18
-                ? capture.npcName.substring(0, 17) + "…"
-                : capture.npcName;
-        JLabel nameLabel = new JLabel(displayName);
+        JLabel nameLabel = new JLabel(capture.npcName);
         nameLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         nameLabel.setForeground(Color.WHITE);
+
+        JLabel rarityLabel = new JLabel("● " + capture.rarity.label);
+        rarityLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        rarityLabel.setForeground(capture.rarity.displayColor);
+
+        topRow.add(nameLabel,   BorderLayout.CENTER);
+        topRow.add(rarityLabel, BorderLayout.EAST);
+
+        // Bottom row: combat level left | Q + region + date right
+        JPanel botRow = new JPanel(new BorderLayout(4, 0));
+        botRow.setOpaque(false);
 
         String levelText = capture.npcCombatLevel > 0 ? "Lvl " + capture.npcCombatLevel : "Non-cb";
         JLabel levelLabel = new JLabel(levelText);
         levelLabel.setFont(FontManager.getRunescapeSmallFont());
-        levelLabel.setForeground(ColorScheme.MEDIUM_GRAY_COLOR);
+        levelLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 
-        left.add(nameLabel);
-        left.add(levelLabel);
+        int q      = capture.quality.overallRating();
+        String reg = shorten(capture.regionName, 12);
+        String dt  = DATE_FMT.format(capture.captureTime);
+        JLabel statsLabel = new JLabel("Q:" + q + "  " + reg + "  " + dt);
+        statsLabel.setFont(FontManager.getRunescapeSmallFont());
+        statsLabel.setForeground(ColorScheme.MEDIUM_GRAY_COLOR);
 
-        // Right: rarity label + compact stats line
-        JPanel right = new JPanel(new GridLayout(2, 1, 0, 2));
-        right.setOpaque(false);
+        botRow.add(levelLabel, BorderLayout.WEST);
+        botRow.add(statsLabel, BorderLayout.EAST);
 
-        JLabel rarityLabel = new JLabel("● " + capture.rarity.label, SwingConstants.RIGHT);
-        rarityLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
-        rarityLabel.setForeground(capture.rarity.displayColor);
-
-        int q = capture.quality.overallRating();
-        String region = shorten(capture.regionName, 10);
-        String date   = DATE_FMT.format(capture.captureTime);
-        JLabel infoLabel = new JLabel("Q:" + q + " · " + region + " · " + date, SwingConstants.RIGHT);
-        infoLabel.setFont(FontManager.getRunescapeSmallFont());
-        infoLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-
-        right.add(rarityLabel);
-        right.add(infoLabel);
-
-        add(left,  BorderLayout.CENTER);
-        add(right, BorderLayout.EAST);
+        add(topRow);
+        add(botRow);
 
         addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
@@ -85,22 +84,13 @@ public class CaptureRow extends JPanel {
                         group, collection).setVisible(true);
             }
 
-            @Override
-            public void mouseEntered(java.awt.event.MouseEvent e) {
-                setBackground(ROW_HOVER);
-                repaint();
-            }
-
-            @Override
-            public void mouseExited(java.awt.event.MouseEvent e) {
-                setBackground(ROW_BG);
-                repaint();
-            }
+            @Override public void mouseEntered(java.awt.event.MouseEvent e) { setBackground(ROW_HOVER); repaint(); }
+            @Override public void mouseExited(java.awt.event.MouseEvent e)  { setBackground(ROW_BG);    repaint(); }
         });
     }
 
-    private static String shorten(String name, int max) {
-        if (name == null || name.isEmpty()) return "?";
-        return name.length() > max ? name.substring(0, max - 1) + "…" : name;
+    private static String shorten(String s, int max) {
+        if (s == null || s.isEmpty()) return "?";
+        return s.length() > max ? s.substring(0, max - 1) + "…" : s;
     }
 }

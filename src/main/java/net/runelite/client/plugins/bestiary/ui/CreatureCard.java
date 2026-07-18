@@ -53,7 +53,7 @@ public class CreatureCard extends JPanel {
         String levelText = combatLevel > 0 ? "Combat lvl " + combatLevel : "Non-combat";
         JLabel levelLabel = new JLabel(levelText);
         levelLabel.setFont(FontManager.getRunescapeSmallFont());
-        levelLabel.setForeground(ColorScheme.MEDIUM_GRAY_COLOR);
+        levelLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 
         leftCol.add(nameLabel);
         leftCol.add(levelLabel);

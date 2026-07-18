@@ -228,19 +228,20 @@ public class BestiaryPlugin extends Plugin {
                         : rarity + " " + name + " captured!";
                 sendChatMessage(msg, ChatColorType.HIGHLIGHT);
             }
-        }, 30, TimeUnit.SECONDS);
+        }, 10, TimeUnit.SECONDS);
 
         batchFutures.put(key, future);
     }
 
     private void notifyCapture(CapturedCreature creature) {
-        int quality  = creature.quality.overallRating();
-        int killNum  = creature.killsBeforeCapture + 1;
-        // Include kill# so identical consecutive captures produce distinct messages
+        int quality = creature.quality.overallRating();
+        int killNum = creature.killsBeforeCapture; // already includes current kill
+        // kill# and quality together ensure no two consecutive messages are identical
         // (RuneLite silently drops duplicate chat messages)
         String message = new ChatMessageBuilder()
+                .append(creature.rarity.displayColor, creature.rarity.label)
                 .append(ChatColorType.HIGHLIGHT)
-                .append(creature.rarity.label + " " + creature.npcName + " captured!")
+                .append(" " + creature.npcName + " captured!")
                 .append(ChatColorType.NORMAL)
                 .append("  Kill #" + killNum + "  Q:" + quality)
                 .build();
