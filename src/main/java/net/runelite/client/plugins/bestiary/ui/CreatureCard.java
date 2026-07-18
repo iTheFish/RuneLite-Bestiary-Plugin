@@ -23,13 +23,17 @@ public class CreatureCard extends JPanel {
     private static final Color CARD_BG     = ColorScheme.DARKER_GRAY_COLOR;
     private static final Color CARD_HOVER  = new Color(55, 55, 55);
 
+    private final CreatureRarity rarity;
+    private float shimmerPhase = 0f;
+    private javax.swing.Timer shimmerTimer;
+
     /**
      * @param captures All captures of this NPC with this specific rarity (homogeneous list).
      * @param collection Full collection for kill-count lookup.
      */
     public CreatureCard(List<CapturedCreature> captures, BestiaryCollection collection) {
         CapturedCreature sample = captures.get(0);
-        CreatureRarity rarity   = sample.rarity;
+        rarity                  = sample.rarity;
         String npcName          = sample.npcName;
         int npcId               = sample.npcId;
         int combatLevel         = sample.npcCombatLevel;
@@ -95,7 +99,17 @@ public class CreatureCard extends JPanel {
         add(rightCol, BorderLayout.EAST);
 
 
-        // Click -> detail dialog; hover highlight
+        // Foil shimmer: one sweep per hover for Legendary / Mythic
+        if (rarity == CreatureRarity.LEGENDARY || rarity == CreatureRarity.MYTHIC) {
+            shimmerTimer = new javax.swing.Timer(30, e -> {
+                shimmerPhase += 0.022f;
+                if (shimmerPhase > 1.3f) { shimmerTimer.stop(); shimmerPhase = 0f; }
+                repaint();
+            });
+            shimmerTimer.setRepeats(true);
+        }
+
+        // Click -> detail dialog; hover highlight + shimmer
         addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
@@ -107,15 +121,44 @@ public class CreatureCard extends JPanel {
             @Override
             public void mouseEntered(java.awt.event.MouseEvent e) {
                 setBackground(CARD_HOVER);
+                if (shimmerTimer != null) { shimmerPhase = 0f; shimmerTimer.restart(); }
                 repaint();
             }
 
             @Override
             public void mouseExited(java.awt.event.MouseEvent e) {
                 setBackground(CARD_BG);
+                if (shimmerTimer != null) shimmerTimer.stop();
                 repaint();
             }
         });
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (shimmerTimer == null || !shimmerTimer.isRunning()) return;
+
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        int w      = getWidth();
+        int h      = getHeight();
+        int stripW = 55;
+        float cx   = shimmerPhase * (w + stripW) - stripW / 2f;
+
+        Color mid = rarity == CreatureRarity.MYTHIC
+                ? new Color(255, 120, 120, 100)
+                : new Color(255, 210, 80,  100);
+        Color none = new Color(mid.getRed(), mid.getGreen(), mid.getBlue(), 0);
+
+        LinearGradientPaint lgp = new LinearGradientPaint(
+                cx - stripW / 2f, 0, cx + stripW / 2f, 0,
+                new float[]{0f, 0.5f, 1f},
+                new Color[]{none, mid, none});
+        g2.setPaint(lgp);
+        g2.fillRect(0, 0, w, h);
+        g2.dispose();
     }
 
     /** EPIC and above get a 2px frame; Common–Rare get 1px. */
