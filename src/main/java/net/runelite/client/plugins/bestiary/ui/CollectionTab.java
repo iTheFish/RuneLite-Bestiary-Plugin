@@ -165,6 +165,7 @@ public class CollectionTab extends JPanel {
         scroll.getViewport().setBackground(ColorScheme.DARK_GRAY_COLOR);
         scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         scroll.getVerticalScrollBar().setUnitIncrement(16);
+        scroll.getVerticalScrollBar().setPreferredSize(new java.awt.Dimension(0, 0));
 
         add(controls, BorderLayout.NORTH);
         add(scroll,   BorderLayout.CENTER);
