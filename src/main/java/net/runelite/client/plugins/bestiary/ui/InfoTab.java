@@ -106,7 +106,7 @@ public class InfoTab extends JPanel {
         box.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         box.setBorder(BorderFactory.createCompoundBorder(
                 new MatteBorder(0, 2, 0, 0, ORANGE),
-                new EmptyBorder(4, 6, 4, 6)));
+                new EmptyBorder(4, 3, 4, 3)));
 
         JLabel label = new JLabel(labelText, SwingConstants.CENTER);
         label.setFont(FontManager.getRunescapeSmallFont());
@@ -147,7 +147,7 @@ public class InfoTab extends JPanel {
         rows.setLayout(new BoxLayout(rows, BoxLayout.Y_AXIS));
         rows.setOpaque(false);
 
-        JPanel headerRow = tableRow("Rarity", "Chance", "XP mult", ColorScheme.MEDIUM_GRAY_COLOR);
+        JPanel headerRow = tableRow("Rarity", "Chance", "XP mult", new Color(200, 200, 200));
         rows.add(headerRow);
 
         for (CreatureRarity r : CreatureRarity.values()) {

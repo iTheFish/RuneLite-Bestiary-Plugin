@@ -31,7 +31,8 @@ public class CollectionTab extends JPanel {
     private final JComboBox<String> sortOrder;
     private final JPanel cardContainer;
 
-    private boolean groupedMode = true;
+    private enum ViewMode { GROUPED, INDIVIDUAL, MONSTER }
+    private ViewMode viewMode = ViewMode.GROUPED;
 
     // Sort options available in both modes
     private static final String[] SORT_OPTIONS = {
@@ -79,42 +80,50 @@ public class CollectionTab extends JPanel {
         filterRow.add(rarityFilter);
         filterRow.add(sortOrder);
 
-        // --- Grouped / Individual toggle ---
-        JPanel toggleRow = new JPanel(new GridLayout(1, 2, 0, 0));
+        // --- Grouped / Individual / Monster toggle ---
+        JPanel toggleRow = new JPanel(new GridLayout(1, 3, 0, 0));
         toggleRow.setOpaque(false);
 
         JToggleButton groupedBtn    = new JToggleButton("Grouped");
         JToggleButton individualBtn = new JToggleButton("Individual");
+        JToggleButton monsterBtn    = new JToggleButton("By Monster");
 
         styleToggleButton(groupedBtn,    true);
         styleToggleButton(individualBtn, false);
+        styleToggleButton(monsterBtn,    false);
 
         ButtonGroup btnGroup = new ButtonGroup();
         btnGroup.add(groupedBtn);
         btnGroup.add(individualBtn);
+        btnGroup.add(monsterBtn);
         groupedBtn.setSelected(true);
 
         groupedBtn.addActionListener(e -> {
-            if (!groupedMode) {
-                groupedMode = true;
-                styleToggleButton(groupedBtn,    true);
-                styleToggleButton(individualBtn, false);
-                rebuildCards();
-            }
+            viewMode = ViewMode.GROUPED;
+            styleToggleButton(groupedBtn,    true);
+            styleToggleButton(individualBtn, false);
+            styleToggleButton(monsterBtn,    false);
+            rebuildCards();
         });
         individualBtn.addActionListener(e -> {
-            if (groupedMode) {
-                groupedMode = false;
-                styleToggleButton(groupedBtn,    false);
-                styleToggleButton(individualBtn, true);
-                // Default sort for individual mode: Newest first
-                sortOrder.setSelectedItem("Newest first");
-                rebuildCards();
-            }
+            viewMode = ViewMode.INDIVIDUAL;
+            styleToggleButton(groupedBtn,    false);
+            styleToggleButton(individualBtn, true);
+            styleToggleButton(monsterBtn,    false);
+            sortOrder.setSelectedItem("Newest first");
+            rebuildCards();
+        });
+        monsterBtn.addActionListener(e -> {
+            viewMode = ViewMode.MONSTER;
+            styleToggleButton(groupedBtn,    false);
+            styleToggleButton(individualBtn, false);
+            styleToggleButton(monsterBtn,    true);
+            rebuildCards();
         });
 
         toggleRow.add(groupedBtn);
         toggleRow.add(individualBtn);
+        toggleRow.add(monsterBtn);
 
         controls.add(searchBar,  BorderLayout.NORTH);
         controls.add(filterRow,  BorderLayout.CENTER);
@@ -163,8 +172,10 @@ public class CollectionTab extends JPanel {
             empty.setAlignmentX(Component.CENTER_ALIGNMENT);
             empty.setBorder(new EmptyBorder(20, 0, 0, 0));
             cardContainer.add(empty);
-        } else if (groupedMode) {
+        } else if (viewMode == ViewMode.GROUPED) {
             buildGroupedView(filtered, selectedSort);
+        } else if (viewMode == ViewMode.MONSTER) {
+            buildMonsterView(filtered, selectedSort);
         } else {
             buildIndividualView(filtered, selectedSort);
         }
@@ -226,7 +237,7 @@ public class CollectionTab extends JPanel {
 
         JLabel countLabel = new JLabel(count + " type" + (count == 1 ? "" : "s"), SwingConstants.RIGHT);
         countLabel.setFont(FontManager.getRunescapeSmallFont());
-        countLabel.setForeground(ColorScheme.MEDIUM_GRAY_COLOR);
+        countLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 
         header.add(label,      BorderLayout.WEST);
         header.add(countLabel, BorderLayout.EAST);
@@ -304,6 +315,62 @@ public class CollectionTab extends JPanel {
             cardContainer.add(new CaptureRow(capture, dataService.getCollection()));
             cardContainer.add(Box.createVerticalStrut(2));
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Monster mode: one card per unique NPC, shows total count + rarity split
+    // -------------------------------------------------------------------------
+
+    private void buildMonsterView(List<CapturedCreature> filtered, String selectedSort) {
+        Map<String, List<CapturedCreature>> byNpc = filtered.stream()
+                .collect(Collectors.groupingBy(c -> c.npcName));
+
+        List<Map.Entry<String, List<CapturedCreature>>> entries =
+                new ArrayList<>(byNpc.entrySet());
+
+        switch (selectedSort == null ? "Name A-Z" : selectedSort) {
+            case "Name A-Z":
+                entries.sort(Comparator.comparing(Map.Entry::getKey));
+                break;
+            case "Name Z-A":
+                entries.sort(Comparator.<Map.Entry<String, List<CapturedCreature>>, String>
+                        comparing(Map.Entry::getKey).reversed());
+                break;
+            case "Newest first":
+                entries.sort((a, b) -> latestCapture(b).compareTo(latestCapture(a)));
+                break;
+            case "Oldest first":
+                entries.sort(Comparator.comparing(e -> earliestCapture(e.getValue())));
+                break;
+            case "Rarity (best)":
+                entries.sort((a, b) -> maxRarity(b.getValue()).ordinal()
+                                     - maxRarity(a.getValue()).ordinal());
+                break;
+            case "Rarity (worst)":
+                entries.sort(Comparator.comparingInt(e -> maxRarity(e.getValue()).ordinal()));
+                break;
+            case "Quality (high)":
+                entries.sort((a, b) -> avgQuality(b.getValue()) - avgQuality(a.getValue()));
+                break;
+            case "Quality (low)":
+                entries.sort(Comparator.comparingInt(e -> avgQuality(e.getValue())));
+                break;
+            default:
+                entries.sort(Comparator.comparing(Map.Entry::getKey));
+        }
+
+        for (Map.Entry<String, List<CapturedCreature>> e : entries) {
+            cardContainer.add(new MonsterSummaryCard(
+                    e.getKey(), e.getValue(), dataService.getCollection()));
+            cardContainer.add(Box.createVerticalStrut(3));
+        }
+    }
+
+    private static CreatureRarity maxRarity(List<CapturedCreature> captures) {
+        return captures.stream()
+                .map(c -> c.rarity)
+                .max(Comparator.comparingInt(Enum::ordinal))
+                .orElse(CreatureRarity.COMMON);
     }
 
     // -------------------------------------------------------------------------
