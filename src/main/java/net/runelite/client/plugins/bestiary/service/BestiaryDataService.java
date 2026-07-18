@@ -129,8 +129,8 @@ public class BestiaryDataService {
         scheduleSave();
     }
 
-    public void incrementKillCount(int npcId) {
-        collection.incrementKillCount(npcId);
+    public void incrementKillCount(String npcName) {
+        collection.incrementKillCount(npcName);
         scheduleSave();
     }
 

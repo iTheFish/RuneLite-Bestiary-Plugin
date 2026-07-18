@@ -43,8 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @PluginDescriptor(
@@ -71,9 +69,8 @@ public class BestiaryPlugin extends Plugin {
 
     private NavigationButton navButton;
 
-    // Batched notification state (accessed only on executor thread)
-    private final Map<String, Integer> batchCounts  = new HashMap<>();
-    private final Map<String, ScheduledFuture<?>> batchFutures = new HashMap<>();
+    // Running capture counts for BATCHED mode (accessed only on executor thread, resets on plugin restart)
+    private final Map<String, Integer> batchCounts = new HashMap<>();
 
     // --- Lifecycle ---
 
@@ -101,12 +98,7 @@ public class BestiaryPlugin extends Plugin {
         clientToolbar.removeNavigation(navButton);
         navButton = null;
 
-        // Cancel any pending batched notifications
-        executor.execute(() -> {
-            batchFutures.values().forEach(f -> f.cancel(false));
-            batchFutures.clear();
-            batchCounts.clear();
-        });
+        executor.execute(batchCounts::clear);
 
         log.info("Bestiary plugin stopped");
     }
@@ -146,12 +138,13 @@ public class BestiaryPlugin extends Plugin {
                 ? client.getLocalPlayer().getWorldLocation()
                 : null;
 
+        String npcName = npc.getName() != null ? npc.getName() : "Unknown";
+
         // Track the kill + check kill-count achievements
-        dataService.incrementKillCount(npc.getId());
+        dataService.incrementKillCount(npcName);
         List<Achievement> killAchievements = progressionService.checkKillAchievements();
         for (Achievement a : killAchievements) {
-            sendChatMessage("Achievement unlocked: " + a.title + " - " + a.description,
-                    ChatColorType.HIGHLIGHT);
+            sendAchievementMessage(a);
         }
 
         int newLevel = progressionService.recordKill(npc);
@@ -165,7 +158,7 @@ public class BestiaryPlugin extends Plugin {
 
         // Attempt capture
         int captureLevel = progressionService.getLevel();
-        int killCount    = dataService.getCollection().getKillCount(npc.getId());
+        int killCount    = dataService.getCollection().getKillCount(npcName);
         String region    = resolveRegionName(location);
 
         Optional<CapturedCreature> result = captureService.attemptCapture(
@@ -199,38 +192,23 @@ public class BestiaryPlugin extends Plugin {
             }
 
             for (Achievement a : newAchievements) {
-                sendChatMessage("Achievement unlocked: " + a.title + " - " + a.description,
-                        ChatColorType.HIGHLIGHT);
+                sendAchievementMessage(a);
             }
 
             SwingUtilities.invokeLater(panel::refresh);
         });
     }
 
-    /** Accumulates a capture for batched chat notification. Called on executor thread. */
+    /**
+     * BATCHED mode: increments running count and immediately posts "Nx Rarity Name captured!"
+     * Each message has a different count so RuneLite never deduplicates them.
+     * Counts reset on plugin restart.  Called on executor thread.
+     */
     private void accumulateBatch(CapturedCreature creature) {
-        String key = creature.rarity.label + " " + creature.npcName;
-        batchCounts.merge(key, 1, Integer::sum);
-
-        // Cancel any existing scheduled flush for this key
-        ScheduledFuture<?> existing = batchFutures.remove(key);
-        if (existing != null) existing.cancel(false);
-
-        // Schedule a new flush 30s from now
-        final String rarity = creature.rarity.label;
-        final String name   = creature.npcName;
-        ScheduledFuture<?> future = executor.schedule(() -> {
-            Integer count = batchCounts.remove(key);
-            batchFutures.remove(key);
-            if (count != null && count > 0) {
-                String msg = count > 1
-                        ? count + "x " + rarity + " " + name + " captured!"
-                        : rarity + " " + name + " captured!";
-                sendChatMessage(msg, ChatColorType.HIGHLIGHT);
-            }
-        }, 10, TimeUnit.SECONDS);
-
-        batchFutures.put(key, future);
+        String key   = creature.npcName + ":" + creature.rarity.label;
+        int count    = batchCounts.merge(key, 1, Integer::sum);
+        String msg   = count + "x " + creature.rarity.label + " " + creature.npcName + " captured!";
+        sendChatMessage(msg, ChatColorType.HIGHLIGHT);
     }
 
     private void notifyCapture(CapturedCreature creature) {
@@ -248,6 +226,20 @@ public class BestiaryPlugin extends Plugin {
         chatMessageManager.queue(QueuedMessage.builder()
                 .type(ChatMessageType.GAMEMESSAGE)
                 .runeLiteFormattedMessage(message)
+                .build());
+    }
+
+    private void sendAchievementMessage(Achievement a) {
+        String formatted = new ChatMessageBuilder()
+                .append(ChatColorType.NORMAL)
+                .append("Achievement unlocked: ")
+                .append(a.chatColor, a.title)
+                .append(ChatColorType.NORMAL)
+                .append(" - " + a.description)
+                .build();
+        chatMessageManager.queue(QueuedMessage.builder()
+                .type(ChatMessageType.GAMEMESSAGE)
+                .runeLiteFormattedMessage(formatted)
                 .build());
     }
 

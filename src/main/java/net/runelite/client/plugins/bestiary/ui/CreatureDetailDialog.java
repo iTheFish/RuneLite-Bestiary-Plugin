@@ -104,8 +104,8 @@ public class CreatureDetailDialog extends JDialog {
         scroll.getViewport().setBackground(ColorScheme.DARK_GRAY_COLOR);
 
         // Footer: kill / capture summary
-        int kills    = collection.getKillCount(sample.npcId);
-        int totalCap = collection.getCaptureCount(sample.npcId);
+        int kills    = collection.getKillCount(sample.npcName);
+        int totalCap = collection.getCaptureCount(sample.npcName);
         String ratio = kills > 0 ? "1 in " + Math.round((double) kills / Math.max(1, totalCap)) : "—";
         JLabel footer = new JLabel(String.format(
                 "Total kills: %,d  |  All captures: %d  |  Kill ratio: %s", kills, totalCap, ratio));

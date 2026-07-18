@@ -14,29 +14,29 @@ public class BestiaryCollection {
     /** All captures in chronological order. */
     public List<CapturedCreature> creatures = new ArrayList<>();
 
-    /** npcId \u00e2\u2020\u2019 total kills (including unsuccessful capture attempts). */
-    public Map<Integer, Integer> killCounts = new HashMap<>();
+    /** npcName -> total kills (keyed by name so variants like "Goblin" all count together). */
+    public Map<String, Integer> killCounts = new HashMap<>();
 
-    /** npcId \u00e2\u2020\u2019 total successful captures. */
-    public Map<Integer, Integer> captureCountByNpc = new HashMap<>();
+    /** npcName -> total successful captures. */
+    public Map<String, Integer> captureCountByNpc = new HashMap<>();
 
     // --- mutators called by BestiaryDataService ---
 
     public void addCapture(CapturedCreature c) {
         creatures.add(c);
-        captureCountByNpc.merge(c.npcId, 1, Integer::sum);
+        captureCountByNpc.merge(c.npcName, 1, Integer::sum);
     }
 
-    public void incrementKillCount(int npcId) {
-        killCounts.merge(npcId, 1, Integer::sum);
+    public void incrementKillCount(String npcName) {
+        killCounts.merge(npcName, 1, Integer::sum);
     }
 
-    public int getKillCount(int npcId) {
-        return killCounts.getOrDefault(npcId, 0);
+    public int getKillCount(String npcName) {
+        return killCounts.getOrDefault(npcName, 0);
     }
 
-    public int getCaptureCount(int npcId) {
-        return captureCountByNpc.getOrDefault(npcId, 0);
+    public int getCaptureCount(String npcName) {
+        return captureCountByNpc.getOrDefault(npcName, 0);
     }
 
     public int totalCaptures() {
@@ -44,7 +44,7 @@ public class BestiaryCollection {
     }
 
     public long uniqueSpeciesCount() {
-        return creatures.stream().mapToInt(c -> c.npcId).distinct().count();
+        return creatures.stream().map(c -> c.npcName).distinct().count();
     }
 
     public int totalKills() {

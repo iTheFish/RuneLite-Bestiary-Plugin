@@ -9,6 +9,7 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
 import java.awt.*;
+import java.awt.Color;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -63,12 +64,23 @@ public class CaptureRow extends JPanel {
         int q      = capture.quality.overallRating();
         String reg = shorten(capture.regionName, 12);
         String dt  = DATE_FMT.format(capture.captureTime);
-        JLabel statsLabel = new JLabel("Q:" + q + "  " + reg + "  " + dt);
-        statsLabel.setFont(FontManager.getRunescapeSmallFont());
-        statsLabel.setForeground(ColorScheme.MEDIUM_GRAY_COLOR);
 
-        botRow.add(levelLabel, BorderLayout.WEST);
-        botRow.add(statsLabel, BorderLayout.EAST);
+        // Quality in gold, location + date in same muted tone as level label
+        JLabel qualLabel = new JLabel("Q:" + q);
+        qualLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        qualLabel.setForeground(new Color(255, 200, 60));
+
+        JLabel locDateLabel = new JLabel("  " + reg + "  " + dt);
+        locDateLabel.setFont(FontManager.getRunescapeSmallFont());
+        locDateLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+
+        JPanel statsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        statsPanel.setOpaque(false);
+        statsPanel.add(qualLabel);
+        statsPanel.add(locDateLabel);
+
+        botRow.add(levelLabel,  BorderLayout.WEST);
+        botRow.add(statsPanel,  BorderLayout.EAST);
 
         add(topRow);
         add(botRow);

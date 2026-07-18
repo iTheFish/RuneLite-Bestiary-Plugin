@@ -56,7 +56,9 @@ public class CaptureService {
             return Optional.empty();
         }
 
-        double catchRate = config.devForceCaptureRate() ? 1.0 : calculateCatchRate(captureLevel);
+        double catchRate = config.devZeroCaptureRate()    ? 0.0
+                        : config.devForceCaptureRate()   ? 1.0
+                        : calculateCatchRate(captureLevel);
         double roll      = rng.nextDouble();
 
         log.debug("Capture roll for {}: roll={} catchRate={}", npc.getName(),

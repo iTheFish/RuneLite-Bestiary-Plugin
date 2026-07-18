@@ -70,7 +70,7 @@ public class CreatureCard extends JPanel {
                 .mapToInt(c -> c.quality.overallRating())
                 .average()
                 .orElse(0);
-        int kills = collection.getKillCount(npcId);
+        int kills = collection.getKillCount(npcName);
         JLabel statsLabel = new JLabel(captures.size() + " caught  \u00b7  avg " + avgQuality, SwingConstants.RIGHT);
         statsLabel.setFont(FontManager.getRunescapeSmallFont());
         statsLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);

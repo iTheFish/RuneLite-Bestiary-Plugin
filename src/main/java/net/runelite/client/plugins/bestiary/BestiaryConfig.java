@@ -155,4 +155,15 @@ public interface BestiaryConfig extends Config {
     default boolean devForceCaptureRate() {
         return false;
     }
+
+    @ConfigItem(
+            keyName = "devZeroCaptureRate",
+            name = "Force 0% Capture Rate",
+            description = "No kill will ever produce a capture — useful for testing the miss/overlay path.",
+            position = 23,
+            section = "devSection"
+    )
+    default boolean devZeroCaptureRate() {
+        return false;
+    }
 }
