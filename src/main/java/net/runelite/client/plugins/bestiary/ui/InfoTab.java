@@ -54,7 +54,7 @@ public class InfoTab extends JPanel {
         content.add(Box.createVerticalStrut(8));
 
         // Dev tip
-        content.add(tipRow("Tip: Set Base Capture Rate to 100% in config to test instantly."));
+        content.add(tipRow("Dev: Enable 'Force 100% Capture Rate' in the Developer Tools config section."));
 
         JScrollPane scroll = new JScrollPane(content);
         scroll.setBorder(null);
@@ -195,14 +195,13 @@ public class InfoTab extends JPanel {
         tiles.setLayout(new BoxLayout(tiles, BoxLayout.Y_AXIS));
         tiles.setOpaque(false);
 
-        tiles.add(tile("Capture",    "Random roll on each kill vs. your capture rate (config)"));
-        tiles.add(tile("Quality",    "0-100 score from NPC combat stats at time of capture"));
-        tiles.add(tile("XP",         "Kill XP = max(10, combatLvl*10); captures multiply by rarity"));
-        tiles.add(tile("Level",      "Capture Level 1-100 shown in Progress tab"));
-        tiles.add(tile("Overlay",    "Top-centre notification; pokeball animation optional"));
-        tiles.add(tile("Collection", "Grouped by NPC + rarity; Individual shows every capture"));
-        tiles.add(tile("Batch chat", "Batched mode: 3x Uncommon Goblin captured! after 30s idle"));
-        tiles.add(tile("Reset",      "Delete ~/.runelite/bestiary/collection.json to reset all data"));
+        tiles.add(tile("Capture",    "Random roll on each kill. Base rate + level bonus, capped at max rate."));
+        tiles.add(tile("Quality",    "0-100 score based on NPC combat stats at time of capture."));
+        tiles.add(tile("XP",         "Kill XP = max(10, combatLvl×10). Captures multiply by rarity bonus."));
+        tiles.add(tile("Overlay",    "Top-centre notification shown on each capture. Pokeball animation optional."));
+        tiles.add(tile("Verbose",    "One chat message per capture with kill# and quality score."));
+        tiles.add(tile("Batched",    "Shows 1x, 2x, 3x count immediately on each kill of same NPC+rarity."));
+        tiles.add(tile("Reset",      "Use the Reset Collection button at the bottom of the panel."));
 
         outer.add(title, BorderLayout.NORTH);
         outer.add(tiles, BorderLayout.CENTER);
@@ -210,17 +209,19 @@ public class InfoTab extends JPanel {
     }
 
     private static JPanel tile(String term, String definition) {
-        JPanel row = new JPanel(new BorderLayout(6, 0));
+        JPanel row = new JPanel(new BorderLayout(8, 0));
         row.setOpaque(false);
-        row.setBorder(new EmptyBorder(2, 0, 2, 0));
-        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+        row.setBorder(new EmptyBorder(3, 0, 3, 0));
+        // No fixed maxHeight — let content determine size so wrapped text isn't clipped
 
         JLabel termLabel = new JLabel(term);
         termLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
-        termLabel.setForeground(Color.WHITE);
-        termLabel.setPreferredSize(new Dimension(70, 14));
+        termLabel.setForeground(new Color(255, 200, 80));
+        termLabel.setPreferredSize(new Dimension(62, 14));
+        termLabel.setVerticalAlignment(SwingConstants.TOP);
 
-        JLabel defLabel = new JLabel("<html><body style='width:120px'>" + definition + "</body></html>");
+        // width:140px gives each definition enough room without forcing a scroll
+        JLabel defLabel = new JLabel("<html><body style='width:140px'>" + definition + "</body></html>");
         defLabel.setFont(FontManager.getRunescapeSmallFont());
         defLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 
