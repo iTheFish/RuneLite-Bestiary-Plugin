@@ -36,9 +36,10 @@ public class CreatureCard extends JPanel {
 
         setLayout(new BorderLayout(8, 0));
         setBackground(CARD_BG);
+        int t = borderThick(rarity);
         setBorder(BorderFactory.createCompoundBorder(
-                new MatteBorder(0, 4, 0, 0, rarity.displayColor),
-                new EmptyBorder(6, 8, 6, 8)));
+                new MatteBorder(t, 4, t, t, rarity.displayColor),
+                new EmptyBorder(6 - t, 8, 6 - t, 8 - t)));
         setMaximumSize(new Dimension(Integer.MAX_VALUE, CARD_HEIGHT));
         setPreferredSize(new Dimension(200, CARD_HEIGHT));
         setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -75,13 +76,24 @@ public class CreatureCard extends JPanel {
         JLabel statsLabel = new JLabel(captures.size() + " caught  \u00b7  avg " + avgQuality, SwingConstants.RIGHT);
         statsLabel.setFont(FontManager.getRunescapeSmallFont());
         statsLabel.setForeground(rarity.displayColor);
-        statsLabel.setToolTipText(captures.size() + " captures of this rarity  |  " + kills + " total kills");
+
+        int aStr = (int) captures.stream().mapToInt(c -> c.quality.strength).average().orElse(0);
+        int aSpd = (int) captures.stream().mapToInt(c -> c.quality.speed).average().orElse(0);
+        int aEnd = (int) captures.stream().mapToInt(c -> c.quality.endurance).average().orElse(0);
+        int aInt = (int) captures.stream().mapToInt(c -> c.quality.intelligence).average().orElse(0);
+        int aStl = (int) captures.stream().mapToInt(c -> c.quality.stealth).average().orElse(0);
+        int aVit = (int) captures.stream().mapToInt(c -> c.quality.vitality).average().orElse(0);
+        statsLabel.setToolTipText(String.format(
+                "<html>%d captures of this rarity  |  %d total kills<br>" +
+                "Avg stats:  STR:%d  SPD:%d  END:%d  INT:%d  STL:%d  VIT:%d</html>",
+                captures.size(), kills, aStr, aSpd, aEnd, aInt, aStl, aVit));
 
         rightCol.add(rarityLabel);
         rightCol.add(statsLabel);
 
         add(leftCol,  BorderLayout.CENTER);
         add(rightCol, BorderLayout.EAST);
+
 
         // Click -> detail dialog; hover highlight
         addMouseListener(new java.awt.event.MouseAdapter() {
@@ -104,5 +116,10 @@ public class CreatureCard extends JPanel {
                 repaint();
             }
         });
+    }
+
+    /** EPIC and above get a 2px frame; Common–Rare get 1px. */
+    private static int borderThick(CreatureRarity r) {
+        return r.ordinal() >= CreatureRarity.EPIC.ordinal() ? 2 : 1;
     }
 }

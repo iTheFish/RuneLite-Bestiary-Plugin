@@ -2,6 +2,7 @@ package net.runelite.client.plugins.bestiary.ui;
 
 import net.runelite.client.plugins.bestiary.model.BestiaryCollection;
 import net.runelite.client.plugins.bestiary.model.CapturedCreature;
+import net.runelite.client.plugins.bestiary.model.CreatureRarity;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 
@@ -31,9 +32,10 @@ public class CaptureRow extends JPanel {
     public CaptureRow(CapturedCreature capture, BestiaryCollection collection) {
         setLayout(new GridLayout(2, 1, 0, 3));
         setBackground(ROW_BG);
+        int t = borderThick(capture.rarity);
         setBorder(BorderFactory.createCompoundBorder(
-                new MatteBorder(0, 4, 0, 0, capture.rarity.displayColor),
-                new EmptyBorder(5, 8, 5, 8)));
+                new MatteBorder(t, 4, t, t, capture.rarity.displayColor),
+                new EmptyBorder(5 - t, 8, 5 - t, 8 - t)));
         setMaximumSize(new Dimension(Integer.MAX_VALUE, ROW_HEIGHT));
         setPreferredSize(new Dimension(200, ROW_HEIGHT));
 
@@ -104,5 +106,9 @@ public class CaptureRow extends JPanel {
     private static String shorten(String s, int max) {
         if (s == null || s.isEmpty()) return "?";
         return s.length() > max ? s.substring(0, max - 1) + "…" : s;
+    }
+
+    private static int borderThick(CreatureRarity r) {
+        return r.ordinal() >= CreatureRarity.EPIC.ordinal() ? 2 : 1;
     }
 }
