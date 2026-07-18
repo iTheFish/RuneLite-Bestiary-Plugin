@@ -41,6 +41,7 @@ public class CreatureCard extends JPanel {
                 new EmptyBorder(6, 8, 6, 8)));
         setMaximumSize(new Dimension(Integer.MAX_VALUE, CARD_HEIGHT));
         setPreferredSize(new Dimension(200, CARD_HEIGHT));
+        setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         // Left column: name + combat level
         JPanel leftCol = new JPanel(new GridLayout(2, 1, 0, 2));
@@ -88,7 +89,7 @@ public class CreatureCard extends JPanel {
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 new CreatureDetailDialog(
                         SwingUtilities.getWindowAncestor(CreatureCard.this),
-                        captures, collection).setVisible(true);
+                        captures, collection);
             }
 
             @Override

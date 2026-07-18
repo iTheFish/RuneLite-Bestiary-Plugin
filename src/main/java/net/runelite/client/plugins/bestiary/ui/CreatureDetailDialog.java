@@ -144,6 +144,8 @@ public class CreatureDetailDialog extends JDialog {
         setContentPane(root);
         pack();
         setLocationRelativeTo(owner);
+        setVisible(true);
+        toFront();
     }
 
     private void buildList(String sortMode) {
