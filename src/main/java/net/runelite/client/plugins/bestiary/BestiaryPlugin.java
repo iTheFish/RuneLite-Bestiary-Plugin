@@ -21,6 +21,7 @@ import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.HitsplatApplied;
 import net.runelite.api.events.InteractingChanged;
 import net.runelite.api.events.NpcDespawned;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.chat.ChatColorType;
 import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.chat.ChatMessageManager;
@@ -54,6 +55,7 @@ public class BestiaryPlugin extends Plugin {
 
     @Inject private Client client;
     @Inject private BestiaryConfig config;
+    @Inject private ConfigManager configManager;
     @Inject private ClientToolbar clientToolbar;
     @Inject private ChatMessageManager chatMessageManager;
     @Inject private OverlayManager overlayManager;
@@ -104,6 +106,17 @@ public class BestiaryPlugin extends Plugin {
     }
 
     // --- Event handlers ---
+
+    @Subscribe
+    public void onConfigChanged(ConfigChanged event) {
+        if (!"bestiary".equals(event.getGroup())) return;
+        // Keep dev rate toggles mutually exclusive
+        if ("devForceCaptureRate".equals(event.getKey()) && "true".equals(event.getNewValue())) {
+            configManager.setConfiguration("bestiary", "devZeroCaptureRate", false);
+        } else if ("devZeroCaptureRate".equals(event.getKey()) && "true".equals(event.getNewValue())) {
+            configManager.setConfiguration("bestiary", "devForceCaptureRate", false);
+        }
+    }
 
     @Subscribe
     public void onActorDeath(ActorDeath event) {
@@ -205,10 +218,22 @@ public class BestiaryPlugin extends Plugin {
      * Counts reset on plugin restart.  Called on executor thread.
      */
     private void accumulateBatch(CapturedCreature creature) {
-        String key   = creature.npcName + ":" + creature.rarity.label;
-        int count    = batchCounts.merge(key, 1, Integer::sum);
-        String msg   = count + "x " + creature.rarity.label + " " + creature.npcName + " captured!";
-        sendChatMessage(msg, ChatColorType.HIGHLIGHT);
+        String key  = creature.npcName + ":" + creature.rarity.label;
+        int count   = batchCounts.merge(key, 1, Integer::sum);
+        int killNum = creature.killsBeforeCapture;
+        String formatted = new ChatMessageBuilder()
+                .append(ChatColorType.NORMAL)
+                .append(count + "x ")
+                .append(creature.rarity.displayColor, creature.rarity.label)
+                .append(ChatColorType.HIGHLIGHT)
+                .append(" " + creature.npcName + " captured!")
+                .append(ChatColorType.NORMAL)
+                .append("  Kill #" + killNum)
+                .build();
+        chatMessageManager.queue(QueuedMessage.builder()
+                .type(ChatMessageType.GAMEMESSAGE)
+                .runeLiteFormattedMessage(formatted)
+                .build());
     }
 
     private void notifyCapture(CapturedCreature creature) {

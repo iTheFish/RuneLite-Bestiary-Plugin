@@ -73,7 +73,7 @@ public class CreatureCard extends JPanel {
         int kills = collection.getKillCount(npcName);
         JLabel statsLabel = new JLabel(captures.size() + " caught  \u00b7  avg " + avgQuality, SwingConstants.RIGHT);
         statsLabel.setFont(FontManager.getRunescapeSmallFont());
-        statsLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+        statsLabel.setForeground(rarity.displayColor);
         statsLabel.setToolTipText(captures.size() + " captures of this rarity  |  " + kills + " total kills");
 
         rightCol.add(rarityLabel);

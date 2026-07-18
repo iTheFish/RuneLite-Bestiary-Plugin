@@ -68,7 +68,7 @@ public class CaptureRow extends JPanel {
         // Quality in gold, location + date in same muted tone as level label
         JLabel qualLabel = new JLabel("Q:" + q);
         qualLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
-        qualLabel.setForeground(new Color(255, 200, 60));
+        qualLabel.setForeground(capture.rarity.displayColor);
 
         JLabel locDateLabel = new JLabel("  " + reg + "  " + dt);
         locDateLabel.setFont(FontManager.getRunescapeSmallFont());

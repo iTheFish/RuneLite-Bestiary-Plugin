@@ -209,25 +209,30 @@ public class InfoTab extends JPanel {
     }
 
     private static JPanel tile(String term, String definition) {
-        JPanel row = new JPanel(new BorderLayout(8, 0));
-        row.setOpaque(false);
-        row.setBorder(new EmptyBorder(3, 0, 3, 0));
-        // No fixed maxHeight — let content determine size so wrapped text isn't clipped
+        // Title on NORTH, JTextArea on CENTER — BorderLayout gives CENTER full width
+        // so lineWrap fires correctly without needing a fixed pixel width.
+        JPanel panel = new JPanel(new BorderLayout(0, 2));
+        panel.setOpaque(false);
+        panel.setAlignmentX(LEFT_ALIGNMENT);
+        panel.setBorder(new EmptyBorder(4, 0, 5, 0));
 
         JLabel termLabel = new JLabel(term);
-        termLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        termLabel.setFont(FontManager.getRunescapeFont().deriveFont(Font.BOLD));
         termLabel.setForeground(new Color(255, 200, 80));
-        termLabel.setPreferredSize(new Dimension(62, 14));
-        termLabel.setVerticalAlignment(SwingConstants.TOP);
 
-        // width:140px gives each definition enough room without forcing a scroll
-        JLabel defLabel = new JLabel("<html><body style='width:140px'>" + definition + "</body></html>");
-        defLabel.setFont(FontManager.getRunescapeSmallFont());
-        defLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+        JTextArea defArea = new JTextArea(definition);
+        defArea.setFont(FontManager.getRunescapeFont());
+        defArea.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+        defArea.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        defArea.setEditable(false);
+        defArea.setFocusable(false);
+        defArea.setLineWrap(true);
+        defArea.setWrapStyleWord(true);
+        defArea.setBorder(new EmptyBorder(0, 6, 0, 0));
 
-        row.add(termLabel, BorderLayout.WEST);
-        row.add(defLabel,  BorderLayout.CENTER);
-        return row;
+        panel.add(termLabel, BorderLayout.NORTH);
+        panel.add(defArea,   BorderLayout.CENTER);
+        return panel;
     }
 
     private static JPanel tipRow(String text) {

@@ -4,3 +4,6 @@ target/
 # IntelliJ — keep run configurations, ignore everything else
 .idea/*
 !.idea/runConfigurations/
+
+# AI handover file — kept locally only, not published to GitHub
+CLAUDE.md
