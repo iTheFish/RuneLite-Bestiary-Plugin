@@ -38,6 +38,7 @@ import javax.inject.Inject;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,9 +73,10 @@ public class BestiaryPlugin extends Plugin {
     private NavigationButton navButton;
 
     // BATCHED mode: 5-second accumulation per npcName+rarity key (executor thread only)
-    private final Map<String, Integer>           batchCounts      = new HashMap<>();
-    private final Map<String, CapturedCreature>  batchLastCreature = new HashMap<>();
-    private final Map<String, ScheduledFuture<?>> batchFutures    = new HashMap<>();
+    private final Map<String, Integer>            batchCounts       = new HashMap<>();
+    private final Map<String, CapturedCreature>   batchLastCreature = new HashMap<>();
+    private final Map<String, List<Integer>>      batchQualities    = new HashMap<>();
+    private final Map<String, ScheduledFuture<?>> batchFutures      = new HashMap<>();
 
     // --- Lifecycle ---
 
@@ -107,6 +109,7 @@ public class BestiaryPlugin extends Plugin {
             batchFutures.clear();
             batchCounts.clear();
             batchLastCreature.clear();
+            batchQualities.clear();
         });
 
         log.info("Bestiary plugin stopped");
@@ -217,6 +220,7 @@ public class BestiaryPlugin extends Plugin {
         String key = creature.npcName + ":" + creature.rarity.label;
         batchCounts.merge(key, 1, Integer::sum);
         batchLastCreature.put(key, creature);
+        batchQualities.computeIfAbsent(key, k -> new ArrayList<>()).add(creature.quality.overallRating());
 
         ScheduledFuture<?> existing = batchFutures.remove(key);
         if (existing != null) existing.cancel(false);
@@ -225,10 +229,17 @@ public class BestiaryPlugin extends Plugin {
     }
 
     private void flushBatch(String key) {
-        Integer count = batchCounts.remove(key);
+        Integer count     = batchCounts.remove(key);
         CapturedCreature last = batchLastCreature.remove(key);
+        List<Integer> qualities = batchQualities.remove(key);
         batchFutures.remove(key);
         if (count == null || last == null) return;
+
+        String qualStr = qualities == null || qualities.isEmpty() ? ""
+                : "  Q:" + qualities.stream()
+                        .map(String::valueOf)
+                        .reduce((a, b) -> a + ", " + b)
+                        .orElse("");
 
         ChatMessageBuilder builder = new ChatMessageBuilder()
                 .append(ChatColorType.NORMAL);
@@ -237,7 +248,7 @@ public class BestiaryPlugin extends Plugin {
                .append(ChatColorType.HIGHLIGHT)
                .append(" " + last.npcName + " captured!")
                .append(ChatColorType.NORMAL)
-               .append("  Kill #" + last.killsBeforeCapture);
+               .append("  Kill #" + last.killsBeforeCapture + qualStr);
 
         chatMessageManager.queue(QueuedMessage.builder()
                 .type(ChatMessageType.GAMEMESSAGE)

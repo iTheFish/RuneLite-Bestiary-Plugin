@@ -93,10 +93,10 @@ public class InfoTab extends JPanel {
         strip.setMaximumSize(new Dimension(Integer.MAX_VALUE, 52));
         strip.setAlignmentX(LEFT_ALIGNMENT);
 
-        strip.add(statBox("Species",  speciesVal));
-        strip.add(statBox("Captures", capturesVal));
-        strip.add(statBox("Level",    levelVal));
-        strip.add(statBox("Kills",    killsVal));
+        strip.add(statBox("Species", speciesVal));
+        strip.add(statBox("Caught",  capturesVal));
+        strip.add(statBox("Level",   levelVal));
+        strip.add(statBox("Kills",   killsVal));
 
         return strip;
     }
@@ -226,12 +226,12 @@ public class InfoTab extends JPanel {
         panel.setBorder(new EmptyBorder(4, 0, 5, 0));
 
         JLabel termLabel = new JLabel(term);
-        termLabel.setFont(FontManager.getRunescapeFont().deriveFont(Font.BOLD));
+        termLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         termLabel.setForeground(new Color(255, 200, 80));
 
         JTextArea defArea = new JTextArea(definition);
-        defArea.setFont(FontManager.getRunescapeFont());
-        defArea.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+        defArea.setFont(FontManager.getRunescapeSmallFont());
+        defArea.setForeground(new Color(210, 210, 210));
         defArea.setBackground(ColorScheme.DARK_GRAY_COLOR);
         defArea.setEditable(false);
         defArea.setFocusable(false);
