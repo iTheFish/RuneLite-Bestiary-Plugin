@@ -1,0 +1,6 @@
+target/
+*.class
+
+# IntelliJ — keep run configurations, ignore everything else
+.idea/*
+!.idea/runConfigurations/

@@ -1,0 +1,112 @@
+package net.runelite.client.plugins.bestiary;
+
+import net.runelite.client.config.Config;
+import net.runelite.client.config.ConfigGroup;
+import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.Range;
+
+@ConfigGroup("bestiary")
+public interface BestiaryConfig extends Config {
+
+    @ConfigItem(
+            keyName = "captureEnabled",
+            name = "Capture Enabled",
+            description = "Enable or disable creature capture attempts on kill",
+            position = 0
+    )
+    default boolean captureEnabled() {
+        return true;
+    }
+
+    @Range(min = 1, max = 100)
+    @ConfigItem(
+            keyName = "baseCaptureRate",
+            name = "Base Catch Rate (%)",
+            description = "Starting capture probability at Capture Level 1 (1-100%)",
+            position = 1
+    )
+    default int baseCaptureRate() {
+        return 10;
+    }
+
+    @Range(min = 10, max = 100)
+    @ConfigItem(
+            keyName = "maxCaptureRate",
+            name = "Max Catch Rate (%)",
+            description = "Ceiling for the catch rate including all level bonuses (10-100%)",
+            position = 2
+    )
+    default int maxCaptureRate() {
+        return 60;
+    }
+
+    @ConfigItem(
+            keyName = "notifyOnCapture",
+            name = "Notify on Capture",
+            description = "Show a chat message when a creature is captured",
+            position = 3
+    )
+    default boolean notifyOnCapture() {
+        return true;
+    }
+
+    @ConfigItem(
+            keyName = "notifyRareOnly",
+            name = "Notify Rare+ Only",
+            description = "Only show capture notifications for Rare rarity and above",
+            position = 4
+    )
+    default boolean notifyRareOnly() {
+        return false;
+    }
+
+    @ConfigItem(
+            keyName = "notifyOnLevelUp",
+            name = "Notify on Level Up",
+            description = "Show a chat message when the Capture Level increases",
+            position = 5
+    )
+    default boolean notifyOnLevelUp() {
+        return true;
+    }
+
+    @ConfigItem(
+            keyName = "showOverlay",
+            name = "Show Capture Overlay",
+            description = "Display an in-game overlay notification when a creature is captured",
+            position = 6
+    )
+    default boolean showOverlay() {
+        return true;
+    }
+
+    @ConfigItem(
+            keyName = "showCaptureAnimation",
+            name = "Show Capture Animation",
+            description = "Pokeball-style shake animation on each kill attempt (shows before capture result)",
+            position = 7
+    )
+    default boolean showCaptureAnimation() {
+        return false;
+    }
+
+    @ConfigItem(
+            keyName = "animationShowMisses",
+            name = "Animate Failed Catches",
+            description = "Show the animation even when the capture attempt fails (requires animation enabled)",
+            position = 8
+    )
+    default boolean animationShowMisses() {
+        return false;
+    }
+
+    @ConfigItem(
+            keyName = "captureXpEnabled",
+            name = "Capture XP Enabled",
+            description = "Award bonus XP on capture in addition to kill XP",
+            position = 9
+    )
+    default boolean captureXpEnabled() {
+        return true;
+    }
+}
