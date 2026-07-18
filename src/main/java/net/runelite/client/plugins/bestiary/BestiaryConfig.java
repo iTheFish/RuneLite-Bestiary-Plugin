@@ -6,6 +6,7 @@ import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
 import net.runelite.client.config.Range;
 import net.runelite.client.plugins.bestiary.model.ChatNotifyMode;
+import net.runelite.client.plugins.bestiary.model.DevCaptureMode;
 import net.runelite.client.plugins.bestiary.model.DevRarityOverride;
 
 @ConfigGroup("bestiary")
@@ -146,24 +147,13 @@ public interface BestiaryConfig extends Config {
     }
 
     @ConfigItem(
-            keyName = "devForceCaptureRate",
-            name = "Force 100% Capture Rate",
-            description = "Every kill triggers a capture attempt that always succeeds.",
+            keyName = "devCaptureMode",
+            name = "Capture Rate Override",
+            description = "Override the catch rate for testing. Normal = config-based rate.",
             position = 22,
             section = "devSection"
     )
-    default boolean devForceCaptureRate() {
-        return false;
-    }
-
-    @ConfigItem(
-            keyName = "devZeroCaptureRate",
-            name = "Force 0% Capture Rate",
-            description = "No kill will ever produce a capture — useful for testing the miss/overlay path.",
-            position = 23,
-            section = "devSection"
-    )
-    default boolean devZeroCaptureRate() {
-        return false;
+    default DevCaptureMode devCaptureMode() {
+        return DevCaptureMode.NORMAL;
     }
 }

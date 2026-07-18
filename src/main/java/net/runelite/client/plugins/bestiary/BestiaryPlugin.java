@@ -21,7 +21,6 @@ import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.HitsplatApplied;
 import net.runelite.api.events.InteractingChanged;
 import net.runelite.api.events.NpcDespawned;
-import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.chat.ChatColorType;
 import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.chat.ChatMessageManager;
@@ -44,6 +43,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @PluginDescriptor(
@@ -55,7 +56,6 @@ public class BestiaryPlugin extends Plugin {
 
     @Inject private Client client;
     @Inject private BestiaryConfig config;
-    @Inject private ConfigManager configManager;
     @Inject private ClientToolbar clientToolbar;
     @Inject private ChatMessageManager chatMessageManager;
     @Inject private OverlayManager overlayManager;
@@ -71,8 +71,10 @@ public class BestiaryPlugin extends Plugin {
 
     private NavigationButton navButton;
 
-    // Running capture counts for BATCHED mode (accessed only on executor thread, resets on plugin restart)
-    private final Map<String, Integer> batchCounts = new HashMap<>();
+    // BATCHED mode: 5-second accumulation per npcName+rarity key (executor thread only)
+    private final Map<String, Integer>           batchCounts      = new HashMap<>();
+    private final Map<String, CapturedCreature>  batchLastCreature = new HashMap<>();
+    private final Map<String, ScheduledFuture<?>> batchFutures    = new HashMap<>();
 
     // --- Lifecycle ---
 
@@ -100,23 +102,17 @@ public class BestiaryPlugin extends Plugin {
         clientToolbar.removeNavigation(navButton);
         navButton = null;
 
-        executor.execute(batchCounts::clear);
+        executor.execute(() -> {
+            batchFutures.values().forEach(f -> f.cancel(false));
+            batchFutures.clear();
+            batchCounts.clear();
+            batchLastCreature.clear();
+        });
 
         log.info("Bestiary plugin stopped");
     }
 
     // --- Event handlers ---
-
-    @Subscribe
-    public void onConfigChanged(ConfigChanged event) {
-        if (!"bestiary".equals(event.getGroup())) return;
-        // Keep dev rate toggles mutually exclusive
-        if ("devForceCaptureRate".equals(event.getKey()) && "true".equals(event.getNewValue())) {
-            configManager.setConfiguration("bestiary", "devZeroCaptureRate", false);
-        } else if ("devZeroCaptureRate".equals(event.getKey()) && "true".equals(event.getNewValue())) {
-            configManager.setConfiguration("bestiary", "devForceCaptureRate", false);
-        }
-    }
 
     @Subscribe
     public void onActorDeath(ActorDeath event) {
@@ -213,26 +209,39 @@ public class BestiaryPlugin extends Plugin {
     }
 
     /**
-     * BATCHED mode: increments running count and immediately posts "Nx Rarity Name captured!"
-     * Each message has a different count so RuneLite never deduplicates them.
-     * Counts reset on plugin restart.  Called on executor thread.
+     * BATCHED mode: accumulates captures for 5 seconds of inactivity per NPC+rarity key,
+     * then posts a single "Nx Rarity Name captured!" message.  Timer resets on each kill.
+     * Called on executor thread.
      */
     private void accumulateBatch(CapturedCreature creature) {
-        String key  = creature.npcName + ":" + creature.rarity.label;
-        int count   = batchCounts.merge(key, 1, Integer::sum);
-        int killNum = creature.killsBeforeCapture;
-        String formatted = new ChatMessageBuilder()
-                .append(ChatColorType.NORMAL)
-                .append(count + "x ")
-                .append(creature.rarity.displayColor, creature.rarity.label)
-                .append(ChatColorType.HIGHLIGHT)
-                .append(" " + creature.npcName + " captured!")
-                .append(ChatColorType.NORMAL)
-                .append("  Kill #" + killNum)
-                .build();
+        String key = creature.npcName + ":" + creature.rarity.label;
+        batchCounts.merge(key, 1, Integer::sum);
+        batchLastCreature.put(key, creature);
+
+        ScheduledFuture<?> existing = batchFutures.remove(key);
+        if (existing != null) existing.cancel(false);
+
+        batchFutures.put(key, executor.schedule(() -> flushBatch(key), 5, TimeUnit.SECONDS));
+    }
+
+    private void flushBatch(String key) {
+        Integer count = batchCounts.remove(key);
+        CapturedCreature last = batchLastCreature.remove(key);
+        batchFutures.remove(key);
+        if (count == null || last == null) return;
+
+        ChatMessageBuilder builder = new ChatMessageBuilder()
+                .append(ChatColorType.NORMAL);
+        if (count > 1) builder.append(count + "x ");
+        builder.append(last.rarity.displayColor, last.rarity.label)
+               .append(ChatColorType.HIGHLIGHT)
+               .append(" " + last.npcName + " captured!")
+               .append(ChatColorType.NORMAL)
+               .append("  Kill #" + last.killsBeforeCapture);
+
         chatMessageManager.queue(QueuedMessage.builder()
                 .type(ChatMessageType.GAMEMESSAGE)
-                .runeLiteFormattedMessage(formatted)
+                .runeLiteFormattedMessage(builder.build())
                 .build());
     }
 

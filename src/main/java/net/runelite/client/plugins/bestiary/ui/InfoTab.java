@@ -36,7 +36,16 @@ public class InfoTab extends JPanel {
         setLayout(new BorderLayout());
         setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-        JPanel content = new JPanel();
+        // Override getPreferredSize so BoxLayout uses the viewport's actual width,
+        // allowing JTextArea children to wrap at the panel boundary.
+        JPanel content = new JPanel() {
+            @Override
+            public Dimension getPreferredSize() {
+                Dimension d = super.getPreferredSize();
+                if (getParent() != null) d.width = getParent().getWidth();
+                return d;
+            }
+        };
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
         content.setBackground(ColorScheme.DARK_GRAY_COLOR);
         content.setBorder(new EmptyBorder(6, 6, 6, 6));

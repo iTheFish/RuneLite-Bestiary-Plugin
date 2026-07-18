@@ -4,6 +4,7 @@ import net.runelite.client.plugins.bestiary.BestiaryConfig;
 import net.runelite.client.plugins.bestiary.model.CapturedCreature;
 import net.runelite.client.plugins.bestiary.model.CreatureQuality;
 import net.runelite.client.plugins.bestiary.model.CreatureRarity;
+import net.runelite.client.plugins.bestiary.model.DevCaptureMode;
 import net.runelite.client.plugins.bestiary.model.DevRarityOverride;
 import net.runelite.client.plugins.bestiary.util.RarityRoller;
 import lombok.extern.slf4j.Slf4j;
@@ -56,8 +57,8 @@ public class CaptureService {
             return Optional.empty();
         }
 
-        double catchRate = config.devZeroCaptureRate()    ? 0.0
-                        : config.devForceCaptureRate()   ? 1.0
+        double catchRate = config.devCaptureMode() == DevCaptureMode.FORCE_0   ? 0.0
+                        : config.devCaptureMode() == DevCaptureMode.FORCE_100 ? 1.0
                         : calculateCatchRate(captureLevel);
         double roll      = rng.nextDouble();
 
