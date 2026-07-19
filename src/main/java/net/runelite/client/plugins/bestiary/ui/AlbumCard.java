@@ -74,6 +74,13 @@ public class AlbumCard extends JPanel {
     private final int killCount;
     private final boolean hasShiny;
 
+    // Optional override: if set, clicking opens detail dialog with these captures instead of `captures`
+    @Nullable private List<CapturedCreature> detailCaptures;
+
+    public void setDetailCaptures(List<CapturedCreature> all) {
+        this.detailCaptures = all;
+    }
+
     // -------------------------------------------------------------------------
     // Constructors
     // -------------------------------------------------------------------------
@@ -169,8 +176,10 @@ public class AlbumCard extends JPanel {
             public void mouseClicked(MouseEvent e) {
                 if (!locked && captures != null && collection != null
                         && SwingUtilities.isLeftMouseButton(e)) {
+                    List<CapturedCreature> forDialog = (detailCaptures != null && !detailCaptures.isEmpty())
+                            ? detailCaptures : captures;
                     new CreatureDetailDialog(
-                            SwingUtilities.getWindowAncestor(AlbumCard.this), captures, collection, "By Rarity", rarest);
+                            SwingUtilities.getWindowAncestor(AlbumCard.this), forDialog, collection, "By Rarity", rarest);
                 }
             }
 
@@ -194,7 +203,7 @@ public class AlbumCard extends JPanel {
                     for (int i = 0; i < shown; i++) {
                         CapturedCreature c = sorted.get(i);
                         String label = (c.nickname != null && !c.nickname.isEmpty())
-                                ? c.nickname
+                                ? "\"" + c.nickname + "\"  Q:" + c.quality.overallRating()
                                 : c.rarity.label + "  Q:" + c.quality.overallRating();
                         JMenuItem item = new JMenuItem(label);
                         item.setForeground(c.rarity.displayColor);

@@ -356,12 +356,25 @@ public class CreatureDetailDialog extends JDialog {
             }
         });
 
-        JLabel dateLabel = new JLabel(DATE_FMT.format(c.captureTime), SwingConstants.RIGHT);
+        // Right column: player name (gold, when known) stacked above date
+        JPanel rightCol = new JPanel();
+        rightCol.setLayout(new BoxLayout(rightCol, BoxLayout.Y_AXIS));
+        rightCol.setOpaque(false);
+        if (c.playerName != null && !c.playerName.isEmpty()) {
+            JLabel capturedByLabel = new JLabel(c.playerName);
+            capturedByLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+            capturedByLabel.setForeground(new Color(200, 155, 50));
+            capturedByLabel.setAlignmentX(Component.RIGHT_ALIGNMENT);
+            rightCol.add(capturedByLabel);
+        }
+        JLabel dateLabel = new JLabel(DATE_FMT.format(c.captureTime));
         dateLabel.setFont(FontManager.getRunescapeSmallFont());
         dateLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+        dateLabel.setAlignmentX(Component.RIGHT_ALIGNMENT);
+        rightCol.add(dateLabel);
 
         topLine.add(qualLabel, BorderLayout.WEST);
-        topLine.add(dateLabel, BorderLayout.EAST);
+        topLine.add(rightCol,  BorderLayout.EAST);
 
         JPanel botLine = new JPanel(new BorderLayout());
         botLine.setOpaque(false);
