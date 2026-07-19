@@ -156,7 +156,10 @@ public class CollectionTab extends JPanel {
         controls.add(togglesPanel, BorderLayout.SOUTH);
 
         // --- Card container ---
-        cardContainer = new JPanel();
+        // Implements Scrollable so the viewport constrains its width — without this,
+        // HORIZONTAL_SCROLLBAR_NEVER only hides the scrollbar but content still lays
+        // out at preferred width and overflows.
+        cardContainer = new ScrollablePanel();
         cardContainer.setLayout(new BoxLayout(cardContainer, BoxLayout.Y_AXIS));
         cardContainer.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
@@ -457,5 +460,14 @@ public class CollectionTab extends JPanel {
 
     private static int avgQuality(List<CapturedCreature> captures) {
         return (int) captures.stream().mapToInt(c -> c.quality.overallRating()).average().orElse(0);
+    }
+
+    /** JPanel that tells its JScrollPane to constrain width to the viewport. */
+    private static class ScrollablePanel extends JPanel implements javax.swing.Scrollable {
+        public Dimension getPreferredScrollableViewportSize() { return getPreferredSize(); }
+        public int getScrollableUnitIncrement(java.awt.Rectangle r, int o, int d) { return 16; }
+        public int getScrollableBlockIncrement(java.awt.Rectangle r, int o, int d) { return 100; }
+        public boolean getScrollableTracksViewportWidth()  { return true; }
+        public boolean getScrollableTracksViewportHeight() { return false; }
     }
 }
