@@ -27,6 +27,11 @@ public class CreatureCard extends JPanel {
     private float shimmerPhase = 0f;
     private javax.swing.Timer shimmerTimer;
 
+    private JLabel rarityLabelRef;
+    private JLabel statsLabelRef;
+    private String rateTooltip;
+    private String statsTooltip;
+
     /**
      * @param captures All captures of this NPC with this specific rarity (homogeneous list).
      * @param collection Full collection for kill-count lookup.
@@ -68,18 +73,18 @@ public class CreatureCard extends JPanel {
         JPanel rightCol = new JPanel(new GridLayout(2, 1, 0, 2));
         rightCol.setOpaque(false);
 
-        JLabel rarityLabel = new JLabel("\u25cf " + rarity.label, SwingConstants.RIGHT);
-        rarityLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
-        rarityLabel.setForeground(rarity.displayColor);
+        rarityLabelRef = new JLabel("\u25cf " + rarity.label, SwingConstants.RIGHT);
+        rarityLabelRef.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        rarityLabelRef.setForeground(rarity.displayColor);
 
         int avgQuality = (int) captures.stream()
                 .mapToInt(c -> c.quality.overallRating())
                 .average()
                 .orElse(0);
         int kills = collection.getKillCount(npcName);
-        JLabel statsLabel = new JLabel(captures.size() + " caught  \u00b7  avg " + avgQuality, SwingConstants.RIGHT);
-        statsLabel.setFont(FontManager.getRunescapeSmallFont());
-        statsLabel.setForeground(rarity.displayColor);
+        statsLabelRef = new JLabel(captures.size() + " caught  \u00b7  avg " + avgQuality, SwingConstants.RIGHT);
+        statsLabelRef.setFont(FontManager.getRunescapeSmallFont());
+        statsLabelRef.setForeground(rarity.displayColor);
 
         int aStr = (int) captures.stream().mapToInt(c -> c.quality.strength).average().orElse(0);
         int aSpd = (int) captures.stream().mapToInt(c -> c.quality.speed).average().orElse(0);
@@ -90,20 +95,17 @@ public class CreatureCard extends JPanel {
         String yourRate = kills > 0
                 ? "Your rate: 1 in " + Math.round((double) kills / Math.max(1, captures.size())) + " kills"
                 : "No kills recorded yet";
-        setToolTipText(String.format(
-                "<html><b>%s capture rate</b><br>" +
-                "Base chance: %.1f%% (~1 in %d kills)<br>" +
-                "%s<br><br>" +
-                "%d captures  |  %d total kills<br>" +
-                "Avg stats:  STR:%d  SPD:%d  END:%d  INT:%d  STL:%d  VIT:%d</html>",
-                rarity.label,
-                rarity.probability * 100,
-                Math.round(1.0 / rarity.probability),
-                yourRate,
-                captures.size(), kills, aStr, aSpd, aEnd, aInt, aStl, aVit));
+        rateTooltip = String.format(
+                "<html><b>%s capture rate</b><br>Base chance: %.1f%% (~1 in %d kills)<br>%s</html>",
+                rarity.label, rarity.probability * 100,
+                Math.round(1.0 / rarity.probability), yourRate);
+        statsTooltip = String.format(
+                "<html>%d captures  |  %d total kills<br>Avg stats:  STR:%d  SPD:%d  END:%d  INT:%d  STL:%d  VIT:%d</html>",
+                captures.size(), kills, aStr, aSpd, aEnd, aInt, aStl, aVit);
+        ToolTipManager.sharedInstance().registerComponent(this);
 
-        rightCol.add(rarityLabel);
-        rightCol.add(statsLabel);
+        rightCol.add(rarityLabelRef);
+        rightCol.add(statsLabelRef);
 
         add(leftCol,  BorderLayout.CENTER);
         add(rightCol, BorderLayout.EAST);
@@ -142,6 +144,14 @@ public class CreatureCard extends JPanel {
                 repaint();
             }
         });
+    }
+
+    @Override
+    public String getToolTipText(java.awt.event.MouseEvent event) {
+        Component c = SwingUtilities.getDeepestComponentAt(this, event.getX(), event.getY());
+        if (c == rarityLabelRef) return rateTooltip;
+        if (c == statsLabelRef)  return statsTooltip;
+        return null;
     }
 
     @Override
