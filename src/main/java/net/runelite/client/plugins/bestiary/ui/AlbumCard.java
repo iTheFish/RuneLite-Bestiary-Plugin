@@ -25,8 +25,8 @@ import java.util.List;
  */
 public class AlbumCard extends JPanel {
 
-    public static final int CARD_W = 150;
-    public static final int CARD_H = 275;
+    public static final int CARD_W = 165;
+    public static final int CARD_H = 300;
 
     private static final int PAD      = 8;
     private static final int LABEL_W  = 26;
@@ -37,7 +37,7 @@ public class AlbumCard extends JPanel {
     private static final int HEADER_Y = 6;
     private static final int HEADER_H = 14;
     private static final int IMAGE_Y  = HEADER_Y + HEADER_H + 4;
-    private static final int IMAGE_H  = 110;
+    private static final int IMAGE_H  = 130;
     private static final int NAME_Y   = IMAGE_Y + IMAGE_H + 4;
     private static final int NAME_H   = 16;
     private static final int COMBAT_Y = NAME_Y + NAME_H;
@@ -202,7 +202,7 @@ public class AlbumCard extends JPanel {
         FontMetrics dfm = sfm;
         String dexStr = String.format("no. %03d", dexNumber);
         g2.setFont(smallFont);
-        g2.setColor(locked ? new Color(50, 50, 50) : ColorScheme.MEDIUM_GRAY_COLOR);
+        g2.setColor(locked ? new Color(75, 75, 75) : ColorScheme.LIGHT_GRAY_COLOR);
         g2.drawString(dexStr, w - PAD - dfm.stringWidth(dexStr),
                 HEADER_Y + (HEADER_H + dfm.getAscent() - dfm.getDescent()) / 2);
 

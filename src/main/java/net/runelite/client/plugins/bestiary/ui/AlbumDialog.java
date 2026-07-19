@@ -25,13 +25,13 @@ import java.util.stream.Collectors;
  */
 public class AlbumDialog extends JDialog {
 
-    private static final int DEFAULT_W = 490;
+    private static final int DEFAULT_W = 540;
     private static final int DEFAULT_H = 580;
     private static final int CARD_GAP  = 6;
     private static final int SIDE_PAD  = 8;
 
     private static final String[] SORT_OPTIONS = {
-        "Name A–Z", "Name Z–A", "Difficulty", "Most caught",
+        "Name A–Z", "Name Z–A", "Difficulty ↑", "Difficulty ↓", "Most caught",
         "Rarity (best)", "Quality (high)", "Newest first"
     };
 
@@ -203,8 +203,11 @@ public class AlbumDialog extends JDialog {
             case "Name Z–A":
                 names.sort((a, b) -> String.CASE_INSENSITIVE_ORDER.compare(b, a));
                 break;
-            case "Difficulty":
+            case "Difficulty ↑":
                 names.sort((a, b) -> diffOrdinal(a, capturesByNpc) - diffOrdinal(b, capturesByNpc));
+                break;
+            case "Difficulty ↓":
+                names.sort((a, b) -> diffOrdinal(b, capturesByNpc) - diffOrdinal(a, capturesByNpc));
                 break;
             case "Most caught":
                 names.sort((a, b) -> capturesByNpc.get(b).size() - capturesByNpc.get(a).size());
@@ -232,9 +235,11 @@ public class AlbumDialog extends JDialog {
             case "Name Z–A":
                 names.sort((a, b) -> String.CASE_INSENSITIVE_ORDER.compare(b, a));
                 break;
-            case "Difficulty":
-                // Difficulty is known for all entries (roster or combat-level fallback)
+            case "Difficulty ↑":
                 names.sort((a, b) -> diffOrdinalAny(a) - diffOrdinalAny(b));
+                break;
+            case "Difficulty ↓":
+                names.sort((a, b) -> diffOrdinalAny(b) - diffOrdinalAny(a));
                 break;
             case "Most caught":
                 names.sort((a, b) -> {

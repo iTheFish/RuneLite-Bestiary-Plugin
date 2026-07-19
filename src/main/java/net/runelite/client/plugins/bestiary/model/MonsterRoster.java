@@ -194,12 +194,13 @@ public class MonsterRoster {
             "Cave bug", "Cave crawler", "Cave slime",
             "Desert lizard", "Fever spider", "Pyrefiend", "Rockslugs",
             "Fleshcrawler", "Ice warrior", "Ice spider",
+            "Hill giant", "Moss giant", "Ice giant", "Earth warrior",
             "Green dragon"
         )) { d.put(n, EASY); }
 
         // Medium — mid-game slayer, accessible dungeon monsters
         for (String n : Arrays.asList(
-            "Hill giant", "Moss giant", "Fire giant", "Ice giant", "Earth warrior",
+            "Fire giant",
             "Lesser demon", "Black knight", "White knight",
             "Banshee", "Twisted banshee", "Bloodveld",
             "Cave horror", "Jelly", "Warped jelly",
@@ -232,7 +233,9 @@ public class MonsterRoster {
             "Lizardman shaman",
             "Brutal black dragon", "Brutal red dragon",
             "Brutal blue dragon", "Brutal green dragon",
-            "Lava dragon", "Dark warrior", "Chaos druid warrior"
+            "Lava dragon", "Dark warrior", "Chaos druid warrior",
+            "Obor", "Bryophyta",
+            "Artio", "Spindel", "Calvar'ion"
         )) { d.put(n, HARD); }
 
         // Elite — challenging late-game PvM
@@ -240,19 +243,17 @@ public class MonsterRoster {
             "Adamant dragon", "Rune dragon",
             "Hydra", "Alchemical Hydra",
             "Giant Mole",
-            "Sarachnis", "Hespori", "Obor", "Bryophyta",
+            "Sarachnis", "Hespori",
             "Cerberus", "Kraken", "Thermonuclear smoke devil",
             "Abyssal Sire",
             "Deranged Archaeologist",
             "Chaos Fanatic", "Crazy Archaeologist", "Scorpia",
-            "Callisto", "Artio",
-            "Venenatis", "Spindel",
-            "Vet'ion", "Calvar'ion"
+            "Callisto", "Venenatis", "Vet'ion",
+            "Scurrius"
         )) { d.put(n, ELITE); }
 
         // Boss — endgame encounters requiring preparation/skill
         for (String n : Arrays.asList(
-            "Scurrius",
             "King Black Dragon", "Chaos Elemental", "Corporeal Beast",
             "Commander Zilyana", "General Graardor", "K'ril Tsutsaroth", "Kree'arra",
             "Dagannoth Rex", "Dagannoth Prime", "Dagannoth Supreme",
