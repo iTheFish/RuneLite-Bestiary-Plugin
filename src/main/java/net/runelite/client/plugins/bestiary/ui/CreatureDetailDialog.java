@@ -43,7 +43,7 @@ public class CreatureDetailDialog extends JDialog {
     private final BestiaryCollection collection;
     private final JPanel listPanel;
     private final boolean multiRarity;
-    private final int[] globalBest;
+    private final int[] dialogBest;
 
     public CreatureDetailDialog(Window owner, List<CapturedCreature> captures,
                                 BestiaryCollection collection) {
@@ -58,7 +58,7 @@ public class CreatureDetailDialog extends JDialog {
         this.captures    = captures;
         this.collection  = collection;
         this.multiRarity = captures.stream().map(c -> c.rarity).distinct().count() > 1;
-        this.globalBest  = computeGlobalBest(collection);
+        this.dialogBest  = computeBests(captures);
 
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setResizable(false);
@@ -273,7 +273,7 @@ public class CreatureDetailDialog extends JDialog {
         content.setOpaque(false);
         content.add(topLine);
         content.add(botLine);
-        content.add(buildStatBars(c.quality, c.rarity.displayColor, globalBest));
+        content.add(buildStatBars(c.quality, c.rarity.displayColor, dialogBest));
 
         row.add(content, BorderLayout.CENTER);
         return row;
@@ -317,12 +317,20 @@ public class CreatureDetailDialog extends JDialog {
                     g2.setColor(new Color(30, 30, 30));
                     g2.fillRoundRect(x, 0, slotW, barH, 4, 4);
 
-                    // Fill — gold if this stat is a global personal best
+                    // Fill
                     if (fill > 0) {
-                        boolean isPB = globalBest != null && vals[i] >= globalBest[i];
-                        g2.setColor(isPB ? PB_GOLD
-                                : new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 200));
+                        g2.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 200));
                         g2.fillRoundRect(x, 0, fill, barH, 4, 4);
+                    }
+
+                    // Gold outline when this stat is the best among captures in this dialog
+                    boolean isPB = globalBest != null && vals[i] >= globalBest[i];
+                    if (isPB) {
+                        Stroke prev = g2.getStroke();
+                        g2.setStroke(new BasicStroke(1.5f));
+                        g2.setColor(PB_GOLD);
+                        g2.drawRoundRect(x, 0, slotW - 1, barH - 1, 4, 4);
+                        g2.setStroke(prev);
                     }
 
                     // Value number centred in bar slot — shadow first for legibility
@@ -352,9 +360,9 @@ public class CreatureDetailDialog extends JDialog {
         return p;
     }
 
-    private static int[] computeGlobalBest(BestiaryCollection col) {
+    private static int[] computeBests(List<CapturedCreature> list) {
         int[] best = new int[6];
-        for (CapturedCreature c : col.creatures) {
+        for (CapturedCreature c : list) {
             CreatureQuality q = c.quality;
             int[] v = {q.strength, q.speed, q.endurance, q.intelligence, q.stealth, q.vitality};
             for (int i = 0; i < 6; i++) best[i] = Math.max(best[i], v[i]);
