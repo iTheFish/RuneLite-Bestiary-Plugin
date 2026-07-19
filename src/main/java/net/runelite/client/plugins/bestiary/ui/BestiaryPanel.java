@@ -1,5 +1,6 @@
 package net.runelite.client.plugins.bestiary.ui;
 
+import net.runelite.client.plugins.bestiary.BestiaryConfig;
 import net.runelite.client.plugins.bestiary.service.BestiaryDataService;
 import net.runelite.client.plugins.bestiary.service.ProgressionService;
 import net.runelite.client.plugins.bestiary.service.WikiImageService;
@@ -30,10 +31,11 @@ public class BestiaryPanel extends PluginPanel {
 
     @Inject
     public BestiaryPanel(BestiaryDataService dataService, ProgressionService progressionService,
-                         WikiImageService imageService) {
+                         WikiImageService imageService, BestiaryConfig config) {
         super(false); // false = don't auto-wrap in scroll pane
         this.dataService        = dataService;
         this.progressionService = progressionService;
+        CreatureDetailDialog.setConfig(config);
 
         setLayout(new BorderLayout(0, 6));
         setBackground(ColorScheme.DARK_GRAY_COLOR);

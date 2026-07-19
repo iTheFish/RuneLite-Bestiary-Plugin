@@ -1,9 +1,11 @@
 package net.runelite.client.plugins.bestiary.ui;
 
+import net.runelite.client.plugins.bestiary.BestiaryConfig;
 import net.runelite.client.plugins.bestiary.model.BestiaryCollection;
 import net.runelite.client.plugins.bestiary.model.CapturedCreature;
 import net.runelite.client.plugins.bestiary.model.CreatureQuality;
 import net.runelite.client.plugins.bestiary.model.CreatureRarity;
+import net.runelite.client.plugins.bestiary.model.DetailSectionDefault;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 
@@ -11,11 +13,15 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -27,6 +33,11 @@ public class CreatureDetailDialog extends JDialog {
     private static final DateTimeFormatter DATE_FMT =
             DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm").withZone(ZoneId.systemDefault());
 
+    private static final CreatureRarity[] RARITY_ORDER = {
+        CreatureRarity.MYTHIC, CreatureRarity.LEGENDARY, CreatureRarity.EPIC,
+        CreatureRarity.RARE,   CreatureRarity.UNCOMMON,  CreatureRarity.COMMON
+    };
+
     private static final String[] SORT_OPTIONS_SINGLE = {
         "Newest first", "Oldest first", "Quality (high)", "Quality (low)", "By region"
     };
@@ -37,6 +48,13 @@ public class CreatureDetailDialog extends JDialog {
     /** Ensures only one dialog is open at a time. */
     private static CreatureDetailDialog current;
 
+    /** Set once by BestiaryPanel at startup; read by each dialog instance for default section state. */
+    private static BestiaryConfig sharedConfig;
+
+    public static void setConfig(BestiaryConfig config) {
+        sharedConfig = config;
+    }
+
     private static final Color PB_GOLD = new Color(255, 195, 40, 220);
 
     private final List<CapturedCreature> captures;
@@ -44,6 +62,12 @@ public class CreatureDetailDialog extends JDialog {
     private final JPanel listPanel;
     private final boolean multiRarity;
     private final int[] dialogBest;
+
+    /** Tracks which rarity sections are currently collapsed (By Rarity sort only). */
+    private final Set<CreatureRarity> collapsedRarities = EnumSet.noneOf(CreatureRarity.class);
+
+    /** Current sort selection — stored so header click can trigger a rebuild. */
+    private String currentSort;
 
     public CreatureDetailDialog(Window owner, List<CapturedCreature> captures,
                                 BestiaryCollection collection) {
@@ -59,13 +83,18 @@ public class CreatureDetailDialog extends JDialog {
         this.collection  = collection;
         this.multiRarity = captures.stream().map(c -> c.rarity).distinct().count() > 1;
         this.dialogBest  = computeBests(captures);
+        this.currentSort = multiRarity ? "By Rarity" : "Newest first";
+
+        // Apply default collapse state from config
+        if (sharedConfig != null && sharedConfig.detailSectionDefault() == DetailSectionDefault.COLLAPSED) {
+            collapsedRarities.addAll(java.util.Arrays.asList(RARITY_ORDER));
+        }
 
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setResizable(false);
 
         CapturedCreature sample = captures.get(0);
 
-        // Use rarest rarity for border/accent when showing multiple rarities
         CreatureRarity accentRarity = multiRarity
                 ? captures.stream().map(c -> c.rarity)
                         .max(Comparator.comparingInt(Enum::ordinal)).orElse(sample.rarity)
@@ -100,8 +129,7 @@ public class CreatureDetailDialog extends JDialog {
         header.add(subLabel,   BorderLayout.CENTER);
 
         // Sort control
-        String[] sortOpts    = multiRarity ? SORT_OPTIONS_MULTI : SORT_OPTIONS_SINGLE;
-        String   defaultSort = multiRarity ? "By Rarity" : "Newest first";
+        String[] sortOpts = multiRarity ? SORT_OPTIONS_MULTI : SORT_OPTIONS_SINGLE;
 
         JPanel sortRow = new JPanel(new BorderLayout(6, 0));
         sortRow.setOpaque(false);
@@ -120,7 +148,7 @@ public class CreatureDetailDialog extends JDialog {
         listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
         listPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-        buildList(defaultSort);
+        buildList(currentSort);
         sortBox.addActionListener(e -> buildList((String) sortBox.getSelectedItem()));
 
         JScrollPane scroll = new JScrollPane(listPanel);
@@ -154,28 +182,30 @@ public class CreatureDetailDialog extends JDialog {
     }
 
     private void buildList(String sortMode) {
+        this.currentSort = sortMode;
         listPanel.removeAll();
 
         if ("By Rarity".equals(sortMode)) {
-            // Group by rarity MYTHIC→COMMON, newest-first within each group
-            CreatureRarity[] order = {
-                CreatureRarity.MYTHIC, CreatureRarity.LEGENDARY, CreatureRarity.EPIC,
-                CreatureRarity.RARE,   CreatureRarity.UNCOMMON,  CreatureRarity.COMMON
-            };
             int rowIndex = 1;
-            for (CreatureRarity r : order) {
+            for (CreatureRarity r : RARITY_ORDER) {
                 List<CapturedCreature> group = captures.stream()
                         .filter(c -> c.rarity == r)
                         .sorted(Comparator.comparing((CapturedCreature c) -> c.captureTime).reversed())
                         .collect(Collectors.toList());
-                if (group.isEmpty()) continue;
-                listPanel.add(buildRarityHeader(r, group.size()));
+
+                boolean collapsed = collapsedRarities.contains(r);
+                listPanel.add(buildRarityHeader(r, group.size(), collapsed));
                 listPanel.add(Box.createVerticalStrut(2));
-                for (CapturedCreature c : group) {
-                    listPanel.add(buildCaptureRow(c, rowIndex++));
-                    listPanel.add(Box.createVerticalStrut(4));
+
+                if (!collapsed) {
+                    for (CapturedCreature c : group) {
+                        listPanel.add(buildCaptureRow(c, rowIndex++));
+                        listPanel.add(Box.createVerticalStrut(4));
+                    }
+                    if (!group.isEmpty()) {
+                        listPanel.add(Box.createVerticalStrut(4));
+                    }
                 }
-                listPanel.add(Box.createVerticalStrut(4));
             }
         } else {
             List<CapturedCreature> sorted = new ArrayList<>(captures);
@@ -208,24 +238,41 @@ public class CreatureDetailDialog extends JDialog {
         listPanel.repaint();
     }
 
-    private JPanel buildRarityHeader(CreatureRarity rarity, int count) {
+    private JPanel buildRarityHeader(CreatureRarity rarity, int count, boolean collapsed) {
         JPanel header = new JPanel(new BorderLayout(8, 0));
         header.setBackground(new Color(35, 35, 35));
         header.setBorder(BorderFactory.createCompoundBorder(
                 new MatteBorder(0, 3, 0, 0, rarity.displayColor),
                 new EmptyBorder(4, 8, 4, 8)));
         header.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
+        header.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        JLabel label = new JLabel("● " + rarity.label.toUpperCase());
+        String chevron = collapsed ? "▶" : "▼";
+        JLabel label = new JLabel(chevron + "  " + rarity.label.toUpperCase());
         label.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         label.setForeground(rarity.displayColor);
 
         JLabel cnt = new JLabel(count + " capture" + (count == 1 ? "" : "s"), SwingConstants.RIGHT);
         cnt.setFont(FontManager.getRunescapeSmallFont());
-        cnt.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+        cnt.setForeground(count == 0 ? new Color(75, 75, 75) : ColorScheme.LIGHT_GRAY_COLOR);
 
         header.add(label, BorderLayout.WEST);
         header.add(cnt,   BorderLayout.EAST);
+
+        header.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (collapsedRarities.contains(rarity)) {
+                    collapsedRarities.remove(rarity);
+                } else {
+                    collapsedRarities.add(rarity);
+                }
+                buildList(currentSort);
+            }
+            @Override public void mouseEntered(MouseEvent e) { header.setBackground(new Color(48, 48, 48)); }
+            @Override public void mouseExited(MouseEvent e)  { header.setBackground(new Color(35, 35, 35)); }
+        });
+
         return header;
     }
 
@@ -279,11 +326,6 @@ public class CreatureDetailDialog extends JDialog {
         return row;
     }
 
-    /**
-     * Renders six labelled progress bars (STR/SPD/END/INT/STL/VIT) for a single capture.
-     * Bar shows the numeric value centred in white; label sits below in larger text.
-     * Total height 36px: ~20px bar + ~16px label.
-     */
     private static JPanel buildStatBars(CreatureQuality q, Color accent, int[] globalBest) {
         JPanel p = new JPanel() {
             @Override
@@ -313,17 +355,14 @@ public class CreatureDetailDialog extends JDialog {
                     int x    = i * (slotW + gap);
                     int fill = Math.round(slotW * vals[i] / 100f);
 
-                    // Background
                     g2.setColor(new Color(30, 30, 30));
                     g2.fillRoundRect(x, 0, slotW, barH, 4, 4);
 
-                    // Fill
                     if (fill > 0) {
                         g2.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 200));
                         g2.fillRoundRect(x, 0, fill, barH, 4, 4);
                     }
 
-                    // Gold outline when this stat is the best among captures in this dialog
                     boolean isPB = globalBest != null && vals[i] >= globalBest[i];
                     if (isPB) {
                         Stroke prev = g2.getStroke();
@@ -333,7 +372,6 @@ public class CreatureDetailDialog extends JDialog {
                         g2.setStroke(prev);
                     }
 
-                    // Value number centred in bar slot — shadow first for legibility
                     String numStr = String.valueOf(vals[i]);
                     g2.setFont(numFont);
                     FontMetrics nfm = g2.getFontMetrics();
@@ -344,7 +382,6 @@ public class CreatureDetailDialog extends JDialog {
                     g2.setColor(Color.WHITE);
                     g2.drawString(numStr, nx, ny);
 
-                    // Label below bar
                     g2.setFont(labelFont);
                     FontMetrics lfm = g2.getFontMetrics();
                     g2.setColor(ColorScheme.LIGHT_GRAY_COLOR);
