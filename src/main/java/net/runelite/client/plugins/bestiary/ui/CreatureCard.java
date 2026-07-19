@@ -87,20 +87,20 @@ public class CreatureCard extends JPanel {
         int aInt = (int) captures.stream().mapToInt(c -> c.quality.intelligence).average().orElse(0);
         int aStl = (int) captures.stream().mapToInt(c -> c.quality.stealth).average().orElse(0);
         int aVit = (int) captures.stream().mapToInt(c -> c.quality.vitality).average().orElse(0);
-        statsLabel.setToolTipText(String.format(
-                "<html>%d captures of this rarity  |  %d total kills<br>" +
-                "Avg stats:  STR:%d  SPD:%d  END:%d  INT:%d  STL:%d  VIT:%d</html>",
-                captures.size(), kills, aStr, aSpd, aEnd, aInt, aStl, aVit));
-
         String yourRate = kills > 0
                 ? "Your rate: 1 in " + Math.round((double) kills / Math.max(1, captures.size())) + " kills"
                 : "No kills recorded yet";
-        rarityLabel.setToolTipText(String.format(
-                "<html><b>%s capture rate</b><br>Base chance: %.1f%% (~1 in %d kills)<br>%s</html>",
+        setToolTipText(String.format(
+                "<html><b>%s capture rate</b><br>" +
+                "Base chance: %.1f%% (~1 in %d kills)<br>" +
+                "%s<br><br>" +
+                "%d captures  |  %d total kills<br>" +
+                "Avg stats:  STR:%d  SPD:%d  END:%d  INT:%d  STL:%d  VIT:%d</html>",
                 rarity.label,
                 rarity.probability * 100,
                 Math.round(1.0 / rarity.probability),
-                yourRate));
+                yourRate,
+                captures.size(), kills, aStr, aSpd, aEnd, aInt, aStl, aVit));
 
         rightCol.add(rarityLabel);
         rightCol.add(statsLabel);
