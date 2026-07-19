@@ -1,6 +1,7 @@
 package net.runelite.client.plugins.bestiary.util;
 
 import net.runelite.client.plugins.bestiary.model.CreatureRarity;
+import net.runelite.client.plugins.bestiary.model.StatArchetype;
 
 import java.util.Random;
 
@@ -34,12 +35,13 @@ public final class RarityRoller {
     }
 
     /**
-     * Generates quality stats for a captured creature.
-     * Higher rarities produce higher-mean stats with a tighter distribution.
+     * Generates quality stats shaped by the monster's archetype.
+     * Primary stats (per archetype) pull toward 100; secondary stats pull toward 0.
+     * Higher rarities raise the baseline mean and tighten the spread.
      */
-    public static net.runelite.client.plugins.bestiary.model.CreatureQuality generateQuality(CreatureRarity rarity, Random rng) {
-        double mean;
-        double sd;
+    public static net.runelite.client.plugins.bestiary.model.CreatureQuality generateQuality(
+            StatArchetype archetype, CreatureRarity rarity, Random rng) {
+        double mean, sd;
         switch (rarity) {
             case MYTHIC:     mean = 90; sd =  8; break;
             case LEGENDARY:  mean = 75; sd = 10; break;
@@ -48,13 +50,15 @@ public final class RarityRoller {
             case UNCOMMON:   mean = 38; sd = 15; break;
             default:         mean = 28; sd = 15; break;
         }
+        int[] stats = new int[6];
+        for (int i = 0; i < 6; i++) {
+            double m = archetype.isPrimary(i)
+                    ? mean + 0.3 * (100 - mean)  // pull toward ceiling
+                    : mean * 0.6;                 // pull toward floor
+            stats[i] = rollStat(rng, m, sd);
+        }
         return new net.runelite.client.plugins.bestiary.model.CreatureQuality(
-                rollStat(rng, mean, sd),
-                rollStat(rng, mean, sd),
-                rollStat(rng, mean, sd),
-                rollStat(rng, mean, sd),
-                rollStat(rng, mean, sd),
-                rollStat(rng, mean, sd));
+                stats[0], stats[1], stats[2], stats[3], stats[4], stats[5]);
     }
 
     private static int rollStat(Random rng, double mean, double sd) {

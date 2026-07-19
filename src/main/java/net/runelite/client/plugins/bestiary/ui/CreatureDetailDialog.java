@@ -144,7 +144,9 @@ public class CreatureDetailDialog extends JDialog {
         titleLabel.setForeground(Color.WHITE);
 
         String combatText = sample.npcCombatLevel > 0 ? "Combat level " + sample.npcCombatLevel : "Non-combat";
-        String subText    = multiRarity ? "All rarities  ·  " + combatText : combatText;
+        String archetypeLabel = net.runelite.client.plugins.bestiary.model.MonsterRoster
+                .getArchetype(sample.npcName, sample.npcCombatLevel).label;
+        String subText = (multiRarity ? "All rarities  ·  " : "") + combatText + "  ·  " + archetypeLabel;
         JLabel subLabel = new JLabel(subText);
         subLabel.setFont(FontManager.getRunescapeSmallFont());
         subLabel.setForeground(accentRarity.displayColor);

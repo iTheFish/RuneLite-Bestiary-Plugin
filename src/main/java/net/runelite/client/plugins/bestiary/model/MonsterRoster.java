@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static net.runelite.client.plugins.bestiary.model.DifficultyTier.*;
+import static net.runelite.client.plugins.bestiary.model.StatArchetype.*;
 
 /**
  * Canonical list of known OSRS NPC names and their difficulty ratings.
@@ -288,6 +289,138 @@ public class MonsterRoster {
     }
 
     // -------------------------------------------------------------------------
+    // Archetype map — determines which stats are "primary" for each species.
+    // Monsters not listed fall back to archetypeFromTier().
+    // -------------------------------------------------------------------------
+
+    private static final Map<String, StatArchetype> ARCHETYPES;
+    static {
+        Map<String, StatArchetype> a = new HashMap<>();
+
+        // NIMBLE — SPD, STL
+        for (String n : Arrays.asList(
+            "Rat", "Giant rat", "Chicken", "Duck", "Seagull", "Imp", "Goblin",
+            "Spider", "Giant spider", "Ice spider", "Fever spider",
+            "Cave bug", "Cave crawler", "Cave slime", "Fleshcrawler",
+            "Scorpion", "King scorpion",
+            "Rogue", "Pirate", "Dark warrior",
+            "Desert lizard",
+            "Mogre", "Molanisk"
+        )) { a.put(n, NIMBLE); }
+
+        // BRUTE — STR, END
+        for (String n : Arrays.asList(
+            "Bear", "Grizzly bear",
+            "Barbarian", "Warrior", "Guard", "Black knight", "White knight",
+            "Zombie", "Skeleton", "Ghost",
+            "Hobgoblin", "Minotaur",
+            "Troll", "Ice troll", "Mountain troll",
+            "Hill giant", "Moss giant", "Ice giant", "Fire giant",
+            "Earth warrior",
+            "Lizardman", "Lizardman brute",
+            "Dagannoth",
+            "Mutant tarn", "Zombie pirate",
+            "Man", "Woman", "Farmer"
+        )) { a.put(n, BRUTE); }
+
+        // TANK — END, VIT
+        for (String n : Arrays.asList(
+            "Rock crab", "Sand crab", "Swamp crab",
+            "Gargoyle",
+            "Kalphite", "Kalphite soldier", "Kalphite worker", "Kalphite guardian",
+            "Basilisk", "Basilisk knight",
+            "Jelly", "Warped jelly",
+            "Tortoise", "Warped tortoise",
+            "Rockslugs",
+            "Turoth", "Kurask",
+            "Pyrefiend", "Nechryael", "Greater nechryael", "Nechryarch",
+            "Cow", "Unicorn",
+            "Corporeal Beast", "Giant Mole",
+            "Dusk", "Dawn"
+        )) { a.put(n, TANK); }
+
+        // PREDATOR — STR, SPD
+        for (String n : Arrays.asList(
+            "Baby blue dragon", "Baby green dragon",
+            "Green dragon", "Blue dragon", "Red dragon", "Black dragon", "Lava dragon",
+            "Bronze dragon", "Iron dragon", "Steel dragon", "Mithril dragon",
+            "Adamant dragon", "Rune dragon",
+            "Brutal black dragon", "Brutal red dragon", "Brutal blue dragon", "Brutal green dragon",
+            "Hellhound",
+            "Wyrm", "Drake", "Wyvern", "Fossil island wyvern", "Ancient wyvern", "Skeletal wyvern",
+            "Abyssal demon", "Black demon", "Greater demon",
+            "Waterfiend",
+            "Aberrant spectre", "Deviant spectre",
+            "King Black Dragon", "Vorkath", "Zulrah",
+            "Araxxor", "Hueycoatl"
+        )) { a.put(n, PREDATOR); }
+
+        // MYSTIC — INT, VIT
+        for (String n : Arrays.asList(
+            "Wizard", "Dark wizard",
+            "Ankou", "Ghost",
+            "Banshee", "Twisted banshee",
+            "Vampyre", "Feral vampyre", "Vyrewatch",
+            "Chaos druid", "Chaos druid warrior",
+            "Infernal mage",
+            "Spiritual mage",
+            "Abyssal Sire",
+            "The Nightmare", "Phosani's Nightmare",
+            "Nex",
+            "Duke Sucellus", "The Whisperer",
+            "Phantom Muspah",
+            "Tempoross",
+            "The Mimic"
+        )) { a.put(n, MYSTIC); }
+
+        // STALKER — INT, STL
+        for (String n : Arrays.asList(
+            "Smoke devil", "Dust devil",
+            "Bloodveld", "Mutated bloodveld",
+            "Cave horror",
+            "Suqah",
+            "Dark beast",
+            "Lizardman shaman",
+            "Hydra", "Alchemical Hydra",
+            "Kraken",
+            "Cerberus",
+            "Thermonuclear smoke devil",
+            "Scurrius",
+            "Vardorvis", "The Leviathan"
+        )) { a.put(n, STALKER); }
+
+        // TITAN — STR, VIT
+        for (String n : Arrays.asList(
+            "Lesser demon",
+            "Spiritual warrior", "Spiritual ranger",
+            "Obor", "Bryophyta",
+            "Sarachnis", "Hespori",
+            "Commander Zilyana", "General Graardor", "K'ril Tsutsaroth", "Kree'arra",
+            "Dagannoth Rex", "Dagannoth Prime", "Dagannoth Supreme",
+            "Chaos Elemental", "Chaos Fanatic", "Crazy Archaeologist", "Deranged Archaeologist",
+            "Scorpia", "Callisto", "Artio", "Venenatis", "Spindel", "Vet'ion", "Calvar'ion",
+            "Ahrim the Blighted", "Dharok the Wretched", "Guthan the Infested",
+            "Karil the Tainted", "Torag the Corrupted", "Verac the Defiled",
+            "Tekton", "Maiden of Sugadinti", "Pestilent Bloat", "Sotetseg",
+            "Xarpus", "Verzik Vitur",
+            "Akkha", "Ba-Ba", "Kephri", "Zebak",
+            "Tumeken's Warden", "Elidinis' Warden",
+            "Sol Heredit", "Amoxliatl",
+            "Great Olm", "Vespula"
+        )) { a.put(n, TITAN); }
+
+        // APEX — STR, SPD, INT (3 primaries — hardest endgame content)
+        for (String n : Arrays.asList(
+            "TzTok-Jad", "TzKal-Zuk",
+            "Nex",           // also in MYSTIC — APEX overrides
+            "Duke Sucellus", // also in MYSTIC — APEX overrides
+            "The Leviathan"  // also in STALKER — APEX overrides
+        )) { a.put(n, APEX); }
+
+        ARCHETYPES = Collections.unmodifiableMap(a);
+    }
+
+    // -------------------------------------------------------------------------
     // Public helpers
     // -------------------------------------------------------------------------
 
@@ -298,6 +431,21 @@ public class MonsterRoster {
     public static DifficultyTier getDifficulty(String npcName, int combatLevel) {
         DifficultyTier tier = DIFFICULTY.get(npcName);
         return tier != null ? tier : fromCombatLevel(combatLevel);
+    }
+
+    /** Returns the stat archetype for a given NPC, falling back to tier-based default. */
+    public static StatArchetype getArchetype(String npcName, int combatLevel) {
+        StatArchetype arch = ARCHETYPES.get(npcName);
+        return arch != null ? arch : archetypeFromTier(getDifficulty(npcName, combatLevel));
+    }
+
+    private static StatArchetype archetypeFromTier(DifficultyTier tier) {
+        switch (tier) {
+            case BOSS:  return StatArchetype.APEX;
+            case ELITE: return StatArchetype.TITAN;
+            case HARD:  return StatArchetype.PREDATOR;
+            default:    return StatArchetype.BRUTE;
+        }
     }
 
     /**

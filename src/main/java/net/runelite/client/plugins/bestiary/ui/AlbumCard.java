@@ -5,6 +5,7 @@ import net.runelite.client.plugins.bestiary.model.CapturedCreature;
 import net.runelite.client.plugins.bestiary.model.CreatureRarity;
 import net.runelite.client.plugins.bestiary.model.DifficultyTier;
 import net.runelite.client.plugins.bestiary.model.MonsterRoster;
+import net.runelite.client.plugins.bestiary.model.StatArchetype;
 import net.runelite.client.plugins.bestiary.service.WikiImageService;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
@@ -56,6 +57,7 @@ public class AlbumCard extends JPanel {
     private final String npcName;
     private final int dexNumber;
     private final DifficultyTier difficulty;
+    private final StatArchetype archetype;
     @Nullable private final WikiImageService imageService;
     private boolean hovered = false;
     private final boolean locked;
@@ -114,6 +116,7 @@ public class AlbumCard extends JPanel {
         };
 
         this.difficulty = MonsterRoster.getDifficulty(npcName, combatLevel);
+        this.archetype  = MonsterRoster.getArchetype(npcName, combatLevel);
         init(imageService, true);
     }
 
@@ -133,7 +136,8 @@ public class AlbumCard extends JPanel {
         this.avgStats     = new int[6];
 
         this.difficulty = MonsterRoster.getDifficulty(npcName, 0);
-        init(imageService, imageService != null); // fetch image for locked if service provided
+        this.archetype  = MonsterRoster.getArchetype(npcName, 0);
+        init(imageService, imageService != null);
     }
 
     private void init(@Nullable WikiImageService imgService, boolean fetchImage) {
@@ -292,9 +296,13 @@ public class AlbumCard extends JPanel {
         int subBaseline = COMBAT_Y + (COMBAT_H + sfm.getAscent() - sfm.getDescent()) / 2;
 
         if (!locked) {
+            String combatStr = combatLevel > 0 ? "Lvl " + combatLevel : "Non-combat";
             g2.setColor(ColorScheme.LIGHT_GRAY_COLOR);
-            String combatStr = combatLevel > 0 ? "Combat lvl " + combatLevel : "Non-combat";
             g2.drawString(combatStr, imgX + 2, subBaseline);
+            // Archetype label right-aligned
+            g2.setColor(new Color(180, 140, 60));
+            String archStr = "· " + archetype.label;
+            g2.drawString(archStr, w - PAD - sfm.stringWidth(archStr), subBaseline);
         } else {
             g2.setColor(new Color(65, 65, 65));
             String killStr = killCount > 0 ? killCount + " kills" : "Not encountered";
@@ -309,7 +317,8 @@ public class AlbumCard extends JPanel {
             int baseline = rowY + (STAT_ROW + sfm.getAscent() - sfm.getDescent()) / 2;
 
             g2.setFont(smallFont);
-            g2.setColor(locked ? new Color(48, 48, 48) : new Color(160, 160, 160));
+            boolean primary = !locked && archetype.isPrimary(i);
+            g2.setColor(primary ? new Color(200, 160, 60) : locked ? new Color(48, 48, 48) : new Color(160, 160, 160));
             g2.drawString(STAT_LABELS[i], imgX, baseline);
 
             int barX = imgX + LABEL_W + 3;

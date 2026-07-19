@@ -6,6 +6,8 @@ import net.runelite.client.plugins.bestiary.model.CreatureQuality;
 import net.runelite.client.plugins.bestiary.model.CreatureRarity;
 import net.runelite.client.plugins.bestiary.model.DevCaptureMode;
 import net.runelite.client.plugins.bestiary.model.DevRarityOverride;
+import net.runelite.client.plugins.bestiary.model.MonsterRoster;
+import net.runelite.client.plugins.bestiary.model.StatArchetype;
 import net.runelite.client.plugins.bestiary.util.RarityRoller;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.NPC;
@@ -73,11 +75,13 @@ public class CaptureService {
         CreatureRarity rarity = (forceRarity != null && forceRarity != DevRarityOverride.NONE)
                 ? CreatureRarity.fromLabel(forceRarity.name())
                 : RarityRoller.roll(rng);
-        CreatureQuality quality = RarityRoller.generateQuality(rarity, rng);
+        String npcName = npc.getName() != null ? npc.getName() : "Unknown";
+        StatArchetype archetype = MonsterRoster.getArchetype(npcName, npc.getCombatLevel());
+        CreatureQuality quality = RarityRoller.generateQuality(archetype, rarity, rng);
 
         CapturedCreature creature = CapturedCreature.builder()
                 .npcId(npc.getId())
-                .npcName(npc.getName() != null ? npc.getName() : "Unknown")
+                .npcName(npcName)
                 .npcCombatLevel(npc.getCombatLevel())
                 .rarity(rarity)
                 .quality(quality)
