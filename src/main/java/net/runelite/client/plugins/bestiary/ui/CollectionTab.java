@@ -354,18 +354,21 @@ public class CollectionTab extends JPanel {
                 .collect(Collectors.groupingBy(c -> c.npcName));
 
         // Album view button — fixed at top of monster list
-        JButton albumBtn = new JButton("Album View");
-        albumBtn.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
-        albumBtn.setBackground(new Color(60, 60, 60));
+        JButton albumBtn = new JButton("Open Bestiary Album");
+        albumBtn.setFont(FontManager.getRunescapeBoldFont());
+        albumBtn.setBackground(new Color(55, 55, 55));
         albumBtn.setForeground(new Color(255, 165, 0));
         albumBtn.setFocusPainted(false);
         albumBtn.setBorderPainted(false);
-        albumBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+        albumBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        albumBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        albumBtn.setPreferredSize(new Dimension(180, 40));
         albumBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         albumBtn.addActionListener(e -> new AlbumDialog(
                 SwingUtilities.getWindowAncestor(CollectionTab.this), byNpc, dataService.getCollection()));
+        cardContainer.add(Box.createVerticalStrut(4));
         cardContainer.add(albumBtn);
-        cardContainer.add(Box.createVerticalStrut(6));
+        cardContainer.add(Box.createVerticalStrut(8));
 
         List<Map.Entry<String, List<CapturedCreature>>> entries =
                 new ArrayList<>(byNpc.entrySet());
