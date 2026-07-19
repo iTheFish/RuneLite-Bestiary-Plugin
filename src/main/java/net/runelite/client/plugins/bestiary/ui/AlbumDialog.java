@@ -3,6 +3,7 @@ package net.runelite.client.plugins.bestiary.ui;
 import net.runelite.client.plugins.bestiary.model.BestiaryCollection;
 import net.runelite.client.plugins.bestiary.model.CapturedCreature;
 import net.runelite.client.plugins.bestiary.model.CreatureRarity;
+import net.runelite.client.plugins.bestiary.model.DifficultyTier;
 import net.runelite.client.plugins.bestiary.model.MonsterRoster;
 import net.runelite.client.plugins.bestiary.service.WikiImageService;
 import net.runelite.client.ui.ColorScheme;
@@ -30,7 +31,8 @@ public class AlbumDialog extends JDialog {
     private static final int SIDE_PAD  = 8;
 
     private static final String[] SORT_OPTIONS = {
-        "Name A–Z", "Name Z–A", "Most caught", "Rarity (best)", "Quality (high)", "Newest first"
+        "Name A–Z", "Name Z–A", "Difficulty", "Most caught",
+        "Rarity (best)", "Quality (high)", "Newest first"
     };
 
     private final Map<String, List<CapturedCreature>> capturesByNpc;
@@ -84,11 +86,8 @@ public class AlbumDialog extends JDialog {
         sortRow.add(sortBox,   BorderLayout.CENTER);
 
         // Captured-first toggle
-        JToggleButton capturedFirstBtn = new JToggleButton("Captured first");
+        JToggleButton capturedFirstBtn = new JToggleButton();
         capturedFirstBtn.setSelected(capturedFirst);
-        capturedFirstBtn.setFont(FontManager.getRunescapeSmallFont());
-        capturedFirstBtn.setFocusPainted(false);
-        capturedFirstBtn.setBorderPainted(false);
         styleCapturedFirstBtn(capturedFirstBtn, capturedFirst);
         capturedFirstBtn.addActionListener(e -> {
             capturedFirst = capturedFirstBtn.isSelected();
@@ -181,7 +180,7 @@ public class AlbumDialog extends JDialog {
                 gridPanel.add(new AlbumCard(dexNum, name, capturesByNpc.get(name), collection, imageService));
             } else {
                 int kills = killCounts.getOrDefault(name, 0);
-                gridPanel.add(new AlbumCard(dexNum, name, kills, null)); // no image for locked
+                gridPanel.add(new AlbumCard(dexNum, name, kills, imageService));
             }
         }
 
@@ -203,6 +202,9 @@ public class AlbumDialog extends JDialog {
         switch (currentSort == null ? "Name A–Z" : currentSort) {
             case "Name Z–A":
                 names.sort((a, b) -> String.CASE_INSENSITIVE_ORDER.compare(b, a));
+                break;
+            case "Difficulty":
+                names.sort((a, b) -> diffOrdinal(a, capturesByNpc) - diffOrdinal(b, capturesByNpc));
                 break;
             case "Most caught":
                 names.sort((a, b) -> capturesByNpc.get(b).size() - capturesByNpc.get(a).size());
@@ -229,6 +231,10 @@ public class AlbumDialog extends JDialog {
         switch (currentSort == null ? "Name A–Z" : currentSort) {
             case "Name Z–A":
                 names.sort((a, b) -> String.CASE_INSENSITIVE_ORDER.compare(b, a));
+                break;
+            case "Difficulty":
+                // Difficulty is known for all entries (roster or combat-level fallback)
+                names.sort((a, b) -> diffOrdinalAny(a) - diffOrdinalAny(b));
                 break;
             case "Most caught":
                 names.sort((a, b) -> {
@@ -269,13 +275,30 @@ public class AlbumDialog extends JDialog {
     // -------------------------------------------------------------------------
 
     private static void styleCapturedFirstBtn(JToggleButton btn, boolean active) {
+        btn.setFont(FontManager.getRunescapeSmallFont());
+        btn.setBorderPainted(false);
+        btn.setFocusPainted(false);
+        btn.setOpaque(true);
+        btn.setContentAreaFilled(true);
         if (active) {
             btn.setBackground(new Color(255, 165, 0));
-            btn.setForeground(Color.BLACK);
+            // HTML forces the text colour regardless of the dark LAF's selection style
+            btn.setText("<html><b><font color='#101010'>Captured first</font></b></html>");
         } else {
             btn.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-            btn.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+            btn.setText("<html><font color='#B0B0B0'>Captured first</font></html>");
         }
+    }
+
+    private int diffOrdinal(String name, Map<String, List<CapturedCreature>> byNpc) {
+        int combat = byNpc.containsKey(name) ? byNpc.get(name).get(0).npcCombatLevel : 0;
+        return MonsterRoster.getDifficulty(name, combat).ordinal();
+    }
+
+    private int diffOrdinalAny(String name) {
+        int combat = capturesByNpc.containsKey(name)
+                ? capturesByNpc.get(name).get(0).npcCombatLevel : 0;
+        return MonsterRoster.getDifficulty(name, combat).ordinal();
     }
 
     private static CreatureRarity maxRarity(List<CapturedCreature> captures) {
