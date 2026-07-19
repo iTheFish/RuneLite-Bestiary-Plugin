@@ -37,10 +37,13 @@ public class CreatureDetailDialog extends JDialog {
     /** Ensures only one dialog is open at a time. */
     private static CreatureDetailDialog current;
 
+    private static final Color PB_GOLD = new Color(255, 195, 40, 220);
+
     private final List<CapturedCreature> captures;
     private final BestiaryCollection collection;
     private final JPanel listPanel;
     private final boolean multiRarity;
+    private final int[] globalBest;
 
     public CreatureDetailDialog(Window owner, List<CapturedCreature> captures,
                                 BestiaryCollection collection) {
@@ -52,9 +55,10 @@ public class CreatureDetailDialog extends JDialog {
         }
         current = this;
 
-        this.captures   = captures;
-        this.collection = collection;
+        this.captures    = captures;
+        this.collection  = collection;
         this.multiRarity = captures.stream().map(c -> c.rarity).distinct().count() > 1;
+        this.globalBest  = computeGlobalBest(collection);
 
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setResizable(false);
@@ -269,7 +273,7 @@ public class CreatureDetailDialog extends JDialog {
         content.setOpaque(false);
         content.add(topLine);
         content.add(botLine);
-        content.add(buildStatBars(c.quality, c.rarity.displayColor));
+        content.add(buildStatBars(c.quality, c.rarity.displayColor, globalBest));
 
         row.add(content, BorderLayout.CENTER);
         return row;
@@ -280,7 +284,7 @@ public class CreatureDetailDialog extends JDialog {
      * Bar shows the numeric value centred in white; label sits below in larger text.
      * Total height 36px: ~20px bar + ~16px label.
      */
-    private static JPanel buildStatBars(CreatureQuality q, Color accent) {
+    private static JPanel buildStatBars(CreatureQuality q, Color accent, int[] globalBest) {
         JPanel p = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -313,10 +317,11 @@ public class CreatureDetailDialog extends JDialog {
                     g2.setColor(new Color(30, 30, 30));
                     g2.fillRoundRect(x, 0, slotW, barH, 4, 4);
 
-                    // Fill
+                    // Fill — gold if this stat is a global personal best
                     if (fill > 0) {
-                        g2.setColor(new Color(accent.getRed(), accent.getGreen(),
-                                accent.getBlue(), 200));
+                        boolean isPB = globalBest != null && vals[i] >= globalBest[i];
+                        g2.setColor(isPB ? PB_GOLD
+                                : new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 200));
                         g2.fillRoundRect(x, 0, fill, barH, 4, 4);
                     }
 
@@ -345,5 +350,15 @@ public class CreatureDetailDialog extends JDialog {
         p.setPreferredSize(new Dimension(0, 36));
         p.setMinimumSize(new Dimension(0, 36));
         return p;
+    }
+
+    private static int[] computeGlobalBest(BestiaryCollection col) {
+        int[] best = new int[6];
+        for (CapturedCreature c : col.creatures) {
+            CreatureQuality q = c.quality;
+            int[] v = {q.strength, q.speed, q.endurance, q.intelligence, q.stealth, q.vitality};
+            for (int i = 0; i < 6; i++) best[i] = Math.max(best[i], v[i]);
+        }
+        return best;
     }
 }
