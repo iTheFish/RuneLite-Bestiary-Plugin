@@ -14,6 +14,8 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.time.Instant;
 import java.util.*;
 import java.util.List;
@@ -25,8 +27,11 @@ import java.util.stream.Collectors;
  */
 public class AlbumDialog extends JDialog {
 
-    private static final int DEFAULT_W = 540;
-    private static final int DEFAULT_H = 580;
+    private static final int DEFAULT_W = 700;
+    private static final int DEFAULT_H = 720;
+
+    /** Persists the user's last resized dimensions across opens within the same session. */
+    private static Dimension savedSize = null;
     private static final int CARD_GAP  = 6;
     private static final int SIDE_PAD  = 8;
 
@@ -130,8 +135,12 @@ public class AlbumDialog extends JDialog {
         root.add(scroll, BorderLayout.CENTER);
 
         setContentPane(root);
-        setSize(DEFAULT_W, DEFAULT_H);
+        setSize(savedSize != null ? savedSize : new Dimension(DEFAULT_W, DEFAULT_H));
         setLocationRelativeTo(owner);
+
+        addWindowListener(new WindowAdapter() {
+            @Override public void windowClosing(WindowEvent e) { savedSize = getSize(); }
+        });
 
         SwingUtilities.invokeLater(this::rebuildGrid);
         setVisible(true);
@@ -281,13 +290,13 @@ public class AlbumDialog extends JDialog {
 
     private static void styleCapturedFirstBtn(JToggleButton btn, boolean active) {
         btn.setFont(FontManager.getRunescapeSmallFont());
-        btn.setBorderPainted(false);
+        btn.setBorderPainted(true);
+        btn.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1));
         btn.setFocusPainted(false);
         btn.setOpaque(true);
         btn.setContentAreaFilled(true);
         if (active) {
             btn.setBackground(new Color(255, 165, 0));
-            // HTML forces the text colour regardless of the dark LAF's selection style
             btn.setText("<html><b><font color='#101010'>Captured first</font></b></html>");
         } else {
             btn.setBackground(ColorScheme.DARKER_GRAY_COLOR);

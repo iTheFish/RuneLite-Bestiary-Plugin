@@ -39,7 +39,7 @@ public class AlbumCard extends JPanel {
     private static final int IMAGE_Y  = HEADER_Y + HEADER_H + 4;
     private static final int IMAGE_H  = 130;
     private static final int NAME_Y   = IMAGE_Y + IMAGE_H + 4;
-    private static final int NAME_H   = 16;
+    private static final int NAME_H   = 20;
     private static final int COMBAT_Y = NAME_Y + NAME_H;
     private static final int COMBAT_H = 14;
     private static final int STATS_Y  = COMBAT_Y + COMBAT_H + 3;
@@ -185,7 +185,7 @@ public class AlbumCard extends JPanel {
 
         Font smallFont = FontManager.getRunescapeSmallFont();
         Font boldFont  = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD);
-        Font smallBold = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 10f);
+        Font smallBold = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 12f);
 
         g2.setFont(smallFont);
         FontMetrics sfm = g2.getFontMetrics();
@@ -261,9 +261,9 @@ public class AlbumCard extends JPanel {
         g2.setFont(smallBold);
         FontMetrics sbfm = g2.getFontMetrics();
         String badgeText = difficulty.label;
-        int badgePad = 4;
+        int badgePad = 5;
         int badgeW   = sbfm.stringWidth(badgeText) + badgePad * 2;
-        int badgeH   = 13;
+        int badgeH   = 16;
         int badgeX   = w - PAD - badgeW;
         int badgeY   = NAME_Y + (NAME_H - badgeH) / 2;
 
