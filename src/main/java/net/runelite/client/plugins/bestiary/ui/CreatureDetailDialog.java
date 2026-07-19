@@ -327,7 +327,7 @@ public class CreatureDetailDialog extends JDialog {
                     boolean isPB = globalBest != null && vals[i] >= globalBest[i];
                     if (isPB) {
                         Stroke prev = g2.getStroke();
-                        g2.setStroke(new BasicStroke(1.5f));
+                        g2.setStroke(new BasicStroke(2.5f));
                         g2.setColor(PB_GOLD);
                         g2.drawRoundRect(x, 0, slotW - 1, barH - 1, 4, 4);
                         g2.setStroke(prev);
