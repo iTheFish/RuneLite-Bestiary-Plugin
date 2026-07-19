@@ -142,6 +142,7 @@ public class AlbumDialog extends JDialog {
             @Override public void windowClosing(WindowEvent e) { savedSize = getSize(); }
         });
 
+        imageService.prefetchBatch(fullRoster, gridPanel::repaint);
         SwingUtilities.invokeLater(this::rebuildGrid);
         setVisible(true);
         toFront();
