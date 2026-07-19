@@ -260,7 +260,7 @@ public class CreatureDetailDialog extends JDialog {
 
         JLabel killLabel = new JLabel("Kill #" + c.killsBeforeCapture, SwingConstants.RIGHT);
         killLabel.setFont(FontManager.getRunescapeSmallFont());
-        killLabel.setForeground(ColorScheme.MEDIUM_GRAY_COLOR);
+        killLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 
         botLine.add(locLabel,  BorderLayout.WEST);
         botLine.add(killLabel, BorderLayout.EAST);
@@ -302,7 +302,7 @@ public class CreatureDetailDialog extends JDialog {
                 int barH   = h - labelH - 2;
                 int slotW  = (w - gap * (n - 1)) / n;
 
-                Font numFont   = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 11f);
+                Font numFont   = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 13f);
                 Font labelFont = FontManager.getRunescapeSmallFont();
 
                 for (int i = 0; i < n; i++) {
