@@ -61,6 +61,10 @@ public class CreatureDetailDialog extends JDialog {
         sharedConfig = config;
     }
 
+    /** Called after nickname changes to persist the mutation to disk. */
+    private static Runnable saveCallback;
+    public static void setSaveCallback(Runnable cb) { saveCallback = cb; }
+
     private static final Color PB_GOLD = new Color(255, 195, 40, 220);
 
     private final List<CapturedCreature> captures;
@@ -166,8 +170,22 @@ public class CreatureDetailDialog extends JDialog {
         sortBox.setForeground(Color.WHITE);
         sortBox.setFont(FontManager.getRunescapeSmallFont());
         sortBox.setSelectedItem(defaultSort);
-        sortRow.add(sortLabel, BorderLayout.WEST);
-        sortRow.add(sortBox,   BorderLayout.CENTER);
+        JLabel expandAll = new JLabel("Expand all");
+        expandAll.setFont(FontManager.getRunescapeSmallFont());
+        expandAll.setForeground(new Color(90, 140, 210));
+        expandAll.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        expandAll.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override public void mouseClicked(java.awt.event.MouseEvent e) {
+                collapsedRarities.clear();
+                sessionCollapsed.clear();
+                sortBox.setSelectedItem("By Rarity");
+                buildList("By Rarity");
+            }
+        });
+
+        sortRow.add(sortLabel,  BorderLayout.WEST);
+        sortRow.add(sortBox,    BorderLayout.CENTER);
+        sortRow.add(expandAll,  BorderLayout.EAST);
 
         listPanel = new JPanel();
         listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
@@ -349,6 +367,7 @@ public class CreatureDetailDialog extends JDialog {
                     if (input != null) {
                         c.nickname = input.isBlank() ? null : input.trim();
                         buildList(currentSort);
+                        if (saveCallback != null) saveCallback.run();
                     }
                 });
                 menu.add(nameItem);

@@ -36,6 +36,7 @@ public class BestiaryPanel extends PluginPanel {
         this.dataService        = dataService;
         this.progressionService = progressionService;
         CreatureDetailDialog.setConfig(config);
+        CreatureDetailDialog.setSaveCallback(dataService::saveNow);
         CardExportDialog.setShared(imageService, dataService.getCollection());
 
         setLayout(new BorderLayout(0, 6));
