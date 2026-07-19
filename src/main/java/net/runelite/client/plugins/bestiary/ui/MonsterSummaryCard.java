@@ -51,7 +51,7 @@ public class MonsterSummaryCard extends JPanel {
         setMaximumSize(new Dimension(Integer.MAX_VALUE, 52));
         setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        // Top row: NPC name (left) + total caught (right)
+        // Top row: NPC name (centre, compresses) + total caught (right, fixed)
         JPanel topRow = new JPanel(new BorderLayout(4, 0));
         topRow.setOpaque(false);
 
@@ -63,24 +63,26 @@ public class MonsterSummaryCard extends JPanel {
         totalLabel.setFont(FontManager.getRunescapeSmallFont());
         totalLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 
-        topRow.add(nameLabel,  BorderLayout.WEST);
+        topRow.add(nameLabel,  BorderLayout.CENTER);
         topRow.add(totalLabel, BorderLayout.EAST);
 
-        // Bottom row: colored rarity breakdown (● N Abbrev per rarity present)
-        JPanel rarityRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-        rarityRow.setOpaque(false);
-
+        // Bottom row: single HTML label so it clips naturally rather than wrapping
+        StringBuilder sb = new StringBuilder("<html>");
+        boolean first = true;
         for (Map.Entry<CreatureRarity, Integer> entry : countByRarity.entrySet()) {
             CreatureRarity r = entry.getKey();
-            JLabel tag = new JLabel("● " + entry.getValue()
-                    + " " + RARITY_ABBREV[r.ordinal()]);
-            tag.setFont(FontManager.getRunescapeSmallFont());
-            tag.setForeground(r.displayColor);
-            rarityRow.add(tag);
+            if (!first) sb.append("&nbsp;&nbsp;");
+            sb.append(String.format("<font color='#%02x%02x%02x'>&#9679; %d %s</font>",
+                    r.displayColor.getRed(), r.displayColor.getGreen(), r.displayColor.getBlue(),
+                    entry.getValue(), RARITY_ABBREV[r.ordinal()]));
+            first = false;
         }
+        sb.append("</html>");
+        JLabel rarityRow = new JLabel(sb.toString());
+        rarityRow.setFont(FontManager.getRunescapeSmallFont());
 
         add(topRow);
-        add(rarityRow);
+        add(rarityRow);  // JLabel — clips at right edge instead of wrapping
 
         addMouseListener(new MouseAdapter() {
             @Override public void mouseEntered(MouseEvent e) { setBackground(HOVER_BG); }
