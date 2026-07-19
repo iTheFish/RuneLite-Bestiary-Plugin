@@ -174,8 +174,10 @@ public class CreatureDetailDialog extends JDialog {
         buildList(currentSort);
         sortBox.addActionListener(e -> buildList((String) sortBox.getSelectedItem()));
 
+        // Always reserve space for all 6 rarity headers (~28px each) + the capture rows
+        int scrollH = Math.min(RARITY_ORDER.length * 28 + captures.size() * 100 + 16, 540);
         JScrollPane scroll = new JScrollPane(listPanel);
-        scroll.setPreferredSize(new Dimension(400, Math.min(captures.size() * 100 + 16, 540)));
+        scroll.setPreferredSize(new Dimension(400, scrollH));
         scroll.setBorder(null);
         scroll.getViewport().setBackground(ColorScheme.DARK_GRAY_COLOR);
 
