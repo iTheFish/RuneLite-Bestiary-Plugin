@@ -22,7 +22,7 @@ public class MonsterRoster {
 
     public static final List<String> ROSTER = Arrays.asList(
         // === F2P / Early game ===
-        "Chicken", "Cow", "Duck", "Seagull",
+        "Chicken", "Cow", "Cow calf", "Duck", "Seagull",
         "Man", "Woman", "Farmer",
         "Goblin",
         "Guard",
@@ -180,7 +180,7 @@ public class MonsterRoster {
 
         // Beginner — trivially easy, basically AFK
         for (String n : Arrays.asList(
-            "Chicken", "Cow", "Duck", "Seagull", "Man", "Woman", "Farmer",
+            "Chicken", "Cow", "Cow calf", "Duck", "Seagull", "Man", "Woman", "Farmer",
             "Goblin", "Rat", "Giant rat", "Imp", "Unicorn", "Spider",
             "Bear", "Grizzly bear",
             "Dark wizard", "Minotaur",

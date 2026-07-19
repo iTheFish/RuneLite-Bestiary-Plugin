@@ -54,7 +54,7 @@ public class CaptureService {
      */
     public Optional<CapturedCreature> attemptCapture(NPC npc, WorldPoint location,
                                                      int captureLevel, int killCount,
-                                                     String regionName) {
+                                                     String regionName, String playerName) {
         if (!config.captureEnabled()) {
             return Optional.empty();
         }
@@ -89,6 +89,7 @@ public class CaptureService {
                 .regionName(regionName)
                 .captureLevel(captureLevel)
                 .killsBeforeCapture(killCount)
+                .playerName(playerName != null ? playerName : "")
                 .build();
 
         log.info("Captured {} [{}]", creature.npcName, creature.rarity.label);

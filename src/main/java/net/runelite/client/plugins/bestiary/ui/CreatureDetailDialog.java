@@ -317,9 +317,44 @@ public class CreatureDetailDialog extends JDialog {
                         : quality >= 50 ? new Color(220, 220, 80)
                         : new Color(160, 160, 160);
 
-        JLabel qualLabel = new JLabel("#" + index + "  Quality: " + quality + " / 100");
+        String qualText = c.nickname != null && !c.nickname.isEmpty()
+                ? "#" + index + "  \"" + c.nickname + "\"  Q:" + quality
+                : "#" + index + "  Quality: " + quality + " / 100";
+        JLabel qualLabel = new JLabel(qualText);
         qualLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         qualLabel.setForeground(qualColor);
+
+        row.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.isPopupTrigger()) showRowMenu(e);
+            }
+            private void showRowMenu(MouseEvent e) {
+                JPopupMenu menu = new JPopupMenu();
+
+                JMenuItem exportItem = new JMenuItem("Export Card");
+                exportItem.addActionListener(ev ->
+                        CardExportDialog.open(CreatureDetailDialog.this, c));
+                menu.add(exportItem);
+
+                String nameLabel = (c.nickname != null && !c.nickname.isEmpty()) ? "Rename…" : "Name capture…";
+                JMenuItem nameItem = new JMenuItem(nameLabel);
+                nameItem.addActionListener(ev -> {
+                    String input = (String) JOptionPane.showInputDialog(
+                            CreatureDetailDialog.this,
+                            "Name for this capture (leave blank to clear):",
+                            "Name Capture",
+                            JOptionPane.PLAIN_MESSAGE, null, null,
+                            c.nickname != null ? c.nickname : "");
+                    if (input != null) {
+                        c.nickname = input.isBlank() ? null : input.trim();
+                        buildList(currentSort);
+                    }
+                });
+                menu.add(nameItem);
+                menu.show(row, e.getX(), e.getY());
+            }
+        });
 
         JLabel dateLabel = new JLabel(DATE_FMT.format(c.captureTime), SwingConstants.RIGHT);
         dateLabel.setFont(FontManager.getRunescapeSmallFont());

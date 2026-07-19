@@ -94,8 +94,6 @@ public class BestiaryPlugin extends Plugin {
         clientToolbar.addNavigation(navButton);
         overlayManager.add(overlay);
 
-        CardExportDialog.setPlayerNameSupplier(() ->
-                client.getLocalPlayer() != null ? client.getLocalPlayer().getName() : "");
         SwingUtilities.invokeLater(panel::refresh);
         log.info("Bestiary plugin started");
     }
@@ -176,8 +174,9 @@ public class BestiaryPlugin extends Plugin {
         int killCount    = dataService.getCollection().getKillCount(npcName);
         String region    = resolveRegionName(location);
 
+        String playerName = client.getLocalPlayer() != null ? client.getLocalPlayer().getName() : "";
         Optional<CapturedCreature> result = captureService.attemptCapture(
-                npc, location, captureLevel, killCount, region);
+                npc, location, captureLevel, killCount, region, playerName);
 
         // Overlay / animation
         if (config.showCaptureAnimation()) {

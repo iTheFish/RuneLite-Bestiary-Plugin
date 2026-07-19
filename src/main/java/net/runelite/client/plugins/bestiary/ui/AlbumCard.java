@@ -170,7 +170,7 @@ public class AlbumCard extends JPanel {
                 if (!locked && captures != null && collection != null
                         && SwingUtilities.isLeftMouseButton(e)) {
                     new CreatureDetailDialog(
-                            SwingUtilities.getWindowAncestor(AlbumCard.this), captures, collection, "By Rarity", null);
+                            SwingUtilities.getWindowAncestor(AlbumCard.this), captures, collection, "By Rarity", rarest);
                 }
             }
 
@@ -193,7 +193,9 @@ public class AlbumCard extends JPanel {
                     int shown = Math.min(sorted.size(), 8);
                     for (int i = 0; i < shown; i++) {
                         CapturedCreature c = sorted.get(i);
-                        String label = c.rarity.label + "  Q:" + c.quality.overallRating();
+                        String label = (c.nickname != null && !c.nickname.isEmpty())
+                                ? c.nickname
+                                : c.rarity.label + "  Q:" + c.quality.overallRating();
                         JMenuItem item = new JMenuItem(label);
                         item.setForeground(c.rarity.displayColor);
                         item.addActionListener(ev ->

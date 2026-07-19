@@ -24,7 +24,7 @@ public final class CardId {
 
     private CardId() {}
 
-    public static String encode(int dexNumber, CapturedCreature capture, String playerName) {
+    public static String encode(int dexNumber, CapturedCreature capture) {
         CreatureQuality q = capture.quality;
         return String.format("%03d%s%s%s%s%s%s%d%s",
                 dexNumber,
@@ -35,7 +35,7 @@ public final class CardId {
                 encodeStat(q.stealth),
                 encodeStat(q.vitality),
                 rarityDigit(capture.rarity),
-                encodePlayer(playerName));
+                encodePlayer(capture.playerName));
     }
 
     /** Returns the dex number encoded in the ID (chars 0–2), or -1 if malformed. */

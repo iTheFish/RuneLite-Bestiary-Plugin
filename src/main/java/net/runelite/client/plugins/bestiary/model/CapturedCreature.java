@@ -33,6 +33,12 @@ public class CapturedCreature {
     /** The player's Capture Level at the moment this creature was caught. */
     public final int captureLevel;
 
+    /** RuneScape username of the player who captured this creature. Empty string on pre-existing saves. */
+    public final String playerName;
+
+    /** Optional user-assigned nickname for this individual capture. Null = not set. */
+    public String nickname;
+
     /**
      * How many kills of this species the player had accumulated before this
      * capture succeeded (useful for showing "lucky" catches).
@@ -50,6 +56,7 @@ public class CapturedCreature {
         this.regionName        = b.regionName;
         this.captureLevel      = b.captureLevel;
         this.killsBeforeCapture = b.killsBeforeCapture;
+        this.playerName        = b.playerName != null ? b.playerName : "";
     }
 
     public static Builder builder() {
@@ -67,6 +74,7 @@ public class CapturedCreature {
         private String regionName = "Unknown";
         private int captureLevel = 1;
         private int killsBeforeCapture = 0;
+        private String playerName = "";
 
         public Builder npcId(int v)             { this.npcId = v; return this; }
         public Builder npcName(String v)         { this.npcName = v; return this; }
@@ -77,6 +85,7 @@ public class CapturedCreature {
         public Builder regionName(String v)      { this.regionName = v; return this; }
         public Builder captureLevel(int v)       { this.captureLevel = v; return this; }
         public Builder killsBeforeCapture(int v) { this.killsBeforeCapture = v; return this; }
+        public Builder playerName(String v)       { this.playerName = v; return this; }
 
         public CapturedCreature build() {
             if (quality == null) {

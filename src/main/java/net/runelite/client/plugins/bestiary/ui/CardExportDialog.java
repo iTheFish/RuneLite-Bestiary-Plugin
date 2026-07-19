@@ -18,7 +18,6 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.List;
-import java.util.function.Supplier;
 
 /**
  * Modal dialog showing a single capture as an album card, with options to
@@ -27,14 +26,8 @@ import java.util.function.Supplier;
  */
 public class CardExportDialog extends JDialog {
 
-    // Player name resolved fresh at open-time via supplier — avoids LOGGED_IN timing issues
-    private static Supplier<String> playerNameFn = () -> "";
     private static WikiImageService sharedImageService;
     private static BestiaryCollection sharedCollection;
-
-    public static void setPlayerNameSupplier(Supplier<String> fn) {
-        playerNameFn = (fn != null) ? fn : () -> "";
-    }
 
     public static void setShared(WikiImageService imgSvc, BestiaryCollection collection) {
         sharedImageService = imgSvc;
@@ -45,9 +38,7 @@ public class CardExportDialog extends JDialog {
     public static void open(Window owner, CapturedCreature capture) {
         if (sharedImageService == null || sharedCollection == null) return;
         int dex = MonsterRoster.getDexNumber(capture.npcName);
-        String player = playerNameFn.get();
-        if (player == null) player = "";
-        new CardExportDialog(owner, capture, sharedCollection, sharedImageService, dex, player);
+        new CardExportDialog(owner, capture, sharedCollection, sharedImageService, dex);
     }
 
     // -------------------------------------------------------------------------
@@ -59,14 +50,16 @@ public class CardExportDialog extends JDialog {
     public CardExportDialog(Window owner, CapturedCreature capture,
                             BestiaryCollection collection,
                             WikiImageService imageService,
-                            int dexNumber, String playerName) {
+                            int dexNumber) {
         super(owner, "Export Card — " + capture.npcName, ModalityType.APPLICATION_MODAL);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setResizable(false);
 
+        String capturedBy = capture.playerName != null && !capture.playerName.isEmpty()
+                ? capture.playerName : "Unknown";
         this.card   = new AlbumCard(dexNumber, capture.npcName, List.of(capture), collection, imageService);
-        this.cardId = CardId.encode(dexNumber, capture, playerName);
-        this.owner  = playerName.isEmpty() ? "Unknown" : playerName;
+        this.cardId = CardId.encode(dexNumber, capture);
+        this.owner  = capturedBy;
 
         // Card ID label
         JLabel idLabel = new JLabel(cardId);
@@ -75,7 +68,7 @@ public class CardExportDialog extends JDialog {
         idLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
         // Owner label
-        JLabel ownerLabel = new JLabel("Owned by " + this.owner);
+        JLabel ownerLabel = new JLabel("Captured by " + this.owner);
         ownerLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         ownerLabel.setForeground(new Color(220, 170, 60));
         ownerLabel.setHorizontalAlignment(SwingConstants.CENTER);
@@ -162,7 +155,7 @@ public class CardExportDialog extends JDialog {
         g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 8f));
         FontMetrics ownerFm = g2.getFontMetrics();
         g2.setColor(new Color(200, 155, 50));
-        String ownerStr = "Owned by " + owner;
+        String ownerStr = "Captured by " + owner;
         g2.drawString(ownerStr,
                 (AlbumCard.CARD_W - ownerFm.stringWidth(ownerStr)) / 2,
                 AlbumCard.CARD_H + 22);
