@@ -353,6 +353,20 @@ public class CollectionTab extends JPanel {
         Map<String, List<CapturedCreature>> byNpc = filtered.stream()
                 .collect(Collectors.groupingBy(c -> c.npcName));
 
+        // Album view button — fixed at top of monster list
+        JButton albumBtn = new JButton("Album View");
+        albumBtn.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        albumBtn.setBackground(new Color(60, 60, 60));
+        albumBtn.setForeground(new Color(255, 165, 0));
+        albumBtn.setFocusPainted(false);
+        albumBtn.setBorderPainted(false);
+        albumBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+        albumBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        albumBtn.addActionListener(e -> new AlbumDialog(
+                SwingUtilities.getWindowAncestor(CollectionTab.this), byNpc, dataService.getCollection()));
+        cardContainer.add(albumBtn);
+        cardContainer.add(Box.createVerticalStrut(6));
+
         List<Map.Entry<String, List<CapturedCreature>>> entries =
                 new ArrayList<>(byNpc.entrySet());
 
