@@ -371,7 +371,9 @@ public class CollectionTab extends JPanel {
         albumBtn.setPreferredSize(new Dimension(180, 40));
         albumBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         albumBtn.addActionListener(e -> new AlbumDialog(
-                SwingUtilities.getWindowAncestor(CollectionTab.this), byNpc, dataService.getCollection(), imageService));
+                SwingUtilities.getWindowAncestor(CollectionTab.this), byNpc,
+                dataService.getCollection().killCounts,
+                dataService.getCollection(), imageService));
         cardContainer.add(Box.createVerticalStrut(4));
         cardContainer.add(albumBtn);
         cardContainer.add(Box.createVerticalStrut(8));
