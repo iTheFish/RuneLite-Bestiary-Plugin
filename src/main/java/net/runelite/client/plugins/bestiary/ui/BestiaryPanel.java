@@ -2,6 +2,7 @@ package net.runelite.client.plugins.bestiary.ui;
 
 import net.runelite.client.plugins.bestiary.service.BestiaryDataService;
 import net.runelite.client.plugins.bestiary.service.ProgressionService;
+import net.runelite.client.plugins.bestiary.service.WikiImageService;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
@@ -28,7 +29,8 @@ public class BestiaryPanel extends PluginPanel {
     private InfoTab infoTab;
 
     @Inject
-    public BestiaryPanel(BestiaryDataService dataService, ProgressionService progressionService) {
+    public BestiaryPanel(BestiaryDataService dataService, ProgressionService progressionService,
+                         WikiImageService imageService) {
         super(false); // false = don't auto-wrap in scroll pane
         this.dataService        = dataService;
         this.progressionService = progressionService;
@@ -62,7 +64,7 @@ public class BestiaryPanel extends PluginPanel {
         header.add(sep,      BorderLayout.CENTER);
 
         // Tabs
-        collectionTab = new CollectionTab(dataService);
+        collectionTab = new CollectionTab(dataService, imageService);
         progressTab   = new ProgressTab(progressionService);
         infoTab       = new InfoTab(dataService, progressionService);
 

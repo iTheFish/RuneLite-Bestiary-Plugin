@@ -3,6 +3,7 @@ package net.runelite.client.plugins.bestiary.ui;
 import net.runelite.client.plugins.bestiary.model.BestiaryCollection;
 import net.runelite.client.plugins.bestiary.model.CapturedCreature;
 import net.runelite.client.plugins.bestiary.model.CreatureRarity;
+import net.runelite.client.plugins.bestiary.service.WikiImageService;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 
@@ -33,15 +34,17 @@ public class AlbumDialog extends JDialog {
 
     private final Map<String, List<CapturedCreature>> capturesByNpc;
     private final BestiaryCollection collection;
+    private final WikiImageService imageService;
     private final Map<String, Integer> dexNumbers;
     private final JPanel gridPanel;
     private String currentSort = "Name A–Z";
 
     public AlbumDialog(Window owner, Map<String, List<CapturedCreature>> capturesByNpc,
-                       BestiaryCollection collection) {
+                       BestiaryCollection collection, WikiImageService imageService) {
         super(owner, "Bestiary Album", ModalityType.MODELESS);
         this.capturesByNpc = capturesByNpc;
         this.collection    = collection;
+        this.imageService  = imageService;
         this.dexNumbers    = assignDexNumbers(capturesByNpc);
 
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -130,7 +133,7 @@ public class AlbumDialog extends JDialog {
         for (int i = 0; i < entries.size(); i++) {
             Map.Entry<String, List<CapturedCreature>> e = entries.get(i);
             int dexNum = dexNumbers.getOrDefault(e.getKey(), i + 1);
-            gridPanel.add(new AlbumCard(dexNum, e.getKey(), e.getValue(), collection));
+            gridPanel.add(new AlbumCard(dexNum, e.getKey(), e.getValue(), collection, imageService));
         }
 
         gridPanel.revalidate();

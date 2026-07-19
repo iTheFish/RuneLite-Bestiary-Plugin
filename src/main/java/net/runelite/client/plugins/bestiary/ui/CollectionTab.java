@@ -3,6 +3,7 @@ package net.runelite.client.plugins.bestiary.ui;
 import net.runelite.client.plugins.bestiary.model.CapturedCreature;
 import net.runelite.client.plugins.bestiary.model.CreatureRarity;
 import net.runelite.client.plugins.bestiary.service.BestiaryDataService;
+import net.runelite.client.plugins.bestiary.service.WikiImageService;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.components.IconTextField;
@@ -25,6 +26,7 @@ public class CollectionTab extends JPanel {
     private static final Color HEADER_BG = new Color(35, 35, 35);
 
     private final BestiaryDataService dataService;
+    private final WikiImageService imageService;
 
     private final IconTextField searchBar;
     private final JComboBox<String> rarityFilter;
@@ -43,8 +45,9 @@ public class CollectionTab extends JPanel {
         "Quality (high)", "Quality (low)"
     };
 
-    public CollectionTab(BestiaryDataService dataService) {
-        this.dataService = dataService;
+    public CollectionTab(BestiaryDataService dataService, WikiImageService imageService) {
+        this.dataService  = dataService;
+        this.imageService = imageService;
         setLayout(new BorderLayout(0, 6));
         setBackground(ColorScheme.DARK_GRAY_COLOR);
         setBorder(new EmptyBorder(8, 8, 8, 8));
@@ -368,7 +371,7 @@ public class CollectionTab extends JPanel {
         albumBtn.setPreferredSize(new Dimension(180, 40));
         albumBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         albumBtn.addActionListener(e -> new AlbumDialog(
-                SwingUtilities.getWindowAncestor(CollectionTab.this), byNpc, dataService.getCollection()));
+                SwingUtilities.getWindowAncestor(CollectionTab.this), byNpc, dataService.getCollection(), imageService));
         cardContainer.add(Box.createVerticalStrut(4));
         cardContainer.add(albumBtn);
         cardContainer.add(Box.createVerticalStrut(8));

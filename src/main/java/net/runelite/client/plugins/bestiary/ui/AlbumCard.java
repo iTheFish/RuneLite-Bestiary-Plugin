@@ -3,25 +3,27 @@ package net.runelite.client.plugins.bestiary.ui;
 import net.runelite.client.plugins.bestiary.model.BestiaryCollection;
 import net.runelite.client.plugins.bestiary.model.CapturedCreature;
 import net.runelite.client.plugins.bestiary.model.CreatureRarity;
+import net.runelite.client.plugins.bestiary.service.WikiImageService;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 
+import javax.annotation.Nullable;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
 import java.util.*;
 import java.util.List;
 
 /**
- * Fixed-size album card: image placeholder, name + rarity badge, combat level,
- * and 6 avg-stat bars (label | bar | value).
- * Clicking opens CreatureDetailDialog for all captures of this NPC.
+ * Fixed-size album card: NPC image (from OSRS Wiki), name + rarity badge, combat level,
+ * and 6 avg-stat bars. Clicking opens CreatureDetailDialog for all captures of this NPC.
  */
 public class AlbumCard extends JPanel {
 
     public static final int CARD_W = 150;
-    public static final int CARD_H = 250;
+    public static final int CARD_H = 275;
 
     private static final int PAD      = 8;
     private static final int LABEL_W  = 26;
@@ -32,13 +34,13 @@ public class AlbumCard extends JPanel {
     // Layout Y positions
     private static final int HEADER_Y = 6;
     private static final int HEADER_H = 14;
-    private static final int IMAGE_Y  = HEADER_Y + HEADER_H + 4;  // 24
-    private static final int IMAGE_H  = 90;
-    private static final int NAME_Y   = IMAGE_Y + IMAGE_H + 4;    // 118
+    private static final int IMAGE_Y  = HEADER_Y + HEADER_H + 4;   // 24
+    private static final int IMAGE_H  = 110;
+    private static final int NAME_Y   = IMAGE_Y + IMAGE_H + 4;     // 138
     private static final int NAME_H   = 16;
-    private static final int COMBAT_Y = NAME_Y + NAME_H;          // 134
+    private static final int COMBAT_Y = NAME_Y + NAME_H;           // 154
     private static final int COMBAT_H = 14;
-    private static final int STATS_Y  = COMBAT_Y + COMBAT_H + 3;  // 151
+    private static final int STATS_Y  = COMBAT_Y + COMBAT_H + 3;  // 171
 
     private static final Color IMAGE_BG  = new Color(22, 22, 22);
     private static final Color NORMAL_BG = new Color(38, 38, 38);
@@ -54,14 +56,16 @@ public class AlbumCard extends JPanel {
     private final int[] avgStats;
     private final List<CapturedCreature> captures;
     private final BestiaryCollection collection;
+    @Nullable private final WikiImageService imageService;
     private boolean hovered = false;
 
     public AlbumCard(int dexNumber, String npcName, List<CapturedCreature> captures,
-                     BestiaryCollection collection) {
-        this.dexNumber  = dexNumber;
-        this.npcName    = npcName;
-        this.captures   = captures;
-        this.collection = collection;
+                     BestiaryCollection collection, @Nullable WikiImageService imageService) {
+        this.dexNumber    = dexNumber;
+        this.npcName      = npcName;
+        this.captures     = captures;
+        this.collection   = collection;
+        this.imageService = imageService;
 
         CapturedCreature sample = captures.get(0);
         this.combatLevel = sample.npcCombatLevel;
@@ -99,6 +103,11 @@ public class AlbumCard extends JPanel {
         setMaximumSize(new Dimension(CARD_W, CARD_H));
         setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
+        // Kick off async image fetch; repaint when it arrives
+        if (imageService != null) {
+            imageService.requestImage(npcName, this::repaint);
+        }
+
         addMouseListener(new MouseAdapter() {
             @Override public void mouseEntered(MouseEvent e) { hovered = true;  repaint(); }
             @Override public void mouseExited(MouseEvent e)  { hovered = false; repaint(); }
@@ -116,6 +125,8 @@ public class AlbumCard extends JPanel {
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,      RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,     RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g2.setRenderingHint(RenderingHints.KEY_RENDERING,         RenderingHints.VALUE_RENDER_QUALITY);
 
         int w    = getWidth();
         int imgX = PAD;
@@ -153,29 +164,44 @@ public class AlbumCard extends JPanel {
         g2.drawString(dexStr, w - PAD - dfm.stringWidth(dexStr),
                 HEADER_Y + (HEADER_H + dfm.getAscent() - dfm.getDescent()) / 2);
 
-        // --- Image placeholder ---
+        // --- Image area ---
         g2.setColor(IMAGE_BG);
         g2.fillRoundRect(imgX, IMAGE_Y, imgW, IMAGE_H, 6, 6);
-        g2.setColor(new Color(45, 45, 45));
-        g2.setStroke(new BasicStroke(1f));
-        g2.drawRoundRect(imgX, IMAGE_Y, imgW, IMAGE_H, 6, 6);
 
-        // Subtle landscape placeholder icon
-        int cx = imgX + imgW / 2;
-        int cy = IMAGE_Y + IMAGE_H / 2 + 6;
-        g2.setColor(new Color(50, 50, 50));
-        // left mountain
-        g2.fillPolygon(new int[]{cx - 24, cx - 6,  cx - 40}, new int[]{cy - 10, cy + 6, cy + 6}, 3);
-        // right larger mountain
-        g2.fillPolygon(new int[]{cx + 10, cx + 30, cx - 10}, new int[]{cy - 18, cy + 6, cy + 6}, 3);
-        // sun circle
-        g2.setColor(new Color(60, 60, 60));
-        g2.fillOval(cx - 34, IMAGE_Y + 10, 9, 9);
+        BufferedImage npcImage = imageService != null ? imageService.getImage(npcName) : null;
+        if (npcImage != null) {
+            // Scale to fit, maintain aspect ratio, centre in the image area
+            double scaleX = (double) imgW / npcImage.getWidth();
+            double scaleY = (double) IMAGE_H / npcImage.getHeight();
+            double scale  = Math.min(scaleX, scaleY);
+            int dw = (int) (npcImage.getWidth()  * scale);
+            int dh = (int) (npcImage.getHeight() * scale);
+            int dx = imgX + (imgW - dw) / 2;
+            int dy = IMAGE_Y + (IMAGE_H - dh) / 2;
+
+            // Clip to the image area so nothing overflows the rounded rect
+            Shape oldClip = g2.getClip();
+            g2.setClip(imgX, IMAGE_Y, imgW, IMAGE_H);
+            g2.drawImage(npcImage, dx, dy, dw, dh, null);
+            g2.setClip(oldClip);
+        } else {
+            // Placeholder icon while loading / not found
+            g2.setColor(new Color(45, 45, 45));
+            g2.setStroke(new BasicStroke(1f));
+            g2.drawRoundRect(imgX, IMAGE_Y, imgW, IMAGE_H, 6, 6);
+
+            int cx = imgX + imgW / 2;
+            int cy = IMAGE_Y + IMAGE_H / 2 + 6;
+            g2.setColor(new Color(50, 50, 50));
+            g2.fillPolygon(new int[]{cx - 24, cx - 6,  cx - 40}, new int[]{cy - 10, cy + 6, cy + 6}, 3);
+            g2.fillPolygon(new int[]{cx + 10, cx + 30, cx - 10}, new int[]{cy - 18, cy + 6, cy + 6}, 3);
+            g2.setColor(new Color(60, 60, 60));
+            g2.fillOval(cx - 34, IMAGE_Y + 10, 9, 9);
+        }
 
         // --- Name row + rarity badge ---
         int nameBaseline = NAME_Y + (NAME_H + sfm.getAscent() - sfm.getDescent()) / 2;
 
-        // Rarity badge (right-aligned, draw first to know its width)
         g2.setFont(smallBold);
         FontMetrics sbfm = g2.getFontMetrics();
         String badgeText = rarest.label;
@@ -191,7 +217,6 @@ public class AlbumCard extends JPanel {
         int badgeBaseline = badgeY + (badgeH + sbfm.getAscent() - sbfm.getDescent()) / 2;
         g2.drawString(badgeText, badgeX + badgePad, badgeBaseline);
 
-        // NPC name (truncated to leave room for badge)
         g2.setFont(boldFont);
         FontMetrics bfm = g2.getFontMetrics();
         int maxNameW = badgeX - PAD - 4;
@@ -212,17 +237,14 @@ public class AlbumCard extends JPanel {
         g2.drawString(combatStr, imgX + 2, COMBAT_Y + (COMBAT_H + sfm.getAscent() - sfm.getDescent()) / 2);
 
         // --- Stat bars ---
-        Font valFont = boldFont;
         for (int i = 0; i < STAT_LABELS.length; i++) {
             int rowY     = STATS_Y + i * STAT_ROW;
             int baseline = rowY + (STAT_ROW + sfm.getAscent() - sfm.getDescent()) / 2;
 
-            // Label
             g2.setFont(smallFont);
             g2.setColor(new Color(160, 160, 160));
             g2.drawString(STAT_LABELS[i], imgX, baseline);
 
-            // Bar background + fill
             int barX = imgX + LABEL_W + 3;
             int barW = imgW - LABEL_W - VAL_W - 6;
             int barY = rowY + (STAT_ROW - BAR_H) / 2;
@@ -235,8 +257,7 @@ public class AlbumCard extends JPanel {
                 g2.fillRoundRect(barX, barY, fill, BAR_H, 3, 3);
             }
 
-            // Value (right-aligned, bold)
-            g2.setFont(valFont);
+            g2.setFont(boldFont);
             FontMetrics vfm = g2.getFontMetrics();
             String valStr = String.valueOf(avgStats[i]);
             g2.setColor(Color.WHITE);
