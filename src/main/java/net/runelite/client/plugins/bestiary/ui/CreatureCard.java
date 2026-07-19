@@ -92,6 +92,16 @@ public class CreatureCard extends JPanel {
                 "Avg stats:  STR:%d  SPD:%d  END:%d  INT:%d  STL:%d  VIT:%d</html>",
                 captures.size(), kills, aStr, aSpd, aEnd, aInt, aStl, aVit));
 
+        String yourRate = kills > 0
+                ? "Your rate: 1 in " + Math.round((double) kills / Math.max(1, captures.size())) + " kills"
+                : "No kills recorded yet";
+        rarityLabel.setToolTipText(String.format(
+                "<html><b>%s capture rate</b><br>Base chance: %.1f%% (~1 in %d kills)<br>%s</html>",
+                rarity.label,
+                rarity.probability * 100,
+                Math.round(1.0 / rarity.probability),
+                yourRate));
+
         rightCol.add(rarityLabel);
         rightCol.add(statsLabel);
 
