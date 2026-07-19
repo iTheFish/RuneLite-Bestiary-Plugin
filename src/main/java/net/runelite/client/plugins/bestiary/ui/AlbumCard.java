@@ -157,26 +157,52 @@ public class AlbumCard extends JPanel {
         addMouseListener(new MouseAdapter() {
             @Override public void mouseEntered(MouseEvent e) { hovered = true;  repaint(); }
             @Override public void mouseExited(MouseEvent e)  { hovered = false; repaint(); }
-            @Override public void mouseClicked(MouseEvent e) {
-                if (!locked && captures != null && collection != null) {
-                    if (SwingUtilities.isRightMouseButton(e)) {
-                        JPopupMenu menu = new JPopupMenu();
-                        JMenuItem exportItem = new JMenuItem("Export Card");
-                        // Export the best (highest rarity, then quality) capture for this NPC
-                        CapturedCreature best = captures.stream()
-                                .max(java.util.Comparator.<CapturedCreature>
-                                        comparingInt(c -> c.rarity.ordinal())
-                                        .thenComparingInt(c -> c.quality.overallRating()))
-                                .orElse(captures.get(0));
-                        exportItem.addActionListener(ev ->
-                                CardExportDialog.open(SwingUtilities.getWindowAncestor(AlbumCard.this), best));
-                        menu.add(exportItem);
-                        menu.show(AlbumCard.this, e.getX(), e.getY());
-                        return;
-                    }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.isPopupTrigger() && !locked && captures != null) {
+                    showExportMenu(e);
+                }
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (!locked && captures != null && collection != null
+                        && SwingUtilities.isLeftMouseButton(e)) {
                     new CreatureDetailDialog(
                             SwingUtilities.getWindowAncestor(AlbumCard.this), captures, collection, "By Rarity", null);
                 }
+            }
+
+            private void showExportMenu(MouseEvent e) {
+                JPopupMenu menu = new JPopupMenu();
+                List<CapturedCreature> sorted = new ArrayList<>(captures);
+                sorted.sort(java.util.Comparator.<CapturedCreature>
+                        comparingInt(c -> c.rarity.ordinal())
+                        .reversed()
+                        .thenComparingInt(c -> -c.quality.overallRating()));
+
+                if (sorted.size() == 1) {
+                    JMenuItem item = new JMenuItem("Export Card");
+                    CapturedCreature only = sorted.get(0);
+                    item.addActionListener(ev ->
+                            CardExportDialog.open(SwingUtilities.getWindowAncestor(AlbumCard.this), only));
+                    menu.add(item);
+                } else {
+                    JMenu sub = new JMenu("Export Card");
+                    int shown = Math.min(sorted.size(), 8);
+                    for (int i = 0; i < shown; i++) {
+                        CapturedCreature c = sorted.get(i);
+                        String label = c.rarity.label + "  Q:" + c.quality.overallRating();
+                        JMenuItem item = new JMenuItem(label);
+                        item.setForeground(c.rarity.displayColor);
+                        item.addActionListener(ev ->
+                                CardExportDialog.open(SwingUtilities.getWindowAncestor(AlbumCard.this), c));
+                        sub.add(item);
+                    }
+                    menu.add(sub);
+                }
+                menu.show(AlbumCard.this, e.getX(), e.getY());
             }
         });
     }

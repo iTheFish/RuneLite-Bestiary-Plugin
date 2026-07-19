@@ -18,7 +18,6 @@ import net.runelite.api.Client;
 import net.runelite.api.NPC;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ActorDeath;
-import net.runelite.api.GameState;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.HitsplatApplied;
 import net.runelite.api.events.InteractingChanged;
@@ -95,6 +94,8 @@ public class BestiaryPlugin extends Plugin {
         clientToolbar.addNavigation(navButton);
         overlayManager.add(overlay);
 
+        CardExportDialog.setPlayerNameSupplier(() ->
+                client.getLocalPlayer() != null ? client.getLocalPlayer().getName() : "");
         SwingUtilities.invokeLater(panel::refresh);
         log.info("Bestiary plugin started");
     }
@@ -143,9 +144,6 @@ public class BestiaryPlugin extends Plugin {
     @Subscribe
     public void onGameStateChanged(GameStateChanged event) {
         killTracker.onGameStateChanged(event);
-        if (event.getGameState() == GameState.LOGGED_IN && client.getLocalPlayer() != null) {
-            CardExportDialog.setPlayerName(client.getLocalPlayer().getName());
-        }
     }
 
     // --- Kill handling ---

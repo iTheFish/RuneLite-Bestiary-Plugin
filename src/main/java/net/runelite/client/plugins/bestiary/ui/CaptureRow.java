@@ -95,22 +95,27 @@ public class CaptureRow extends JPanel {
 
         addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
-            public void mouseClicked(java.awt.event.MouseEvent e) {
-                if (SwingUtilities.isRightMouseButton(e)) {
+            public void mouseReleased(java.awt.event.MouseEvent e) {
+                if (e.isPopupTrigger()) {
                     JPopupMenu menu = new JPopupMenu();
                     JMenuItem exportItem = new JMenuItem("Export Card");
                     exportItem.addActionListener(ev ->
                             CardExportDialog.open(SwingUtilities.getWindowAncestor(CaptureRow.this), capture));
                     menu.add(exportItem);
                     menu.show(CaptureRow.this, e.getX(), e.getY());
-                    return;
                 }
-                List<CapturedCreature> allCaptures = collection.creatures.stream()
-                        .filter(c -> c.npcName.equals(capture.npcName))
-                        .collect(Collectors.toList());
-                new CreatureDetailDialog(
-                        SwingUtilities.getWindowAncestor(CaptureRow.this),
-                        allCaptures, collection, "Newest first", capture.rarity).setVisible(true);
+            }
+
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    List<CapturedCreature> allCaptures = collection.creatures.stream()
+                            .filter(c -> c.npcName.equals(capture.npcName))
+                            .collect(Collectors.toList());
+                    new CreatureDetailDialog(
+                            SwingUtilities.getWindowAncestor(CaptureRow.this),
+                            allCaptures, collection, "Newest first", capture.rarity).setVisible(true);
+                }
             }
 
             @Override public void mouseEntered(java.awt.event.MouseEvent e) { setBackground(ROW_HOVER); repaint(); }

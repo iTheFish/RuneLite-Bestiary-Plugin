@@ -18,21 +18,22 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * Modal dialog showing a single capture as an album card, with options to
  * copy the card image to clipboard or save it as a PNG.
- * Card ID (28-char fixed fingerprint) is displayed beneath the card.
+ * Exported image includes a bottom owner banner and the 28-char card ID.
  */
 public class CardExportDialog extends JDialog {
 
-    private static String playerName = "";
+    // Player name resolved fresh at open-time via supplier — avoids LOGGED_IN timing issues
+    private static Supplier<String> playerNameFn = () -> "";
     private static WikiImageService sharedImageService;
     private static BestiaryCollection sharedCollection;
 
-    /** Called from BestiaryPlugin.onGameStateChanged when LOGGED_IN. */
-    public static void setPlayerName(String name) {
-        playerName = (name != null) ? name : "";
+    public static void setPlayerNameSupplier(Supplier<String> fn) {
+        playerNameFn = (fn != null) ? fn : () -> "";
     }
 
     public static void setShared(WikiImageService imgSvc, BestiaryCollection collection) {
@@ -44,27 +45,40 @@ public class CardExportDialog extends JDialog {
     public static void open(Window owner, CapturedCreature capture) {
         if (sharedImageService == null || sharedCollection == null) return;
         int dex = MonsterRoster.getDexNumber(capture.npcName);
-        new CardExportDialog(owner, capture, sharedCollection, sharedImageService, dex);
+        String player = playerNameFn.get();
+        if (player == null) player = "";
+        new CardExportDialog(owner, capture, sharedCollection, sharedImageService, dex, player);
     }
+
+    // -------------------------------------------------------------------------
+
+    private final AlbumCard card;
+    private final String cardId;
+    private final String owner;
 
     public CardExportDialog(Window owner, CapturedCreature capture,
                             BestiaryCollection collection,
                             WikiImageService imageService,
-                            int dexNumber) {
+                            int dexNumber, String playerName) {
         super(owner, "Export Card — " + capture.npcName, ModalityType.APPLICATION_MODAL);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setResizable(false);
 
-        // Build card (single capture for exact stat display)
-        AlbumCard card = new AlbumCard(dexNumber, capture.npcName,
-                List.of(capture), collection, imageService);
+        this.card   = new AlbumCard(dexNumber, capture.npcName, List.of(capture), collection, imageService);
+        this.cardId = CardId.encode(dexNumber, capture, playerName);
+        this.owner  = playerName.isEmpty() ? "Unknown" : playerName;
 
-        // Card ID
-        String id = CardId.encode(dexNumber, capture, playerName);
-        JLabel idLabel = new JLabel(id);
-        idLabel.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 11));
-        idLabel.setForeground(new Color(160, 160, 160));
+        // Card ID label
+        JLabel idLabel = new JLabel(cardId);
+        idLabel.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 10));
+        idLabel.setForeground(new Color(130, 130, 130));
         idLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        // Owner label
+        JLabel ownerLabel = new JLabel("Owned by " + this.owner);
+        ownerLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        ownerLabel.setForeground(new Color(220, 170, 60));
+        ownerLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
         // Buttons
         JButton copyBtn = new JButton("Copy Image");
@@ -72,14 +86,14 @@ public class CardExportDialog extends JDialog {
         copyBtn.setBackground(new Color(255, 153, 0));
         copyBtn.setForeground(Color.BLACK);
         copyBtn.setFocusPainted(false);
-        copyBtn.addActionListener(e -> copyToClipboard(card));
+        copyBtn.addActionListener(e -> copyToClipboard());
 
         JButton saveBtn = new JButton("Save PNG…");
         saveBtn.setFont(FontManager.getRunescapeSmallFont());
         saveBtn.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         saveBtn.setForeground(Color.WHITE);
         saveBtn.setFocusPainted(false);
-        saveBtn.addActionListener(e -> savePng(card, capture.npcName));
+        saveBtn.addActionListener(e -> savePng(capture.npcName));
 
         JPanel btnRow = new JPanel(new GridLayout(1, 2, 6, 0));
         btnRow.setOpaque(false);
@@ -94,11 +108,14 @@ public class CardExportDialog extends JDialog {
 
         card.setAlignmentX(Component.CENTER_ALIGNMENT);
         idLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        ownerLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         btnRow.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         content.add(card);
-        content.add(Box.createVerticalStrut(8));
+        content.add(Box.createVerticalStrut(6));
         content.add(idLabel);
+        content.add(Box.createVerticalStrut(2));
+        content.add(ownerLabel);
         content.add(Box.createVerticalStrut(10));
         content.add(btnRow);
 
@@ -110,24 +127,52 @@ public class CardExportDialog extends JDialog {
 
     // -------------------------------------------------------------------------
 
-    private static BufferedImage renderCard(AlbumCard card) {
-        int scale = 3;
+    private BufferedImage renderCard() {
+        int scale  = 3;
+        int bannerH = 28; // original-scale pixels for owner banner below card
+
         card.setSize(AlbumCard.CARD_W, AlbumCard.CARD_H);
+
         BufferedImage img = new BufferedImage(
-                AlbumCard.CARD_W * scale, AlbumCard.CARD_H * scale,
+                AlbumCard.CARD_W * scale,
+                (AlbumCard.CARD_H + bannerH) * scale,
                 BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2 = img.createGraphics();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,      RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,     RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         g2.scale(scale, scale);
+
+        // Paint card
         card.print(g2);
+
+        // Owner banner
+        g2.setColor(new Color(12, 12, 12));
+        g2.fillRect(0, AlbumCard.CARD_H, AlbumCard.CARD_W, bannerH);
+
+        // Card ID (top of banner, tiny)
+        g2.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 6));
+        FontMetrics idFm = g2.getFontMetrics();
+        g2.setColor(new Color(90, 90, 90));
+        g2.drawString(cardId,
+                (AlbumCard.CARD_W - idFm.stringWidth(cardId)) / 2,
+                AlbumCard.CARD_H + 9);
+
+        // Owner name (bottom of banner)
+        g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 8f));
+        FontMetrics ownerFm = g2.getFontMetrics();
+        g2.setColor(new Color(200, 155, 50));
+        String ownerStr = "Owned by " + owner;
+        g2.drawString(ownerStr,
+                (AlbumCard.CARD_W - ownerFm.stringWidth(ownerStr)) / 2,
+                AlbumCard.CARD_H + 22);
+
         g2.dispose();
         return img;
     }
 
-    private void copyToClipboard(AlbumCard card) {
-        BufferedImage img = renderCard(card);
+    private void copyToClipboard() {
+        BufferedImage img = renderCard();
         Transferable t = new Transferable() {
             @Override public DataFlavor[] getTransferDataFlavors() { return new DataFlavor[]{DataFlavor.imageFlavor}; }
             @Override public boolean isDataFlavorSupported(DataFlavor f) { return f.equals(DataFlavor.imageFlavor); }
@@ -140,14 +185,13 @@ public class CardExportDialog extends JDialog {
         JOptionPane.showMessageDialog(this, "Card image copied to clipboard!", "Copied", JOptionPane.INFORMATION_MESSAGE);
     }
 
-    private void savePng(AlbumCard card, String npcName) {
+    private void savePng(String npcName) {
         JFileChooser chooser = new JFileChooser();
         String fileName = "bestiary_" + npcName.toLowerCase().replace(" ", "_") + ".png";
         chooser.setSelectedFile(new File(System.getProperty("user.home"), fileName));
         if (chooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
             try {
-                BufferedImage img = renderCard(card);
-                ImageIO.write(img, "PNG", chooser.getSelectedFile());
+                ImageIO.write(renderCard(), "PNG", chooser.getSelectedFile());
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Failed to save: " + ex.getMessage(),
                         "Error", JOptionPane.ERROR_MESSAGE);

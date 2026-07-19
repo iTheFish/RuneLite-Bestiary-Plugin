@@ -485,7 +485,13 @@ public class MonsterRoster {
 
     /** Returns the dex number for a monster in the static roster, or 0 if unlisted. */
     public static int getDexNumber(String npcName) {
-        return STATIC_DEX.getOrDefault(npcName, 0);
+        Integer num = STATIC_DEX.get(npcName);
+        if (num != null) return num;
+        // Case-insensitive fallback: in-game NPC names may differ in casing from roster
+        for (Map.Entry<String, Integer> e : STATIC_DEX.entrySet()) {
+            if (e.getKey().equalsIgnoreCase(npcName)) return e.getValue();
+        }
+        return 0;
     }
 
     /** Assigns stable alphabetical dex numbers to the full roster. */
