@@ -181,32 +181,37 @@ public class MonsterRoster {
         for (String n : Arrays.asList(
             "Chicken", "Cow", "Duck", "Seagull", "Man", "Woman", "Farmer",
             "Goblin", "Rat", "Giant rat", "Imp", "Unicorn", "Spider",
-            "Baby blue dragon", "Baby green dragon"
+            "Bear", "Grizzly bear",
+            "Dark wizard", "Minotaur",
+            "Cave bug",
+            "Rock crab", "Sand crab"
         )) { d.put(n, BEGINNER); }
 
-        // Easy — early F2P grind, low-level slayer
+        // Easy — early/mid F2P, basic slayer
         for (String n : Arrays.asList(
-            "Guard", "Barbarian", "Warrior", "Wizard", "Dark wizard", "Minotaur",
-            "Bear", "Grizzly bear", "Giant spider", "Scorpion", "King scorpion",
+            "Guard", "Barbarian", "Warrior", "Wizard",
+            "Giant spider", "Scorpion", "King scorpion",
             "Zombie", "Skeleton", "Ghost", "Pirate", "Rogue",
-            "Rock crab", "Sand crab", "Swamp crab",
-            "Hobgoblin", "Chaos druid", "Ankou",
-            "Cave bug", "Cave crawler", "Cave slime",
+            "Swamp crab",
+            "Hobgoblin", "Chaos druid",
+            "Cave crawler", "Cave slime",
             "Desert lizard", "Fever spider", "Pyrefiend", "Rockslugs",
             "Fleshcrawler", "Ice warrior", "Ice spider",
             "Hill giant", "Moss giant", "Ice giant", "Earth warrior",
-            "Green dragon"
+            "Baby blue dragon", "Baby green dragon",
+            "Banshee", "Basilisk", "Black knight"
         )) { d.put(n, EASY); }
 
         // Medium — mid-game slayer, accessible dungeon monsters
         for (String n : Arrays.asList(
             "Fire giant",
-            "Lesser demon", "Black knight", "White knight",
-            "Banshee", "Twisted banshee", "Bloodveld",
+            "Lesser demon", "White knight",
+            "Ankou",
+            "Twisted banshee", "Bloodveld",
             "Cave horror", "Jelly", "Warped jelly",
-            "Basilisk", "Kalphite", "Kalphite soldier", "Kalphite worker",
-            "Kurask", "Turoth", "Nechryael",
-            "Blue dragon", "Red dragon", "Bronze dragon", "Iron dragon",
+            "Kalphite", "Kalphite soldier", "Kalphite worker",
+            "Turoth", "Nechryael",
+            "Blue dragon", "Red dragon", "Green dragon", "Bronze dragon", "Iron dragon",
             "Spiritual warrior", "Spiritual mage", "Spiritual ranger",
             "Lizardman", "Lizardman brute",
             "Mogre", "Molanisk",
@@ -223,8 +228,9 @@ public class MonsterRoster {
             "Greater demon", "Black demon", "Abyssal demon",
             "Gargoyle", "Hellhound", "Dark beast",
             "Greater nechryael", "Nechryarch", "Mutated bloodveld",
-            "Kalphite guardian", "Kalphite soldier",
+            "Kalphite guardian",
             "Basilisk knight",
+            "Kurask",
             "Steel dragon", "Mithril dragon", "Black dragon",
             "Wyrm", "Drake", "Wyvern", "Fossil island wyvern",
             "Ancient wyvern", "Skeletal wyvern",
@@ -236,24 +242,26 @@ public class MonsterRoster {
             "Lava dragon", "Dark warrior", "Chaos druid warrior"
         )) { d.put(n, HARD); }
 
-        // Elite — challenging late-game PvM
+        // Elite — challenging late-game PvM (pre-boss tier)
         for (String n : Arrays.asList(
             "Adamant dragon", "Rune dragon",
-            "Hydra", "Alchemical Hydra",
-            "Giant Mole",
-            "Sarachnis", "Hespori", "Obor", "Bryophyta",
-            "Cerberus", "Kraken", "Thermonuclear smoke devil",
-            "Abyssal Sire",
-            "Deranged Archaeologist",
-            "Chaos Fanatic", "Crazy Archaeologist", "Scorpia",
-            "Callisto", "Artio",
-            "Venenatis", "Spindel",
-            "Vet'ion", "Calvar'ion"
+            "Hydra",
+            "Kraken"
         )) { d.put(n, ELITE); }
 
         // Boss — endgame encounters requiring preparation/skill
         for (String n : Arrays.asList(
             "Scurrius",
+            "Alchemical Hydra",
+            "Giant Mole",
+            "Sarachnis", "Hespori", "Obor", "Bryophyta",
+            "Cerberus", "Thermonuclear smoke devil",
+            "Abyssal Sire",
+            "Deranged Archaeologist",
+            "Chaos Fanatic", "Crazy Archaeologist", "Scorpia",
+            "Callisto", "Artio",
+            "Venenatis", "Spindel",
+            "Vet'ion", "Calvar'ion",
             "King Black Dragon", "Chaos Elemental", "Corporeal Beast",
             "Commander Zilyana", "General Graardor", "K'ril Tsutsaroth", "Kree'arra",
             "Dagannoth Rex", "Dagannoth Prime", "Dagannoth Supreme",
