@@ -27,8 +27,8 @@ import java.util.stream.Collectors;
  */
 public class AlbumDialog extends JDialog {
 
-    private static final int DEFAULT_W = 700;
-    private static final int DEFAULT_H = 720;
+    private static final int DEFAULT_W = 820;
+    private static final int DEFAULT_H = 820;
 
     /** Persists the user's last resized dimensions across opens within the same session. */
     private static Dimension savedSize = null;
@@ -300,7 +300,7 @@ public class AlbumDialog extends JDialog {
             btn.setText("<html><b><font color='#101010'>Captured first</font></b></html>");
         } else {
             btn.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-            btn.setText("<html><font color='#B0B0B0'>Captured first</font></html>");
+            btn.setText("<html><b><font color='#B0B0B0'>Captured first</font></b></html>");
         }
     }
 

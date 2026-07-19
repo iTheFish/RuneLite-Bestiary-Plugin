@@ -185,7 +185,7 @@ public class AlbumCard extends JPanel {
 
         Font smallFont = FontManager.getRunescapeSmallFont();
         Font boldFont  = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD);
-        Font smallBold = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 12f);
+        Font smallBold = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 14f);
 
         g2.setFont(smallFont);
         FontMetrics sfm = g2.getFontMetrics();
