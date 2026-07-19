@@ -127,7 +127,7 @@ public class CreatureCard extends JPanel {
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 new CreatureDetailDialog(
                         SwingUtilities.getWindowAncestor(CreatureCard.this),
-                        captures, collection);
+                        captures, collection, "By Rarity");
             }
 
             @Override

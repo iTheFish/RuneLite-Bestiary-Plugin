@@ -18,6 +18,7 @@ import java.awt.event.MouseEvent;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
@@ -25,7 +26,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * MODELESS dialog showing capture history for one NPC+rarity combination.
+ * MODELESS dialog showing capture history for one NPC (all rarities or a single rarity).
  * Only one instance can be visible at a time — opening a new one disposes the previous.
  */
 public class CreatureDetailDialog extends JDialog {
@@ -38,18 +39,23 @@ public class CreatureDetailDialog extends JDialog {
         CreatureRarity.RARE,   CreatureRarity.UNCOMMON,  CreatureRarity.COMMON
     };
 
-    private static final String[] SORT_OPTIONS_SINGLE = {
-        "Newest first", "Oldest first", "Quality (high)", "Quality (low)", "By region"
-    };
-    private static final String[] SORT_OPTIONS_MULTI = {
+    private static final String[] SORT_OPTIONS = {
         "By Rarity", "Newest first", "Oldest first", "Quality (high)", "Quality (low)", "By region"
     };
 
     /** Ensures only one dialog is open at a time. */
     private static CreatureDetailDialog current;
 
-    /** Set once by BestiaryPanel at startup; read by each dialog instance for default section state. */
+    /** Set once by BestiaryPanel at startup; read for the config default on first open. */
     private static BestiaryConfig sharedConfig;
+
+    /**
+     * Session-wide collapse state — persists across dialog opens within the same RuneLite session.
+     * Initialised from the config default on the very first open, then updated live as the user
+     * collapses / expands sections.
+     */
+    private static final Set<CreatureRarity> sessionCollapsed = EnumSet.noneOf(CreatureRarity.class);
+    private static boolean sessionInitialized = false;
 
     public static void setConfig(BestiaryConfig config) {
         sharedConfig = config;
@@ -63,17 +69,19 @@ public class CreatureDetailDialog extends JDialog {
     private final boolean multiRarity;
     private final int[] dialogBest;
 
-    /** Tracks which rarity sections are currently collapsed (By Rarity sort only). */
+    /** Per-dialog-instance view of the session collapse state (mutated on toggle). */
     private final Set<CreatureRarity> collapsedRarities = EnumSet.noneOf(CreatureRarity.class);
 
-    /** Current sort selection — stored so header click can trigger a rebuild. */
     private String currentSort;
 
+    /**
+     * @param defaultSort  The sort option to select on open ("By Rarity", "Newest first", etc.).
+     *                     Callers should pass whichever sort makes sense for their entry point.
+     */
     public CreatureDetailDialog(Window owner, List<CapturedCreature> captures,
-                                BestiaryCollection collection) {
+                                BestiaryCollection collection, String defaultSort) {
         super(owner, "Bestiary Detail", ModalityType.MODELESS);
 
-        // Close any existing detail dialog before opening a new one
         if (current != null && current.isShowing()) {
             current.dispose();
         }
@@ -83,12 +91,17 @@ public class CreatureDetailDialog extends JDialog {
         this.collection  = collection;
         this.multiRarity = captures.stream().map(c -> c.rarity).distinct().count() > 1;
         this.dialogBest  = computeBests(captures);
-        this.currentSort = multiRarity ? "By Rarity" : "Newest first";
+        this.currentSort = defaultSort;
 
-        // Apply default collapse state from config
-        if (sharedConfig != null && sharedConfig.detailSectionDefault() == DetailSectionDefault.COLLAPSED) {
-            collapsedRarities.addAll(java.util.Arrays.asList(RARITY_ORDER));
+        // Seed the session collapse set from config on the very first dialog open
+        if (!sessionInitialized) {
+            sessionInitialized = true;
+            if (sharedConfig != null
+                    && sharedConfig.detailSectionDefault() == DetailSectionDefault.COLLAPSED) {
+                sessionCollapsed.addAll(Arrays.asList(RARITY_ORDER));
+            }
         }
+        collapsedRarities.addAll(sessionCollapsed);
 
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setResizable(false);
@@ -128,22 +141,21 @@ public class CreatureDetailDialog extends JDialog {
         header.add(titleLabel, BorderLayout.NORTH);
         header.add(subLabel,   BorderLayout.CENTER);
 
-        // Sort control
-        String[] sortOpts = multiRarity ? SORT_OPTIONS_MULTI : SORT_OPTIONS_SINGLE;
-
+        // Sort control — "By Rarity" always available regardless of single vs multi rarity
         JPanel sortRow = new JPanel(new BorderLayout(6, 0));
         sortRow.setOpaque(false);
         JLabel sortLabel = new JLabel("Sort:");
         sortLabel.setFont(FontManager.getRunescapeSmallFont());
         sortLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-        JComboBox<String> sortBox = new JComboBox<>(sortOpts);
+
+        JComboBox<String> sortBox = new JComboBox<>(SORT_OPTIONS);
         sortBox.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         sortBox.setForeground(Color.WHITE);
         sortBox.setFont(FontManager.getRunescapeSmallFont());
+        sortBox.setSelectedItem(defaultSort);
         sortRow.add(sortLabel, BorderLayout.WEST);
         sortRow.add(sortBox,   BorderLayout.CENTER);
 
-        // Capture list
         listPanel = new JPanel();
         listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
         listPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -156,7 +168,6 @@ public class CreatureDetailDialog extends JDialog {
         scroll.setBorder(null);
         scroll.getViewport().setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-        // Footer: kill / capture summary
         int kills    = collection.getKillCount(sample.npcName);
         int totalCap = collection.getCaptureCount(sample.npcName);
         String ratio = kills > 0 ? "1 in " + Math.round((double) kills / Math.max(1, totalCap)) : "—";
@@ -264,8 +275,10 @@ public class CreatureDetailDialog extends JDialog {
             public void mouseClicked(MouseEvent e) {
                 if (collapsedRarities.contains(rarity)) {
                     collapsedRarities.remove(rarity);
+                    sessionCollapsed.remove(rarity);
                 } else {
                     collapsedRarities.add(rarity);
+                    sessionCollapsed.add(rarity);
                 }
                 buildList(currentSort);
             }
@@ -281,7 +294,6 @@ public class CreatureDetailDialog extends JDialog {
         row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         row.setBorder(new EmptyBorder(7, 10, 7, 10));
 
-        // Top line: quality badge + date
         JPanel topLine = new JPanel(new BorderLayout());
         topLine.setOpaque(false);
 
@@ -301,7 +313,6 @@ public class CreatureDetailDialog extends JDialog {
         topLine.add(qualLabel, BorderLayout.WEST);
         topLine.add(dateLabel, BorderLayout.EAST);
 
-        // Bottom line: region + kill number
         JPanel botLine = new JPanel(new BorderLayout());
         botLine.setOpaque(false);
 
@@ -332,10 +343,8 @@ public class CreatureDetailDialog extends JDialog {
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                        RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-                        RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,      RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
                 int[] vals = {q.strength, q.speed, q.endurance,
                               q.intelligence, q.stealth, q.vitality};

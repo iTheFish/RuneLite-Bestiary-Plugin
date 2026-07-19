@@ -100,7 +100,7 @@ public class CaptureRow extends JPanel {
                         .collect(Collectors.toList());
                 new CreatureDetailDialog(
                         SwingUtilities.getWindowAncestor(CaptureRow.this),
-                        group, collection).setVisible(true);
+                        group, collection, "Newest first").setVisible(true);
             }
 
             @Override public void mouseEntered(java.awt.event.MouseEvent e) { setBackground(ROW_HOVER); repaint(); }

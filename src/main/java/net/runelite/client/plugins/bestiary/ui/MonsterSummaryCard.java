@@ -96,7 +96,7 @@ public class MonsterSummaryCard extends JPanel {
             @Override public void mouseClicked(MouseEvent e) {
                 new CreatureDetailDialog(
                         SwingUtilities.getWindowAncestor(MonsterSummaryCard.this),
-                        captures, collection);
+                        captures, collection, "By Rarity");
             }
         });
     }
