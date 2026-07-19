@@ -69,13 +69,16 @@ public class MonsterSummaryCard extends JPanel {
         // Bottom row: single HTML label so it clips naturally rather than wrapping
         StringBuilder sb = new StringBuilder("<html>");
         boolean first = true;
+        int shown = 0;
         for (Map.Entry<CreatureRarity, Integer> entry : countByRarity.entrySet()) {
+            if (shown == 3) break;
             CreatureRarity r = entry.getKey();
             if (!first) sb.append("&nbsp;&nbsp;");
             sb.append(String.format("<font color='#%02x%02x%02x'>&#9679; %d %s</font>",
                     r.displayColor.getRed(), r.displayColor.getGreen(), r.displayColor.getBlue(),
                     entry.getValue(), RARITY_ABBREV[r.ordinal()]));
             first = false;
+            shown++;
         }
         sb.append("</html>");
         JLabel rarityRow = new JLabel(sb.toString());
