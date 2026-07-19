@@ -51,11 +51,11 @@ public class CreatureDetailDialog extends JDialog {
 
     /**
      * Session-wide collapse state — persists across dialog opens within the same RuneLite session.
-     * Initialised from the config default on the very first open, then updated live as the user
-     * collapses / expands sections.
+     * Seeded from config on first open. When the config value changes, the session resets to
+     * match the new default, then session-level toggles take over again.
      */
     private static final Set<CreatureRarity> sessionCollapsed = EnumSet.noneOf(CreatureRarity.class);
-    private static boolean sessionInitialized = false;
+    private static boolean lastConfigCollapsed = false;
 
     public static void setConfig(BestiaryConfig config) {
         sharedConfig = config;
@@ -75,11 +75,14 @@ public class CreatureDetailDialog extends JDialog {
     private String currentSort;
 
     /**
-     * @param defaultSort  The sort option to select on open ("By Rarity", "Newest first", etc.).
-     *                     Callers should pass whichever sort makes sense for their entry point.
+     * @param defaultSort  Initial sort option ("By Rarity", "Newest first", etc.).
+     * @param focusRarity  If non-null, this rarity section is guaranteed to be expanded on open
+     *                     regardless of the session collapse state. Use when the caller was
+     *                     reached via a specific rarity (e.g. clicking a rarity card or individual row).
      */
     public CreatureDetailDialog(Window owner, List<CapturedCreature> captures,
-                                BestiaryCollection collection, String defaultSort) {
+                                BestiaryCollection collection, String defaultSort,
+                                CreatureRarity focusRarity) {
         super(owner, "Bestiary Detail", ModalityType.MODELESS);
 
         if (current != null && current.isShowing()) {
@@ -93,15 +96,23 @@ public class CreatureDetailDialog extends JDialog {
         this.dialogBest  = computeBests(captures);
         this.currentSort = defaultSort;
 
-        // Seed the session collapse set from config on the very first dialog open
-        if (!sessionInitialized) {
-            sessionInitialized = true;
-            if (sharedConfig != null
-                    && sharedConfig.detailSectionDefault() == DetailSectionDefault.COLLAPSED) {
+        // Sync session state from config. If the config value changed since last open, reset the
+        // session to match the new default — then future manual toggles take over again.
+        boolean configCollapsed = sharedConfig != null
+                && sharedConfig.detailSectionDefault() == DetailSectionDefault.COLLAPSED;
+        if (configCollapsed != lastConfigCollapsed) {
+            lastConfigCollapsed = configCollapsed;
+            sessionCollapsed.clear();
+            if (configCollapsed) {
                 sessionCollapsed.addAll(Arrays.asList(RARITY_ORDER));
             }
         }
         collapsedRarities.addAll(sessionCollapsed);
+
+        // Always expand the focus rarity so the user can see what they clicked into
+        if (focusRarity != null) {
+            collapsedRarities.remove(focusRarity);
+        }
 
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setResizable(false);

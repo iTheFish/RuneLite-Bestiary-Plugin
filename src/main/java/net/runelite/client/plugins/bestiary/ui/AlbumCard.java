@@ -153,7 +153,7 @@ public class AlbumCard extends JPanel {
             @Override public void mouseClicked(MouseEvent e) {
                 if (!locked && captures != null && collection != null) {
                     new CreatureDetailDialog(
-                            SwingUtilities.getWindowAncestor(AlbumCard.this), captures, collection, "By Rarity");
+                            SwingUtilities.getWindowAncestor(AlbumCard.this), captures, collection, "By Rarity", null);
                 }
             }
         });

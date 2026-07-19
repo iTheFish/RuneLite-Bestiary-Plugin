@@ -95,12 +95,12 @@ public class CaptureRow extends JPanel {
         addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
-                List<CapturedCreature> group = collection.creatures.stream()
-                        .filter(c -> c.npcName.equals(capture.npcName) && c.rarity == capture.rarity)
+                List<CapturedCreature> allCaptures = collection.creatures.stream()
+                        .filter(c -> c.npcName.equals(capture.npcName))
                         .collect(Collectors.toList());
                 new CreatureDetailDialog(
                         SwingUtilities.getWindowAncestor(CaptureRow.this),
-                        group, collection, "Newest first").setVisible(true);
+                        allCaptures, collection, "By Rarity", capture.rarity).setVisible(true);
             }
 
             @Override public void mouseEntered(java.awt.event.MouseEvent e) { setBackground(ROW_HOVER); repaint(); }
