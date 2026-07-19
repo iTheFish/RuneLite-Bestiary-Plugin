@@ -302,7 +302,7 @@ public class CreatureDetailDialog extends JDialog {
                 int barH   = h - labelH - 2;
                 int slotW  = (w - gap * (n - 1)) / n;
 
-                Font numFont   = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 10f);
+                Font numFont   = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 11f);
                 Font labelFont = FontManager.getRunescapeSmallFont();
 
                 for (int i = 0; i < n; i++) {
@@ -320,13 +320,15 @@ public class CreatureDetailDialog extends JDialog {
                         g2.fillRoundRect(x, 0, fill, barH, 4, 4);
                     }
 
-                    // Value number centred in bar slot
+                    // Value number centred in bar slot — shadow first for legibility
                     String numStr = String.valueOf(vals[i]);
                     g2.setFont(numFont);
                     FontMetrics nfm = g2.getFontMetrics();
-                    g2.setColor(Color.WHITE);
                     int nx = x + (slotW - nfm.stringWidth(numStr)) / 2;
                     int ny = (barH + nfm.getAscent() - nfm.getDescent()) / 2;
+                    g2.setColor(new Color(0, 0, 0, 180));
+                    g2.drawString(numStr, nx + 1, ny + 1);
+                    g2.setColor(Color.WHITE);
                     g2.drawString(numStr, nx, ny);
 
                     // Label below bar
