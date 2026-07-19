@@ -72,6 +72,7 @@ public class AlbumCard extends JPanel {
 
     // Locked-only
     private final int killCount;
+    private final boolean hasShiny;
 
     // -------------------------------------------------------------------------
     // Constructors
@@ -117,6 +118,7 @@ public class AlbumCard extends JPanel {
 
         this.difficulty = MonsterRoster.getDifficulty(npcName, combatLevel);
         this.archetype  = MonsterRoster.getArchetype(npcName, combatLevel);
+        this.hasShiny   = captures.stream().anyMatch(CapturedCreature::isShiny);
         init(imageService, true);
     }
 
@@ -137,6 +139,7 @@ public class AlbumCard extends JPanel {
 
         this.difficulty = MonsterRoster.getDifficulty(npcName, 0);
         this.archetype  = MonsterRoster.getArchetype(npcName, 0);
+        this.hasShiny   = false;
         init(imageService, imageService != null);
     }
 
@@ -206,9 +209,15 @@ public class AlbumCard extends JPanel {
         FontMetrics dfm = sfm;
         String dexStr = String.format("no. %03d", dexNumber);
         g2.setFont(smallFont);
+        int dexX = w - PAD - dfm.stringWidth(dexStr);
+        int dexY = HEADER_Y + (HEADER_H + dfm.getAscent() - dfm.getDescent()) / 2;
         g2.setColor(locked ? new Color(75, 75, 75) : ColorScheme.LIGHT_GRAY_COLOR);
-        g2.drawString(dexStr, w - PAD - dfm.stringWidth(dexStr),
-                HEADER_Y + (HEADER_H + dfm.getAscent() - dfm.getDescent()) / 2);
+        g2.drawString(dexStr, dexX, dexY);
+        if (hasShiny) {
+            String star = "✦";
+            g2.setColor(new Color(255, 215, 0));
+            g2.drawString(star, dexX - dfm.stringWidth(star) - 3, dexY);
+        }
 
         // --- Image area ---
         g2.setColor(IMAGE_BG);

@@ -28,6 +28,15 @@ public class CreatureQuality {
         return Math.round((strength + speed + endurance + intelligence + stealth + vitality) / 6f);
     }
 
+    /** True when all primary stats for the given archetype are 95 or above. */
+    public boolean isShiny(StatArchetype archetype) {
+        int[] stats = {strength, speed, endurance, intelligence, stealth, vitality};
+        for (int i : archetype.primaryIndices) {
+            if (stats[i] < 95) return false;
+        }
+        return true;
+    }
+
     private static int clamp(int v) {
         return Math.max(1, Math.min(100, v));
     }

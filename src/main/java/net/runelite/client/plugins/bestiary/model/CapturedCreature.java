@@ -86,6 +86,11 @@ public class CapturedCreature {
         }
     }
 
+    /** Derived: true when all primary stats for this species' archetype are ≥ 95. */
+    public boolean isShiny() {
+        return quality.isShiny(MonsterRoster.getArchetype(npcName, npcCombatLevel));
+    }
+
     @Override
     public String toString() {
         return String.format("[%s] %s (ID %d) - %s @ %s",
