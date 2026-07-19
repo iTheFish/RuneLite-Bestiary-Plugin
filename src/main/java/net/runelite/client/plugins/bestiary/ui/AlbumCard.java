@@ -159,6 +159,21 @@ public class AlbumCard extends JPanel {
             @Override public void mouseExited(MouseEvent e)  { hovered = false; repaint(); }
             @Override public void mouseClicked(MouseEvent e) {
                 if (!locked && captures != null && collection != null) {
+                    if (SwingUtilities.isRightMouseButton(e)) {
+                        JPopupMenu menu = new JPopupMenu();
+                        JMenuItem exportItem = new JMenuItem("Export Card");
+                        // Export the best (highest rarity, then quality) capture for this NPC
+                        CapturedCreature best = captures.stream()
+                                .max(java.util.Comparator.<CapturedCreature>
+                                        comparingInt(c -> c.rarity.ordinal())
+                                        .thenComparingInt(c -> c.quality.overallRating()))
+                                .orElse(captures.get(0));
+                        exportItem.addActionListener(ev ->
+                                CardExportDialog.open(SwingUtilities.getWindowAncestor(AlbumCard.this), best));
+                        menu.add(exportItem);
+                        menu.show(AlbumCard.this, e.getX(), e.getY());
+                        return;
+                    }
                     new CreatureDetailDialog(
                             SwingUtilities.getWindowAncestor(AlbumCard.this), captures, collection, "By Rarity", null);
                 }

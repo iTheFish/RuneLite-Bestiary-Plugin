@@ -10,6 +10,7 @@ import net.runelite.client.plugins.bestiary.service.KillTracker;
 import net.runelite.client.plugins.bestiary.service.ProgressionService;
 import net.runelite.client.plugins.bestiary.ui.BestiaryOverlay;
 import net.runelite.client.plugins.bestiary.ui.BestiaryPanel;
+import net.runelite.client.plugins.bestiary.ui.CardExportDialog;
 import net.runelite.client.plugins.bestiary.util.RegionNames;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
@@ -17,6 +18,7 @@ import net.runelite.api.Client;
 import net.runelite.api.NPC;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ActorDeath;
+import net.runelite.api.GameState;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.HitsplatApplied;
 import net.runelite.api.events.InteractingChanged;
@@ -141,6 +143,9 @@ public class BestiaryPlugin extends Plugin {
     @Subscribe
     public void onGameStateChanged(GameStateChanged event) {
         killTracker.onGameStateChanged(event);
+        if (event.getGameState() == GameState.LOGGED_IN && client.getLocalPlayer() != null) {
+            CardExportDialog.setPlayerName(client.getLocalPlayer().getName());
+        }
     }
 
     // --- Kill handling ---

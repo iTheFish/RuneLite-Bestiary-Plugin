@@ -479,6 +479,15 @@ public class MonsterRoster {
                 .collect(Collectors.toList());
     }
 
+    /** Stable dex numbers from the static roster alone (no kill-count entries). */
+    private static final Map<String, Integer> STATIC_DEX =
+            assignDexNumbers(buildFullRoster(Collections.emptyMap()));
+
+    /** Returns the dex number for a monster in the static roster, or 0 if unlisted. */
+    public static int getDexNumber(String npcName) {
+        return STATIC_DEX.getOrDefault(npcName, 0);
+    }
+
     /** Assigns stable alphabetical dex numbers to the full roster. */
     public static Map<String, Integer> assignDexNumbers(List<String> fullRoster) {
         Map<String, Integer> nums = new LinkedHashMap<>();

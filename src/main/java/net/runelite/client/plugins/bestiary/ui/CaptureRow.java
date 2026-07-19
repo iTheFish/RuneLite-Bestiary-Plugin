@@ -9,6 +9,7 @@ import net.runelite.client.ui.FontManager;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
+import java.awt.event.MouseAdapter;
 import java.awt.*;
 import java.awt.Color;
 import java.time.ZoneId;
@@ -95,6 +96,15 @@ public class CaptureRow extends JPanel {
         addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    JPopupMenu menu = new JPopupMenu();
+                    JMenuItem exportItem = new JMenuItem("Export Card");
+                    exportItem.addActionListener(ev ->
+                            CardExportDialog.open(SwingUtilities.getWindowAncestor(CaptureRow.this), capture));
+                    menu.add(exportItem);
+                    menu.show(CaptureRow.this, e.getX(), e.getY());
+                    return;
+                }
                 List<CapturedCreature> allCaptures = collection.creatures.stream()
                         .filter(c -> c.npcName.equals(capture.npcName))
                         .collect(Collectors.toList());
