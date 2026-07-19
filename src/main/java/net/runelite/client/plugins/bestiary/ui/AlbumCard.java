@@ -249,15 +249,7 @@ public class AlbumCard extends JPanel {
         g2.setFont(smallFont);
         FontMetrics sfm = g2.getFontMetrics();
 
-        // --- Header: rarity dots (captured only) + dex number ---
-        if (!locked && rarityDots != null) {
-            int dotSize = 7, dotY = HEADER_Y + (HEADER_H - 7) / 2, dotX = PAD + 2;
-            for (CreatureRarity r : rarityDots) {
-                g2.setColor(r.displayColor);
-                g2.fillOval(dotX, dotY, dotSize, dotSize);
-                dotX += dotSize + 4;
-            }
-        }
+        // --- Header: left side (nickname or rarity dots) + right side (dex number) ---
         FontMetrics dfm = sfm;
         String dexStr = String.format("no. %03d", dexNumber);
         g2.setFont(smallFont);
@@ -269,6 +261,28 @@ public class AlbumCard extends JPanel {
             String star = "✦";
             g2.setColor(new Color(255, 215, 0));
             g2.drawString(star, dexX - dfm.stringWidth(star) - 3, dexY);
+        }
+
+        // Left of header: nickname (single-capture card only) or rarity dots
+        String headerNickname = (!locked && captures != null && captures.size() == 1
+                && captures.get(0).nickname != null && !captures.get(0).nickname.isEmpty())
+                ? captures.get(0).nickname : null;
+        if (headerNickname != null) {
+            Font nickFont = smallFont.deriveFont(Font.BOLD | Font.ITALIC, 11f);
+            g2.setFont(nickFont);
+            FontMetrics nfm = g2.getFontMetrics();
+            int maxNickW = dexX - PAD - 6;
+            String nick = truncate(headerNickname, nfm, maxNickW);
+            g2.setColor(new Color(200, 155, 50));
+            g2.drawString(nick, PAD + 2, dexY);
+            g2.setFont(smallFont);
+        } else if (!locked && rarityDots != null) {
+            int dotSize = 7, dotY = HEADER_Y + (HEADER_H - 7) / 2, dotX = PAD + 2;
+            for (CreatureRarity r : rarityDots) {
+                g2.setColor(r.displayColor);
+                g2.fillOval(dotX, dotY, dotSize, dotSize);
+                dotX += dotSize + 4;
+            }
         }
 
         // --- Image area ---

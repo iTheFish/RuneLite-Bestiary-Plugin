@@ -18,6 +18,7 @@ import net.runelite.api.Client;
 import net.runelite.api.NPC;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ActorDeath;
+import net.runelite.api.GameState;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.HitsplatApplied;
 import net.runelite.api.events.InteractingChanged;
@@ -142,6 +143,18 @@ public class BestiaryPlugin extends Plugin {
     @Subscribe
     public void onGameStateChanged(GameStateChanged event) {
         killTracker.onGameStateChanged(event);
+        if (event.getGameState() == GameState.LOGGED_IN && client.getLocalPlayer() != null) {
+            String name = client.getLocalPlayer().getName();
+            if (name != null && !name.isEmpty()) {
+                // Backfill playerName for captures recorded before the playerName field was added
+                for (net.runelite.client.plugins.bestiary.model.CapturedCreature c
+                        : dataService.getCollection().creatures) {
+                    if (c.playerName == null || c.playerName.isEmpty()) {
+                        c.playerName = name;
+                    }
+                }
+            }
+        }
     }
 
     // --- Kill handling ---

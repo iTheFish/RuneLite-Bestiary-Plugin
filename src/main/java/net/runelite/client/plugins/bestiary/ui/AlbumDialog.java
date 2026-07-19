@@ -30,6 +30,9 @@ public class AlbumDialog extends JDialog {
     private static final int DEFAULT_W = 820;
     private static final int DEFAULT_H = 820;
 
+    /** Prevents multiple album windows from stacking — same pattern as CreatureDetailDialog. */
+    private static AlbumDialog current = null;
+
     /** Persists the user's last resized dimensions across opens within the same session. */
     private static Dimension savedSize = null;
     private static final int CARD_GAP  = 6;
@@ -58,6 +61,10 @@ public class AlbumDialog extends JDialog {
                        Map<String, Integer> killCounts, BestiaryCollection collection,
                        WikiImageService imageService) {
         super(owner, "Bestiary Album", ModalityType.MODELESS);
+        if (current != null && current.isShowing()) {
+            current.dispose();
+        }
+        current = this;
         this.capturesByNpc = capturesByNpc;
         this.killCounts    = killCounts;
         this.collection    = collection;

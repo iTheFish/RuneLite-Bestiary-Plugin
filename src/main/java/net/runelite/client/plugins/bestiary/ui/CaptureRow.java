@@ -114,7 +114,7 @@ public class CaptureRow extends JPanel {
                             .collect(Collectors.toList());
                     new CreatureDetailDialog(
                             SwingUtilities.getWindowAncestor(CaptureRow.this),
-                            allCaptures, collection, "Newest first", capture.rarity).setVisible(true);
+                            allCaptures, collection, "By Rarity", capture.rarity).setVisible(true);
                 }
             }
 
