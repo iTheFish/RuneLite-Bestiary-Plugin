@@ -12,6 +12,7 @@ import javax.swing.border.MatteBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -43,12 +44,15 @@ public class MonsterSummaryCard extends JPanel {
             if (cnt > 0) countByRarity.put(r, cnt);
         }
 
+        int rarityRows = Math.max(1, (int) Math.ceil(countByRarity.size() / 3.0));
+        int cardHeight = 32 + rarityRows * 20;
+
         setBackground(NORMAL_BG);
         setBorder(BorderFactory.createCompoundBorder(
                 new MatteBorder(0, 3, 0, 0, rarest.displayColor),
                 new EmptyBorder(5, 8, 5, 8)));
-        setLayout(new GridLayout(2, 1, 0, 3));
-        setMaximumSize(new Dimension(Integer.MAX_VALUE, 52));
+        setLayout(new GridLayout(1 + rarityRows, 1, 0, 2));
+        setMaximumSize(new Dimension(Integer.MAX_VALUE, cardHeight));
         setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         // Top row: NPC name (centre, compresses) + total caught (right, fixed)
@@ -66,26 +70,25 @@ public class MonsterSummaryCard extends JPanel {
         topRow.add(nameLabel,  BorderLayout.CENTER);
         topRow.add(totalLabel, BorderLayout.EAST);
 
-        // Bottom row: single HTML label so it clips naturally rather than wrapping
-        StringBuilder sb = new StringBuilder("<html>");
-        boolean first = true;
-        int shown = 0;
-        for (Map.Entry<CreatureRarity, Integer> entry : countByRarity.entrySet()) {
-            if (shown == 3) break;
-            CreatureRarity r = entry.getKey();
-            if (!first) sb.append("&nbsp;&nbsp;");
-            sb.append(String.format("<font color='#%02x%02x%02x'>&#9679; %d %s</font>",
-                    r.displayColor.getRed(), r.displayColor.getGreen(), r.displayColor.getBlue(),
-                    entry.getValue(), RARITY_ABBREV[r.ordinal()]));
-            first = false;
-            shown++;
-        }
-        sb.append("</html>");
-        JLabel rarityRow = new JLabel(sb.toString());
-        rarityRow.setFont(FontManager.getRunescapeSmallFont());
+        // One label per row of up to 3 rarities (rarest first)
+        List<Map.Entry<CreatureRarity, Integer>> rarityEntries = new ArrayList<>(countByRarity.entrySet());
 
         add(topRow);
-        add(rarityRow);  // JLabel — clips at right edge instead of wrapping
+
+        for (int i = 0; i < rarityEntries.size(); i += 3) {
+            StringBuilder sb = new StringBuilder("<html>");
+            for (int j = i; j < Math.min(i + 3, rarityEntries.size()); j++) {
+                CreatureRarity r = rarityEntries.get(j).getKey();
+                if (j > i) sb.append("&nbsp;&nbsp;");
+                sb.append(String.format("<font color='#%02x%02x%02x'>&#9679; %d %s</font>",
+                        r.displayColor.getRed(), r.displayColor.getGreen(), r.displayColor.getBlue(),
+                        rarityEntries.get(j).getValue(), RARITY_ABBREV[r.ordinal()]));
+            }
+            sb.append("</html>");
+            JLabel rowLabel = new JLabel(sb.toString());
+            rowLabel.setFont(FontManager.getRunescapeSmallFont());
+            add(rowLabel);
+        }
 
         addMouseListener(new MouseAdapter() {
             @Override public void mouseEntered(MouseEvent e) { setBackground(HOVER_BG); }
