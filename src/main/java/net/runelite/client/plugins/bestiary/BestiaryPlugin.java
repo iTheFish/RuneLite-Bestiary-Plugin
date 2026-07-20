@@ -42,6 +42,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +75,9 @@ public class BestiaryPlugin extends Plugin {
     @Inject private BestiaryOverlay overlay;
 
     private NavigationButton navButton;
+
+    // Session capture tracking (reset on login, flushed on logout)
+    private final List<CapturedCreature> sessionCaptures = new ArrayList<>();
 
     // BATCHED mode: 5-second accumulation per npcName+rarity key (executor thread only)
     private final Map<String, Integer>            batchCounts       = new HashMap<>();
@@ -153,7 +157,6 @@ public class BestiaryPlugin extends Plugin {
         if (event.getGameState() == GameState.LOGGED_IN && client.getLocalPlayer() != null) {
             String name = client.getLocalPlayer().getName();
             if (name != null && !name.isEmpty()) {
-                // Backfill playerName for captures recorded before the playerName field was added
                 for (net.runelite.client.plugins.bestiary.model.CapturedCreature c
                         : dataService.getCollection().creatures) {
                     if (c.playerName == null || c.playerName.isEmpty()) {
@@ -161,6 +164,10 @@ public class BestiaryPlugin extends Plugin {
                     }
                 }
             }
+            sessionCaptures.clear();
+        }
+        if (event.getGameState() == GameState.LOGIN_SCREEN && !sessionCaptures.isEmpty()) {
+            sendSessionRecap();
         }
     }
 
@@ -206,6 +213,7 @@ public class BestiaryPlugin extends Plugin {
         }
 
         result.ifPresent(creature -> {
+            sessionCaptures.add(creature);
             dataService.addCapture(creature);
 
             List<Achievement> newAchievements = progressionService.recordCapture(creature, config.captureXpEnabled());
@@ -294,6 +302,55 @@ public class BestiaryPlugin extends Plugin {
                 .type(ChatMessageType.GAMEMESSAGE)
                 .runeLiteFormattedMessage(message)
                 .build());
+    }
+
+    private void sendSessionRecap() {
+        if (!config.sessionRecap() || sessionCaptures.isEmpty()) return;
+
+        Map<CreatureRarity, Integer> counts = new EnumMap<>(CreatureRarity.class);
+        CapturedCreature best = null;
+        for (CapturedCreature c : sessionCaptures) {
+            counts.merge(c.rarity, 1, Integer::sum);
+            if (best == null
+                    || c.rarity.ordinal() > best.rarity.ordinal()
+                    || (c.rarity == best.rarity && c.quality.overallRating() > best.quality.overallRating())) {
+                best = c;
+            }
+        }
+
+        // Line 1: total + rarity breakdown (rarest first, skip zero counts)
+        CreatureRarity[] order = {
+            CreatureRarity.MYTHIC, CreatureRarity.LEGENDARY, CreatureRarity.EPIC,
+            CreatureRarity.RARE,   CreatureRarity.UNCOMMON,  CreatureRarity.COMMON
+        };
+        ChatMessageBuilder line1 = new ChatMessageBuilder()
+                .append(ChatColorType.HIGHLIGHT)
+                .append("Bestiary session: " + sessionCaptures.size() + " capture"
+                        + (sessionCaptures.size() == 1 ? "" : "s") + " — ");
+        boolean first = true;
+        for (CreatureRarity r : order) {
+            int n = counts.getOrDefault(r, 0);
+            if (n == 0) continue;
+            if (!first) line1.append(ChatColorType.NORMAL).append(", ");
+            line1.append(r.displayColor, r.label + " ×" + n);
+            first = false;
+        }
+        chatMessageManager.queue(QueuedMessage.builder()
+                .type(ChatMessageType.GAMEMESSAGE)
+                .runeLiteFormattedMessage(line1.build())
+                .build());
+
+        // Line 2: best capture
+        if (best != null) {
+            ChatMessageBuilder line2 = new ChatMessageBuilder()
+                    .append(ChatColorType.NORMAL).append("Best catch: ")
+                    .append(best.rarity.displayColor, best.npcName + " " + best.rarity.label)
+                    .append(ChatColorType.NORMAL).append("  Q:" + best.quality.overallRating());
+            chatMessageManager.queue(QueuedMessage.builder()
+                    .type(ChatMessageType.GAMEMESSAGE)
+                    .runeLiteFormattedMessage(line2.build())
+                    .build());
+        }
     }
 
     private void sendAchievementMessage(Achievement a) {

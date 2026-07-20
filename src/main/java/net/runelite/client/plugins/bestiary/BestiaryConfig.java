@@ -124,10 +124,20 @@ public interface BestiaryConfig extends Config {
     }
 
     @ConfigItem(
+            keyName = "sessionRecap",
+            name = "Session Recap",
+            description = "Post a capture summary to chat when you log out",
+            position = 12
+    )
+    default boolean sessionRecap() {
+        return true;
+    }
+
+    @ConfigItem(
             keyName = "overlayPosition",
             name = "Overlay Position",
             description = "Where on screen the capture overlay appears",
-            position = 12
+            position = 13
     )
     default OverlayPos overlayPosition() {
         return OverlayPos.TOP_CENTER;
@@ -138,7 +148,7 @@ public interface BestiaryConfig extends Config {
             keyName = "overlayWidth",
             name = "Overlay Width",
             description = "Width of the capture overlay panel in pixels (150–300)",
-            position = 13
+            position = 14
     )
     default int overlayWidth() {
         return 200;
