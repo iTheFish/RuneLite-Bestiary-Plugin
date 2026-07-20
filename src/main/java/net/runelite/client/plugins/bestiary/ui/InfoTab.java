@@ -11,8 +11,11 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.text.NumberFormat;
 import java.util.Locale;
+import java.util.function.Consumer;
 
 public class InfoTab extends JPanel {
 
@@ -21,7 +24,8 @@ public class InfoTab extends JPanel {
     private static final NumberFormat FMT = NumberFormat.getNumberInstance(Locale.UK);
 
     private final BestiaryDataService dataService;
-    private final ProgressionService progressionService;
+    private final ProgressionService  progressionService;
+    private final Consumer<DashboardDialog.DashView> openDashboard;
 
     // Live stat labels
     private final JLabel speciesVal  = statValue("0");
@@ -30,9 +34,11 @@ public class InfoTab extends JPanel {
     private final JLabel killsVal    = statValue("0");
 
     public InfoTab(BestiaryDataService dataService, ProgressionService progressionService,
-                   Runnable openAlbum, Runnable openFavourites, Runnable openRecap) {
+                   Runnable openAlbum, Runnable openFavourites, Runnable openRecap,
+                   Consumer<DashboardDialog.DashView> openDashboard) {
         this.dataService        = dataService;
         this.progressionService = progressionService;
+        this.openDashboard      = openDashboard;
 
         setLayout(new BorderLayout());
         setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -98,19 +104,29 @@ public class InfoTab extends JPanel {
         strip.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
         strip.setAlignmentX(LEFT_ALIGNMENT);
 
-        strip.add(statBox("Level",   levelVal,    false));
-        strip.add(statBox("Kills",   killsVal,    true));
-        strip.add(statBox("Species", speciesVal,  false));
-        strip.add(statBox("Caught",  capturesVal, true));
+        strip.add(clickable(statBox("Level",   levelVal,    false), DashboardDialog.DashView.PROGRESSION));
+        strip.add(clickable(statBox("Kills",   killsVal,    true),  DashboardDialog.DashView.KILLS));
+        strip.add(clickable(statBox("Species", speciesVal,  false), DashboardDialog.DashView.SPECIES));
+        strip.add(clickable(statBox("Caught",  capturesVal, true),  DashboardDialog.DashView.CAUGHT));
 
         return strip;
+    }
+
+    private JPanel clickable(JPanel panel, DashboardDialog.DashView view) {
+        panel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        panel.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) {
+                if (openDashboard != null) openDashboard.accept(view);
+            }
+        });
+        return panel;
     }
 
     private static JPanel statBox(String labelText, JLabel valueLabel, boolean rightAccent) {
         JPanel box = new JPanel(new GridLayout(2, 1, 0, 2));
         box.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         box.setBorder(BorderFactory.createCompoundBorder(
-                rightAccent ? new MatteBorder(0, 0, 0, 3, ORANGE)
+                rightAccent ? new MatteBorder(0, 3, 0, 3, ORANGE)
                             : new MatteBorder(0, 3, 0, 0, ORANGE),
                 new EmptyBorder(8, 6, 6, 6)));
 
