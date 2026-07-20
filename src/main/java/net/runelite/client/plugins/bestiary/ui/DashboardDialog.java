@@ -1089,7 +1089,7 @@ public class DashboardDialog extends JDialog {
 
         g.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         FontMetrics sfm = g.getFontMetrics();
-        g.setColor(MUTED);
+        g.setColor(TEXT);
         g.drawString(label, PAD + 10, y + 18);
 
         g.setFont(FontManager.getRunescapeBoldFont().deriveFont(36f));
@@ -1301,7 +1301,7 @@ public class DashboardDialog extends JDialog {
         y += 8;
 
         // --- Footer ---
-        drawCardFooter(g, y, W, PAD);
+        drawCardFooter(g, H - 36, W, PAD);
         g.dispose();
         return img;
     }
@@ -1436,7 +1436,7 @@ public class DashboardDialog extends JDialog {
             }
         }
         y += 8;
-        drawCardFooter(g, y, W, PAD);
+        drawCardFooter(g, H - 36, W, PAD);
         g.dispose();
         return img;
     }
@@ -1485,10 +1485,9 @@ public class DashboardDialog extends JDialog {
                 .limit(5).collect(Collectors.toList());
 
         final int W = 480, PAD = 24;
-        int arcD = 100;
         int diffTiers = DifficultyTier.values().length;
         int top5Rows = Math.max(1, top5.size());
-        int H = 4 + PAD + 60 + 12 + (arcD + 12)
+        int H = 4 + PAD + 60 + 12
                + 22 + 6 + diffTiers * 22 + 8
                + 22 + 6 + sortedSpTypes.size() * 22 + 8
                + 22 + 6 + 21 + top5Rows * 20 + 8
@@ -1501,30 +1500,6 @@ public class DashboardDialog extends JDialog {
         y = drawHeroStat(g, String.format("%.1f%%", pct * 100f) + "  (" + captured + " / " + total + ")",
                 "DEX COMPLETION", new Color(80, 200, 80), y, W, PAD);
         y += 12;
-
-        // Completion ring
-        int arcX = (W - arcD) / 2, arcY = y;
-        int cx = arcX + arcD / 2, cy = arcY + arcD / 2;
-        g.setStroke(new BasicStroke(12f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        g.setColor(new Color(40, 40, 40));
-        g.draw(new Arc2D.Double(arcX, arcY, arcD, arcD, -220, 260, Arc2D.OPEN));
-        if (pct > 0.001f) {
-            g.setPaint(new GradientPaint(arcX, arcY, new Color(40, 150, 40), arcX + arcD, arcY + arcD, new Color(80, 230, 80)));
-            g.draw(new Arc2D.Double(arcX, arcY, arcD, arcD, -220, (int)(-260 * pct), Arc2D.OPEN));
-        }
-        // % in ring centre
-        g.setFont(FontManager.getRunescapeBoldFont().deriveFont(18f));
-        FontMetrics bfm = g.getFontMetrics();
-        String pctStr = String.format("%.1f%%", pct * 100f);
-        g.setColor(new Color(90, 220, 90));
-        g.drawString(pctStr, cx - bfm.stringWidth(pctStr) / 2, cy + bfm.getAscent() / 2 - 6);
-        // X / Y below %
-        g.setFont(FontManager.getRunescapeSmallFont());
-        FontMetrics sfm = g.getFontMetrics();
-        String countStr = captured + " / " + total;
-        g.setColor(new Color(140, 140, 140));
-        g.drawString(countStr, cx - sfm.stringWidth(countStr) / 2, cy + sfm.getAscent() + 4);
-        y += arcD + 12;
 
         // Completion by difficulty
         y = drawCardSectionHeader(g, "COMPLETION BY DIFFICULTY", y, W, PAD);
@@ -1593,7 +1568,7 @@ public class DashboardDialog extends JDialog {
             }
         }
         y += 8;
-        drawCardFooter(g, y, W, PAD);
+        drawCardFooter(g, H - 36, W, PAD);
         g.dispose();
         return img;
     }
@@ -1660,7 +1635,7 @@ public class DashboardDialog extends JDialog {
             }
         }
         y += 8;
-        drawCardFooter(g, y, W, PAD);
+        drawCardFooter(g, H - 36, W, PAD);
         g.dispose();
         return img;
     }
