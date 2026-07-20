@@ -147,6 +147,7 @@ public class InfoTab extends JPanel {
         JLabel subtitle = new JLabel("Catch chance improves with your Capture Level");
         subtitle.setFont(FontManager.getRunescapeSmallFont());
         subtitle.setForeground(new Color(120, 120, 120));
+        subtitle.setToolTipText("Catch chance improves with your Capture Level");
 
         JPanel titleBlock = new JPanel(new BorderLayout(0, 1));
         titleBlock.setOpaque(false);
@@ -175,8 +176,8 @@ public class InfoTab extends JPanel {
             CreatureRarity r = rarities[i];
             double pct1  = r.probability * 100;
             double pct99 = w99[i] / total99 * 100;
-            String s1  = pct1  >= 1.0 ? String.format("%.0f%%", pct1)  : String.format("%.1f%%", pct1);
-            String s99 = pct99 >= 1.0 ? String.format("%.0f%%", pct99) : String.format("%.1f%%", pct99);
+            String s1  = pct1  >= 10.0 ? String.format("%.0f%%", pct1)  : String.format("%.1f%%", pct1);
+            String s99 = pct99 >= 10.0 ? String.format("%.0f%%", pct99) : String.format("%.1f%%", pct99);
             rows.add(tableRow("● " + r.label, s1, s99, r.displayColor));
         }
 
