@@ -155,7 +155,9 @@ public class CollectionTab extends JPanel {
         albumBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
         albumBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         albumBtn.setToolTipText("Open the full Bestiary Album dex grid");
-        albumBtn.addActionListener(e -> openAlbum(SwingUtilities.getWindowAncestor(CollectionTab.this)));
+        albumBtn.addActionListener(e -> openAlbum(
+                SwingUtilities.getWindowAncestor(CollectionTab.this),
+                viewMode == ViewMode.FAVOURITES));
 
         // Action listeners
         starBtn.addActionListener(e -> {
@@ -255,10 +257,14 @@ public class CollectionTab extends JPanel {
     }
 
     public void openAlbum(Window parent) {
+        openAlbum(parent, false);
+    }
+
+    public void openAlbum(Window parent, boolean startFavourites) {
         Map<String, List<CapturedCreature>> byNpc = dataService.getCollection().creatures.stream()
                 .collect(Collectors.groupingBy(c -> c.npcName));
         new AlbumDialog(parent, byNpc, dataService.getCollection().killCounts,
-                dataService.getCollection(), imageService);
+                dataService.getCollection(), imageService, startFavourites);
     }
 
     private void rebuildCards() {

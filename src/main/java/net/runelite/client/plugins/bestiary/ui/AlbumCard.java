@@ -103,14 +103,16 @@ public class AlbumCard extends JPanel {
         this.locked       = false;
         this.killCount    = 0;
 
-        CapturedCreature sample = captures.get(0);
-        this.combatLevel = sample.npcCombatLevel;
+        // Best capture = highest rarity, then highest overall quality as tiebreaker
+        CapturedCreature best = captures.stream()
+                .max(Comparator.comparingInt((CapturedCreature c) -> c.rarity.ordinal())
+                        .thenComparingInt(c -> c.quality.overallRating()))
+                .orElse(captures.get(0));
+        this.combatLevel = best.npcCombatLevel;
 
-        this.rarest = captures.stream()
-                .map(c -> c.rarity)
-                .max(Comparator.comparingInt(Enum::ordinal))
-                .orElse(CreatureRarity.COMMON);
+        this.rarest = best.rarity;
 
+        // Rarity dots show every rarity the player has unlocked across all captures
         CreatureRarity[] order = {
             CreatureRarity.MYTHIC, CreatureRarity.LEGENDARY, CreatureRarity.EPIC,
             CreatureRarity.RARE,   CreatureRarity.UNCOMMON,  CreatureRarity.COMMON
@@ -121,13 +123,14 @@ public class AlbumCard extends JPanel {
         }
         this.rarityDots = dots;
 
+        // Stats displayed are the best capture's individual stats, not an average
         this.avgStats = new int[]{
-            (int) captures.stream().mapToInt(c -> c.quality.strength).average().orElse(0),
-            (int) captures.stream().mapToInt(c -> c.quality.speed).average().orElse(0),
-            (int) captures.stream().mapToInt(c -> c.quality.endurance).average().orElse(0),
-            (int) captures.stream().mapToInt(c -> c.quality.intelligence).average().orElse(0),
-            (int) captures.stream().mapToInt(c -> c.quality.stealth).average().orElse(0),
-            (int) captures.stream().mapToInt(c -> c.quality.vitality).average().orElse(0),
+            best.quality.strength,
+            best.quality.speed,
+            best.quality.endurance,
+            best.quality.intelligence,
+            best.quality.stealth,
+            best.quality.vitality,
         };
 
         this.difficulty = MonsterRoster.getDifficulty(npcName, combatLevel);
