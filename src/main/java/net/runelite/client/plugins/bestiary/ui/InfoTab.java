@@ -142,7 +142,7 @@ public class InfoTab extends JPanel {
         topRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
         topRow.setAlignmentX(LEFT_ALIGNMENT);
         topRow.add(shortcutBtn("Open Album",   ORANGE,                  openAlbum));
-        topRow.add(shortcutBtn("Favourites",   new Color(220, 180, 60), openFavourites));
+        topRow.add(shortcutBtn("★ Favourites", new Color(220, 180, 60), openFavourites));
 
         JButton recapBtn = shortcutBtn("Session Recap", new Color(120, 200, 120), openRecap);
         recapBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
@@ -157,6 +157,7 @@ public class InfoTab extends JPanel {
     private static JButton shortcutBtn(String text, Color fg, Runnable action) {
         JButton btn = new JButton(text);
         btn.setFont(FontManager.getRunescapeSmallFont());
+        btn.setMargin(new Insets(0, 2, 0, 2));
         btn.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         btn.setForeground(fg);
         btn.setFocusPainted(false);
