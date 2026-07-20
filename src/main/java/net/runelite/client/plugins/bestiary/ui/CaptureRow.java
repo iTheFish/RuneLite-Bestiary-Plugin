@@ -67,7 +67,7 @@ public class CaptureRow extends JPanel {
         levelLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 
         int q      = capture.quality.overallRating();
-        String reg = shorten(capture.regionName, 12);
+        String reg = shorten(capture.regionName, 16);
         String dt  = DATE_FMT.format(capture.captureTime);
 
         // Quality in gold, location + date in same muted tone as level label

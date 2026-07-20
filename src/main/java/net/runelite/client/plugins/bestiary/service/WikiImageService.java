@@ -213,13 +213,14 @@ public class WikiImageService {
     @Nullable
     private BufferedImage downloadImage(String imageUrl) throws Exception {
         HttpURLConnection conn = openConnection(imageUrl);
-        if (conn.getResponseCode() != 200) { conn.disconnect(); return null; }
-        BufferedImage img;
-        try (InputStream is = conn.getInputStream()) {
-            img = ImageIO.read(is);
+        try {
+            if (conn.getResponseCode() != 200) return null;
+            try (InputStream is = conn.getInputStream()) {
+                return ImageIO.read(is);
+            }
+        } finally {
+            conn.disconnect();
         }
-        conn.disconnect();
-        return img;
     }
 
     private HttpURLConnection openConnection(String urlStr) throws Exception {

@@ -221,6 +221,51 @@ public final class RegionNames {
     private RegionNames() {}
 
     public static String get(int regionId) {
-        return NAMES.getOrDefault(regionId, "Region " + regionId);
+        String name = NAMES.get(regionId);
+        return name != null ? name : approximateZone(regionId);
+    }
+
+    /**
+     * Decodes rx/ry from the region ID (rx = worldX/64, ry = worldY/64) and maps
+     * to a broad zone name. Used as a fallback when the exact region isn't in NAMES.
+     * Surface y tops out near 4160 (ry ≈ 65); anything above is underground/instanced.
+     */
+    private static String approximateZone(int regionId) {
+        int rx = regionId >> 8;    // worldX / 64
+        int ry = regionId & 0xFF;  // worldY / 64
+
+        if (ry > 65) return "Underground";
+
+        // Wilderness: north of Edgeville latitude
+        if (ry >= 55 && rx >= 43 && rx <= 53) return "Wilderness";
+
+        // Morytania: east of Misthalin
+        if (rx >= 53 && ry >= 48) return "Morytania";
+
+        // Great Kourend / Zeah: far west
+        if (rx <= 28) return "Great Kourend";
+
+        // Fremennik: north, central
+        if (rx >= 36 && rx <= 43 && ry >= 56) return "Fremennik";
+
+        // Tirannwn: west of Kandarin
+        if (rx >= 32 && rx <= 38 && ry >= 47 && ry <= 54) return "Tirannwn";
+
+        // Karamja: south, central
+        if (rx >= 42 && rx <= 48 && ry >= 42 && ry <= 48) return "Karamja";
+
+        // Desert: south-east
+        if (ry <= 50 && rx >= 49) return "Desert";
+
+        // Kandarin: west-central
+        if (rx >= 39 && rx <= 46 && ry >= 48 && ry <= 57) return "Kandarin";
+
+        // Asgarnia: central-west
+        if (rx >= 43 && rx <= 49 && ry >= 48 && ry <= 55) return "Asgarnia";
+
+        // Misthalin: central (default for known surface coords)
+        if (rx >= 48 && ry >= 48) return "Misthalin";
+
+        return "Unknown";
     }
 }
