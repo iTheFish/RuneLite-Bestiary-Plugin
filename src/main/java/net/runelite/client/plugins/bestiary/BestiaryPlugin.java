@@ -367,8 +367,17 @@ public class BestiaryPlugin extends Plugin {
 
         dlg.setContentPane(content);
         dlg.pack();
-        java.awt.Point mouse = java.awt.MouseInfo.getPointerInfo().getLocation();
-        dlg.setLocation(mouse.x, mouse.y);
+        java.awt.Point mouse  = java.awt.MouseInfo.getPointerInfo().getLocation();
+        java.awt.Dimension sz = dlg.getSize();
+        java.awt.Window ancestor = SwingUtilities.getWindowAncestor(panel);
+        if (ancestor != null) {
+            java.awt.Rectangle win = ancestor.getBounds();
+            int x = Math.min(mouse.x, win.x + win.width  - sz.width);
+            int y = Math.min(mouse.y, win.y + win.height - sz.height);
+            dlg.setLocation(Math.max(x, win.x), Math.max(y, win.y));
+        } else {
+            dlg.setLocation(mouse.x, mouse.y);
+        }
         dlg.setVisible(true);
     }
 
