@@ -243,7 +243,7 @@ public class DashboardDialog extends JDialog {
                 g2.drawString(cap, cx - sfm.stringWidth(cap) / 2, arcY + arcD / 2 - 34);
 
                 // XP bar
-                int barY = arcY + arcD + 14, barH = 10, padX = 28, barW = w - padX * 2;
+                int barY = arcY + arcD + 24, barH = 10, padX = 28, barW = w - padX * 2;
                 g2.setColor(new Color(40, 40, 40));
                 g2.fillRoundRect(padX, barY, barW, barH, 6, 6);
                 int fill = (int)(barW * progress);
@@ -283,7 +283,7 @@ public class DashboardDialog extends JDialog {
         grid.add(miniCard("Species",  String.valueOf(col.uniqueSpeciesCount())));
         grid.add(miniCard("Captured", FMT.format(caps)));
         grid.add(miniCard("Kills",    FMT.format(kills)));
-        grid.add(miniCard("K : C",    ratio));
+        grid.add(miniCard("K : C",    ratio, true));
         return grid;
     }
 
@@ -399,6 +399,27 @@ public class DashboardDialog extends JDialog {
             }
         }
         root.add(ratioPanel);
+        root.add(gap(10));
+        root.add(sectionHeader("UNCAUGHT — HIGHEST KILLS"));
+
+        List<Map.Entry<String, Integer>> uncaught = col.killCounts.entrySet().stream()
+                .filter(e -> col.getCaptureCount(e.getKey()) == 0)
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .limit(8).collect(Collectors.toList());
+
+        JPanel uncaughtPanel = col();
+        uncaughtPanel.setBorder(new EmptyBorder(0, 12, 0, 12));
+        if (uncaught.isEmpty()) {
+            uncaughtPanel.add(emptyNote("All hunted species have been captured!"));
+        } else {
+            Color curseCol = new Color(200, 75, 75);
+            int maxU = uncaught.get(0).getValue();
+            for (Map.Entry<String, Integer> e : uncaught) {
+                uncaughtPanel.add(barRow(e.getKey(), curseCol, e.getValue(), maxU, FMT.format(e.getValue()), ""));
+                uncaughtPanel.add(gap(4));
+            }
+        }
+        root.add(uncaughtPanel);
         root.add(gap(16));
         return root;
     }
@@ -876,11 +897,18 @@ public class DashboardDialog extends JDialog {
     }
 
     private JPanel sectionHeader(String text) {
-        JPanel p = new JPanel(new BorderLayout());
-        p.setBackground(SECT);
-        p.setBorder(BorderFactory.createCompoundBorder(
-                new MatteBorder(0, 3, 0, 0, ORANGE),
-                new EmptyBorder(6, 10, 6, 10)));
+        JPanel p = new JPanel(new BorderLayout()) {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = g2(g);
+                g2.setPaint(new GradientPaint(0, 0, new Color(44, 44, 44), 0, getHeight(), new Color(22, 22, 22)));
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                g2.setColor(ORANGE);
+                g2.fillRect(0, 0, 3, getHeight());
+                g2.dispose();
+            }
+        };
+        p.setOpaque(false);
+        p.setBorder(new EmptyBorder(6, 10, 6, 10));
         p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
         JLabel l = new JLabel(text);
         l.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
@@ -890,17 +918,21 @@ public class DashboardDialog extends JDialog {
     }
 
     private JPanel miniCard(String label, String value) {
+        return miniCard(label, value, false);
+    }
+
+    private JPanel miniCard(String label, String value, boolean rightAccent) {
         JPanel card = new JPanel(new GridLayout(2, 1, 0, 2));
         card.setBackground(CARD);
         card.setBorder(BorderFactory.createCompoundBorder(
-                new MatteBorder(0, 2, 0, 0, ORANGE),
+                new MatteBorder(0, 2, 0, rightAccent ? 2 : 0, ORANGE),
                 new EmptyBorder(5, 7, 5, 7)));
         JLabel vl = new JLabel(value, SwingConstants.CENTER);
-        vl.setFont(FontManager.getRunescapeFont().deriveFont(Font.BOLD));
+        vl.setFont(FontManager.getRunescapeBoldFont().deriveFont(15f));
         vl.setForeground(ORANGE);
         JLabel ll = new JLabel(label, SwingConstants.CENTER);
         ll.setFont(FontManager.getRunescapeSmallFont());
-        ll.setForeground(MUTED);
+        ll.setForeground(new Color(190, 190, 190));
         card.add(vl); card.add(ll);
         return card;
     }
@@ -1195,7 +1227,7 @@ public class DashboardDialog extends JDialog {
         // Fixed layout heights
         int topBarH  = 4;
         int hdrH     = 60;   // BESTIARY + account + date
-        int arcH     = 220;  // XP arc + level number
+        int arcH     = 230;  // XP arc + level number
         int xpBarH   = 42;   // XP bar + label
         int sepH     = 28;   // section header
         int overH    = 60;   // 4 stat boxes
@@ -1264,7 +1296,7 @@ public class DashboardDialog extends JDialog {
         g.setColor(new Color(200, 200, 200));
         g.drawString(pctStr, cx - sfm.stringWidth(pctStr) / 2, cy + 32);
 
-        y += arcD + 16;
+        y += arcD + 26;
 
         // --- XP bar ---
         int barX = PAD + 10, barW = W - (PAD + 10) * 2, barH2 = 10;
@@ -1299,21 +1331,22 @@ public class DashboardDialog extends JDialog {
         };
         for (int i = 0; i < 4; i++) {
             int bx = PAD + i * (boxW + boxGap);
-            g.setColor(new Color(32, 32, 32));
+            g.setPaint(new GradientPaint(bx, y, new Color(38, 38, 38), bx, y + boxH, new Color(26, 26, 26)));
             g.fillRoundRect(bx, y, boxW, boxH, 6, 6);
             g.setColor(ORANGE);
             g.fillRect(bx, y, 3, boxH);
+            if (i == 3) g.fillRect(bx + boxW - 3, y, 3, boxH);
 
-            g.setFont(FontManager.getRunescapeBoldFont().deriveFont(15f));
+            g.setFont(FontManager.getRunescapeBoldFont().deriveFont(17f));
             FontMetrics bfm = g.getFontMetrics();
             String val = stats[i][1];
             g.setColor(ORANGE);
-            g.drawString(val, bx + (boxW - bfm.stringWidth(val)) / 2, y + 22);
+            g.drawString(val, bx + (boxW - bfm.stringWidth(val)) / 2, y + 24);
             g.setFont(FontManager.getRunescapeSmallFont());
             sfm = g.getFontMetrics();
-            g.setColor(MUTED);
+            g.setColor(new Color(190, 190, 190));
             String lbl = stats[i][0];
-            g.drawString(lbl, bx + (boxW - sfm.stringWidth(lbl)) / 2, y + 38);
+            g.drawString(lbl, bx + (boxW - sfm.stringWidth(lbl)) / 2, y + 40);
         }
         y += boxH + PAD;
 
@@ -1368,7 +1401,7 @@ public class DashboardDialog extends JDialog {
     }
 
     private static int drawCardSectionHeader(Graphics2D g, String text, int y, int W, int PAD) {
-        g.setColor(new Color(26, 26, 26));
+        g.setPaint(new GradientPaint(PAD, y, new Color(44, 44, 44), PAD, y + 22, new Color(22, 22, 22)));
         g.fillRoundRect(PAD, y, W - PAD * 2, 22, 4, 4);
         g.setColor(ORANGE);
         g.fillRect(PAD, y, 3, 22);
@@ -1458,11 +1491,18 @@ public class DashboardDialog extends JDialog {
                 .sorted(Comparator.comparingInt(e ->
                         col.getKillCount(e.getKey()) / Math.max(1, e.getValue())))
                 .limit(8).collect(Collectors.toList());
+        List<Map.Entry<String, Integer>> uncaught = col.killCounts.entrySet().stream()
+                .filter(e -> col.getCaptureCount(e.getKey()) == 0)
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .limit(8).collect(Collectors.toList());
 
         final int W = 480, PAD = 24;
         int barRows = Math.max(1, top.size()), ratioRows = Math.max(1, ratios.size());
+        int uncaughtRows = Math.max(1, uncaught.size());
         int H = 4 + PAD + 60 + 12 + 70 + 12 + 22 + 6 + barRows * 22 + 8
-                + 22 + 6 + ratioRows * 22 + 8 + 36 + PAD;
+                + 22 + 6 + ratioRows * 22 + 8
+                + 22 + 6 + uncaughtRows * 22 + 8
+                + 36 + PAD;
 
         BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = cardGraphics(img);
@@ -1497,6 +1537,20 @@ public class DashboardDialog extends JDialog {
             }
         }
         y += 8;
+
+        y = drawCardSectionHeader(g, "UNCAUGHT — HIGHEST KILLS", y, W, PAD);
+        y += 6;
+        if (uncaught.isEmpty()) {
+            g.setFont(FontManager.getRunescapeSmallFont()); g.setColor(DIM);
+            g.drawString("All hunted species captured!", PAD + 6, y + g.getFontMetrics().getAscent()); y += 22;
+        } else {
+            Color curseCol = new Color(200, 75, 75);
+            int maxU = uncaught.get(0).getValue();
+            for (Map.Entry<String, Integer> e : uncaught)
+                y = drawCardBarRow(g, e.getKey(), curseCol, e.getValue(), maxU, FMT.format(e.getValue()), "", y, PAD, W);
+        }
+        y += 8;
+
         drawCardFooter(g, H - 36, W, PAD);
         g.dispose();
         return img;
