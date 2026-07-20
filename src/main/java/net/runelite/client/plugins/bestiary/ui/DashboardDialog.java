@@ -443,17 +443,21 @@ public class DashboardDialog extends JDialog {
             capBySpecies.get(MonsterRoster.getSpecies(c.npcName, c.npcCombatLevel)).add(c.npcName);
         }
 
+        List<CreatureSpecies> sortedTypes = Arrays.stream(CreatureSpecies.values())
+                .filter(sp -> rosterBySpecies.getOrDefault(sp, 0) > 0)
+                .sorted(Comparator.comparingInt((CreatureSpecies sp) -> capBySpecies.get(sp).size()).reversed())
+                .collect(Collectors.toList());
+
         JPanel typePanel = col();
         typePanel.setBorder(new EmptyBorder(0, 12, 0, 12));
-        for (CreatureSpecies sp : CreatureSpecies.values()) {
+        for (CreatureSpecies sp : sortedTypes) {
             int cap2 = capBySpecies.get(sp).size(), ttl2 = rosterBySpecies.getOrDefault(sp, 0);
-            if (ttl2 == 0) continue;
             typePanel.add(barRow(sp.label, sp.displayColor, cap2, Math.max(ttl2, 1), cap2 + "/" + ttl2, ""));
             typePanel.add(gap(4));
         }
         root.add(typePanel);
         root.add(gap(10));
-        root.add(sectionHeader("TOP SPECIES"));
+        root.add(sectionHeader("TOP MONSTERS"));
         root.add(buildTopSpeciesSection(col));
         root.add(gap(10));
 
@@ -693,7 +697,7 @@ public class DashboardDialog extends JDialog {
                 FontMetrics fm = g2.getFontMetrics();
                 int base = (h + fm.getAscent() - fm.getDescent()) / 2;
                 g2.setColor(MUTED);
-                g2.drawString("Monster", 0, base);
+                g2.drawString("Name", 0, base);
                 for (int i = 0; i < rarAbbr.length; i++) {
                     g2.setColor(rarOrder[i].displayColor);
                     g2.drawString(rarAbbr[i], firstColW + i * colW + (colW - fm.stringWidth(rarAbbr[i])) / 2, base);
@@ -1467,7 +1471,11 @@ public class DashboardDialog extends JDialog {
         }
         for (CapturedCreature c : col.creatures)
             capBySp.get(MonsterRoster.getSpecies(c.npcName, c.npcCombatLevel)).add(c.npcName);
-        int activeSpTypes = (int) Arrays.stream(CreatureSpecies.values()).filter(sp -> rosterBySp.getOrDefault(sp, 0) > 0).count();
+        List<CreatureSpecies> sortedSpTypes = Arrays.stream(CreatureSpecies.values())
+                .filter(sp -> rosterBySp.getOrDefault(sp, 0) > 0)
+                .sorted(Comparator.comparingInt((CreatureSpecies sp) -> capBySp.get(sp).size()).reversed())
+                .limit(5)
+                .collect(Collectors.toList());
 
         // Top 5 species by capture count
         Map<String, List<CapturedCreature>> bySpecies = col.creatures.stream()
@@ -1482,7 +1490,7 @@ public class DashboardDialog extends JDialog {
         int top5Rows = Math.max(1, top5.size());
         int H = 4 + PAD + 60 + 12 + (arcD + 12)
                + 22 + 6 + diffTiers * 22 + 8
-               + 22 + 6 + activeSpTypes * 22 + 8
+               + 22 + 6 + sortedSpTypes.size() * 22 + 8
                + 22 + 6 + 21 + top5Rows * 20 + 8
                + 36 + PAD;
 
@@ -1527,18 +1535,17 @@ public class DashboardDialog extends JDialog {
         }
         y += 8;
 
-        // Completion by creature type
+        // Completion by creature type (top 5 by captured count)
         y = drawCardSectionHeader(g, "COMPLETION BY CREATURE TYPE", y, W, PAD);
         y += 6;
-        for (CreatureSpecies sp : CreatureSpecies.values()) {
+        for (CreatureSpecies sp : sortedSpTypes) {
             int cap = capBySp.get(sp).size(), ttl = rosterBySp.getOrDefault(sp, 0);
-            if (ttl == 0) continue;
             y = drawCardBarRow(g, sp.label, sp.displayColor, cap, Math.max(ttl, 1), cap + "/" + ttl, "", y, PAD, W);
         }
         y += 8;
 
-        // Top 5 species — rarity breakdown table
-        y = drawCardSectionHeader(g, "TOP SPECIES", y, W, PAD);
+        // Top 5 monsters — rarity breakdown table
+        y = drawCardSectionHeader(g, "TOP MONSTERS", y, W, PAD);
         y += 6;
         CreatureRarity[] rarOrder = {CreatureRarity.COMMON, CreatureRarity.UNCOMMON, CreatureRarity.RARE,
                 CreatureRarity.EPIC, CreatureRarity.LEGENDARY, CreatureRarity.MYTHIC};
@@ -1546,9 +1553,9 @@ public class DashboardDialog extends JDialog {
         int colW = 22, firstColW = W - PAD * 2 - rarOrder.length * colW;
         g.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         FontMetrics hfm = g.getFontMetrics();
-        // Column header row — "Monster" label + rarity abbreviations
+        // Column header row — "Name" label + rarity abbreviations
         g.setColor(MUTED);
-        g.drawString("Monster", PAD, y + hfm.getAscent());
+        g.drawString("Name", PAD, y + hfm.getAscent());
         for (int i = 0; i < rarAbbr.length; i++) {
             g.setColor(rarOrder[i].displayColor);
             g.drawString(rarAbbr[i], PAD + firstColW + i * colW + (colW - hfm.stringWidth(rarAbbr[i])) / 2, y + hfm.getAscent());
