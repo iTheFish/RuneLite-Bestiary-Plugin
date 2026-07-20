@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import static net.runelite.client.plugins.bestiary.model.DifficultyTier.*;
 import static net.runelite.client.plugins.bestiary.model.CombatClass.*;
+import static net.runelite.client.plugins.bestiary.model.CreatureSpecies.*;
 
 /**
  * Canonical list of known OSRS NPC names and their difficulty ratings.
@@ -421,6 +422,111 @@ public class MonsterRoster {
     }
 
     // -------------------------------------------------------------------------
+    // Species map — biological/lore type of each monster.
+    // Monsters not listed fall back to OTHER.
+    // -------------------------------------------------------------------------
+
+    private static final Map<String, CreatureSpecies> SPECIES;
+    static {
+        Map<String, CreatureSpecies> s = new HashMap<>();
+
+        // ANIMAL — real-world creature analogues
+        for (String n : Arrays.asList(
+            "Chicken", "Cow", "Cow calf", "Duck", "Ram", "Seagull",
+            "Rat", "Giant rat", "Bear", "Grizzly bear", "Unicorn",
+            "Rock crab", "Sand crab", "Swamp crab",
+            "Desert lizard", "Molanisk", "Warped tortoise", "Tortoise",
+            "Giant Mole", "Callisto", "Artio", "Scurrius", "Kraken",
+            "Ba-Ba", "Zebak", "Amoxliatl"
+        )) { s.put(n, ANIMAL); }
+
+        // DEMON — creatures of demonic or infernal origin
+        for (String n : Arrays.asList(
+            "Imp", "Lesser demon", "Greater demon", "Black demon", "Abyssal demon",
+            "Bloodveld", "Mutated bloodveld", "Pyrefiend", "Waterfiend",
+            "Dust devil", "Smoke devil", "Thermonuclear smoke devil",
+            "Hellhound", "Nechryael", "Greater nechryael", "Nechryarch",
+            "Cerberus", "Abyssal Sire", "K'ril Tsutsaroth",
+            "Infernal mage", "Duke Sucellus", "Sotetseg"
+        )) { s.put(n, DEMON); }
+
+        // DRAGON — true dragons and dragon-kind
+        for (String n : Arrays.asList(
+            "Baby blue dragon", "Baby green dragon",
+            "Green dragon", "Blue dragon", "Red dragon", "Black dragon", "Lava dragon",
+            "Bronze dragon", "Iron dragon", "Steel dragon",
+            "Mithril dragon", "Adamant dragon", "Rune dragon",
+            "Brutal black dragon", "Brutal red dragon", "Brutal blue dragon", "Brutal green dragon",
+            "King Black Dragon", "Vorkath", "Great Olm"
+        )) { s.put(n, DRAGON); }
+
+        // GIANT — giants and giant-kin
+        for (String n : Arrays.asList(
+            "Hill giant", "Moss giant", "Fire giant", "Ice giant",
+            "Obor", "Tekton", "General Graardor"
+        )) { s.put(n, GIANT); }
+
+        // GOBLINOID — goblins and goblin-like creatures
+        for (String n : Arrays.asList(
+            "Goblin", "Hobgoblin"
+        )) { s.put(n, GOBLINOID); }
+
+        // HUMAN — humanoid mortals (NPCs and human-variant monsters)
+        for (String n : Arrays.asList(
+            "Man", "Woman", "Farmer",
+            "Guard", "Barbarian", "Warrior", "Wizard", "Dark wizard",
+            "Black knight", "White knight",
+            "Pirate", "Rogue",
+            "Chaos druid", "Chaos druid warrior", "Dark warrior",
+            "Ice warrior",
+            "Crazy Archaeologist", "Deranged Archaeologist", "Chaos Fanatic",
+            "Sol Heredit"
+        )) { s.put(n, HUMAN); }
+
+        // INSECT — insects, spiders, scorpions, and arthropod-type creatures
+        for (String n : Arrays.asList(
+            "Spider", "Giant spider", "Ice spider", "Fever spider",
+            "Cave bug", "Cave crawler", "Cave slime", "Fleshcrawler",
+            "Scorpion", "King scorpion", "Scorpia",
+            "Araxxor", "Venenatis", "Spindel", "Sarachnis",
+            "Vespula", "Kephri"
+        )) { s.put(n, INSECT); }
+
+        // KALPHITE — kalphite species
+        for (String n : Arrays.asList(
+            "Kalphite", "Kalphite soldier", "Kalphite worker", "Kalphite guardian"
+        )) { s.put(n, KALPHITE); }
+
+        // TROLL — trolls
+        for (String n : Arrays.asList(
+            "Troll", "Ice troll", "Mountain troll"
+        )) { s.put(n, TROLL); }
+
+        // UNDEAD — reanimated or spectral creatures
+        for (String n : Arrays.asList(
+            "Zombie", "Skeleton", "Ghost", "Zombie pirate",
+            "Ankou", "Banshee", "Twisted banshee",
+            "Aberrant spectre", "Deviant spectre",
+            "Vampyre", "Feral vampyre", "Vyrewatch",
+            "Spiritual warrior", "Spiritual mage", "Spiritual ranger",
+            "Vet'ion", "Calvar'ion",
+            "Ahrim the Blighted", "Dharok the Wretched", "Guthan the Infested",
+            "Karil the Tainted", "Torag the Corrupted", "Verac the Defiled",
+            "Maiden of Sugadinti", "Verzik Vitur", "Xarpus",
+            "Akkha", "Mutant tarn", "Vardorvis"
+        )) { s.put(n, UNDEAD); }
+
+        // WYRM — reptilian magical creatures (hydras, wyverns, wyrms)
+        for (String n : Arrays.asList(
+            "Wyrm", "Drake", "Hydra", "Alchemical Hydra",
+            "Wyvern", "Ancient wyvern", "Skeletal wyvern", "Fossil island wyvern"
+        )) { s.put(n, WYRM); }
+
+        // All unlisted monsters fall back to OTHER via getSpecies()
+        SPECIES = Collections.unmodifiableMap(s);
+    }
+
+    // -------------------------------------------------------------------------
     // Public helpers
     // -------------------------------------------------------------------------
 
@@ -437,6 +543,12 @@ public class MonsterRoster {
     public static CombatClass getCombatClass(String npcName, int combatLevel) {
         CombatClass cls = COMBAT_CLASSES.get(npcName);
         return cls != null ? cls : classFromTier(getDifficulty(npcName, combatLevel));
+    }
+
+    /** Returns the biological species for a given NPC. Falls back to OTHER for unlisted monsters. */
+    public static CreatureSpecies getSpecies(String npcName, int combatLevel) {
+        CreatureSpecies species = SPECIES.get(npcName);
+        return species != null ? species : CreatureSpecies.OTHER;
     }
 
     private static CombatClass classFromTier(DifficultyTier tier) {

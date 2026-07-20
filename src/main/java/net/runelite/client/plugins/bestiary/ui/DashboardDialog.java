@@ -4,6 +4,7 @@ import net.runelite.client.plugins.bestiary.model.Achievement;
 import net.runelite.client.plugins.bestiary.model.BestiaryCollection;
 import net.runelite.client.plugins.bestiary.model.CapturedCreature;
 import net.runelite.client.plugins.bestiary.model.CreatureRarity;
+import net.runelite.client.plugins.bestiary.model.CreatureSpecies;
 import net.runelite.client.plugins.bestiary.model.DifficultyTier;
 import net.runelite.client.plugins.bestiary.model.MonsterRoster;
 import net.runelite.client.plugins.bestiary.service.BestiaryDataService;
@@ -425,6 +426,32 @@ public class DashboardDialog extends JDialog {
             diffPanel.add(gap(4));
         }
         root.add(diffPanel);
+        root.add(gap(10));
+        root.add(sectionHeader("COMPLETION BY CREATURE TYPE"));
+
+        Map<CreatureSpecies, Integer> rosterBySpecies = new EnumMap<>(CreatureSpecies.class);
+        for (CreatureSpecies sp : CreatureSpecies.values()) rosterBySpecies.put(sp, 0);
+        for (String name : roster) {
+            int cb = col.creatures.stream().filter(c -> c.npcName.equals(name))
+                    .findFirst().map(c -> c.npcCombatLevel).orElse(0);
+            rosterBySpecies.merge(MonsterRoster.getSpecies(name, cb), 1, Integer::sum);
+        }
+
+        Map<CreatureSpecies, Set<String>> capBySpecies = new EnumMap<>(CreatureSpecies.class);
+        for (CreatureSpecies sp : CreatureSpecies.values()) capBySpecies.put(sp, new HashSet<>());
+        for (CapturedCreature c : col.creatures) {
+            capBySpecies.get(MonsterRoster.getSpecies(c.npcName, c.npcCombatLevel)).add(c.npcName);
+        }
+
+        JPanel typePanel = col();
+        typePanel.setBorder(new EmptyBorder(0, 12, 0, 12));
+        for (CreatureSpecies sp : CreatureSpecies.values()) {
+            int cap2 = capBySpecies.get(sp).size(), ttl2 = rosterBySpecies.getOrDefault(sp, 0);
+            if (ttl2 == 0) continue;
+            typePanel.add(barRow(sp.label, sp.displayColor, cap2, Math.max(ttl2, 1), cap2 + "/" + ttl2, ""));
+            typePanel.add(gap(4));
+        }
+        root.add(typePanel);
         root.add(gap(10));
         root.add(sectionHeader("TOP SPECIES"));
         root.add(buildTopSpeciesSection(col));
@@ -1430,6 +1457,18 @@ public class DashboardDialog extends JDialog {
         for (CapturedCreature c : col.creatures)
             capByDiff.get(MonsterRoster.getDifficulty(c.npcName, c.npcCombatLevel)).add(c.npcName);
 
+        // Species type completion (exclude types with no roster entries)
+        Map<CreatureSpecies, Integer> rosterBySp = new EnumMap<>(CreatureSpecies.class);
+        Map<CreatureSpecies, Set<String>> capBySp = new EnumMap<>(CreatureSpecies.class);
+        for (CreatureSpecies sp : CreatureSpecies.values()) { rosterBySp.put(sp, 0); capBySp.put(sp, new HashSet<>()); }
+        for (String name : roster) {
+            int cb = col.creatures.stream().filter(c -> c.npcName.equals(name)).findFirst().map(c -> c.npcCombatLevel).orElse(0);
+            rosterBySp.merge(MonsterRoster.getSpecies(name, cb), 1, Integer::sum);
+        }
+        for (CapturedCreature c : col.creatures)
+            capBySp.get(MonsterRoster.getSpecies(c.npcName, c.npcCombatLevel)).add(c.npcName);
+        int activeSpTypes = (int) Arrays.stream(CreatureSpecies.values()).filter(sp -> rosterBySp.getOrDefault(sp, 0) > 0).count();
+
         // Top 5 species by capture count
         Map<String, List<CapturedCreature>> bySpecies = col.creatures.stream()
                 .collect(Collectors.groupingBy(c -> c.npcName));
@@ -1443,6 +1482,7 @@ public class DashboardDialog extends JDialog {
         int top5Rows = Math.max(1, top5.size());
         int H = 4 + PAD + 60 + 12 + (arcD + 12)
                + 22 + 6 + diffTiers * 22 + 8
+               + 22 + 6 + activeSpTypes * 22 + 8
                + 22 + 6 + 21 + top5Rows * 20 + 8
                + 36 + PAD;
 
@@ -1484,6 +1524,16 @@ public class DashboardDialog extends JDialog {
         for (DifficultyTier tier : DifficultyTier.values()) {
             int cap = capByDiff.get(tier).size(), ttl = rosterByDiff.getOrDefault(tier, 0);
             y = drawCardBarRow(g, tier.label, tier.displayColor, cap, Math.max(ttl, 1), cap + "/" + ttl, "", y, PAD, W);
+        }
+        y += 8;
+
+        // Completion by creature type
+        y = drawCardSectionHeader(g, "COMPLETION BY CREATURE TYPE", y, W, PAD);
+        y += 6;
+        for (CreatureSpecies sp : CreatureSpecies.values()) {
+            int cap = capBySp.get(sp).size(), ttl = rosterBySp.getOrDefault(sp, 0);
+            if (ttl == 0) continue;
+            y = drawCardBarRow(g, sp.label, sp.displayColor, cap, Math.max(ttl, 1), cap + "/" + ttl, "", y, PAD, W);
         }
         y += 8;
 
