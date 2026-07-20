@@ -124,16 +124,6 @@ public interface BestiaryConfig extends Config {
     }
 
     @ConfigItem(
-            keyName = "sessionRecap",
-            name = "Session Recap",
-            description = "Post a capture summary to chat when you log out",
-            position = 12
-    )
-    default boolean sessionRecap() {
-        return true;
-    }
-
-    @ConfigItem(
             keyName = "overlayPosition",
             name = "Overlay Position",
             description = "Where on screen the capture overlay appears",

@@ -81,6 +81,13 @@ public class AlbumCard extends JPanel {
         this.detailCaptures = all;
     }
 
+    // If set, left-click fires this instead of the default detail-dialog logic
+    @Nullable private Runnable clickOverride;
+
+    public void setClickOverride(Runnable override) {
+        this.clickOverride = override;
+    }
+
     // -------------------------------------------------------------------------
     // Constructors
     // -------------------------------------------------------------------------
@@ -174,8 +181,12 @@ public class AlbumCard extends JPanel {
 
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (!locked && captures != null && collection != null
-                        && SwingUtilities.isLeftMouseButton(e)) {
+                if (!SwingUtilities.isLeftMouseButton(e)) return;
+                if (clickOverride != null) {
+                    clickOverride.run();
+                    return;
+                }
+                if (!locked && captures != null && collection != null) {
                     List<CapturedCreature> forDialog = (detailCaptures != null && !detailCaptures.isEmpty())
                             ? detailCaptures : captures;
                     new CreatureDetailDialog(

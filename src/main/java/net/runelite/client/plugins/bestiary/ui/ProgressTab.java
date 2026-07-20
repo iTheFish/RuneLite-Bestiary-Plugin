@@ -2,6 +2,7 @@ package net.runelite.client.plugins.bestiary.ui;
 
 import net.runelite.client.plugins.bestiary.model.Achievement;
 import net.runelite.client.plugins.bestiary.service.ProgressionService;
+import net.runelite.client.plugins.bestiary.service.SessionTracker;
 import net.runelite.client.plugins.bestiary.util.XpTable;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
@@ -11,19 +12,21 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
 /**
- * Progress tab: Capture Level bar, XP totals, and achievement list.
+ * Progress tab: Capture Level bar, XP totals, achievement list, and session recap button.
  */
 public class ProgressTab extends JPanel {
 
     private final ProgressionService progressionService;
+    private final SessionTracker sessionTracker;
 
     private final JLabel levelLabel;
     private final JProgressBar xpBar;
     private final JLabel xpLabel;
     private final JPanel achievementPanel;
 
-    public ProgressTab(ProgressionService progressionService) {
+    public ProgressTab(ProgressionService progressionService, SessionTracker sessionTracker) {
         this.progressionService = progressionService;
+        this.sessionTracker     = sessionTracker;
         setLayout(new BorderLayout(0, 8));
         setBackground(ColorScheme.DARK_GRAY_COLOR);
         setBorder(new EmptyBorder(8, 8, 8, 8));
@@ -51,6 +54,22 @@ public class ProgressTab extends JPanel {
         levelPanel.add(xpBar,     BorderLayout.CENTER);
         levelPanel.add(xpLabel,   BorderLayout.SOUTH);
 
+        // Session Recap button
+        JButton recapBtn = new JButton("Session Recap");
+        recapBtn.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        recapBtn.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        recapBtn.setForeground(new Color(255, 165, 0));
+        recapBtn.setFocusPainted(false);
+        recapBtn.setBorderPainted(true);
+        recapBtn.setToolTipText("View captures from this session");
+        recapBtn.addActionListener(e ->
+            SessionRecapDialog.open(SwingUtilities.getWindowAncestor(this), sessionTracker));
+
+        JPanel recapRow = new JPanel(new BorderLayout());
+        recapRow.setOpaque(false);
+        recapRow.setBorder(new EmptyBorder(4, 0, 4, 0));
+        recapRow.add(recapBtn, BorderLayout.CENTER);
+
         // Achievements
         achievementPanel = new JPanel();
         achievementPanel.setLayout(new BoxLayout(achievementPanel, BoxLayout.Y_AXIS));
@@ -70,7 +89,12 @@ public class ProgressTab extends JPanel {
         centerPanel.add(achievementHeader, BorderLayout.NORTH);
         centerPanel.add(scroll,            BorderLayout.CENTER);
 
-        add(levelPanel,  BorderLayout.NORTH);
+        JPanel northStack = new JPanel(new BorderLayout(0, 0));
+        northStack.setOpaque(false);
+        northStack.add(levelPanel, BorderLayout.NORTH);
+        northStack.add(recapRow,   BorderLayout.CENTER);
+
+        add(northStack,  BorderLayout.NORTH);
         add(centerPanel, BorderLayout.CENTER);
 
         refresh();

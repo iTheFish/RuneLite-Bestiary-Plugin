@@ -176,8 +176,15 @@ public class CreatureDetailDialog extends JDialog {
         expandAll.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         expandAll.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override public void mouseClicked(java.awt.event.MouseEvent e) {
-                collapsedRarities.clear();
-                sessionCollapsed.clear();
+                if (collapsedRarities.isEmpty()) {
+                    collapsedRarities.addAll(Arrays.asList(RARITY_ORDER));
+                    sessionCollapsed.addAll(Arrays.asList(RARITY_ORDER));
+                    expandAll.setText("Expand all");
+                } else {
+                    collapsedRarities.clear();
+                    sessionCollapsed.clear();
+                    expandAll.setText("Collapse all");
+                }
                 sortBox.setSelectedItem("By Rarity");
                 buildList("By Rarity");
             }
@@ -204,10 +211,32 @@ public class CreatureDetailDialog extends JDialog {
         int kills    = collection.getKillCount(sample.npcName);
         int totalCap = collection.getCaptureCount(sample.npcName);
         String ratio = kills > 0 ? "1 in " + Math.round((double) kills / Math.max(1, totalCap)) : "—";
-        JLabel footer = new JLabel(String.format(
+        JLabel statsLabel = new JLabel(String.format(
                 "Total kills: %,d  |  All captures: %d  |  Kill ratio: %s", kills, totalCap, ratio));
-        footer.setFont(FontManager.getRunescapeSmallFont());
-        footer.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+        statsLabel.setFont(FontManager.getRunescapeSmallFont());
+        statsLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+
+        JPanel footerRow = new JPanel(new BorderLayout(8, 0));
+        footerRow.setOpaque(false);
+        footerRow.add(statsLabel, BorderLayout.WEST);
+
+        if (captures.size() < totalCap) {
+            JLabel showAll = new JLabel("Show all " + totalCap + " captures");
+            showAll.setFont(FontManager.getRunescapeSmallFont());
+            showAll.setForeground(new Color(90, 140, 210));
+            showAll.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            showAll.addMouseListener(new MouseAdapter() {
+                @Override public void mouseClicked(MouseEvent e) {
+                    List<CapturedCreature> all = collection.creatures.stream()
+                            .filter(c -> c.npcName.equals(sample.npcName))
+                            .collect(Collectors.toList());
+                    if (!all.isEmpty()) {
+                        new CreatureDetailDialog(owner, all, collection, "By Rarity", null);
+                    }
+                }
+            });
+            footerRow.add(showAll, BorderLayout.EAST);
+        }
 
         JPanel centerBlock = new JPanel(new BorderLayout(0, 4));
         centerBlock.setOpaque(false);
@@ -216,7 +245,7 @@ public class CreatureDetailDialog extends JDialog {
 
         root.add(header,      BorderLayout.NORTH);
         root.add(centerBlock, BorderLayout.CENTER);
-        root.add(footer,      BorderLayout.SOUTH);
+        root.add(footerRow,   BorderLayout.SOUTH);
 
         setContentPane(root);
         pack();

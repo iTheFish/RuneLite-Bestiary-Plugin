@@ -18,6 +18,7 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -28,18 +29,18 @@ import java.util.stream.Collectors;
 public class CardExportDialog extends JDialog {
 
     private static WikiImageService sharedImageService;
-    private static BestiaryCollection sharedCollection;
+    private static Supplier<BestiaryCollection> collectionSupplier;
 
-    public static void setShared(WikiImageService imgSvc, BestiaryCollection collection) {
+    public static void setShared(WikiImageService imgSvc, Supplier<BestiaryCollection> supplier) {
         sharedImageService = imgSvc;
-        sharedCollection = collection;
+        collectionSupplier = supplier;
     }
 
     /** Open export dialog for a single capture (uses shared service/collection). */
     public static void open(Window owner, CapturedCreature capture) {
-        if (sharedImageService == null || sharedCollection == null) return;
+        if (sharedImageService == null || collectionSupplier == null) return;
         int dex = MonsterRoster.getDexNumber(capture.npcName);
-        new CardExportDialog(owner, capture, sharedCollection, sharedImageService, dex);
+        new CardExportDialog(owner, capture, collectionSupplier.get(), sharedImageService, dex);
     }
 
     // -------------------------------------------------------------------------
@@ -62,11 +63,16 @@ public class CardExportDialog extends JDialog {
         this.cardId = CardId.encode(dexNumber, capture);
         this.owner  = capturedBy;
 
-        // Wire up the card click to open all captures for this NPC across all rarities
-        List<CapturedCreature> allNpcCaptures = collection.creatures.stream()
-                .filter(c -> c.npcName.equals(capture.npcName))
-                .collect(Collectors.toList());
-        card.setDetailCaptures(allNpcCaptures.isEmpty() ? List.of(capture) : allNpcCaptures);
+        // Re-query the live collection at click time to avoid stale snapshot
+        card.setClickOverride(() -> {
+            BestiaryCollection live = collectionSupplier.get();
+            List<CapturedCreature> fresh = live.creatures.stream()
+                    .filter(c -> c.npcName.equals(capture.npcName))
+                    .collect(Collectors.toList());
+            List<CapturedCreature> list = fresh.isEmpty() ? List.of(capture) : fresh;
+            new CreatureDetailDialog(CardExportDialog.this, list, live,
+                    "By Rarity", capture.rarity).setVisible(true);
+        });
 
         // Card ID label
         JLabel idLabel = new JLabel(cardId);

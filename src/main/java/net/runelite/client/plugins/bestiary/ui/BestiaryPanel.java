@@ -3,6 +3,7 @@ package net.runelite.client.plugins.bestiary.ui;
 import net.runelite.client.plugins.bestiary.BestiaryConfig;
 import net.runelite.client.plugins.bestiary.service.BestiaryDataService;
 import net.runelite.client.plugins.bestiary.service.ProgressionService;
+import net.runelite.client.plugins.bestiary.service.SessionTracker;
 import net.runelite.client.plugins.bestiary.service.WikiImageService;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
@@ -31,13 +32,14 @@ public class BestiaryPanel extends PluginPanel {
 
     @Inject
     public BestiaryPanel(BestiaryDataService dataService, ProgressionService progressionService,
-                         WikiImageService imageService, BestiaryConfig config) {
+                         WikiImageService imageService, BestiaryConfig config,
+                         SessionTracker sessionTracker) {
         super(false); // false = don't auto-wrap in scroll pane
         this.dataService        = dataService;
         this.progressionService = progressionService;
         CreatureDetailDialog.setConfig(config);
         CreatureDetailDialog.setSaveCallback(dataService::saveNow);
-        CardExportDialog.setShared(imageService, dataService.getCollection());
+        CardExportDialog.setShared(imageService, dataService::getCollection);
 
         setLayout(new BorderLayout(0, 6));
         setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -69,7 +71,7 @@ public class BestiaryPanel extends PluginPanel {
 
         // Tabs
         collectionTab = new CollectionTab(dataService, imageService);
-        progressTab   = new ProgressTab(progressionService);
+        progressTab   = new ProgressTab(progressionService, sessionTracker);
         infoTab       = new InfoTab(dataService, progressionService);
 
         JTabbedPane tabs = new JTabbedPane();
