@@ -70,6 +70,8 @@ public class InfoTab extends JPanel {
         scroll.getViewport().setBackground(ColorScheme.DARK_GRAY_COLOR);
         scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        scroll.getVerticalScrollBar().setPreferredSize(new Dimension(0, 0));
         add(scroll, BorderLayout.CENTER);
 
         refresh();
@@ -138,9 +140,18 @@ public class InfoTab extends JPanel {
                 new MatteBorder(0, 3, 0, 0, ORANGE),
                 new EmptyBorder(3, 8, 3, 0)));
 
-        JLabel title = new JLabel("Rarity Tiers  (chance improves with level)");
+        JLabel title = new JLabel("Rarity Tiers");
         title.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         title.setForeground(ORANGE);
+
+        JLabel subtitle = new JLabel("Catch chance improves with your Capture Level");
+        subtitle.setFont(FontManager.getRunescapeSmallFont());
+        subtitle.setForeground(new Color(120, 120, 120));
+
+        JPanel titleBlock = new JPanel(new BorderLayout(0, 1));
+        titleBlock.setOpaque(false);
+        titleBlock.add(title,    BorderLayout.NORTH);
+        titleBlock.add(subtitle, BorderLayout.CENTER);
 
         // Pre-compute level-99 normalised percentages
         // Multipliers mirror RarityRoller: COMMON 0.50, UNCOMMON 1.30, RARE 2.00,
@@ -169,8 +180,8 @@ public class InfoTab extends JPanel {
             rows.add(tableRow("● " + r.label, s1, s99, r.displayColor));
         }
 
-        outer.add(title, BorderLayout.NORTH);
-        outer.add(rows,  BorderLayout.CENTER);
+        outer.add(titleBlock, BorderLayout.NORTH);
+        outer.add(rows,       BorderLayout.CENTER);
         return outer;
     }
 
@@ -215,38 +226,72 @@ public class InfoTab extends JPanel {
         tiles.setOpaque(false);
 
         tiles.add(tile("Catch rate",
-                "Scales with your Capture Level and the monster's difficulty. " +
-                "Beginner: 20% (lv 1) → 60% (lv 99). Boss: 1.5% → 8%."));
+                "Each kill rolls a capture attempt. The chance depends on two things: " +
+                "the monster's difficulty tier and your current Capture Level.\n\n" +
+                "Beginner monsters (cows, goblins): 20% at level 1, rising to 60% at level 99.\n" +
+                "Easy (lesser demons, skeletons): 15% → 50%.\n" +
+                "Medium (hill giants, moss giants): 10% → 40%.\n" +
+                "Hard (hellhounds, gargoyles): 6% → 28%.\n" +
+                "Elite (Adamant/Rune dragons): 3% → 15%.\n" +
+                "Boss (Cerberus, Callisto, etc.): 1.5% → 8%."));
         tiles.add(tile("Rarity",
-                "Weighted roll on each capture. Higher Capture Level shifts weight toward rarer outcomes — " +
-                "Mythic is 12× more likely at level 99 than level 1."));
+                "When a capture succeeds, a second weighted roll picks the rarity. " +
+                "At level 1 the weights match the base percentages shown in the table above. " +
+                "Each level shifts weight toward rarer outcomes.\n\n" +
+                "Example: Mythic goes from 0.1% at level 1 to 1.5% at level 99 — " +
+                "about 15 times more likely. Common drops from 75% to 46% over the same range."));
         tiles.add(tile("Quality",
-                "6 stats (Power, Defence, Speed, Agility, Stamina, Intellect), each 0–100. " +
-                "Shaped by the monster's archetype — primary stats for that archetype roll high. " +
-                "Gold labels mark primary stats in the detail dialog."));
+                "Every capture has six individual stats, each scored 0–100:\n" +
+                "Strength, Speed, Endurance, Intelligence, Stealth, Vitality.\n\n" +
+                "Which stats roll high depends on the monster's archetype " +
+                "(e.g. a Brute rolls high Strength; a Nimble rolls high Speed and Stealth). " +
+                "Higher rarities shift all stats toward the top — a Mythic capture will generally " +
+                "score much higher than a Common of the same species.\n\n" +
+                "Gold-outlined bars in the detail dialog mark your personal bests."));
         tiles.add(tile("XP",
-                "Kill XP = max(10, combatLvl × 10). " +
-                "Captures add XP × rarity multiplier (Common 1×, Rare 5×, Legendary 25×, Mythic 50×)."));
+                "You earn experience from kills and captures.\n\n" +
+                "Kill XP = maximum of 10 or (combat level × 10). " +
+                "A level 50 enemy gives 500 XP per kill; a level 1 enemy gives at least 10 XP.\n\n" +
+                "Captures add a bonus on top: the kill XP multiplied by the rarity. " +
+                "Common: 1×, Uncommon: 2×, Rare: 5×, Epic: 10×, Legendary: 25×, Mythic: 50×.\n\n" +
+                "Example: catching a Rare goblin (level 2, kill XP = 20) gives 20 × 5 = 100 bonus XP."));
         tiles.add(tile("Overlay",
-                "Configurable position (top/bottom, left/centre/right) and width via Config. " +
-                "Optional Pokeball animation plays before the result is shown."));
-        tiles.add(tile("Chat mode",
-                "Verbose: one message per capture with kill# and quality score. " +
-                "Batched: accumulates kills of the same NPC+rarity for 5 seconds of inactivity, " +
-                "then sends one summary message."));
+                "A small notification panel appears on screen each time a capture succeeds. " +
+                "Position (top-left, top-centre, top-right, bottom-left, bottom-right) and width " +
+                "(150–300 px) are configurable in the RuneLite Config panel under Bestiary.\n\n" +
+                "An optional Pokeball-style animation can play on every kill attempt before " +
+                "the result is revealed — toggle 'Show Capture Animation' in Config."));
+        tiles.add(tile("Chat notifications",
+                "Two modes, selected in Config under 'Chat Notification Mode':\n\n" +
+                "Verbose — one chat message per capture showing the rarity, NPC name, kill number, " +
+                "and quality score. The kill number ensures no two messages are identical " +
+                "(RuneLite silently drops duplicate messages).\n\n" +
+                "Batched — if you kill the same NPC+rarity multiple times in quick succession, " +
+                "messages are held for 5 seconds of inactivity then sent as one summary " +
+                "(e.g. '3× Common Goblin captured!  Kill #42  Q:28, 35, 41')."));
         tiles.add(tile("Album",
-                "Full dex grid showing every capturable species. " +
-                "Open via the 'Open Album' button in the By Monster view. " +
-                "Supports name search and difficulty filter."));
+                "A full dex grid showing every capturable species in the game. " +
+                "Open it via the 'Open Album' button at the top of the By Monster view.\n\n" +
+                "Each card shows the species image, average stats, combat level, difficulty tier, " +
+                "and rarity dots for all rarities you have caught. " +
+                "Use the search box or difficulty dropdown to filter the grid."));
         tiles.add(tile("Export",
-                "Right-click any card or capture row → Export Image. " +
-                "Generates a shareable PNG with a 28-character card fingerprint and your player name."));
+                "Right-click any card in the Collection or Album views, or right-click a capture " +
+                "row in the detail dialog → 'Export Card'.\n\n" +
+                "Opens a preview of the capture as a large card. " +
+                "Copy to clipboard or save as a PNG. " +
+                "Each card has a unique 28-character fingerprint encoding the species, " +
+                "all six stat values, rarity, and your player name."));
         tiles.add(tile("Session Recap",
-                "Button on the Progress tab. Shows all captures since your last login — " +
-                "rarity breakdown, quality scores, and regions. Copy as text or clear the session."));
-        tiles.add(tile("Reset",
-                "Double-confirm via the Reset Collection button at the bottom of the panel. " +
-                "Permanently deletes all captures, kills, XP, and achievements."));
+                "A button on the Progress tab shows all captures made since you last logged in.\n\n" +
+                "The recap lists every capture with its rarity (colour-coded), quality score, " +
+                "region, and time. A rarity pill summary at the top shows your totals at a glance.\n\n" +
+                "'Copy Summary' places the list on your clipboard, formatted as a code block " +
+                "so it displays cleanly when pasted into Discord or a text editor."));
+        tiles.add(tile("Reset Collection",
+                "The 'Reset Collection' button at the bottom of the panel permanently deletes " +
+                "all captures, kill counts, XP, levels, and achievements. " +
+                "You will be asked to confirm twice before anything is erased."));
 
         outer.add(title, BorderLayout.NORTH);
         outer.add(tiles, BorderLayout.CENTER);
