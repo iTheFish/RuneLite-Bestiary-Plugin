@@ -445,6 +445,10 @@ public class CreatureDetailDialog extends JDialog {
         content.add(buildStatBars(c.quality, c.rarity.displayColor, dialogBest));
 
         row.add(content, BorderLayout.CENTER);
+        // Prevent BoxLayout / viewport from stretching the row beyond its natural height.
+        // GridLayout distributes ALL available height equally, so without this cap the stat
+        // bars balloon when only 1–3 rows are visible.
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, row.getPreferredSize().height));
         return row;
     }
 
@@ -514,6 +518,7 @@ public class CreatureDetailDialog extends JDialog {
         p.setOpaque(false);
         p.setPreferredSize(new Dimension(0, 36));
         p.setMinimumSize(new Dimension(0, 36));
+        p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
         return p;
     }
 
