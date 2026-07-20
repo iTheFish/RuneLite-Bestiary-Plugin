@@ -97,6 +97,9 @@ public class BestiaryPlugin extends Plugin {
         clientToolbar.addNavigation(navButton);
         overlayManager.add(overlay);
 
+        CardExportDialog.setOnCopy(msg ->
+                sendChatMessage(msg, ChatColorType.NORMAL));
+
         SwingUtilities.invokeLater(panel::refresh);
         log.info("Bestiary plugin started");
     }
@@ -176,11 +179,14 @@ public class BestiaryPlugin extends Plugin {
 
         // Track the kill + check kill-count achievements
         dataService.incrementKillCount(npcName);
+        sessionTracker.addKill();
         List<Achievement> killAchievements = progressionService.checkKillAchievements();
         for (Achievement a : killAchievements) {
             sendAchievementMessage(a);
         }
 
+        long killXp  = Math.max(10L, (long) Math.max(1, npc.getCombatLevel()) * 10);
+        sessionTracker.addXp(killXp);
         int newLevel = progressionService.recordKill(npc);
         if (newLevel > 0) {
             if (config.notifyOnLevelUp()) {
@@ -210,6 +216,11 @@ public class BestiaryPlugin extends Plugin {
             sessionTracker.add(creature);
             dataService.addCapture(creature);
 
+            if (config.captureXpEnabled()) {
+                long ckXp       = Math.max(10L, (long) Math.max(1, creature.npcCombatLevel) * 10);
+                long captureXp  = Math.round(ckXp * creature.rarity.xpMultiplier);
+                sessionTracker.addXp(captureXp);
+            }
             List<Achievement> newAchievements = progressionService.recordCapture(creature, config.captureXpEnabled());
 
             // Chat notification

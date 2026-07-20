@@ -5,6 +5,7 @@ import net.runelite.client.plugins.bestiary.service.BestiaryDataService;
 import net.runelite.client.plugins.bestiary.service.ProgressionService;
 import net.runelite.client.plugins.bestiary.service.SessionTracker;
 import net.runelite.client.plugins.bestiary.service.WikiImageService;
+import net.runelite.client.plugins.bestiary.ui.SessionRecapDialog;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
@@ -24,6 +25,7 @@ public class BestiaryPanel extends PluginPanel {
 
     private final BestiaryDataService dataService;
     private final ProgressionService progressionService;
+    private final SessionTracker sessionTracker;
 
     private final JLabel statsLabel;
     private CollectionTab collectionTab;
@@ -37,6 +39,7 @@ public class BestiaryPanel extends PluginPanel {
         super(false); // false = don't auto-wrap in scroll pane
         this.dataService        = dataService;
         this.progressionService = progressionService;
+        this.sessionTracker     = sessionTracker;
         CreatureDetailDialog.setConfig(config);
         CreatureDetailDialog.setSaveCallback(dataService::saveNow);
         CardExportDialog.setShared(imageService, dataService::getCollection);
@@ -79,7 +82,8 @@ public class BestiaryPanel extends PluginPanel {
 
         infoTab = new InfoTab(dataService, progressionService,
                 () -> collectionTab.openAlbum(SwingUtilities.getWindowAncestor(this)),
-                () -> { tabs.setSelectedIndex(1); collectionTab.showFavourites(); });
+                () -> { tabs.setSelectedIndex(1); collectionTab.showFavourites(); },
+                () -> SessionRecapDialog.open(SwingUtilities.getWindowAncestor(this), sessionTracker));
 
         tabs.addTab("Info",       infoTab);
         tabs.addTab("Collection", collectionTab);

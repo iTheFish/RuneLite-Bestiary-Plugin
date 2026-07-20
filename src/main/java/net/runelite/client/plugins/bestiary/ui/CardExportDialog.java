@@ -18,6 +18,7 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -30,10 +31,15 @@ public class CardExportDialog extends JDialog {
 
     private static WikiImageService sharedImageService;
     private static Supplier<BestiaryCollection> collectionSupplier;
+    private static Consumer<String> onCopyAction;
 
     public static void setShared(WikiImageService imgSvc, Supplier<BestiaryCollection> supplier) {
         sharedImageService = imgSvc;
         collectionSupplier = supplier;
+    }
+
+    public static void setOnCopy(Consumer<String> callback) {
+        onCopyAction = callback;
     }
 
     /** Open export dialog for a single capture (uses shared service/collection). */
@@ -48,6 +54,7 @@ public class CardExportDialog extends JDialog {
     private final AlbumCard card;
     private final String cardId;
     private final String owner;
+    private final String npcName;
 
     public CardExportDialog(Window owner, CapturedCreature capture,
                             BestiaryCollection collection,
@@ -59,7 +66,8 @@ public class CardExportDialog extends JDialog {
 
         String capturedBy = capture.playerName != null && !capture.playerName.isEmpty()
                 ? capture.playerName : "Unknown";
-        this.card   = new AlbumCard(dexNumber, capture.npcName, List.of(capture), collection, imageService);
+        this.npcName = capture.npcName;
+        this.card    = new AlbumCard(dexNumber, capture.npcName, List.of(capture), collection, imageService);
         this.cardId = CardId.encode(dexNumber, capture);
         this.owner  = capturedBy;
 
@@ -186,6 +194,9 @@ public class CardExportDialog extends JDialog {
             }
         };
         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(t, null);
+        if (onCopyAction != null) {
+            onCopyAction.accept("Card exported to clipboard for " + npcName + " — ID: " + cardId);
+        }
     }
 
     private void savePng(String npcName) {

@@ -30,7 +30,7 @@ public class InfoTab extends JPanel {
     private final JLabel killsVal    = statValue("0");
 
     public InfoTab(BestiaryDataService dataService, ProgressionService progressionService,
-                   Runnable openAlbum, Runnable openFavourites) {
+                   Runnable openAlbum, Runnable openFavourites, Runnable openRecap) {
         this.dataService        = dataService;
         this.progressionService = progressionService;
 
@@ -54,7 +54,7 @@ public class InfoTab extends JPanel {
         // Live stats strip
         content.add(buildStatsStrip());
         content.add(Box.createVerticalStrut(6));
-        content.add(buildShortcutRow(openAlbum, openFavourites));
+        content.add(buildShortcutRow(openAlbum, openFavourites, openRecap));
         content.add(Box.createVerticalStrut(10));
 
         // Rarity quick-reference table
@@ -131,13 +131,14 @@ public class InfoTab extends JPanel {
         return l;
     }
 
-    private static JPanel buildShortcutRow(Runnable openAlbum, Runnable openFavourites) {
-        JPanel row = new JPanel(new GridLayout(1, 2, 4, 0));
+    private static JPanel buildShortcutRow(Runnable openAlbum, Runnable openFavourites, Runnable openRecap) {
+        JPanel row = new JPanel(new GridLayout(1, 3, 4, 0));
         row.setOpaque(false);
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
         row.setAlignmentX(LEFT_ALIGNMENT);
-        row.add(shortcutBtn("Open Album",   ORANGE,               openAlbum));
-        row.add(shortcutBtn("★ Favourites", new Color(220, 180, 60), openFavourites));
+        row.add(shortcutBtn("Open Album",     ORANGE,                  openAlbum));
+        row.add(shortcutBtn("★ Favourites",   new Color(220, 180, 60), openFavourites));
+        row.add(shortcutBtn("Session Recap",  new Color(120, 200, 120), openRecap));
         return row;
     }
 

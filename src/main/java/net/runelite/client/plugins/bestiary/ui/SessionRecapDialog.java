@@ -80,8 +80,21 @@ public class SessionRecapDialog extends JDialog {
         subLabel.setFont(FontManager.getRunescapeSmallFont());
         subLabel.setForeground(best != null ? best.rarity.displayColor : ColorScheme.LIGHT_GRAY_COLOR);
 
+        long xpGained  = tracker.getXpGained();
+        int  killCount = tracker.getKillCount();
+        String statsLine = killCount + " kill" + (killCount == 1 ? "" : "s")
+                + "  ·  " + java.text.NumberFormat.getNumberInstance(java.util.Locale.UK).format(xpGained) + " XP";
+        JLabel statsLabel = new JLabel(statsLine);
+        statsLabel.setFont(FontManager.getRunescapeSmallFont());
+        statsLabel.setForeground(new Color(130, 180, 130));
+
+        JPanel subPanel = new JPanel(new GridLayout(2, 1, 0, 1));
+        subPanel.setOpaque(false);
+        subPanel.add(subLabel);
+        subPanel.add(statsLabel);
+
         header.add(titleLabel, BorderLayout.NORTH);
-        header.add(subLabel,   BorderLayout.CENTER);
+        header.add(subPanel,   BorderLayout.CENTER);
 
         // --- Rarity pills ---
         JPanel pillRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));

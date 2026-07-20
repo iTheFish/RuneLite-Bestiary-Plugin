@@ -35,7 +35,7 @@ public class CollectionTab extends JPanel {
 
     private JToggleButton groupedBtn;
     private JToggleButton individualBtn;
-    private JToggleButton starBtn;
+    private JButton starBtn;
     private JPanel subToggleRow;
 
     private enum ViewMode { GROUPED, INDIVIDUAL, FAVOURITES }
@@ -90,12 +90,13 @@ public class CollectionTab extends JPanel {
         filterRow.add(sortOrder);
 
         // --- Star button: Favourites toggle, sits beside search bar ---
-        starBtn = new JToggleButton("★");
+        starBtn = new JButton("★");
         starBtn.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD).deriveFont(12f));
-        starBtn.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-        starBtn.setForeground(new Color(120, 120, 120));
+        starBtn.setContentAreaFilled(false);
+        starBtn.setOpaque(false);
         starBtn.setFocusPainted(false);
         starBtn.setBorderPainted(false);
+        starBtn.setForeground(new Color(120, 120, 120));
         starBtn.setToolTipText("Show Favourites");
         starBtn.setPreferredSize(new Dimension(26, 26));
         starBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -143,34 +144,34 @@ public class CollectionTab extends JPanel {
 
         // --- Album button: persistent, always visible below controls ---
         JButton albumBtn = new JButton("Open Bestiary Album");
-        albumBtn.setFont(FontManager.getRunescapeSmallFont());
+        albumBtn.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         albumBtn.setBackground(new Color(55, 55, 55));
         albumBtn.setForeground(new Color(255, 165, 0));
         albumBtn.setFocusPainted(false);
         albumBtn.setBorderPainted(false);
-        albumBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
+        albumBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
         albumBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         albumBtn.setToolTipText("Open the full Bestiary Album dex grid");
         albumBtn.addActionListener(e -> openAlbum(SwingUtilities.getWindowAncestor(CollectionTab.this)));
 
         // Action listeners
         starBtn.addActionListener(e -> {
-            if (starBtn.isSelected()) {
-                showFavourites();
-            } else {
+            if (viewMode == ViewMode.FAVOURITES) {
                 viewMode = ViewMode.GROUPED;
                 styleToggleButton(groupedBtn,    true);
                 styleToggleButton(individualBtn, false);
                 groupedBtn.setSelected(true);
                 subToggleRow.setVisible(true);
+                starBtn.setForeground(new Color(120, 120, 120));
                 rebuildCards();
+            } else {
+                showFavourites();
             }
         });
         groupedBtn.addActionListener(e -> {
             viewMode = ViewMode.GROUPED;
             styleToggleButton(groupedBtn,    true);
             styleToggleButton(individualBtn, false);
-            starBtn.setSelected(false);
             starBtn.setForeground(new Color(120, 120, 120));
             subToggleRow.setVisible(true);
             rebuildCards();
@@ -179,7 +180,6 @@ public class CollectionTab extends JPanel {
             viewMode = ViewMode.INDIVIDUAL;
             styleToggleButton(groupedBtn,    false);
             styleToggleButton(individualBtn, true);
-            starBtn.setSelected(false);
             starBtn.setForeground(new Color(120, 120, 120));
             subToggleRow.setVisible(false);
             sortOrder.setSelectedItem("Newest first");
@@ -241,7 +241,6 @@ public class CollectionTab extends JPanel {
         viewMode = ViewMode.FAVOURITES;
         styleToggleButton(groupedBtn,    false);
         styleToggleButton(individualBtn, false);
-        starBtn.setSelected(true);
         starBtn.setForeground(new Color(255, 195, 40));
         subToggleRow.setVisible(false);
         sortOrder.setSelectedItem("Rarity (best)");
