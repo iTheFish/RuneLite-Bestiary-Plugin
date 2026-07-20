@@ -15,21 +15,47 @@ public final class RarityRoller {
     private RarityRoller() {}
 
     /**
-     * Rolls a rarity using the probability weights declared on {@link CreatureRarity}.
-     * Uses the provided {@link Random} so callers can seed it for deterministic tests.
+     * Rolls a rarity using the base probability weights on {@link CreatureRarity}.
      */
     public static CreatureRarity roll(Random rng) {
-        double roll = rng.nextDouble();
-        double cumulative = 0.0;
+        return roll(rng, 1);
+    }
 
-        // Walk from rarest to most common so thresholds compose naturally.
-        // Probabilities declared on the enum sum to 1.0.
+    /**
+     * Rolls a rarity with weights shifted toward rarer outcomes at higher capture levels.
+     * At level 1, weights match the base probabilities exactly.
+     * At level 99, COMMON weight halves while MYTHIC weight is 12x the base.
+     *
+     * Level multipliers (linear interpolation between level 1 and level 99):
+     *   COMMON: 1.0 → 0.50   UNCOMMON: 1.0 → 1.30
+     *   RARE:   1.0 → 2.00   EPIC:     1.0 → 4.00
+     *   LEGENDARY: 1.0 → 8.0  MYTHIC: 1.0 → 12.0
+     */
+    public static CreatureRarity roll(Random rng, int captureLevel) {
+        double t = Math.max(0, Math.min(98, captureLevel - 1)) / 98.0; // 0.0 at lvl1, 1.0 at lvl99
+
+        double[] multipliers = {
+            1.0 + t * (0.50 - 1.0),  // COMMON:    1.0 → 0.50
+            1.0 + t * (1.30 - 1.0),  // UNCOMMON:  1.0 → 1.30
+            1.0 + t * (2.00 - 1.0),  // RARE:      1.0 → 2.00
+            1.0 + t * (4.00 - 1.0),  // EPIC:      1.0 → 4.00
+            1.0 + t * (8.00 - 1.0),  // LEGENDARY: 1.0 → 8.00
+            1.0 + t * (12.0 - 1.0),  // MYTHIC:    1.0 → 12.0
+        };
+
         CreatureRarity[] rarities = CreatureRarity.values();
-        for (int i = rarities.length - 1; i >= 0; i--) {
-            cumulative += rarities[i].probability;
-            if (roll >= 1.0 - cumulative) {
-                return rarities[i];
-            }
+        double[] weights = new double[rarities.length];
+        double total = 0.0;
+        for (int i = 0; i < rarities.length; i++) {
+            weights[i] = rarities[i].probability * multipliers[i];
+            total += weights[i];
+        }
+
+        double roll = rng.nextDouble() * total;
+        double cumulative = 0.0;
+        for (int i = 0; i < rarities.length; i++) {
+            cumulative += weights[i];
+            if (roll < cumulative) return rarities[i];
         }
         return CreatureRarity.COMMON;
     }

@@ -6,6 +6,7 @@ import net.runelite.client.plugins.bestiary.model.CreatureQuality;
 import net.runelite.client.plugins.bestiary.model.CreatureRarity;
 import net.runelite.client.plugins.bestiary.model.DevCaptureMode;
 import net.runelite.client.plugins.bestiary.model.DevRarityOverride;
+import net.runelite.client.plugins.bestiary.model.DifficultyTier;
 import net.runelite.client.plugins.bestiary.model.MonsterRoster;
 import net.runelite.client.plugins.bestiary.model.StatArchetype;
 import net.runelite.client.plugins.bestiary.util.RarityRoller;
@@ -50,6 +51,7 @@ public class CaptureService {
      * @param captureLevel  the player's current Capture Level
      * @param killCount     how many times this species has been killed before (used as metadata)
      * @param regionName    human-readable area name
+     * @param playerName    the logged-in player's name
      * @return a populated {@link CapturedCreature} on success, or empty on failure
      */
     public Optional<CapturedCreature> attemptCapture(NPC npc, WorldPoint location,
@@ -59,12 +61,15 @@ public class CaptureService {
             return Optional.empty();
         }
 
+        String npcName = npc.getName() != null ? npc.getName() : "Unknown";
+        DifficultyTier difficulty = MonsterRoster.getDifficulty(npcName, npc.getCombatLevel());
+
         double catchRate = config.devCaptureMode() == DevCaptureMode.FORCE_0   ? 0.0
                         : config.devCaptureMode() == DevCaptureMode.FORCE_100 ? 1.0
-                        : calculateCatchRate(captureLevel);
-        double roll      = rng.nextDouble();
+                        : calculateCatchRate(captureLevel, difficulty);
+        double roll = rng.nextDouble();
 
-        log.debug("Capture roll for {}: roll={} catchRate={}", npc.getName(),
+        log.debug("Capture roll for {} [{}]: roll={} catchRate={}", npcName, difficulty.label,
                 String.format("%.3f", roll), String.format("%.3f", catchRate));
 
         if (roll >= catchRate) {
@@ -74,8 +79,7 @@ public class CaptureService {
         DevRarityOverride forceRarity = config.devForceRarity();
         CreatureRarity rarity = (forceRarity != null && forceRarity != DevRarityOverride.NONE)
                 ? CreatureRarity.fromLabel(forceRarity.name())
-                : RarityRoller.roll(rng);
-        String npcName = npc.getName() != null ? npc.getName() : "Unknown";
+                : RarityRoller.roll(rng, captureLevel);
         StatArchetype archetype = MonsterRoster.getArchetype(npcName, npc.getCombatLevel());
         CreatureQuality quality = RarityRoller.generateQuality(archetype, rarity, rng);
 
@@ -92,20 +96,33 @@ public class CaptureService {
                 .playerName(playerName != null ? playerName : "")
                 .build();
 
-        log.info("Captured {} [{}]", creature.npcName, creature.rarity.label);
+        log.info("Captured {} [{}] difficulty={}", creature.npcName, creature.rarity.label, difficulty.label);
         return Optional.of(creature);
     }
 
     /**
-     * Catch rate formula:
-     *   rate = baseCatchRate% + (captureLevel \u00e2\u02c6\u2019 1) \u00c3\u2014 0.5%
-     *   rate = min(rate, maxCatchRate%)
+     * Catch rate by difficulty tier and capture level.
+     *
+     * Each tier has a base rate (level 1), a per-level bonus, and a cap (level 99+):
+     *   BEGINNER: 20% base, +0.50%/level, 60% cap
+     *   EASY:     15% base, +0.40%/level, 50% cap
+     *   MEDIUM:   10% base, +0.30%/level, 40% cap
+     *   HARD:      6% base, +0.22%/level, 28% cap
+     *   ELITE:     3% base, +0.13%/level, 15% cap
+     *   BOSS:    1.5% base, +0.07%/level,  8% cap
      */
-    double calculateCatchRate(int captureLevel) {
-        double base     = config.baseCaptureRate() / 100.0;
-        double levelAdd = (captureLevel - 1) * 0.005;
-        double max      = config.maxCaptureRate() / 100.0;
-        return Math.min(base + levelAdd, max);
+    double calculateCatchRate(int captureLevel, DifficultyTier difficulty) {
+        double base, perLevel, cap;
+        switch (difficulty) {
+            case BEGINNER: base = 0.20; perLevel = 0.0050; cap = 0.60; break;
+            case EASY:     base = 0.15; perLevel = 0.0040; cap = 0.50; break;
+            case MEDIUM:   base = 0.10; perLevel = 0.0030; cap = 0.40; break;
+            case HARD:     base = 0.06; perLevel = 0.0022; cap = 0.28; break;
+            case ELITE:    base = 0.03; perLevel = 0.0013; cap = 0.15; break;
+            case BOSS:     base = 0.015; perLevel = 0.0007; cap = 0.08; break;
+            default:       base = 0.10; perLevel = 0.0030; cap = 0.40; break;
+        }
+        return Math.min(base + (captureLevel - 1) * perLevel, cap);
     }
 }
 

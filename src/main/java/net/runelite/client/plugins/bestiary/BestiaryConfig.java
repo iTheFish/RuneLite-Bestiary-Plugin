@@ -32,28 +32,6 @@ public interface BestiaryConfig extends Config {
         return true;
     }
 
-    @Range(min = 1, max = 100)
-    @ConfigItem(
-            keyName = "baseCaptureRate",
-            name = "Base Catch Rate (%)",
-            description = "Starting capture probability at Capture Level 1 (1-100%)",
-            position = 1
-    )
-    default int baseCaptureRate() {
-        return 10;
-    }
-
-    @Range(min = 10, max = 100)
-    @ConfigItem(
-            keyName = "maxCaptureRate",
-            name = "Max Catch Rate (%)",
-            description = "Ceiling for the catch rate including all level bonuses (10-100%)",
-            position = 2
-    )
-    default int maxCaptureRate() {
-        return 60;
-    }
-
     @ConfigItem(
             keyName = "notifyOnCapture",
             name = "Notify on Capture",
