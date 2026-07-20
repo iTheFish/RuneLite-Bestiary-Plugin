@@ -63,7 +63,7 @@ public class InfoTab extends JPanel {
         content.add(Box.createVerticalStrut(8));
 
         // Dev tip
-        content.add(tipRow("Dev: Enable 'Force 100% Capture Rate' in the Developer Tools config section."));
+        content.add(tipRow("Dev: Use 'Capture Rate Override' (FORCE_100 / FORCE_0) and 'Force Rarity' in the Developer Tools config section for testing."));
 
         JScrollPane scroll = new JScrollPane(content);
         scroll.setBorder(null);
@@ -138,25 +138,35 @@ public class InfoTab extends JPanel {
                 new MatteBorder(0, 3, 0, 0, ORANGE),
                 new EmptyBorder(3, 8, 3, 0)));
 
-        JLabel title = new JLabel("Rarity Tiers");
+        JLabel title = new JLabel("Rarity Tiers  (chance improves with level)");
         title.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         title.setForeground(ORANGE);
 
-        // Header row
+        // Pre-compute level-99 normalised percentages
+        // Multipliers mirror RarityRoller: COMMON 0.50, UNCOMMON 1.30, RARE 2.00,
+        // EPIC 4.00, LEGENDARY 8.00, MYTHIC 12.0
+        double[] mult99 = {0.50, 1.30, 2.00, 4.00, 8.00, 12.0};
+        CreatureRarity[] rarities = CreatureRarity.values();
+        double total99 = 0.0;
+        double[] w99 = new double[rarities.length];
+        for (int i = 0; i < rarities.length; i++) {
+            w99[i] = rarities[i].probability * mult99[i];
+            total99 += w99[i];
+        }
+
         JPanel rows = new JPanel();
         rows.setLayout(new BoxLayout(rows, BoxLayout.Y_AXIS));
         rows.setOpaque(false);
 
-        JPanel headerRow = tableRow("Rarity", "Chance", "XP mult", new Color(200, 200, 200));
-        rows.add(headerRow);
+        rows.add(tableRow("Rarity", "Lv 1", "Lv 99", new Color(200, 200, 200)));
 
-        for (CreatureRarity r : CreatureRarity.values()) {
-            double pct = r.probability * 100;
-            String pctStr = pct >= 1.0
-                    ? String.format("%.0f%%", pct)
-                    : String.format("%.1f%%", pct);
-            String xpStr = (int) r.xpMultiplier + "x";
-            rows.add(tableRow("● " + r.label, pctStr, xpStr, r.displayColor));
+        for (int i = 0; i < rarities.length; i++) {
+            CreatureRarity r = rarities[i];
+            double pct1  = r.probability * 100;
+            double pct99 = w99[i] / total99 * 100;
+            String s1  = pct1  >= 1.0 ? String.format("%.0f%%", pct1)  : String.format("%.1f%%", pct1);
+            String s99 = pct99 >= 1.0 ? String.format("%.0f%%", pct99) : String.format("%.1f%%", pct99);
+            rows.add(tableRow("● " + r.label, s1, s99, r.displayColor));
         }
 
         outer.add(title, BorderLayout.NORTH);
@@ -204,13 +214,39 @@ public class InfoTab extends JPanel {
         tiles.setLayout(new BoxLayout(tiles, BoxLayout.Y_AXIS));
         tiles.setOpaque(false);
 
-        tiles.add(tile("Capture",    "Random roll on each kill. Base rate + level bonus, capped at max rate."));
-        tiles.add(tile("Quality",    "0-100 score based on NPC combat stats at time of capture."));
-        tiles.add(tile("XP",         "Kill XP = max(10, combatLvl×10). Captures multiply by rarity bonus."));
-        tiles.add(tile("Overlay",    "Top-centre notification shown on each capture. Pokeball animation optional."));
-        tiles.add(tile("Verbose",    "One chat message per capture with kill# and quality score."));
-        tiles.add(tile("Batched",    "Shows 1x, 2x, 3x count immediately on each kill of same NPC+rarity."));
-        tiles.add(tile("Reset",      "Use the Reset Collection button at the bottom of the panel."));
+        tiles.add(tile("Catch rate",
+                "Scales with your Capture Level and the monster's difficulty. " +
+                "Beginner: 20% (lv 1) → 60% (lv 99). Boss: 1.5% → 8%."));
+        tiles.add(tile("Rarity",
+                "Weighted roll on each capture. Higher Capture Level shifts weight toward rarer outcomes — " +
+                "Mythic is 12× more likely at level 99 than level 1."));
+        tiles.add(tile("Quality",
+                "6 stats (Power, Defence, Speed, Agility, Stamina, Intellect), each 0–100. " +
+                "Shaped by the monster's archetype — primary stats for that archetype roll high. " +
+                "Gold labels mark primary stats in the detail dialog."));
+        tiles.add(tile("XP",
+                "Kill XP = max(10, combatLvl × 10). " +
+                "Captures add XP × rarity multiplier (Common 1×, Rare 5×, Legendary 25×, Mythic 50×)."));
+        tiles.add(tile("Overlay",
+                "Configurable position (top/bottom, left/centre/right) and width via Config. " +
+                "Optional Pokeball animation plays before the result is shown."));
+        tiles.add(tile("Chat mode",
+                "Verbose: one message per capture with kill# and quality score. " +
+                "Batched: accumulates kills of the same NPC+rarity for 5 seconds of inactivity, " +
+                "then sends one summary message."));
+        tiles.add(tile("Album",
+                "Full dex grid showing every capturable species. " +
+                "Open via the 'Open Album' button in the By Monster view. " +
+                "Supports name search and difficulty filter."));
+        tiles.add(tile("Export",
+                "Right-click any card or capture row → Export Image. " +
+                "Generates a shareable PNG with a 28-character card fingerprint and your player name."));
+        tiles.add(tile("Session Recap",
+                "Button on the Progress tab. Shows all captures since your last login — " +
+                "rarity breakdown, quality scores, and regions. Copy as text or clear the session."));
+        tiles.add(tile("Reset",
+                "Double-confirm via the Reset Collection button at the bottom of the panel. " +
+                "Permanently deletes all captures, kills, XP, and achievements."));
 
         outer.add(title, BorderLayout.NORTH);
         outer.add(tiles, BorderLayout.CENTER);
