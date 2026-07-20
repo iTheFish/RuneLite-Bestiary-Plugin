@@ -93,9 +93,9 @@ public class InfoTab extends JPanel {
     // -------------------------------------------------------------------------
 
     private JPanel buildStatsStrip() {
-        JPanel strip = new JPanel(new GridLayout(1, 4, 4, 0));
+        JPanel strip = new JPanel(new GridLayout(2, 2, 4, 4));
         strip.setOpaque(false);
-        strip.setMaximumSize(new Dimension(Integer.MAX_VALUE, 52));
+        strip.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
         strip.setAlignmentX(LEFT_ALIGNMENT);
 
         strip.add(statBox("Species", speciesVal));
@@ -110,8 +110,8 @@ public class InfoTab extends JPanel {
         JPanel box = new JPanel(new GridLayout(2, 1, 0, 2));
         box.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         box.setBorder(BorderFactory.createCompoundBorder(
-                new MatteBorder(0, 2, 0, 0, ORANGE),
-                new EmptyBorder(4, 3, 4, 3)));
+                new MatteBorder(0, 3, 0, 0, ORANGE),
+                new EmptyBorder(8, 6, 6, 6)));
 
         JLabel label = new JLabel(labelText, SwingConstants.CENTER);
         label.setFont(FontManager.getRunescapeSmallFont());
@@ -126,7 +126,7 @@ public class InfoTab extends JPanel {
 
     private static JLabel statValue(String text) {
         JLabel l = new JLabel(text, SwingConstants.CENTER);
-        l.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD).deriveFont(13f));
+        l.setFont(FontManager.getRunescapeBoldFont());
         l.setForeground(ORANGE);
         return l;
     }
