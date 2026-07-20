@@ -29,7 +29,8 @@ public class InfoTab extends JPanel {
     private final JLabel levelVal    = statValue("1");
     private final JLabel killsVal    = statValue("0");
 
-    public InfoTab(BestiaryDataService dataService, ProgressionService progressionService) {
+    public InfoTab(BestiaryDataService dataService, ProgressionService progressionService,
+                   Runnable openAlbum, Runnable openFavourites) {
         this.dataService        = dataService;
         this.progressionService = progressionService;
 
@@ -52,6 +53,8 @@ public class InfoTab extends JPanel {
 
         // Live stats strip
         content.add(buildStatsStrip());
+        content.add(Box.createVerticalStrut(6));
+        content.add(buildShortcutRow(openAlbum, openFavourites));
         content.add(Box.createVerticalStrut(10));
 
         // Rarity quick-reference table
@@ -126,6 +129,28 @@ public class InfoTab extends JPanel {
         l.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD).deriveFont(13f));
         l.setForeground(ORANGE);
         return l;
+    }
+
+    private static JPanel buildShortcutRow(Runnable openAlbum, Runnable openFavourites) {
+        JPanel row = new JPanel(new GridLayout(1, 2, 4, 0));
+        row.setOpaque(false);
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+        row.setAlignmentX(LEFT_ALIGNMENT);
+        row.add(shortcutBtn("Open Album",   ORANGE,               openAlbum));
+        row.add(shortcutBtn("★ Favourites", new Color(220, 180, 60), openFavourites));
+        return row;
+    }
+
+    private static JButton shortcutBtn(String text, Color fg, Runnable action) {
+        JButton btn = new JButton(text);
+        btn.setFont(FontManager.getRunescapeSmallFont());
+        btn.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        btn.setForeground(fg);
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.addActionListener(e -> action.run());
+        return btn;
     }
 
     // -------------------------------------------------------------------------

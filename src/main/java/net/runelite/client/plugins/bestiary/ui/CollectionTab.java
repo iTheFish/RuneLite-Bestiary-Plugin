@@ -33,6 +33,11 @@ public class CollectionTab extends JPanel {
     private final JComboBox<String> sortOrder;
     private final JPanel cardContainer;
 
+    private JToggleButton groupedBtn;
+    private JToggleButton individualBtn;
+    private JToggleButton favouritesBtn;
+    private JPanel subToggleRow;
+
     private enum ViewMode { GROUPED, INDIVIDUAL, FAVOURITES }
     private ViewMode viewMode = ViewMode.GROUPED;
     private boolean  byMonster = false;
@@ -88,9 +93,9 @@ public class CollectionTab extends JPanel {
         JPanel toggleRow = new JPanel(new GridLayout(1, 3, 0, 0));
         toggleRow.setOpaque(false);
 
-        JToggleButton groupedBtn    = new JToggleButton("Grouped");
-        JToggleButton individualBtn = new JToggleButton("Individual");
-        JToggleButton favouritesBtn = new JToggleButton("★ Favourites");
+        groupedBtn    = new JToggleButton("Grouped");
+        individualBtn = new JToggleButton("Individual");
+        favouritesBtn = new JToggleButton("★ Favourites");
 
         styleToggleButton(groupedBtn,    true);
         styleToggleButton(individualBtn, false);
@@ -107,7 +112,7 @@ public class CollectionTab extends JPanel {
         toggleRow.add(favouritesBtn);
 
         // --- Sub-toggle (Grouped only): By Rarity / By Monster ---
-        JPanel subToggleRow = new JPanel(new GridLayout(1, 2, 0, 0));
+        subToggleRow = new JPanel(new GridLayout(1, 2, 0, 0));
         subToggleRow.setOpaque(false);
 
         JToggleButton byRarityBtn  = new JToggleButton("By Rarity");
@@ -196,6 +201,24 @@ public class CollectionTab extends JPanel {
 
     public void refresh() {
         rebuildCards();
+    }
+
+    public void showFavourites() {
+        viewMode = ViewMode.FAVOURITES;
+        styleToggleButton(groupedBtn,    false);
+        styleToggleButton(individualBtn, false);
+        styleToggleButton(favouritesBtn, true);
+        favouritesBtn.setSelected(true);
+        subToggleRow.setVisible(false);
+        sortOrder.setSelectedItem("Rarity (best)");
+        rebuildCards();
+    }
+
+    public void openAlbum(Window parent) {
+        Map<String, List<CapturedCreature>> byNpc = dataService.getCollection().creatures.stream()
+                .collect(Collectors.groupingBy(c -> c.npcName));
+        new AlbumDialog(parent, byNpc, dataService.getCollection().killCounts,
+                dataService.getCollection(), imageService);
     }
 
     private void rebuildCards() {

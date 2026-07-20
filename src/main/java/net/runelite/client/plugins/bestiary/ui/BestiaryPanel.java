@@ -72,14 +72,18 @@ public class BestiaryPanel extends PluginPanel {
         // Tabs
         collectionTab = new CollectionTab(dataService, imageService);
         progressTab   = new ProgressTab(progressionService, sessionTracker);
-        infoTab       = new InfoTab(dataService, progressionService);
 
         JTabbedPane tabs = new JTabbedPane();
         tabs.setBackground(ColorScheme.DARK_GRAY_COLOR);
         tabs.setForeground(Color.WHITE);
+
+        infoTab = new InfoTab(dataService, progressionService,
+                () -> collectionTab.openAlbum(SwingUtilities.getWindowAncestor(this)),
+                () -> { tabs.setSelectedIndex(1); collectionTab.showFavourites(); });
+
+        tabs.addTab("Info",       infoTab);
         tabs.addTab("Collection", collectionTab);
         tabs.addTab("Progress",   progressTab);
-        tabs.addTab("Info",       infoTab);
 
         add(header,          BorderLayout.NORTH);
         add(tabs,            BorderLayout.CENTER);
