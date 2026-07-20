@@ -399,7 +399,8 @@ public class DashboardDialog extends JDialog {
         int captured              = (int) col.uniqueSpeciesCount();
         float pct                 = total > 0 ? (float) captured / total : 0f;
 
-        root.add(buildCompletionHero(captured, total, pct));
+        root.add(heroStat(String.format("%.1f%%", pct * 100f) + "  (" + captured + " / " + total + ")",
+                "DEX COMPLETION", new Color(80, 200, 80)));
         root.add(gap(10));
         root.add(sectionHeader("COMPLETION BY DIFFICULTY"));
 
