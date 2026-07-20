@@ -95,15 +95,31 @@ public class DashboardDialog extends JDialog {
         viewBox.setFont(FontManager.getRunescapeSmallFont());
         viewBox.setSelectedItem(initial);
 
-        JButton copyViewBtn = topBarBtn("Copy View", "Copy current view as image to clipboard");
-        JButton saveAllBtn  = topBarBtn("Save All",  "Save all 4 views as a combined PNG");
-        copyViewBtn.addActionListener(e -> exportView(copyViewBtn));
-        saveAllBtn.addActionListener(e  -> exportAll(saveAllBtn));
+        JButton copyBtn = topBarBtn("Copy", "Copy as image to clipboard");
+        JButton saveBtn = topBarBtn("Save", "Save as PNG");
+
+        JPopupMenu copyMenu = new JPopupMenu();
+        JMenuItem copyThis = new JMenuItem("Just this view");
+        JMenuItem copyAll  = new JMenuItem("All views");
+        copyThis.addActionListener(e -> exportView(copyBtn));
+        copyAll.addActionListener(e  -> { copyImageToClipboard(renderAllCard(dataService, progressionService)); flashButton(copyBtn, "✓ Copied!"); });
+        copyMenu.add(copyThis);
+        copyMenu.add(copyAll);
+        copyBtn.addActionListener(e -> copyMenu.show(copyBtn, 0, copyBtn.getHeight()));
+
+        JPopupMenu saveMenu = new JPopupMenu();
+        JMenuItem saveThis = new JMenuItem("Just this view");
+        JMenuItem saveAll  = new JMenuItem("All views");
+        saveThis.addActionListener(e -> exportSingle(saveBtn));
+        saveAll.addActionListener(e  -> exportAll(saveBtn));
+        saveMenu.add(saveThis);
+        saveMenu.add(saveAll);
+        saveBtn.addActionListener(e -> saveMenu.show(saveBtn, 0, saveBtn.getHeight()));
 
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
         right.setOpaque(false);
-        right.add(copyViewBtn);
-        right.add(saveAllBtn);
+        right.add(copyBtn);
+        right.add(saveBtn);
         right.add(viewBox);
 
         topBar.add(title, BorderLayout.WEST);
@@ -938,8 +954,23 @@ public class DashboardDialog extends JDialog {
     }
 
     private void exportView(JButton btn) {
-        copyViewToClipboard(dataService, progressionService, activeView);
+        copyImageToClipboard(renderCard(dataService, progressionService, activeView));
         flashButton(btn, "✓ Copied!");
+    }
+
+    private void exportSingle(JButton btn) {
+        BufferedImage img = renderCard(dataService, progressionService, activeView);
+        JFileChooser chooser = new JFileChooser();
+        chooser.setSelectedFile(new File(System.getProperty("user.home"),
+                "bestiary_" + activeView.name().toLowerCase() + ".png"));
+        if (chooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            try {
+                ImageIO.write(img, "PNG", chooser.getSelectedFile());
+                flashButton(btn, "✓ Saved!");
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Save failed: " + ex.getMessage());
+            }
+        }
     }
 
     private void exportAll(JButton btn) {
@@ -956,9 +987,7 @@ public class DashboardDialog extends JDialog {
         }
     }
 
-    /** Public — called from InfoTab right-click without opening the dialog. */
-    public static void copyViewToClipboard(BestiaryDataService ds, ProgressionService ps, DashView view) {
-        BufferedImage img = renderCard(ds, ps, view);
+    private static void copyImageToClipboard(BufferedImage img) {
         Transferable t = new Transferable() {
             @Override public DataFlavor[] getTransferDataFlavors() { return new DataFlavor[]{DataFlavor.imageFlavor}; }
             @Override public boolean isDataFlavorSupported(DataFlavor f) { return f.equals(DataFlavor.imageFlavor); }
@@ -968,6 +997,11 @@ public class DashboardDialog extends JDialog {
             }
         };
         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(t, null);
+    }
+
+    /** Public — called from InfoTab right-click without opening the dialog. */
+    public static void copyViewToClipboard(BestiaryDataService ds, ProgressionService ps, DashView view) {
+        copyImageToClipboard(renderCard(ds, ps, view));
     }
 
     private static void flashButton(JButton btn, String flashText) {
@@ -998,23 +1032,49 @@ public class DashboardDialog extends JDialog {
         BufferedImage species = renderSpeciesCard(ds);
         BufferedImage caught  = renderCaughtCard(ds);
 
-        int gap    = 10, pad = 16;
-        int colW   = Math.max(prog.getWidth(), species.getWidth());
-        int row1H  = Math.max(prog.getHeight(),    kills.getHeight());
-        int row2H  = Math.max(species.getHeight(), caught.getHeight());
-        int W      = pad * 2 + colW * 2 + gap;
-        int H      = pad * 2 + row1H + gap + row2H;
+        int gap   = 10, pad = 16;
+        int colW  = Math.max(prog.getWidth(), species.getWidth());
+        int row1H = Math.max(prog.getHeight(),    kills.getHeight());
+        int row2H = Math.max(species.getHeight(), caught.getHeight());
+
+        // Pad shorter cards to row height so footers align
+        prog    = padCardToHeight(prog,    row1H);
+        kills   = padCardToHeight(kills,   row1H);
+        species = padCardToHeight(species, row2H);
+        caught  = padCardToHeight(caught,  row2H);
+
+        int W = pad * 2 + colW * 2 + gap;
+        int H = pad * 2 + row1H + gap + row2H;
 
         BufferedImage all = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = all.createGraphics();
         g.setColor(new Color(10, 10, 10));
         g.fillRect(0, 0, W, H);
-        g.drawImage(prog,    pad,             pad,             null);
-        g.drawImage(kills,   pad + colW + gap, pad,            null);
-        g.drawImage(species, pad,             pad + row1H + gap, null);
+        g.drawImage(prog,    pad,              pad,               null);
+        g.drawImage(kills,   pad + colW + gap, pad,               null);
+        g.drawImage(species, pad,              pad + row1H + gap, null);
         g.drawImage(caught,  pad + colW + gap, pad + row1H + gap, null);
         g.dispose();
         return all;
+    }
+
+    private static BufferedImage padCardToHeight(BufferedImage src, int targetH) {
+        if (src.getHeight() >= targetH) return src;
+        int W = src.getWidth();
+        BufferedImage dst = new BufferedImage(W, targetH, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = cardGraphics(dst);
+        // Background fill matching card base colour
+        g.setColor(new Color(14, 14, 14));
+        g.fillRoundRect(0, 0, W, targetH, 16, 16);
+        // Copy content above the old footer
+        int contentH = src.getHeight() - 36;
+        g.drawImage(src, 0, 0, W, contentH, 0, 0, W, contentH, null);
+        g.dispose();
+        // Re-draw footer pinned to the new bottom
+        Graphics2D gf = cardGraphics(dst);
+        drawCardFooter(gf, targetH - 36, W, 24);
+        gf.dispose();
+        return dst;
     }
 
     // ---- shared card base ----
@@ -1488,7 +1548,7 @@ public class DashboardDialog extends JDialog {
         final int W = 480, PAD = 24;
         int diffTiers = DifficultyTier.values().length;
         int top5Rows = Math.max(1, top5.size());
-        int H = 4 + PAD + 60 + 12
+        int H = 4 + PAD + 60 + 12 + 70 + 12 + 12
                + 22 + 6 + diffTiers * 22 + 8
                + 22 + 6 + sortedSpTypes.size() * 22 + 8
                + 22 + 6 + 21 + top5Rows * 20 + 8
