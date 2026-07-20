@@ -37,6 +37,8 @@ public class CollectionTab extends JPanel {
     private JToggleButton individualBtn;
     private JButton starBtn;
     private JPanel subToggleRow;
+    private JToggleButton byRarityBtn;
+    private JToggleButton byMonsterBtn;
 
     private enum ViewMode { GROUPED, INDIVIDUAL, FAVOURITES }
     private ViewMode viewMode = ViewMode.GROUPED;
@@ -91,14 +93,15 @@ public class CollectionTab extends JPanel {
 
         // --- Star button: Favourites toggle, sits beside search bar ---
         starBtn = new JButton("★");
-        starBtn.setFont(new Font(Font.DIALOG, Font.BOLD, 14));
+        starBtn.setFont(new Font(Font.DIALOG, Font.BOLD, 13));
+        starBtn.setMargin(new Insets(0, 0, 0, 0));
         starBtn.setContentAreaFilled(false);
         starBtn.setOpaque(false);
         starBtn.setFocusPainted(false);
         starBtn.setBorderPainted(false);
         starBtn.setForeground(new Color(120, 120, 120));
         starBtn.setToolTipText("Show Favourites");
-        starBtn.setPreferredSize(new Dimension(26, 26));
+        starBtn.setPreferredSize(new Dimension(30, 26));
         starBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         JPanel searchRow = new JPanel(new BorderLayout(4, 0));
@@ -128,8 +131,8 @@ public class CollectionTab extends JPanel {
         subToggleRow = new JPanel(new GridLayout(1, 2, 0, 0));
         subToggleRow.setOpaque(false);
 
-        JToggleButton byRarityBtn  = new JToggleButton("By Rarity");
-        JToggleButton byMonsterBtn = new JToggleButton("By Monster");
+        byRarityBtn  = new JToggleButton("By Rarity");
+        byMonsterBtn = new JToggleButton("By Monster");
 
         styleToggleButton(byRarityBtn,  true);
         styleToggleButton(byMonsterBtn, false);
@@ -162,6 +165,8 @@ public class CollectionTab extends JPanel {
                 styleToggleButton(individualBtn, false);
                 groupedBtn.setSelected(true);
                 starBtn.setForeground(new Color(120, 120, 120));
+                byRarityBtn.setVisible(true);
+                byMonsterBtn.setVisible(true);
                 rebuildCards();
             } else {
                 showFavourites();
@@ -172,6 +177,8 @@ public class CollectionTab extends JPanel {
             styleToggleButton(groupedBtn,    true);
             styleToggleButton(individualBtn, false);
             starBtn.setForeground(new Color(120, 120, 120));
+            byRarityBtn.setVisible(true);
+            byMonsterBtn.setVisible(true);
             rebuildCards();
         });
         individualBtn.addActionListener(e -> {
@@ -179,6 +186,8 @@ public class CollectionTab extends JPanel {
             styleToggleButton(groupedBtn,    false);
             styleToggleButton(individualBtn, true);
             starBtn.setForeground(new Color(120, 120, 120));
+            byRarityBtn.setVisible(false);
+            byMonsterBtn.setVisible(false);
             sortOrder.setSelectedItem("Newest first");
             rebuildCards();
         });
@@ -239,6 +248,8 @@ public class CollectionTab extends JPanel {
         styleToggleButton(groupedBtn,    false);
         styleToggleButton(individualBtn, false);
         starBtn.setForeground(new Color(255, 195, 40));
+        byRarityBtn.setVisible(false);
+        byMonsterBtn.setVisible(false);
         sortOrder.setSelectedItem("Rarity (best)");
         rebuildCards();
     }
