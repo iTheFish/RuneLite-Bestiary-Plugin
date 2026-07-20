@@ -54,8 +54,11 @@ public class AlbumDialog extends JDialog {
     private final Map<String, Integer> dexNumbers;
 
     private final JPanel gridPanel;
-    private String  currentSort    = "Name A–Z";
-    private boolean capturedFirst  = true;
+    private final JLabel countLabel;
+    private String        currentSort      = "Name A–Z";
+    private boolean       capturedFirst    = true;
+    private String        searchTerm       = "";
+    private DifficultyTier filterDifficulty = null; // null = All tiers
 
     public AlbumDialog(Window owner, Map<String, List<CapturedCreature>> capturesByNpc,
                        Map<String, Integer> killCounts, BestiaryCollection collection,
@@ -76,12 +79,17 @@ public class AlbumDialog extends JDialog {
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setResizable(true);
 
-        // --- Top bar ---
-        JPanel topBar = new JPanel(new BorderLayout(6, 0));
+        // --- Top bar (two rows) ---
+        JPanel topBar = new JPanel();
+        topBar.setLayout(new BoxLayout(topBar, BoxLayout.Y_AXIS));
         topBar.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         topBar.setBorder(new EmptyBorder(6, 8, 6, 8));
 
-        // Sort
+        // Row 1: sort + captured-first toggle + count
+        JPanel row1 = new JPanel(new BorderLayout(6, 0));
+        row1.setOpaque(false);
+        row1.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+
         JLabel sortLabel = new JLabel("Sort:");
         sortLabel.setFont(FontManager.getRunescapeSmallFont());
         sortLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
@@ -97,7 +105,6 @@ public class AlbumDialog extends JDialog {
         sortRow.add(sortLabel, BorderLayout.WEST);
         sortRow.add(sortBox,   BorderLayout.CENTER);
 
-        // Captured-first toggle
         JToggleButton capturedFirstBtn = new JToggleButton();
         capturedFirstBtn.setSelected(capturedFirst);
         styleCapturedFirstBtn(capturedFirstBtn, capturedFirst);
@@ -107,10 +114,7 @@ public class AlbumDialog extends JDialog {
             rebuildGrid();
         });
 
-        // Species counts
-        int captured = capturesByNpc.size();
-        int total    = fullRoster.size();
-        JLabel countLabel = new JLabel(captured + " / " + total);
+        countLabel = new JLabel(capturesByNpc.size() + " / " + fullRoster.size());
         countLabel.setFont(FontManager.getRunescapeSmallFont());
         countLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 
@@ -119,8 +123,45 @@ public class AlbumDialog extends JDialog {
         rightPanel.add(capturedFirstBtn, BorderLayout.WEST);
         rightPanel.add(countLabel,       BorderLayout.EAST);
 
-        topBar.add(sortRow,    BorderLayout.CENTER);
-        topBar.add(rightPanel, BorderLayout.EAST);
+        row1.add(sortRow,    BorderLayout.CENTER);
+        row1.add(rightPanel, BorderLayout.EAST);
+
+        // Row 2: search box + difficulty filter
+        JPanel row2 = new JPanel(new BorderLayout(6, 0));
+        row2.setOpaque(false);
+        row2.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
+        row2.setBorder(new EmptyBorder(4, 0, 0, 0));
+
+        JTextField searchBox = new JTextField();
+        searchBox.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        searchBox.setForeground(Color.WHITE);
+        searchBox.setCaretColor(Color.WHITE);
+        searchBox.setFont(FontManager.getRunescapeSmallFont());
+        searchBox.putClientProperty("JTextField.placeholderText", "Search monsters…");
+        searchBox.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            private void update() { searchTerm = searchBox.getText().trim(); rebuildGrid(); }
+            @Override public void insertUpdate(javax.swing.event.DocumentEvent e)  { update(); }
+            @Override public void removeUpdate(javax.swing.event.DocumentEvent e)  { update(); }
+            @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { update(); }
+        });
+
+        String[] diffOptions = {"All tiers", "Beginner", "Easy", "Medium", "Hard", "Elite", "Boss"};
+        JComboBox<String> diffBox = new JComboBox<>(diffOptions);
+        diffBox.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        diffBox.setForeground(Color.WHITE);
+        diffBox.setFont(FontManager.getRunescapeSmallFont());
+        diffBox.setPreferredSize(new Dimension(100, diffBox.getPreferredSize().height));
+        diffBox.addActionListener(e -> {
+            int idx = diffBox.getSelectedIndex();
+            filterDifficulty = idx == 0 ? null : DifficultyTier.values()[idx - 1];
+            rebuildGrid();
+        });
+
+        row2.add(searchBox, BorderLayout.CENTER);
+        row2.add(diffBox,   BorderLayout.EAST);
+
+        topBar.add(row1);
+        topBar.add(row2);
 
         // --- Grid ---
         gridPanel = new JPanel();
@@ -169,11 +210,26 @@ public class AlbumDialog extends JDialog {
         gridPanel.setLayout(new GridLayout(0, cols, CARD_GAP, CARD_GAP));
         gridPanel.setBorder(new EmptyBorder(SIDE_PAD, SIDE_PAD, SIDE_PAD, SIDE_PAD));
 
+        // Apply search + difficulty filters
+        String lc = searchTerm.toLowerCase();
+        List<String> visible = fullRoster.stream()
+                .filter(n -> lc.isEmpty() || n.toLowerCase().contains(lc))
+                .filter(n -> {
+                    if (filterDifficulty == null) return true;
+                    int combat = capturesByNpc.containsKey(n) ? capturesByNpc.get(n).get(0).npcCombatLevel : 0;
+                    return MonsterRoster.getDifficulty(n, combat) == filterDifficulty;
+                })
+                .collect(Collectors.toList());
+
+        long visibleCaptured = visible.stream().filter(capturesByNpc::containsKey).count();
+        countLabel.setText(visibleCaptured + " / " + visible.size()
+                + (visible.size() < fullRoster.size() ? " (filtered)" : ""));
+
         // Split into captured vs locked, then sort each group
-        List<String> capturedNames = fullRoster.stream()
+        List<String> capturedNames = visible.stream()
                 .filter(capturesByNpc::containsKey)
                 .collect(Collectors.toList());
-        List<String> lockedNames = fullRoster.stream()
+        List<String> lockedNames = visible.stream()
                 .filter(n -> !capturesByNpc.containsKey(n))
                 .collect(Collectors.toList());
 
@@ -187,7 +243,7 @@ public class AlbumDialog extends JDialog {
         } else {
             // Mix both groups under the same sort, then locked entries naturally
             // fall last for quality/rarity sorts (they have 0/null values).
-            ordered = new ArrayList<>(fullRoster);
+            ordered = new ArrayList<>(visible);
             sortAllMixed(ordered);
         }
 
