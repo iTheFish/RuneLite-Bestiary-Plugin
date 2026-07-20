@@ -27,6 +27,10 @@ public class CaptureRow extends JPanel {
     private static final int   ROW_HEIGHT = 50;
     private static final Color ROW_BG     = ColorScheme.DARKER_GRAY_COLOR;
     private static final Color ROW_HOVER  = new Color(55, 55, 55);
+
+    private static Runnable onFavouriteLimitReached;
+    public static void setOnFavouriteLimitReached(Runnable r) { onFavouriteLimitReached = r; }
+    public static Runnable getOnFavouriteLimitReached() { return onFavouriteLimitReached; }
     private static final DateTimeFormatter DATE_FMT =
             DateTimeFormatter.ofPattern("dd MMM HH:mm").withZone(ZoneId.systemDefault());
 
@@ -103,6 +107,10 @@ public class CaptureRow extends JPanel {
 
                     JMenuItem favItem = new JMenuItem(capture.favourite ? "✩ Remove Favourite" : "★ Favourite");
                     favItem.addActionListener(ev -> {
+                        if (!capture.favourite && collection.countFavourites() >= 20) {
+                            if (onFavouriteLimitReached != null) onFavouriteLimitReached.run();
+                            return;
+                        }
                         capture.favourite = !capture.favourite;
                         if (onFavouriteChanged != null) onFavouriteChanged.run();
                     });

@@ -208,7 +208,7 @@ public class AlbumDialog extends JDialog {
         exportGridBtn.setForeground(new Color(255, 195, 40));
         exportGridBtn.setFocusPainted(false);
         exportGridBtn.setBorderPainted(false);
-        exportGridBtn.setToolTipText("Export up to 9 starred captures as a 3×3 grid — copies to clipboard");
+        exportGridBtn.setToolTipText("Export starred captures as a grid (≤9: 3 cols, 10–20: 4 cols) — copies to clipboard");
         exportGridBtn.addActionListener(e -> exportFavouritesGrid(exportGridBtn));
 
         exportHint = new JLabel("★ Viewing starred captures only");
@@ -560,7 +560,6 @@ public class AlbumDialog extends JDialog {
                 .flatMap(List::stream)
                 .filter(c -> c.favourite)
                 .sorted(Comparator.comparing((CapturedCreature c) -> c.captureTime, Comparator.reverseOrder()))
-                .limit(9)
                 .collect(Collectors.toList());
 
         if (starred.isEmpty()) {
@@ -576,7 +575,7 @@ public class AlbumDialog extends JDialog {
         }
 
         int count = starred.size();
-        int cols  = Math.min(3, count);
+        int cols  = count <= 9 ? Math.min(3, count) : 4;
         int rows  = (count + cols - 1) / cols;
         final int GAP = 6, PAD = 8, SCALE = 2;
 

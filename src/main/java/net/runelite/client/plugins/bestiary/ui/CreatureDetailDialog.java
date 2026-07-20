@@ -386,6 +386,11 @@ public class CreatureDetailDialog extends JDialog {
 
                 JMenuItem favItem = new JMenuItem(c.favourite ? "✩ Remove Favourite" : "★ Favourite");
                 favItem.addActionListener(ev -> {
+                    if (!c.favourite && collection.countFavourites() >= 20) {
+                        Runnable limCb = CaptureRow.getOnFavouriteLimitReached();
+                        if (limCb != null) limCb.run();
+                        return;
+                    }
                     c.favourite = !c.favourite;
                     buildList(currentSort);
                     if (saveCallback != null) saveCallback.run();

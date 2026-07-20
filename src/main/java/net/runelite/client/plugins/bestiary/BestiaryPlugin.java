@@ -100,6 +100,10 @@ public class BestiaryPlugin extends Plugin {
         CardExportDialog.setOnCopy(msg ->
                 sendChatMessage(msg, ChatColorType.NORMAL));
 
+        net.runelite.client.plugins.bestiary.ui.CaptureRow.setOnFavouriteLimitReached(() ->
+                sendChatMessage("Favourites limit reached (20/20). Remove a star to add another.",
+                        ChatColorType.NORMAL));
+
         SwingUtilities.invokeLater(panel::refresh);
         log.info("Bestiary plugin started");
     }

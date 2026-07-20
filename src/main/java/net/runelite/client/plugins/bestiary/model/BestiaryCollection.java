@@ -50,5 +50,9 @@ public class BestiaryCollection {
     public int totalKills() {
         return killCounts.values().stream().mapToInt(Integer::intValue).sum();
     }
+
+    public int countFavourites() {
+        return (int) creatures.stream().filter(c -> c.favourite).count();
+    }
 }
 
