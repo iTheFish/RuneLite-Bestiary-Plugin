@@ -6,6 +6,7 @@ import net.runelite.client.plugins.bestiary.model.CreatureRarity;
 import net.runelite.client.plugins.bestiary.model.DifficultyTier;
 import net.runelite.client.plugins.bestiary.model.MonsterRoster;
 import net.runelite.client.plugins.bestiary.service.WikiImageService;
+import net.runelite.client.plugins.bestiary.util.CardId;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 
@@ -575,12 +576,21 @@ public class AlbumDialog extends JDialog {
         }
 
         int count = starred.size();
-        int cols  = count <= 9 ? Math.min(3, count) : 4;
+        int cols  = count == 1 ? 1 : count <= 4 ? 2 : count <= 9 ? 3 : 4;
         int rows  = (count + cols - 1) / cols;
-        final int GAP = 6, PAD = 8, SCALE = 2;
+        final int GAP      = 6;
+        final int PAD      = 8;
+        final int SCALE    = 2;
+        final int HEADER_H = 34;
+        final int BANNER_H = 26;
+        final int SLOT_H   = AlbumCard.CARD_H + 2 + BANNER_H;
+
+        String playerName = starred.stream()
+                .map(c -> c.playerName).filter(n -> n != null && !n.isEmpty())
+                .findFirst().orElse("Unknown");
 
         int logW = cols * AlbumCard.CARD_W + (cols - 1) * GAP + PAD * 2;
-        int logH = rows * AlbumCard.CARD_H + (rows - 1) * GAP + PAD * 2;
+        int logH = HEADER_H + PAD + rows * SLOT_H + (rows - 1) * GAP + PAD;
 
         BufferedImage img = new BufferedImage(logW * SCALE, logH * SCALE, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2 = img.createGraphics();
@@ -590,8 +600,24 @@ public class AlbumDialog extends JDialog {
         g2.setRenderingHint(RenderingHints.KEY_RENDERING,         RenderingHints.VALUE_RENDER_QUALITY);
         g2.scale(SCALE, SCALE);
 
+        // Background
         g2.setColor(new Color(18, 18, 18));
         g2.fillRect(0, 0, logW, logH);
+
+        // Header strip
+        g2.setColor(new Color(28, 28, 28));
+        g2.fillRect(0, 0, logW, HEADER_H);
+        String headerText = playerName + "'s Favourites";
+        g2.setFont(FontManager.getRunescapeBoldFont());
+        FontMetrics hfm = g2.getFontMetrics();
+        int hx = (logW - hfm.stringWidth(headerText)) / 2;
+        int hy = (HEADER_H + hfm.getAscent() - hfm.getDescent()) / 2;
+        g2.setColor(new Color(255, 195, 40));
+        g2.drawString(headerText, hx, hy);
+
+        // Cards + per-card banners
+        Font playerFont = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD);
+        Font idFont     = FontManager.getRunescapeSmallFont();
 
         for (int i = 0; i < starred.size(); i++) {
             CapturedCreature cap = starred.get(i);
@@ -602,12 +628,29 @@ public class AlbumDialog extends JDialog {
             int col = i % cols;
             int row = i / cols;
             int x   = PAD + col * (AlbumCard.CARD_W + GAP);
-            int y   = PAD + row * (AlbumCard.CARD_H + GAP);
+            int y   = HEADER_H + PAD + row * (SLOT_H + GAP);
 
             Graphics2D cardG2 = (Graphics2D) g2.create();
             cardG2.translate(x, y);
             card.print(cardG2);
             cardG2.dispose();
+
+            // Banner below card
+            int bY = y + AlbumCard.CARD_H + 2;
+            g2.setColor(new Color(25, 25, 25));
+            g2.fillRoundRect(x, bY, AlbumCard.CARD_W, BANNER_H, 4, 4);
+
+            String capPlayer = (cap.playerName != null && !cap.playerName.isEmpty()) ? cap.playerName : "Unknown";
+            g2.setFont(playerFont);
+            FontMetrics pfm = g2.getFontMetrics();
+            g2.setColor(new Color(200, 155, 50));
+            g2.drawString(capPlayer, x + 4, bY + pfm.getAscent() + 1);
+
+            String cardId = CardId.encode(dex, cap);
+            g2.setFont(idFont);
+            FontMetrics ifm = g2.getFontMetrics();
+            g2.setColor(new Color(90, 90, 90));
+            g2.drawString(cardId, x + 4, bY + pfm.getHeight() + ifm.getAscent() - 1);
         }
         g2.dispose();
 
