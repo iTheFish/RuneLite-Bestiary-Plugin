@@ -35,7 +35,7 @@ public class CollectionTab extends JPanel {
 
     private JToggleButton groupedBtn;
     private JToggleButton individualBtn;
-    private JToggleButton favouritesBtn;
+    private JToggleButton starBtn;
     private JPanel subToggleRow;
 
     private enum ViewMode { GROUPED, INDIVIDUAL, FAVOURITES }
@@ -89,27 +89,39 @@ public class CollectionTab extends JPanel {
         filterRow.add(rarityFilter);
         filterRow.add(sortOrder);
 
-        // --- Main toggle: Grouped / Individual / Favourites ---
-        JPanel toggleRow = new JPanel(new GridLayout(1, 3, 0, 0));
+        // --- Star button: Favourites toggle, sits beside search bar ---
+        starBtn = new JToggleButton("★");
+        starBtn.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD).deriveFont(12f));
+        starBtn.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        starBtn.setForeground(new Color(120, 120, 120));
+        starBtn.setFocusPainted(false);
+        starBtn.setBorderPainted(false);
+        starBtn.setToolTipText("Show Favourites");
+        starBtn.setPreferredSize(new Dimension(26, 26));
+        starBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        JPanel searchRow = new JPanel(new BorderLayout(4, 0));
+        searchRow.setOpaque(false);
+        searchRow.add(searchBar, BorderLayout.CENTER);
+        searchRow.add(starBtn,   BorderLayout.EAST);
+
+        // --- Main toggle: Grouped / Individual (2 buttons; Favourites via star) ---
+        JPanel toggleRow = new JPanel(new GridLayout(1, 2, 0, 0));
         toggleRow.setOpaque(false);
 
         groupedBtn    = new JToggleButton("Grouped");
         individualBtn = new JToggleButton("Individual");
-        favouritesBtn = new JToggleButton("★ Favourites");
 
         styleToggleButton(groupedBtn,    true);
         styleToggleButton(individualBtn, false);
-        styleToggleButton(favouritesBtn, false);
 
         ButtonGroup btnGroup = new ButtonGroup();
         btnGroup.add(groupedBtn);
         btnGroup.add(individualBtn);
-        btnGroup.add(favouritesBtn);
         groupedBtn.setSelected(true);
 
         toggleRow.add(groupedBtn);
         toggleRow.add(individualBtn);
-        toggleRow.add(favouritesBtn);
 
         // --- Sub-toggle (Grouped only): By Rarity / By Monster ---
         subToggleRow = new JPanel(new GridLayout(1, 2, 0, 0));
@@ -129,12 +141,37 @@ public class CollectionTab extends JPanel {
         subToggleRow.add(byRarityBtn);
         subToggleRow.add(byMonsterBtn);
 
+        // --- Album button: persistent, always visible below controls ---
+        JButton albumBtn = new JButton("Open Bestiary Album");
+        albumBtn.setFont(FontManager.getRunescapeSmallFont());
+        albumBtn.setBackground(new Color(55, 55, 55));
+        albumBtn.setForeground(new Color(255, 165, 0));
+        albumBtn.setFocusPainted(false);
+        albumBtn.setBorderPainted(false);
+        albumBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
+        albumBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        albumBtn.setToolTipText("Open the full Bestiary Album dex grid");
+        albumBtn.addActionListener(e -> openAlbum(SwingUtilities.getWindowAncestor(CollectionTab.this)));
+
         // Action listeners
+        starBtn.addActionListener(e -> {
+            if (starBtn.isSelected()) {
+                showFavourites();
+            } else {
+                viewMode = ViewMode.GROUPED;
+                styleToggleButton(groupedBtn,    true);
+                styleToggleButton(individualBtn, false);
+                groupedBtn.setSelected(true);
+                subToggleRow.setVisible(true);
+                rebuildCards();
+            }
+        });
         groupedBtn.addActionListener(e -> {
             viewMode = ViewMode.GROUPED;
             styleToggleButton(groupedBtn,    true);
             styleToggleButton(individualBtn, false);
-            styleToggleButton(favouritesBtn, false);
+            starBtn.setSelected(false);
+            starBtn.setForeground(new Color(120, 120, 120));
             subToggleRow.setVisible(true);
             rebuildCards();
         });
@@ -142,18 +179,10 @@ public class CollectionTab extends JPanel {
             viewMode = ViewMode.INDIVIDUAL;
             styleToggleButton(groupedBtn,    false);
             styleToggleButton(individualBtn, true);
-            styleToggleButton(favouritesBtn, false);
+            starBtn.setSelected(false);
+            starBtn.setForeground(new Color(120, 120, 120));
             subToggleRow.setVisible(false);
             sortOrder.setSelectedItem("Newest first");
-            rebuildCards();
-        });
-        favouritesBtn.addActionListener(e -> {
-            viewMode = ViewMode.FAVOURITES;
-            styleToggleButton(groupedBtn,    false);
-            styleToggleButton(individualBtn, false);
-            styleToggleButton(favouritesBtn, true);
-            subToggleRow.setVisible(false);
-            sortOrder.setSelectedItem("Rarity (best)");
             rebuildCards();
         });
         byRarityBtn.addActionListener(e -> {
@@ -174,9 +203,14 @@ public class CollectionTab extends JPanel {
         togglesPanel.add(toggleRow,    BorderLayout.NORTH);
         togglesPanel.add(subToggleRow, BorderLayout.SOUTH);
 
-        controls.add(searchBar,    BorderLayout.NORTH);
+        controls.add(searchRow,    BorderLayout.NORTH);
         controls.add(filterRow,    BorderLayout.CENTER);
         controls.add(togglesPanel, BorderLayout.SOUTH);
+
+        JPanel northPanel = new JPanel(new BorderLayout(0, 4));
+        northPanel.setOpaque(false);
+        northPanel.add(controls,  BorderLayout.CENTER);
+        northPanel.add(albumBtn,  BorderLayout.SOUTH);
 
         // --- Card container ---
         // Implements Scrollable so the viewport constrains its width — without this,
@@ -193,8 +227,8 @@ public class CollectionTab extends JPanel {
         scroll.getVerticalScrollBar().setUnitIncrement(16);
         scroll.getVerticalScrollBar().setPreferredSize(new java.awt.Dimension(0, 0));
 
-        add(controls, BorderLayout.NORTH);
-        add(scroll,   BorderLayout.CENTER);
+        add(northPanel, BorderLayout.NORTH);
+        add(scroll,     BorderLayout.CENTER);
 
         rebuildCards();
     }
@@ -207,8 +241,8 @@ public class CollectionTab extends JPanel {
         viewMode = ViewMode.FAVOURITES;
         styleToggleButton(groupedBtn,    false);
         styleToggleButton(individualBtn, false);
-        styleToggleButton(favouritesBtn, true);
-        favouritesBtn.setSelected(true);
+        starBtn.setSelected(true);
+        starBtn.setForeground(new Color(255, 195, 40));
         subToggleRow.setVisible(false);
         sortOrder.setSelectedItem("Rarity (best)");
         rebuildCards();
@@ -451,24 +485,6 @@ public class CollectionTab extends JPanel {
         Map<String, List<CapturedCreature>> byNpc = filtered.stream()
                 .collect(Collectors.groupingBy(c -> c.npcName));
 
-        // Album view button — fixed at top of monster list
-        JButton albumBtn = new JButton("Open Bestiary Album");
-        albumBtn.setFont(FontManager.getRunescapeBoldFont());
-        albumBtn.setBackground(new Color(55, 55, 55));
-        albumBtn.setForeground(new Color(255, 165, 0));
-        albumBtn.setFocusPainted(false);
-        albumBtn.setBorderPainted(false);
-        albumBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
-        albumBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-        albumBtn.setPreferredSize(new Dimension(180, 40));
-        albumBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        albumBtn.addActionListener(e -> new AlbumDialog(
-                SwingUtilities.getWindowAncestor(CollectionTab.this), byNpc,
-                dataService.getCollection().killCounts,
-                dataService.getCollection(), imageService));
-        cardContainer.add(Box.createVerticalStrut(4));
-        cardContainer.add(albumBtn);
-        cardContainer.add(Box.createVerticalStrut(8));
 
         List<Map.Entry<String, List<CapturedCreature>>> entries =
                 new ArrayList<>(byNpc.entrySet());
