@@ -12,6 +12,10 @@ import net.runelite.client.ui.FontManager;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DocumentFilter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -396,14 +400,42 @@ public class CreatureDetailDialog extends JDialog {
                 String nameLabel = (c.nickname != null && !c.nickname.isEmpty()) ? "Rename…" : "Name capture…";
                 JMenuItem nameItem = new JMenuItem(nameLabel);
                 nameItem.addActionListener(ev -> {
-                    String input = (String) JOptionPane.showInputDialog(
-                            CreatureDetailDialog.this,
-                            "Name for this capture (leave blank to clear):",
-                            "Name Capture",
-                            JOptionPane.PLAIN_MESSAGE, null, null,
-                            c.nickname != null ? c.nickname : "");
-                    if (input != null) {
-                        c.nickname = input.isBlank() ? null : input.trim();
+                    JTextField field = new JTextField(c.nickname != null ? c.nickname : "", 20);
+                    JLabel counter   = new JLabel(field.getText().length() + " / 20");
+                    counter.setFont(FontManager.getRunescapeSmallFont());
+                    counter.setForeground(Color.GRAY);
+                    ((AbstractDocument) field.getDocument()).setDocumentFilter(new DocumentFilter() {
+                        private void update(FilterBypass fb) {
+                            counter.setText(fb.getDocument().getLength() + " / 20");
+                        }
+                        @Override
+                        public void insertString(FilterBypass fb, int off, String s, AttributeSet a)
+                                throws BadLocationException {
+                            if (fb.getDocument().getLength() + (s == null ? 0 : s.length()) <= 20)
+                            { super.insertString(fb, off, s, a); update(fb); }
+                        }
+                        @Override
+                        public void replace(FilterBypass fb, int off, int len, String s, AttributeSet a)
+                                throws BadLocationException {
+                            if (fb.getDocument().getLength() - len + (s == null ? 0 : s.length()) <= 20)
+                            { super.replace(fb, off, len, s, a); update(fb); }
+                        }
+                        @Override
+                        public void remove(FilterBypass fb, int off, int len)
+                                throws BadLocationException {
+                            super.remove(fb, off, len); update(fb);
+                        }
+                    });
+                    JPanel inputPanel = new JPanel(new BorderLayout(6, 0));
+                    inputPanel.add(new JLabel("Name (blank to clear):"), BorderLayout.NORTH);
+                    inputPanel.add(field,   BorderLayout.CENTER);
+                    inputPanel.add(counter, BorderLayout.EAST);
+                    int res = JOptionPane.showConfirmDialog(CreatureDetailDialog.this,
+                            inputPanel, "Name Capture",
+                            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+                    if (res == JOptionPane.OK_OPTION) {
+                        String val = field.getText().trim();
+                        c.nickname = val.isBlank() ? null : val;
                         buildList(currentSort);
                         if (saveCallback != null) saveCallback.run();
                     }
