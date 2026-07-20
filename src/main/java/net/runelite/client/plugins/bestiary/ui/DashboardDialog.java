@@ -426,6 +426,9 @@ public class DashboardDialog extends JDialog {
         }
         root.add(diffPanel);
         root.add(gap(10));
+        root.add(sectionHeader("TOP SPECIES"));
+        root.add(buildTopSpeciesSection(col));
+        root.add(gap(10));
 
         // Captured species list
         root.add(sectionHeader("CAPTURED SPECIES  (" + captured + ")"));
@@ -626,6 +629,96 @@ public class DashboardDialog extends JDialog {
         p.setPreferredSize(new Dimension(0, 210));
         p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 210));
         return p;
+    }
+
+    // =========================================================================
+    // Top-5 species rarity breakdown table (live view)
+    // =========================================================================
+
+    private JPanel buildTopSpeciesSection(BestiaryCollection col) {
+        JPanel root = col();
+        root.setBorder(new EmptyBorder(0, 12, 0, 12));
+
+        Map<String, List<CapturedCreature>> bySpecies = col.creatures.stream()
+                .collect(Collectors.groupingBy(c -> c.npcName));
+        List<Map.Entry<String, List<CapturedCreature>>> top5 = bySpecies.entrySet().stream()
+                .sorted(Comparator.comparingInt((Map.Entry<String, List<CapturedCreature>> e) -> e.getValue().size()).reversed())
+                .limit(5).collect(Collectors.toList());
+
+        if (top5.isEmpty()) {
+            root.add(emptyNote("No captures yet."));
+            return root;
+        }
+
+        CreatureRarity[] rarOrder = {CreatureRarity.COMMON, CreatureRarity.UNCOMMON, CreatureRarity.RARE,
+                CreatureRarity.EPIC, CreatureRarity.LEGENDARY, CreatureRarity.MYTHIC};
+        String[] rarAbbr = {"C", "U", "R", "E", "L", "M"};
+
+        // Column header row
+        JPanel header = new JPanel() {
+            @Override protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = g2(g);
+                int w = getWidth(), h = getHeight();
+                int colW = 22, firstColW = w - rarOrder.length * colW;
+                Font sf = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD);
+                g2.setFont(sf);
+                FontMetrics fm = g2.getFontMetrics();
+                int base = (h + fm.getAscent() - fm.getDescent()) / 2;
+                for (int i = 0; i < rarAbbr.length; i++) {
+                    g2.setColor(rarOrder[i].displayColor);
+                    g2.drawString(rarAbbr[i], firstColW + i * colW + (colW - fm.stringWidth(rarAbbr[i])) / 2, base);
+                }
+                g2.dispose();
+            }
+        };
+        header.setOpaque(false);
+        header.setPreferredSize(new Dimension(0, 18));
+        header.setMaximumSize(new Dimension(Integer.MAX_VALUE, 18));
+        root.add(header);
+        root.add(gap(2));
+
+        for (Map.Entry<String, List<CapturedCreature>> e : top5) {
+            List<CapturedCreature> caps = e.getValue();
+            Map<CreatureRarity, Long> rarCounts = caps.stream()
+                    .collect(Collectors.groupingBy(c -> c.rarity, Collectors.counting()));
+            CreatureRarity rarest = caps.stream().map(c -> c.rarity)
+                    .max(Comparator.comparingInt(Enum::ordinal)).orElse(CreatureRarity.COMMON);
+            String specName = e.getKey();
+
+            JPanel row = new JPanel() {
+                @Override protected void paintComponent(Graphics g) {
+                    super.paintComponent(g);
+                    Graphics2D g2 = g2(g);
+                    int w = getWidth(), h = getHeight();
+                    int colW = 22, firstColW = w - rarOrder.length * colW;
+                    Font sf = FontManager.getRunescapeSmallFont();
+                    g2.setFont(sf);
+                    FontMetrics fm = g2.getFontMetrics();
+                    int base = (h + fm.getAscent() - fm.getDescent()) / 2;
+
+                    String disp = "● " + specName;
+                    while (fm.stringWidth(disp) > firstColW - 4 && disp.length() > 3)
+                        disp = disp.substring(0, disp.length() - 1);
+                    g2.setColor(rarest.displayColor);
+                    g2.drawString(disp, 0, base);
+
+                    for (int i = 0; i < rarOrder.length; i++) {
+                        long cnt = rarCounts.getOrDefault(rarOrder[i], 0L);
+                        String cs = cnt > 0 ? String.valueOf(cnt) : "–";
+                        g2.setColor(cnt > 0 ? rarOrder[i].displayColor : new Color(55, 55, 55));
+                        g2.drawString(cs, firstColW + i * colW + (colW - fm.stringWidth(cs)) / 2, base);
+                    }
+                    g2.dispose();
+                }
+            };
+            row.setOpaque(false);
+            row.setPreferredSize(new Dimension(0, 22));
+            row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 22));
+            root.add(row);
+            root.add(gap(3));
+        }
+        return root;
     }
 
     // =========================================================================
@@ -1318,16 +1411,32 @@ public class DashboardDialog extends JDialog {
         float pct                 = total > 0 ? (float) captured / total : 0f;
         String account = resolveAccount(ds), date = todayStr();
 
-        // Top discoveries: rarest first, then highest quality
-        List<CapturedCreature> topDisc = col.creatures.stream()
-                .sorted(Comparator.comparingInt((CapturedCreature c) -> c.rarity.ordinal()).reversed()
-                        .thenComparingInt((CapturedCreature c) -> c.quality.overallRating()).reversed())
-                .limit(6).collect(Collectors.toList());
+        // Difficulty completion
+        Map<DifficultyTier, Integer> rosterByDiff = new EnumMap<>(DifficultyTier.class);
+        Map<DifficultyTier, Set<String>> capByDiff = new EnumMap<>(DifficultyTier.class);
+        for (DifficultyTier t : DifficultyTier.values()) { rosterByDiff.put(t, 0); capByDiff.put(t, new HashSet<>()); }
+        for (String name : roster) {
+            int cb = col.creatures.stream().filter(c -> c.npcName.equals(name)).findFirst().map(c -> c.npcCombatLevel).orElse(0);
+            rosterByDiff.merge(MonsterRoster.getDifficulty(name, cb), 1, Integer::sum);
+        }
+        for (CapturedCreature c : col.creatures)
+            capByDiff.get(MonsterRoster.getDifficulty(c.npcName, c.npcCombatLevel)).add(c.npcName);
+
+        // Top 5 species by capture count
+        Map<String, List<CapturedCreature>> bySpecies = col.creatures.stream()
+                .collect(Collectors.groupingBy(c -> c.npcName));
+        List<Map.Entry<String, List<CapturedCreature>>> top5 = bySpecies.entrySet().stream()
+                .sorted(Comparator.comparingInt((Map.Entry<String, List<CapturedCreature>> e) -> e.getValue().size()).reversed())
+                .limit(5).collect(Collectors.toList());
 
         final int W = 480, PAD = 24;
         int arcD = 100;
-        int discRows = Math.max(1, topDisc.size());
-        int H = 4 + PAD + 60 + 12 + (arcD + 12) + 22 + 6 + discRows * 22 + 8 + 36 + PAD;
+        int diffTiers = DifficultyTier.values().length;
+        int top5Rows = Math.max(1, top5.size());
+        int H = 4 + PAD + 60 + 12 + (arcD + 12)
+               + 22 + 6 + diffTiers * 22 + 8
+               + 22 + 6 + 16 + top5Rows * 20 + 8
+               + 36 + PAD;
 
         BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = cardGraphics(img);
@@ -1339,6 +1448,7 @@ public class DashboardDialog extends JDialog {
 
         // Completion ring
         int arcX = (W - arcD) / 2, arcY = y;
+        int cx = arcX + arcD / 2, cy = arcY + arcD / 2;
         g.setStroke(new BasicStroke(12f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         g.setColor(new Color(40, 40, 40));
         g.draw(new Arc2D.Double(arcX, arcY, arcD, arcD, -220, 260, Arc2D.OPEN));
@@ -1346,22 +1456,69 @@ public class DashboardDialog extends JDialog {
             g.setPaint(new GradientPaint(arcX, arcY, new Color(40, 150, 40), arcX + arcD, arcY + arcD, new Color(80, 230, 80)));
             g.draw(new Arc2D.Double(arcX, arcY, arcD, arcD, -220, (int)(-260 * pct), Arc2D.OPEN));
         }
-        g.setFont(FontManager.getRunescapeBoldFont().deriveFont(20f));
-        FontMetrics fm = g.getFontMetrics();
+        // % in ring centre
+        g.setFont(FontManager.getRunescapeBoldFont().deriveFont(18f));
+        FontMetrics bfm = g.getFontMetrics();
         String pctStr = String.format("%.1f%%", pct * 100f);
         g.setColor(new Color(90, 220, 90));
-        g.drawString(pctStr, arcX + arcD / 2 - fm.stringWidth(pctStr) / 2, arcY + arcD / 2 + fm.getAscent() / 2 - 4);
+        g.drawString(pctStr, cx - bfm.stringWidth(pctStr) / 2, cy + bfm.getAscent() / 2 - 6);
+        // X / Y below %
+        g.setFont(FontManager.getRunescapeSmallFont());
+        FontMetrics sfm = g.getFontMetrics();
+        String countStr = captured + " / " + total;
+        g.setColor(new Color(140, 140, 140));
+        g.drawString(countStr, cx - sfm.stringWidth(countStr) / 2, cy + sfm.getAscent() + 4);
         y += arcD + 12;
 
-        y = drawCardSectionHeader(g, "TOP DISCOVERIES", y, W, PAD);
+        // Completion by difficulty
+        y = drawCardSectionHeader(g, "COMPLETION BY DIFFICULTY", y, W, PAD);
         y += 6;
-        if (topDisc.isEmpty()) {
+        for (DifficultyTier tier : DifficultyTier.values()) {
+            int cap = capByDiff.get(tier).size(), ttl = rosterByDiff.getOrDefault(tier, 0);
+            y = drawCardBarRow(g, tier.label, tier.displayColor, cap, Math.max(ttl, 1), cap + "/" + ttl, "", y, PAD, W);
+        }
+        y += 8;
+
+        // Top 5 species — rarity breakdown table
+        y = drawCardSectionHeader(g, "TOP SPECIES", y, W, PAD);
+        y += 6;
+        CreatureRarity[] rarOrder = {CreatureRarity.COMMON, CreatureRarity.UNCOMMON, CreatureRarity.RARE,
+                CreatureRarity.EPIC, CreatureRarity.LEGENDARY, CreatureRarity.MYTHIC};
+        String[] rarAbbr = {"C", "U", "R", "E", "L", "M"};
+        int colW = 22, firstColW = W - PAD * 2 - rarOrder.length * colW;
+        g.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        FontMetrics hfm = g.getFontMetrics();
+        // Column header row
+        for (int i = 0; i < rarAbbr.length; i++) {
+            g.setColor(rarOrder[i].displayColor);
+            g.drawString(rarAbbr[i], PAD + firstColW + i * colW + (colW - hfm.stringWidth(rarAbbr[i])) / 2, y + hfm.getAscent());
+        }
+        y += 16;
+        if (top5.isEmpty()) {
             g.setFont(FontManager.getRunescapeSmallFont()); g.setColor(DIM);
-            g.drawString("No captures yet", PAD + 6, y + g.getFontMetrics().getAscent()); y += 22;
+            g.drawString("No captures yet", PAD + 6, y + g.getFontMetrics().getAscent()); y += 20;
         } else {
-            for (CapturedCreature c : topDisc) {
-                int q = c.quality.overallRating();
-                y = drawCardBarRow(g, c.npcName, c.rarity.displayColor, q, 100, c.rarity.label, "Q:" + q, y, PAD, W);
+            g.setFont(FontManager.getRunescapeSmallFont());
+            FontMetrics rfm = g.getFontMetrics();
+            for (Map.Entry<String, List<CapturedCreature>> e : top5) {
+                List<CapturedCreature> caps = e.getValue();
+                Map<CreatureRarity, Long> rarCounts = caps.stream()
+                        .collect(Collectors.groupingBy(c -> c.rarity, Collectors.counting()));
+                CreatureRarity rarest = caps.stream().map(c -> c.rarity)
+                        .max(Comparator.comparingInt(Enum::ordinal)).orElse(CreatureRarity.COMMON);
+                String disp = e.getKey();
+                while (disp.length() > 0 && rfm.stringWidth("● " + disp) > firstColW - 4)
+                    disp = disp.substring(0, disp.length() - 1);
+                if (disp.length() < e.getKey().length()) disp += "…";
+                g.setColor(rarest.displayColor);
+                g.drawString("● " + disp, PAD, y + rfm.getAscent());
+                for (int i = 0; i < rarOrder.length; i++) {
+                    long cnt = rarCounts.getOrDefault(rarOrder[i], 0L);
+                    String cs = cnt > 0 ? String.valueOf(cnt) : "–";
+                    g.setColor(cnt > 0 ? rarOrder[i].displayColor : DIM);
+                    g.drawString(cs, PAD + firstColW + i * colW + (colW - rfm.stringWidth(cs)) / 2, y + rfm.getAscent());
+                }
+                y += 20;
             }
         }
         y += 8;
