@@ -84,7 +84,8 @@ public class BestiaryPanel extends PluginPanel {
                 () -> collectionTab.openAlbum(SwingUtilities.getWindowAncestor(this)),
                 () -> { tabs.setSelectedIndex(1); collectionTab.showFavourites(); },
                 () -> SessionRecapDialog.open(SwingUtilities.getWindowAncestor(this), sessionTracker),
-                view -> DashboardDialog.open(SwingUtilities.getWindowAncestor(this), dataService, progressionService, view));
+                view -> DashboardDialog.open(SwingUtilities.getWindowAncestor(this), dataService, progressionService, view),
+                view -> DashboardDialog.copyViewToClipboard(dataService, progressionService, view));
 
         tabs.addTab("Info",       infoTab);
         tabs.addTab("Collection", collectionTab);

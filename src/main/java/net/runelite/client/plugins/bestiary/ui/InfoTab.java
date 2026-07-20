@@ -26,6 +26,7 @@ public class InfoTab extends JPanel {
     private final BestiaryDataService dataService;
     private final ProgressionService  progressionService;
     private final Consumer<DashboardDialog.DashView> openDashboard;
+    private final Consumer<DashboardDialog.DashView> exportDashboard;
 
     // Live stat labels
     private final JLabel speciesVal  = statValue("0");
@@ -35,10 +36,12 @@ public class InfoTab extends JPanel {
 
     public InfoTab(BestiaryDataService dataService, ProgressionService progressionService,
                    Runnable openAlbum, Runnable openFavourites, Runnable openRecap,
-                   Consumer<DashboardDialog.DashView> openDashboard) {
+                   Consumer<DashboardDialog.DashView> openDashboard,
+                   Consumer<DashboardDialog.DashView> exportDashboard) {
         this.dataService        = dataService;
         this.progressionService = progressionService;
         this.openDashboard      = openDashboard;
+        this.exportDashboard    = exportDashboard;
 
         setLayout(new BorderLayout());
         setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -116,7 +119,18 @@ public class InfoTab extends JPanel {
         panel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         panel.addMouseListener(new MouseAdapter() {
             @Override public void mouseClicked(MouseEvent e) {
-                if (openDashboard != null) openDashboard.accept(view);
+                if (e.getButton() == MouseEvent.BUTTON1) {
+                    if (openDashboard != null) openDashboard.accept(view);
+                } else if (e.getButton() == MouseEvent.BUTTON3) {
+                    JPopupMenu menu = new JPopupMenu();
+                    JMenuItem open = new JMenuItem("Open Dashboard — " + view.label);
+                    open.addActionListener(ev -> { if (openDashboard != null) openDashboard.accept(view); });
+                    JMenuItem copy = new JMenuItem("Copy " + view.label + " Card");
+                    copy.addActionListener(ev -> { if (exportDashboard != null) exportDashboard.accept(view); });
+                    menu.add(open);
+                    menu.add(copy);
+                    menu.show(panel, e.getX(), e.getY());
+                }
             }
         });
         return panel;

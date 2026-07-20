@@ -11,12 +11,21 @@ import net.runelite.client.plugins.bestiary.service.ProgressionService;
 import net.runelite.client.plugins.bestiary.util.XpTable;
 import net.runelite.client.ui.FontManager;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
 import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.geom.Arc2D;
+import java.awt.geom.RoundRectangle2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.text.NumberFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -50,6 +59,7 @@ public class DashboardDialog extends JDialog {
     private final ProgressionService   progressionService;
     private final JPanel               contentArea;
     private final CardLayout           cardLayout;
+    private DashView                   activeView;
 
     // -------------------------------------------------------------------------
     // Public entry point
@@ -64,6 +74,7 @@ public class DashboardDialog extends JDialog {
         super(owner, "Bestiary Dashboard", ModalityType.MODELESS);
         this.dataService        = ds;
         this.progressionService = ps;
+        this.activeView         = initial;
 
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setResizable(true);
@@ -83,8 +94,19 @@ public class DashboardDialog extends JDialog {
         viewBox.setFont(FontManager.getRunescapeSmallFont());
         viewBox.setSelectedItem(initial);
 
-        topBar.add(title,   BorderLayout.WEST);
-        topBar.add(viewBox, BorderLayout.EAST);
+        JButton copyViewBtn = topBarBtn("Copy View", "Copy current view as image to clipboard");
+        JButton saveAllBtn  = topBarBtn("Save All",  "Save all 4 views as a combined PNG");
+        copyViewBtn.addActionListener(e -> exportView(copyViewBtn));
+        saveAllBtn.addActionListener(e  -> exportAll(saveAllBtn));
+
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
+        right.setOpaque(false);
+        right.add(copyViewBtn);
+        right.add(saveAllBtn);
+        right.add(viewBox);
+
+        topBar.add(title, BorderLayout.WEST);
+        topBar.add(right, BorderLayout.EAST);
 
         // Content
         cardLayout  = new CardLayout();
@@ -98,7 +120,10 @@ public class DashboardDialog extends JDialog {
 
         viewBox.addActionListener(e -> {
             DashView sel = (DashView) viewBox.getSelectedItem();
-            if (sel != null) cardLayout.show(contentArea, sel.name());
+            if (sel != null) {
+                activeView = sel;
+                cardLayout.show(contentArea, sel.name());
+            }
         });
 
         JPanel root = new JPanel(new BorderLayout());
@@ -755,5 +780,636 @@ public class DashboardDialog extends JDialog {
         g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         g2.setRenderingHint(RenderingHints.KEY_RENDERING,         RenderingHints.VALUE_RENDER_QUALITY);
         return g2;
+    }
+
+    // =========================================================================
+    // EXPORT — buttons + public clipboard helper
+    // =========================================================================
+
+    private static JButton topBarBtn(String label, String tip) {
+        JButton btn = new JButton(label);
+        btn.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        btn.setBackground(new Color(45, 45, 45));
+        btn.setForeground(ORANGE);
+        btn.setBorderPainted(false);
+        btn.setFocusPainted(false);
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.setToolTipText(tip);
+        return btn;
+    }
+
+    private void exportView(JButton btn) {
+        copyViewToClipboard(dataService, progressionService, activeView);
+        flashButton(btn, "✓ Copied!");
+    }
+
+    private void exportAll(JButton btn) {
+        BufferedImage img = renderAllCard(dataService, progressionService);
+        JFileChooser chooser = new JFileChooser();
+        chooser.setSelectedFile(new File(System.getProperty("user.home"), "bestiary_dashboard.png"));
+        if (chooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            try {
+                ImageIO.write(img, "PNG", chooser.getSelectedFile());
+                flashButton(btn, "✓ Saved!");
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Save failed: " + ex.getMessage());
+            }
+        }
+    }
+
+    /** Public — called from InfoTab right-click without opening the dialog. */
+    public static void copyViewToClipboard(BestiaryDataService ds, ProgressionService ps, DashView view) {
+        BufferedImage img = renderCard(ds, ps, view);
+        Transferable t = new Transferable() {
+            @Override public DataFlavor[] getTransferDataFlavors() { return new DataFlavor[]{DataFlavor.imageFlavor}; }
+            @Override public boolean isDataFlavorSupported(DataFlavor f) { return f.equals(DataFlavor.imageFlavor); }
+            @Override public Object getTransferData(DataFlavor f) throws UnsupportedFlavorException {
+                if (!f.equals(DataFlavor.imageFlavor)) throw new UnsupportedFlavorException(f);
+                return img;
+            }
+        };
+        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(t, null);
+    }
+
+    private static void flashButton(JButton btn, String flashText) {
+        String orig = btn.getText();
+        btn.setText(flashText);
+        btn.setForeground(new Color(80, 220, 80));
+        javax.swing.Timer timer = new javax.swing.Timer(1400, e -> { btn.setText(orig); btn.setForeground(ORANGE); });
+        timer.setRepeats(false);
+        timer.start();
+    }
+
+    // =========================================================================
+    // CARD RENDERERS — all static so they can be called without a dialog instance
+    // =========================================================================
+
+    public static BufferedImage renderCard(BestiaryDataService ds, ProgressionService ps, DashView view) {
+        switch (view) {
+            case KILLS:   return renderKillsCard(ds);
+            case SPECIES: return renderSpeciesCard(ds);
+            case CAUGHT:  return renderCaughtCard(ds);
+            default:      return renderProgressionCard(ds, ps);
+        }
+    }
+
+    private static BufferedImage renderAllCard(BestiaryDataService ds, ProgressionService ps) {
+        BufferedImage prog    = renderProgressionCard(ds, ps);
+        BufferedImage kills   = renderKillsCard(ds);
+        BufferedImage species = renderSpeciesCard(ds);
+        BufferedImage caught  = renderCaughtCard(ds);
+
+        int gap    = 10, pad = 16;
+        int colW   = Math.max(prog.getWidth(), species.getWidth());
+        int row1H  = Math.max(prog.getHeight(),    kills.getHeight());
+        int row2H  = Math.max(species.getHeight(), caught.getHeight());
+        int W      = pad * 2 + colW * 2 + gap;
+        int H      = pad * 2 + row1H + gap + row2H;
+
+        BufferedImage all = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = all.createGraphics();
+        g.setColor(new Color(10, 10, 10));
+        g.fillRect(0, 0, W, H);
+        g.drawImage(prog,    pad,             pad,             null);
+        g.drawImage(kills,   pad + colW + gap, pad,            null);
+        g.drawImage(species, pad,             pad + row1H + gap, null);
+        g.drawImage(caught,  pad + colW + gap, pad + row1H + gap, null);
+        g.dispose();
+        return all;
+    }
+
+    // ---- shared card base ----
+
+    private static String resolveAccount(BestiaryDataService ds) {
+        return ds.getCollection().creatures.stream()
+                .filter(c -> c.playerName != null && !c.playerName.isEmpty())
+                .findFirst().map(c -> c.playerName).orElse("Unknown");
+    }
+
+    private static String todayStr() {
+        return LocalDate.now().format(DateTimeFormatter.ofPattern("d MMM yyyy"));
+    }
+
+    private static Graphics2D cardGraphics(BufferedImage img) {
+        Graphics2D g = img.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,      RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_RENDERING,         RenderingHints.VALUE_RENDER_QUALITY);
+        g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+        return g;
+    }
+
+    /** Draws the card background + top accent bar. Returns y position after the header block. */
+    private static int drawCardBase(Graphics2D g, int W, int H, String account, String viewLabel, String date, int PAD) {
+        // Background
+        g.setColor(new Color(14, 14, 14));
+        g.fillRoundRect(0, 0, W, H, 16, 16);
+        float[] fr = {0f, 0.6f, 1f};
+        Color[] vc = {new Color(30, 30, 30), new Color(18, 18, 18), new Color(10, 10, 10)};
+        g.setPaint(new RadialGradientPaint(W / 2f, H / 3f, Math.max(W, H) * 0.75f, fr, vc));
+        g.fillRoundRect(0, 0, W, H, 16, 16);
+
+        // Top accent
+        int accentH = 4;
+        g.setPaint(new GradientPaint(0, 0, new Color(255, 120, 0), W, 0, new Color(255, 210, 60)));
+        g.fillRoundRect(0, 0, W, accentH + 8, 8, 8);
+        g.setColor(new Color(14, 14, 14));
+        g.fillRect(0, accentH, W, 8);
+
+        int y = accentH + PAD;
+
+        // BESTIARY + view label left; date right
+        g.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD | Font.ITALIC));
+        FontMetrics sfm = g.getFontMetrics();
+        g.setColor(ORANGE);
+        g.drawString("BESTIARY  ·  " + viewLabel, PAD, y + sfm.getAscent());
+        g.setFont(FontManager.getRunescapeSmallFont());
+        sfm = g.getFontMetrics();
+        g.setColor(MUTED);
+        g.drawString(date, W - PAD - sfm.stringWidth(date), y + sfm.getAscent());
+        y += sfm.getHeight() + 4;
+
+        // Account name
+        g.setFont(FontManager.getRunescapeBoldFont().deriveFont(20f));
+        FontMetrics nameFm = g.getFontMetrics();
+        g.setColor(GOLD);
+        g.drawString(account, PAD, y + nameFm.getAscent());
+        y += nameFm.getHeight() + 6;
+
+        // Gold underline
+        g.setColor(new Color(255, 195, 40, 55));
+        g.fillRect(PAD, y, W - PAD * 2, 1);
+        return y + 12;
+    }
+
+    /** Big hero number with label below. Returns new y. */
+    private static int drawHeroStat(Graphics2D g, String value, String label, Color accent, int y, int W, int PAD) {
+        g.setPaint(new GradientPaint(0, y, new Color(30, 30, 30), 0, y + 70, new Color(18, 18, 18)));
+        g.fillRect(0, y, W, 70);
+        g.setColor(accent);
+        g.fillRect(0, y, 4, 70);
+
+        g.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        FontMetrics sfm = g.getFontMetrics();
+        g.setColor(MUTED);
+        g.drawString(label, PAD + 10, y + 18);
+
+        g.setFont(FontManager.getRunescapeBoldFont().deriveFont(36f));
+        FontMetrics bfm = g.getFontMetrics();
+        int vy = y + 18 + sfm.getHeight() + bfm.getAscent() - 4;
+        g.setColor(new Color(0, 0, 0, 110));
+        g.drawString(value, PAD + 11, vy + 2);
+        g.setColor(accent);
+        g.drawString(value, PAD + 10, vy);
+        return y + 70 + 12;
+    }
+
+    // ---- PROGRESSION card ----
+
+    private static BufferedImage renderProgressionCard(BestiaryDataService ds, ProgressionService ps) {
+        BestiaryCollection col    = ds.getCollection();
+        int    level              = ps.getLevel();
+        long   totalXp            = ps.getTotalXp();
+        long   levelStart         = XpTable.xpForLevel(level);
+        long   levelEnd           = XpTable.xpForLevel(Math.min(level + 1, 100));
+        long   xpInLevel          = totalXp - levelStart;
+        long   xpSpan             = Math.max(1, levelEnd - levelStart);
+        long   xpLeft             = ps.getXpToNextLevel();
+        Set<Achievement> unlocked = ps.getState().unlockedAchievements;
+
+        String account = resolveAccount(ds);
+        String date    = todayStr();
+
+        final int W   = 480;
+        final int PAD = 24;
+
+        // Pre-measure section heights to set total card height
+        int kills = col.totalKills(), caps = col.totalCaptures();
+        String ratio = caps > 0 ? String.format("%.1f:1", (double) kills / caps) : "—";
+        Map<CreatureRarity, Long> rarityCounts = col.creatures.stream()
+                .collect(Collectors.groupingBy(c -> c.rarity, Collectors.counting()));
+        List<Achievement> unlockedList = Arrays.stream(Achievement.values())
+                .filter(unlocked::contains).collect(Collectors.toList());
+        int achRows = (int) Math.ceil(unlockedList.size() / 2.0);
+        if (unlockedList.isEmpty()) achRows = 1;
+
+        // Fixed layout heights
+        int topBarH  = 4;
+        int hdrH     = 60;   // BESTIARY + account + date
+        int arcH     = 220;  // XP arc + level number
+        int xpBarH   = 42;   // XP bar + label
+        int sepH     = 28;   // section header
+        int overH    = 60;   // 4 stat boxes
+        int rarH     = 6 * 22 + 8; // 6 rarity bars
+        int achGridH = achRows * 22 + 8;
+        int footerH  = 36;
+        int H = topBarH + hdrH + arcH + xpBarH + sepH + overH + 8
+                + sepH + rarH + 8 + sepH + achGridH + footerH + PAD * 2;
+
+        BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = cardGraphics(img);
+
+        int y = drawCardBase(g, W, H, account, "PROGRESSION", date, PAD);
+
+        // --- XP Arc ---
+        float progress = xpSpan > 0 ? (float) xpInLevel / xpSpan : 0f;
+        int arcD = 170, arcX = (W - arcD) / 2, arcY = y;
+
+        // Glow behind track
+        g.setColor(new Color(255, 165, 0, 12));
+        g.setStroke(new BasicStroke(28f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g.draw(new Arc2D.Double(arcX - 6, arcY - 6, arcD + 12, arcD + 12, -220, 260, Arc2D.OPEN));
+
+        // Track
+        g.setStroke(new BasicStroke(14f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g.setColor(new Color(42, 42, 42));
+        g.draw(new Arc2D.Double(arcX, arcY, arcD, arcD, -220, 260, Arc2D.OPEN));
+
+        // Fill glow
+        if (progress > 0.01f) {
+            g.setStroke(new BasicStroke(22f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            g.setColor(new Color(255, 140, 0, 30));
+            g.draw(new Arc2D.Double(arcX, arcY, arcD, arcD, -220, (int)(-260 * progress), Arc2D.OPEN));
+        }
+        // Fill
+        if (progress > 0.01f) {
+            g.setStroke(new BasicStroke(14f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            g.setPaint(new GradientPaint(arcX, arcY, new Color(255, 100, 0),
+                    arcX + arcD, arcY + arcD, GOLD));
+            g.draw(new Arc2D.Double(arcX, arcY, arcD, arcD, -220, (int)(-260 * progress), Arc2D.OPEN));
+        }
+
+        // Level text in centre
+        int cx = arcX + arcD / 2, cy = arcY + arcD / 2;
+        g.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        FontMetrics sfm = g.getFontMetrics();
+        String capLabel = "CAPTURE LEVEL";
+        g.setColor(MUTED);
+        g.drawString(capLabel, cx - sfm.stringWidth(capLabel) / 2, cy - 30);
+
+        g.setFont(FontManager.getRunescapeBoldFont().deriveFont(56f));
+        FontMetrics lvlFm = g.getFontMetrics();
+        String lvlStr = String.valueOf(level);
+        int lvlX = cx - lvlFm.stringWidth(lvlStr) / 2;
+        int lvlY = cy + lvlFm.getAscent() / 2 - 4;
+        g.setColor(new Color(0, 0, 0, 120));
+        g.drawString(lvlStr, lvlX + 2, lvlY + 2);
+        g.setColor(level >= 99 ? GOLD : Color.WHITE);
+        g.drawString(lvlStr, lvlX, lvlY);
+
+        // Pct label below level number
+        g.setFont(FontManager.getRunescapeSmallFont());
+        sfm = g.getFontMetrics();
+        String pctStr = String.format("%.1f%% to next", progress * 100f);
+        if (level >= 99) pctStr = "MAX LEVEL";
+        g.setColor(new Color(160, 160, 160));
+        g.drawString(pctStr, cx - sfm.stringWidth(pctStr) / 2, cy + 22);
+
+        y += arcD + 16;
+
+        // --- XP bar ---
+        int barX = PAD + 10, barW = W - (PAD + 10) * 2, barH2 = 10;
+        g.setColor(new Color(36, 36, 36));
+        g.fillRoundRect(barX, y, barW, barH2, 6, 6);
+        int fill = (int)(barW * progress);
+        if (fill > 4) {
+            g.setPaint(new GradientPaint(barX, y, new Color(255, 100, 0), barX + fill, y, GOLD));
+            g.fillRoundRect(barX, y, fill, barH2, 6, 6);
+        }
+        y += barH2 + 10;
+
+        // XP labels
+        g.setFont(FontManager.getRunescapeSmallFont());
+        sfm = g.getFontMetrics();
+        g.setColor(TEXT);
+        g.drawString(FMT.format(totalXp) + " XP total", barX, y + sfm.getAscent());
+        String nextStr = level >= 99 ? "Max level!" : FMT.format(xpLeft) + " XP to level " + (level + 1);
+        g.setColor(MUTED);
+        g.drawString(nextStr, barX + barW - sfm.stringWidth(nextStr), y + sfm.getAscent());
+        y += sfm.getHeight() + PAD;
+
+        // --- OVERVIEW section ---
+        y = drawCardSectionHeader(g, "OVERVIEW", y, W, PAD);
+        y += 6;
+        int boxW  = (W - PAD * 2 - 12) / 4, boxH = 48, boxGap = 4;
+        String[][] stats = {
+            {"Level",   String.valueOf(level)},
+            {"Kills",   FMT.format(kills)},
+            {"Caught",  FMT.format(caps)},
+            {"K : C",   ratio}
+        };
+        for (int i = 0; i < 4; i++) {
+            int bx = PAD + i * (boxW + boxGap);
+            g.setColor(new Color(32, 32, 32));
+            g.fillRoundRect(bx, y, boxW, boxH, 6, 6);
+            g.setColor(ORANGE);
+            g.fillRect(bx, y, 3, boxH);
+
+            g.setFont(FontManager.getRunescapeBoldFont().deriveFont(15f));
+            FontMetrics bfm = g.getFontMetrics();
+            String val = stats[i][1];
+            g.setColor(ORANGE);
+            g.drawString(val, bx + (boxW - bfm.stringWidth(val)) / 2, y + 22);
+            g.setFont(FontManager.getRunescapeSmallFont());
+            sfm = g.getFontMetrics();
+            g.setColor(MUTED);
+            String lbl = stats[i][0];
+            g.drawString(lbl, bx + (boxW - sfm.stringWidth(lbl)) / 2, y + 38);
+        }
+        y += boxH + PAD;
+
+        // --- RARITY BREAKDOWN section ---
+        y = drawCardSectionHeader(g, "RARITY BREAKDOWN", y, W, PAD);
+        y += 6;
+        CreatureRarity[] rarOrder = {
+            CreatureRarity.MYTHIC, CreatureRarity.LEGENDARY, CreatureRarity.EPIC,
+            CreatureRarity.RARE,   CreatureRarity.UNCOMMON,  CreatureRarity.COMMON
+        };
+        int maxRar = rarityCounts.values().stream().mapToInt(Long::intValue).max().orElse(1);
+        int total2 = col.totalCaptures();
+        for (CreatureRarity r : rarOrder) {
+            long cnt = rarityCounts.getOrDefault(r, 0L);
+            String pct = total2 > 0 ? String.format("%.1f%%", cnt * 100.0 / total2) : "0%";
+            y = drawCardBarRow(g, r.label, r.displayColor, (int) cnt, maxRar,
+                    cnt + "  " + pct, y, PAD, W);
+        }
+        y += 8;
+
+        // --- ACHIEVEMENTS section ---
+        y = drawCardSectionHeader(g, "ACHIEVEMENTS  —  " + unlocked.size() + " / " + Achievement.values().length, y, W, PAD);
+        y += 6;
+        if (unlockedList.isEmpty()) {
+            g.setFont(FontManager.getRunescapeSmallFont());
+            sfm = g.getFontMetrics();
+            g.setColor(DIM);
+            g.drawString("No achievements unlocked yet", PAD + 6, y + sfm.getAscent());
+            y += 22;
+        } else {
+            int colW = (W - PAD * 2 - 6) / 2;
+            for (int i = 0; i < unlockedList.size(); i += 2) {
+                Achievement a = unlockedList.get(i);
+                g.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+                sfm = g.getFontMetrics();
+                g.setColor(a.chatColor);
+                g.drawString("✓ " + a.title, PAD + 4, y + sfm.getAscent());
+                if (i + 1 < unlockedList.size()) {
+                    Achievement b = unlockedList.get(i + 1);
+                    g.setColor(b.chatColor);
+                    g.drawString("✓ " + b.title, PAD + colW + 8, y + sfm.getAscent());
+                }
+                y += 22;
+            }
+        }
+        y += 8;
+
+        // --- Footer ---
+        drawCardFooter(g, y, W, PAD);
+        g.dispose();
+        return img;
+    }
+
+    private static int drawCardSectionHeader(Graphics2D g, String text, int y, int W, int PAD) {
+        g.setColor(new Color(26, 26, 26));
+        g.fillRoundRect(PAD, y, W - PAD * 2, 22, 4, 4);
+        g.setColor(ORANGE);
+        g.fillRect(PAD, y, 3, 22);
+        g.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        FontMetrics fm = g.getFontMetrics();
+        g.setColor(ORANGE);
+        g.drawString(text, PAD + 8, y + (22 + fm.getAscent() - fm.getDescent()) / 2);
+        return y + 22;
+    }
+
+    private static int drawCardBarRow(Graphics2D g, String label, Color color,
+                                      int value, int max, String right, int y, int PAD, int W) {
+        g.setFont(FontManager.getRunescapeSmallFont());
+        FontMetrics fm = g.getFontMetrics();
+        int rowH   = 20;
+        int dotW   = fm.stringWidth("● ");
+        int labelW = 110;
+        int rightW = fm.stringWidth(right) + 4;
+        int barX   = PAD + labelW + 6, barW = W - PAD - labelW - rightW - 14;
+        int barH   = 8, barY = y + (rowH - barH) / 2;
+        int base   = y + (rowH + fm.getAscent() - fm.getDescent()) / 2;
+
+        g.setColor(color);
+        g.drawString("●", PAD + 2, base);
+        g.setColor(TEXT);
+        String lbl = label;
+        while (lbl.length() > 0 && fm.stringWidth(lbl) > labelW - dotW - 6)
+            lbl = lbl.substring(0, lbl.length() - 1);
+        if (lbl.length() < label.length()) lbl += "…";
+        g.drawString(lbl, PAD + dotW + 2, base);
+
+        g.setColor(new Color(36, 36, 36));
+        g.fillRoundRect(barX, barY, barW, barH, 4, 4);
+        if (max > 0 && value > 0) {
+            int fill = Math.max(4, (int)((long) barW * value / max));
+            g.setPaint(new GradientPaint(barX, barY,
+                    new Color(color.getRed() / 2, color.getGreen() / 2, color.getBlue() / 2),
+                    barX + fill, barY, color));
+            g.fillRoundRect(barX, barY, fill, barH, 4, 4);
+        }
+        g.setColor(MUTED);
+        g.setFont(FontManager.getRunescapeSmallFont());
+        fm = g.getFontMetrics();
+        g.drawString(right, W - PAD - fm.stringWidth(right), base);
+
+        return y + rowH + 2;
+    }
+
+    private static int drawCardFooter(Graphics2D g, int y, int W, int PAD) {
+        g.setColor(new Color(255, 165, 0, 35));
+        g.fillRect(PAD, y, W - PAD * 2, 1);
+        y += 8;
+        g.setFont(FontManager.getRunescapeSmallFont());
+        FontMetrics fm = g.getFontMetrics();
+        String footer = "RuneLite · Bestiary Plugin";
+        g.setColor(new Color(75, 75, 75));
+        g.drawString(footer, (W - fm.stringWidth(footer)) / 2, y + fm.getAscent());
+        return y + fm.getHeight() + 4;
+    }
+
+    // ---- KILLS card ----
+
+    private static BufferedImage renderKillsCard(BestiaryDataService ds) {
+        BestiaryCollection col = ds.getCollection();
+        String account = resolveAccount(ds), date = todayStr();
+
+        List<Map.Entry<String, Integer>> top = col.killCounts.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .limit(12).collect(Collectors.toList());
+        List<Map.Entry<String, Integer>> ratios = col.captureCountByNpc.entrySet().stream()
+                .filter(e -> e.getValue() > 0)
+                .sorted(Comparator.comparingInt(e ->
+                        col.getKillCount(e.getKey()) / Math.max(1, e.getValue())))
+                .limit(8).collect(Collectors.toList());
+
+        final int W = 480, PAD = 24;
+        int barRows = Math.max(1, top.size()), ratioRows = Math.max(1, ratios.size());
+        int H = 4 + PAD + 60 + 12 + 70 + 12 + 22 + 6 + barRows * 22 + 8
+                + 22 + 6 + ratioRows * 22 + 8 + 36 + PAD;
+
+        BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = cardGraphics(img);
+
+        int y = drawCardBase(g, W, H, account, "KILLS", date, PAD);
+        y = drawHeroStat(g, FMT.format(col.totalKills()), "TOTAL KILLS", ORANGE, y, W, PAD);
+        y += 12;
+
+        y = drawCardSectionHeader(g, "TOP SPECIES BY KILLS", y, W, PAD);
+        y += 6;
+        if (top.isEmpty()) {
+            g.setFont(FontManager.getRunescapeSmallFont()); g.setColor(DIM);
+            g.drawString("No kills recorded yet", PAD + 6, y + g.getFontMetrics().getAscent()); y += 22;
+        } else {
+            int maxK = top.get(0).getValue();
+            for (Map.Entry<String, Integer> e : top)
+                y = drawCardBarRow(g, e.getKey(), ORANGE, e.getValue(), maxK, FMT.format(e.getValue()), y, PAD, W);
+        }
+        y += 8;
+
+        y = drawCardSectionHeader(g, "KILLS PER CAPTURE", y, W, PAD);
+        y += 6;
+        if (ratios.isEmpty()) {
+            g.setFont(FontManager.getRunescapeSmallFont()); g.setColor(DIM);
+            g.drawString("No captures yet", PAD + 6, y + g.getFontMetrics().getAscent()); y += 22;
+        } else {
+            int maxR = ratios.stream().mapToInt(e -> col.getKillCount(e.getKey()) / Math.max(1, e.getValue())).max().orElse(1);
+            Color green = new Color(80, 190, 100);
+            for (Map.Entry<String, Integer> e : ratios) {
+                int r = col.getKillCount(e.getKey()) / Math.max(1, e.getValue());
+                y = drawCardBarRow(g, e.getKey(), green, r, maxR, "1 in " + r, y, PAD, W);
+            }
+        }
+        y += 8;
+        drawCardFooter(g, y, W, PAD);
+        g.dispose();
+        return img;
+    }
+
+    // ---- SPECIES card ----
+
+    private static BufferedImage renderSpeciesCard(BestiaryDataService ds) {
+        BestiaryCollection col    = ds.getCollection();
+        List<String> roster       = MonsterRoster.buildFullRoster(col.killCounts);
+        int captured              = (int) col.uniqueSpeciesCount(), total = roster.size();
+        float pct                 = total > 0 ? (float) captured / total : 0f;
+        String account = resolveAccount(ds), date = todayStr();
+
+        Map<DifficultyTier, Integer> rosterByDiff = new EnumMap<>(DifficultyTier.class);
+        Map<DifficultyTier, Set<String>> capByDiff = new EnumMap<>(DifficultyTier.class);
+        for (DifficultyTier t : DifficultyTier.values()) { rosterByDiff.put(t, 0); capByDiff.put(t, new HashSet<>()); }
+        for (String name : roster) {
+            int cb = col.creatures.stream().filter(c -> c.npcName.equals(name)).findFirst().map(c -> c.npcCombatLevel).orElse(0);
+            rosterByDiff.merge(MonsterRoster.getDifficulty(name, cb), 1, Integer::sum);
+        }
+        for (CapturedCreature c : col.creatures)
+            capByDiff.get(MonsterRoster.getDifficulty(c.npcName, c.npcCombatLevel)).add(c.npcName);
+
+        final int W = 480, PAD = 24;
+        int diffTiers = DifficultyTier.values().length;
+        int H = 4 + PAD + 60 + 12 + 70 + 12 + 22 + 6 + diffTiers * 22 + 8 + 36 + PAD;
+
+        BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = cardGraphics(img);
+
+        int y = drawCardBase(g, W, H, account, "SPECIES", date, PAD);
+        y = drawHeroStat(g, String.format("%.1f%%", pct * 100f) + "  (" + captured + " / " + total + ")",
+                "DEX COMPLETION", new Color(80, 200, 80), y, W, PAD);
+        y += 12;
+
+        // Small completion ring
+        int arcD = 90, arcX = (W - arcD) / 2, arcY = y;
+        g.setStroke(new BasicStroke(11f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g.setColor(new Color(40, 40, 40));
+        g.draw(new Arc2D.Double(arcX, arcY, arcD, arcD, -220, 260, Arc2D.OPEN));
+        if (pct > 0.001f) {
+            g.setStroke(new BasicStroke(11f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            g.setPaint(new GradientPaint(arcX, arcY, new Color(40, 150, 40), arcX + arcD, arcY + arcD, new Color(80, 230, 80)));
+            g.draw(new Arc2D.Double(arcX, arcY, arcD, arcD, -220, (int)(-260 * pct), Arc2D.OPEN));
+        }
+        g.setFont(FontManager.getRunescapeBoldFont().deriveFont(18f));
+        FontMetrics fm = g.getFontMetrics();
+        String pctStr = String.format("%.0f%%", pct * 100f);
+        g.setColor(new Color(90, 220, 90));
+        g.drawString(pctStr, arcX + arcD / 2 - fm.stringWidth(pctStr) / 2, arcY + arcD / 2 + fm.getAscent() / 2 - 4);
+        y += arcD + 12;
+
+        y = drawCardSectionHeader(g, "COMPLETION BY DIFFICULTY", y, W, PAD);
+        y += 6;
+        for (DifficultyTier tier : DifficultyTier.values()) {
+            int cap = capByDiff.get(tier).size(), ttl = rosterByDiff.getOrDefault(tier, 0);
+            y = drawCardBarRow(g, tier.label, tier.displayColor, cap, Math.max(ttl, 1), cap + " / " + ttl, y, PAD, W);
+        }
+        y += 8;
+        drawCardFooter(g, y, W, PAD);
+        g.dispose();
+        return img;
+    }
+
+    // ---- CAUGHT card ----
+
+    private static BufferedImage renderCaughtCard(BestiaryDataService ds) {
+        BestiaryCollection col = ds.getCollection();
+        String account = resolveAccount(ds), date = todayStr();
+
+        Map<CreatureRarity, Long> rarityCounts = col.creatures.stream()
+                .collect(Collectors.groupingBy(c -> c.rarity, Collectors.counting()));
+        List<CapturedCreature> top10 = col.creatures.stream()
+                .sorted(Comparator.comparingInt((CapturedCreature c) -> c.quality.overallRating()).reversed())
+                .limit(10).collect(Collectors.toList());
+
+        final int W = 480, PAD = 24;
+        int rarRows = 6, topRows = Math.max(1, top10.size());
+        int H = 4 + PAD + 60 + 12 + 70 + 12 + 22 + 6 + rarRows * 22 + 8
+                + 22 + 6 + topRows * 24 + 8 + 36 + PAD;
+
+        BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = cardGraphics(img);
+
+        int y = drawCardBase(g, W, H, account, "CAUGHT", date, PAD);
+        y = drawHeroStat(g, FMT.format(col.totalCaptures()), "TOTAL CAPTURES", ORANGE, y, W, PAD);
+        y += 12;
+
+        int total = col.totalCaptures();
+        int maxR  = rarityCounts.values().stream().mapToInt(Long::intValue).max().orElse(1);
+        CreatureRarity[] rarOrder = {CreatureRarity.MYTHIC, CreatureRarity.LEGENDARY,
+                CreatureRarity.EPIC, CreatureRarity.RARE, CreatureRarity.UNCOMMON, CreatureRarity.COMMON};
+
+        y = drawCardSectionHeader(g, "RARITY BREAKDOWN", y, W, PAD);
+        y += 6;
+        for (CreatureRarity r : rarOrder) {
+            long cnt = rarityCounts.getOrDefault(r, 0L);
+            String pct = total > 0 ? String.format("%.1f%%", cnt * 100.0 / total) : "0%";
+            y = drawCardBarRow(g, r.label, r.displayColor, (int) cnt, maxR, cnt + "  " + pct, y, PAD, W);
+        }
+        y += 8;
+
+        y = drawCardSectionHeader(g, "TOP 10 BY QUALITY", y, W, PAD);
+        y += 6;
+        if (top10.isEmpty()) {
+            g.setFont(FontManager.getRunescapeSmallFont()); g.setColor(DIM);
+            g.drawString("No captures yet", PAD + 6, y + g.getFontMetrics().getAscent()); y += 24;
+        } else {
+            for (int i = 0; i < top10.size(); i++) {
+                CapturedCreature c = top10.get(i);
+                g.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+                FontMetrics fm = g.getFontMetrics();
+                g.setColor(c.rarity.displayColor);
+                g.drawString((i + 1) + ".  " + c.npcName, PAD + 4, y + fm.getAscent());
+                int q = c.quality.overallRating();
+                String qs = "Q:" + q;
+                g.setFont(FontManager.getRunescapeSmallFont());
+                fm = g.getFontMetrics();
+                g.setColor(qualColor(q));
+                g.drawString(qs, W - PAD - fm.stringWidth(qs), y + fm.getAscent());
+                y += 24;
+            }
+        }
+        y += 8;
+        drawCardFooter(g, y, W, PAD);
+        g.dispose();
+        return img;
     }
 }
