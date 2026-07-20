@@ -479,6 +479,27 @@ public class DashboardDialog extends JDialog {
 
         root.add(heroStat(FMT.format(total), "TOTAL CAPTURES", ORANGE));
         root.add(gap(10));
+        root.add(sectionHeader("AVERAGE QUALITY BY RARITY"));
+
+        JPanel avgPanel = col();
+        avgPanel.setBorder(new EmptyBorder(0, 12, 0, 12));
+        Map<CreatureRarity, Double> avg = col.creatures.stream().collect(
+                Collectors.groupingBy(c -> c.rarity,
+                        Collectors.averagingInt(c -> c.quality.overallRating())));
+
+        boolean any = false;
+        for (CreatureRarity r : new CreatureRarity[]{
+                CreatureRarity.MYTHIC, CreatureRarity.LEGENDARY, CreatureRarity.EPIC,
+                CreatureRarity.RARE,   CreatureRarity.UNCOMMON,  CreatureRarity.COMMON}) {
+            if (!avg.containsKey(r)) continue;
+            int a = (int) Math.round(avg.get(r));
+            avgPanel.add(barRow(r.label, r.displayColor, a, 100, String.valueOf(a), ""));
+            avgPanel.add(gap(4));
+            any = true;
+        }
+        if (!any) avgPanel.add(emptyNote("No captures yet."));
+        root.add(avgPanel);
+        root.add(gap(10));
         root.add(sectionHeader("TOP 10 BY QUALITY"));
 
         JPanel topList = col();
@@ -522,27 +543,6 @@ public class DashboardDialog extends JDialog {
             }
         }
         root.add(topList);
-        root.add(gap(10));
-        root.add(sectionHeader("AVERAGE QUALITY BY RARITY"));
-
-        JPanel avgPanel = col();
-        avgPanel.setBorder(new EmptyBorder(0, 12, 0, 12));
-        Map<CreatureRarity, Double> avg = col.creatures.stream().collect(
-                Collectors.groupingBy(c -> c.rarity,
-                        Collectors.averagingInt(c -> c.quality.overallRating())));
-
-        boolean any = false;
-        for (CreatureRarity r : new CreatureRarity[]{
-                CreatureRarity.MYTHIC, CreatureRarity.LEGENDARY, CreatureRarity.EPIC,
-                CreatureRarity.RARE,   CreatureRarity.UNCOMMON,  CreatureRarity.COMMON}) {
-            if (!avg.containsKey(r)) continue;
-            int a = (int) Math.round(avg.get(r));
-            avgPanel.add(barRow(r.label, r.displayColor, a, 100, String.valueOf(a), ""));
-            avgPanel.add(gap(4));
-            any = true;
-        }
-        if (!any) avgPanel.add(emptyNote("No captures yet."));
-        root.add(avgPanel);
         root.add(gap(16));
         return root;
     }
@@ -654,7 +654,7 @@ public class DashboardDialog extends JDialog {
                 CreatureRarity.EPIC, CreatureRarity.LEGENDARY, CreatureRarity.MYTHIC};
         String[] rarAbbr = {"C", "U", "R", "E", "L", "M"};
 
-        // Column header row
+        // Column header row (Monster label + rarity abbreviations)
         JPanel header = new JPanel() {
             @Override protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
@@ -665,6 +665,8 @@ public class DashboardDialog extends JDialog {
                 g2.setFont(sf);
                 FontMetrics fm = g2.getFontMetrics();
                 int base = (h + fm.getAscent() - fm.getDescent()) / 2;
+                g2.setColor(MUTED);
+                g2.drawString("Monster", 0, base);
                 for (int i = 0; i < rarAbbr.length; i++) {
                     g2.setColor(rarOrder[i].displayColor);
                     g2.drawString(rarAbbr[i], firstColW + i * colW + (colW - fm.stringWidth(rarAbbr[i])) / 2, base);
@@ -676,7 +678,13 @@ public class DashboardDialog extends JDialog {
         header.setPreferredSize(new Dimension(0, 18));
         header.setMaximumSize(new Dimension(Integer.MAX_VALUE, 18));
         root.add(header);
-        root.add(gap(2));
+        // Full-width divider under header
+        JPanel divider = new JPanel();
+        divider.setBackground(new Color(60, 60, 60));
+        divider.setPreferredSize(new Dimension(0, 1));
+        divider.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+        root.add(divider);
+        root.add(gap(3));
 
         for (Map.Entry<String, List<CapturedCreature>> e : top5) {
             List<CapturedCreature> caps = e.getValue();
@@ -1435,7 +1443,7 @@ public class DashboardDialog extends JDialog {
         int top5Rows = Math.max(1, top5.size());
         int H = 4 + PAD + 60 + 12 + (arcD + 12)
                + 22 + 6 + diffTiers * 22 + 8
-               + 22 + 6 + 16 + top5Rows * 20 + 8
+               + 22 + 6 + 21 + top5Rows * 20 + 8
                + 36 + PAD;
 
         BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
@@ -1488,12 +1496,18 @@ public class DashboardDialog extends JDialog {
         int colW = 22, firstColW = W - PAD * 2 - rarOrder.length * colW;
         g.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         FontMetrics hfm = g.getFontMetrics();
-        // Column header row
+        // Column header row — "Monster" label + rarity abbreviations
+        g.setColor(MUTED);
+        g.drawString("Monster", PAD, y + hfm.getAscent());
         for (int i = 0; i < rarAbbr.length; i++) {
             g.setColor(rarOrder[i].displayColor);
             g.drawString(rarAbbr[i], PAD + firstColW + i * colW + (colW - hfm.stringWidth(rarAbbr[i])) / 2, y + hfm.getAscent());
         }
         y += 16;
+        // Full-width divider
+        g.setColor(new Color(60, 60, 60));
+        g.fillRect(PAD, y, W - PAD * 2, 1);
+        y += 5;
         if (top5.isEmpty()) {
             g.setFont(FontManager.getRunescapeSmallFont()); g.setColor(DIM);
             g.drawString("No captures yet", PAD + 6, y + g.getFontMetrics().getAscent()); y += 20;
