@@ -12,10 +12,14 @@ import net.runelite.client.ui.FontManager;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.image.BufferedImage;
 import java.time.Instant;
 import java.util.*;
 import java.util.List;
@@ -57,6 +61,7 @@ public class AlbumDialog extends JDialog {
     private final JLabel countLabel;
     private String        currentSort      = "Name A–Z";
     private boolean       capturedFirst    = true;
+    private boolean       favouritesOnly   = false;
     private String        searchTerm       = "";
     private DifficultyTier filterDifficulty = null; // null = All tiers
 
@@ -122,10 +127,34 @@ public class AlbumDialog extends JDialog {
         countLabel.setPreferredSize(new Dimension(130, 16));
         countLabel.setMinimumSize(new Dimension(130, 16));
 
+        // ★ favourites-only toggle
+        JToggleButton favOnlyBtn = new JToggleButton("★");
+        favOnlyBtn.setFont(new Font(Font.DIALOG, Font.BOLD, 12));
+        favOnlyBtn.setMargin(new Insets(0, 0, 0, 0));
+        favOnlyBtn.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        favOnlyBtn.setForeground(new Color(90, 90, 90));
+        favOnlyBtn.setFocusPainted(false);
+        favOnlyBtn.setBorder(BorderFactory.createLineBorder(new Color(70, 70, 70), 1));
+        favOnlyBtn.setPreferredSize(new Dimension(26, 26));
+        favOnlyBtn.setToolTipText("Show only starred monsters");
+        favOnlyBtn.addActionListener(e -> {
+            favouritesOnly = favOnlyBtn.isSelected();
+            favOnlyBtn.setForeground(favouritesOnly ? new Color(255, 195, 40) : new Color(90, 90, 90));
+            favOnlyBtn.setBackground(favouritesOnly ? new Color(45, 38, 10) : ColorScheme.DARKER_GRAY_COLOR);
+            rebuildGrid();
+        });
+
+        JPanel btnPair = new JPanel();
+        btnPair.setLayout(new BoxLayout(btnPair, BoxLayout.X_AXIS));
+        btnPair.setOpaque(false);
+        btnPair.add(favOnlyBtn);
+        btnPair.add(Box.createHorizontalStrut(4));
+        btnPair.add(capturedFirstBtn);
+
         JPanel rightPanel = new JPanel(new BorderLayout(6, 0));
         rightPanel.setOpaque(false);
-        rightPanel.add(capturedFirstBtn, BorderLayout.WEST);
-        rightPanel.add(countLabel,       BorderLayout.EAST);
+        rightPanel.add(btnPair,    BorderLayout.WEST);
+        rightPanel.add(countLabel, BorderLayout.EAST);
 
         row1.add(sortRow,    BorderLayout.CENTER);
         row1.add(rightPanel, BorderLayout.EAST);
@@ -164,8 +193,32 @@ public class AlbumDialog extends JDialog {
         row2.add(searchBox, BorderLayout.CENTER);
         row2.add(diffBox,   BorderLayout.EAST);
 
+        // Row 3: export favourites grid
+        JPanel row3 = new JPanel(new BorderLayout(6, 0));
+        row3.setOpaque(false);
+        row3.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
+        row3.setBorder(new EmptyBorder(4, 0, 0, 0));
+
+        JButton exportGridBtn = new JButton("Export ★ Grid");
+        exportGridBtn.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        exportGridBtn.setMargin(new Insets(0, 6, 0, 6));
+        exportGridBtn.setBackground(new Color(45, 38, 10));
+        exportGridBtn.setForeground(new Color(255, 195, 40));
+        exportGridBtn.setFocusPainted(false);
+        exportGridBtn.setBorderPainted(false);
+        exportGridBtn.setToolTipText("Export up to 9 starred monsters as a 3×3 grid image — copies to clipboard");
+        exportGridBtn.addActionListener(e -> exportFavouritesGrid(exportGridBtn));
+
+        JLabel exportHint = new JLabel("Up to 9 starred captures · copies to clipboard");
+        exportHint.setFont(FontManager.getRunescapeSmallFont());
+        exportHint.setForeground(new Color(75, 75, 75));
+
+        row3.add(exportHint,    BorderLayout.CENTER);
+        row3.add(exportGridBtn, BorderLayout.EAST);
+
         topBar.add(row1);
         topBar.add(row2);
+        topBar.add(row3);
 
         // --- Grid ---
         gridPanel = new JPanel();
@@ -214,7 +267,7 @@ public class AlbumDialog extends JDialog {
         gridPanel.setLayout(new GridLayout(0, cols, CARD_GAP, CARD_GAP));
         gridPanel.setBorder(new EmptyBorder(SIDE_PAD, SIDE_PAD, SIDE_PAD, SIDE_PAD));
 
-        // Apply search + difficulty filters
+        // Apply search + difficulty + favourites filters
         String lc = searchTerm.toLowerCase();
         List<String> visible = fullRoster.stream()
                 .filter(n -> lc.isEmpty() || n.toLowerCase().contains(lc))
@@ -223,6 +276,8 @@ public class AlbumDialog extends JDialog {
                     int combat = capturesByNpc.containsKey(n) ? capturesByNpc.get(n).get(0).npcCombatLevel : 0;
                     return MonsterRoster.getDifficulty(n, combat) == filterDifficulty;
                 })
+                .filter(n -> !favouritesOnly || (capturesByNpc.containsKey(n)
+                        && capturesByNpc.get(n).stream().anyMatch(c -> c.favourite)))
                 .collect(Collectors.toList());
 
         long visibleCaptured = visible.stream().filter(capturesByNpc::containsKey).count();
@@ -397,5 +452,88 @@ public class AlbumDialog extends JDialog {
         return captures.stream().map(c -> c.captureTime)
                 .max(Comparator.naturalOrder())
                 .orElse(Instant.EPOCH);
+    }
+
+    // -------------------------------------------------------------------------
+    // Favourites grid export
+    // -------------------------------------------------------------------------
+
+    private void exportFavouritesGrid(JButton btn) {
+        List<String> favNpcs = capturesByNpc.keySet().stream()
+                .filter(n -> capturesByNpc.get(n).stream().anyMatch(c -> c.favourite))
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .limit(9)
+                .collect(Collectors.toList());
+
+        if (favNpcs.isEmpty()) {
+            btn.setText("No favourites!");
+            btn.setForeground(new Color(200, 100, 100));
+            javax.swing.Timer t = new javax.swing.Timer(2000, ev -> {
+                btn.setText("Export ★ Grid");
+                btn.setForeground(new Color(255, 195, 40));
+            });
+            t.setRepeats(false);
+            t.start();
+            return;
+        }
+
+        int count = favNpcs.size();
+        int cols  = Math.min(3, count);
+        int rows  = (count + cols - 1) / cols;
+        final int GAP = 6, PAD = 8, SCALE = 2;
+
+        int logW = cols * AlbumCard.CARD_W + (cols - 1) * GAP + PAD * 2;
+        int logH = rows * AlbumCard.CARD_H + (rows - 1) * GAP + PAD * 2;
+
+        BufferedImage img = new BufferedImage(logW * SCALE, logH * SCALE, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2 = img.createGraphics();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,      RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,     RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g2.setRenderingHint(RenderingHints.KEY_RENDERING,         RenderingHints.VALUE_RENDER_QUALITY);
+        g2.scale(SCALE, SCALE);
+
+        g2.setColor(new Color(18, 18, 18));
+        g2.fillRect(0, 0, logW, logH);
+
+        for (int i = 0; i < favNpcs.size(); i++) {
+            String name = favNpcs.get(i);
+            List<CapturedCreature> caps = capturesByNpc.get(name);
+            int dex = dexNumbers.getOrDefault(name, 0);
+
+            AlbumCard card = new AlbumCard(dex, name, caps, collection, imageService);
+            card.setSize(AlbumCard.CARD_W, AlbumCard.CARD_H);
+
+            int col = i % cols;
+            int row = i / cols;
+            int x   = PAD + col * (AlbumCard.CARD_W + GAP);
+            int y   = PAD + row * (AlbumCard.CARD_H + GAP);
+
+            Graphics2D cardG2 = (Graphics2D) g2.create();
+            cardG2.translate(x, y);
+            card.print(cardG2);
+            cardG2.dispose();
+        }
+        g2.dispose();
+
+        BufferedImage exported = img;
+        Transferable t = new Transferable() {
+            @Override public DataFlavor[] getTransferDataFlavors() { return new DataFlavor[]{DataFlavor.imageFlavor}; }
+            @Override public boolean isDataFlavorSupported(DataFlavor f) { return DataFlavor.imageFlavor.equals(f); }
+            @Override public Object getTransferData(DataFlavor f) throws UnsupportedFlavorException {
+                if (!DataFlavor.imageFlavor.equals(f)) throw new UnsupportedFlavorException(f);
+                return exported;
+            }
+        };
+        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(t, null);
+
+        btn.setText("Copied! (" + count + " cards)");
+        btn.setForeground(new Color(120, 200, 120));
+        javax.swing.Timer timer = new javax.swing.Timer(2500, ev -> {
+            btn.setText("Export ★ Grid");
+            btn.setForeground(new Color(255, 195, 40));
+        });
+        timer.setRepeats(false);
+        timer.start();
     }
 }
