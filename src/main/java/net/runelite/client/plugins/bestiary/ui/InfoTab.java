@@ -98,19 +98,20 @@ public class InfoTab extends JPanel {
         strip.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
         strip.setAlignmentX(LEFT_ALIGNMENT);
 
-        strip.add(statBox("Species", speciesVal));
-        strip.add(statBox("Caught",  capturesVal));
-        strip.add(statBox("Level",   levelVal));
-        strip.add(statBox("Kills",   killsVal));
+        strip.add(statBox("Level",   levelVal,    false));
+        strip.add(statBox("Kills",   killsVal,    true));
+        strip.add(statBox("Species", speciesVal,  false));
+        strip.add(statBox("Caught",  capturesVal, true));
 
         return strip;
     }
 
-    private static JPanel statBox(String labelText, JLabel valueLabel) {
+    private static JPanel statBox(String labelText, JLabel valueLabel, boolean rightAccent) {
         JPanel box = new JPanel(new GridLayout(2, 1, 0, 2));
         box.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         box.setBorder(BorderFactory.createCompoundBorder(
-                new MatteBorder(0, 3, 0, 0, ORANGE),
+                rightAccent ? new MatteBorder(0, 0, 0, 3, ORANGE)
+                            : new MatteBorder(0, 3, 0, 0, ORANGE),
                 new EmptyBorder(8, 6, 6, 6)));
 
         JLabel label = new JLabel(labelText, SwingConstants.CENTER);
