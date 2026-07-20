@@ -83,10 +83,11 @@ public class AlbumCard extends JPanel {
 
     // If set, left-click fires this instead of the default detail-dialog logic
     @Nullable private Runnable clickOverride;
+    public void setClickOverride(Runnable override) { this.clickOverride = override; }
 
-    public void setClickOverride(Runnable override) {
-        this.clickOverride = override;
-    }
+    // If set, right-click menu shows "Remove Favourite" which fires this
+    @Nullable private Runnable unfavouriteCallback;
+    public void setUnfavouriteCallback(Runnable r) { this.unfavouriteCallback = r; }
 
     // -------------------------------------------------------------------------
     // Constructors
@@ -199,6 +200,12 @@ public class AlbumCard extends JPanel {
 
             private void showExportMenu(MouseEvent e) {
                 JPopupMenu menu = new JPopupMenu();
+                if (unfavouriteCallback != null) {
+                    JMenuItem unfavItem = new JMenuItem("✩ Remove Favourite");
+                    unfavItem.addActionListener(ev -> unfavouriteCallback.run());
+                    menu.add(unfavItem);
+                    menu.addSeparator();
+                }
                 List<CapturedCreature> sorted = new ArrayList<>(captures);
                 sorted.sort(java.util.Comparator.<CapturedCreature>
                         comparingInt(c -> c.rarity.ordinal())

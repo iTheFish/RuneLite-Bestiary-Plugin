@@ -367,7 +367,8 @@ public class BestiaryPlugin extends Plugin {
 
         dlg.setContentPane(content);
         dlg.pack();
-        dlg.setLocationRelativeTo(SwingUtilities.getWindowAncestor(panel));
+        java.awt.Point mouse = java.awt.MouseInfo.getPointerInfo().getLocation();
+        dlg.setLocation(mouse.x, mouse.y);
         dlg.setVisible(true);
     }
 

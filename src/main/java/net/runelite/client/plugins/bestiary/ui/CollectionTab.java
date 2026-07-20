@@ -263,6 +263,7 @@ public class CollectionTab extends JPanel {
     public void openAlbum(Window parent, boolean startFavourites) {
         Map<String, List<CapturedCreature>> byNpc = dataService.getCollection().creatures.stream()
                 .collect(Collectors.groupingBy(c -> c.npcName));
+        AlbumDialog.setOnFavouriteChanged(() -> { dataService.saveNow(); rebuildCards(); });
         new AlbumDialog(parent, byNpc, dataService.getCollection().killCounts,
                 dataService.getCollection(), imageService, startFavourites);
     }

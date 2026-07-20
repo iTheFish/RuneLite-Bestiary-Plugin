@@ -37,6 +37,8 @@ public class AlbumDialog extends JDialog {
 
     private static AlbumDialog current = null;
     private static Dimension savedSize = null;
+    private static Runnable onFavouriteChanged;
+    public static void setOnFavouriteChanged(Runnable r) { onFavouriteChanged = r; }
 
     private static final int CARD_GAP = 6;
     private static final int SIDE_PAD = 8;
@@ -209,7 +211,8 @@ public class AlbumDialog extends JDialog {
         exportGridBtn.setForeground(new Color(255, 195, 40));
         exportGridBtn.setFocusPainted(false);
         exportGridBtn.setBorderPainted(false);
-        exportGridBtn.setToolTipText("Export starred captures as a grid (≤9: 3 cols, 10–20: 4 cols) — copies to clipboard");
+        exportGridBtn.setToolTipText("<html>Export starred captures as a grid — copies to clipboard.<br>"
+                + "1 card: 1×1 &nbsp;|&nbsp; 2–4 cards: 2 cols &nbsp;|&nbsp; 5–9: 3×3 &nbsp;|&nbsp; 10–20: 4 cols</html>");
         exportGridBtn.addActionListener(e -> exportFavouritesGrid(exportGridBtn));
 
         exportHint = new JLabel("★ Viewing starred captures only");
@@ -353,7 +356,13 @@ public class AlbumDialog extends JDialog {
 
             for (CapturedCreature cap : starred) {
                 int dex = dexNumbers.getOrDefault(cap.npcName, 0);
-                gridPanel.add(new AlbumCard(dex, cap.npcName, List.of(cap), collection, imageService));
+                AlbumCard card = new AlbumCard(dex, cap.npcName, List.of(cap), collection, imageService);
+                card.setUnfavouriteCallback(() -> {
+                    cap.favourite = false;
+                    rebuildGrid();
+                    if (onFavouriteChanged != null) onFavouriteChanged.run();
+                });
+                gridPanel.add(card);
             }
 
             gridPanel.revalidate();
@@ -641,16 +650,19 @@ public class AlbumDialog extends JDialog {
             g2.fillRoundRect(x, bY, AlbumCard.CARD_W, BANNER_H, 4, 4);
 
             String capPlayer = (cap.playerName != null && !cap.playerName.isEmpty()) ? cap.playerName : "Unknown";
+            String capLine = "Captured by: " + capPlayer;
             g2.setFont(playerFont);
             FontMetrics pfm = g2.getFontMetrics();
+            int capX = x + (AlbumCard.CARD_W - pfm.stringWidth(capLine)) / 2;
             g2.setColor(new Color(200, 155, 50));
-            g2.drawString(capPlayer, x + 4, bY + pfm.getAscent() + 1);
+            g2.drawString(capLine, capX, bY + pfm.getAscent() + 1);
 
             String cardId = CardId.encode(dex, cap);
             g2.setFont(idFont);
             FontMetrics ifm = g2.getFontMetrics();
+            int idX = x + (AlbumCard.CARD_W - ifm.stringWidth(cardId)) / 2;
             g2.setColor(new Color(90, 90, 90));
-            g2.drawString(cardId, x + 4, bY + pfm.getHeight() + ifm.getAscent() - 1);
+            g2.drawString(cardId, idX, bY + pfm.getHeight() + ifm.getAscent() - 1);
         }
         g2.dispose();
 
