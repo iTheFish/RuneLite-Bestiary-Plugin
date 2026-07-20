@@ -286,7 +286,7 @@ public class DashboardDialog extends JDialog {
         for (CreatureRarity r : order) {
             long cnt = counts.getOrDefault(r, 0L);
             String pct = total > 0 ? String.format("%.0f%%", cnt * 100.0 / total) : "0%";
-            panel.add(barRow(r.label, r.displayColor, (int) cnt, maxCount, cnt + "  " + pct));
+            panel.add(barRow(r.label, r.displayColor, (int) cnt, maxCount, FMT.format(cnt), pct));
             panel.add(gap(4));
         }
         return panel;
@@ -350,7 +350,7 @@ public class DashboardDialog extends JDialog {
         } else {
             int max = sorted.get(0).getValue();
             for (Map.Entry<String, Integer> e : sorted) {
-                bars.add(barRow(e.getKey(), ORANGE, e.getValue(), max, FMT.format(e.getValue())));
+                bars.add(barRow(e.getKey(), ORANGE, e.getValue(), max, FMT.format(e.getValue()), ""));
                 bars.add(gap(4));
             }
         }
@@ -377,7 +377,7 @@ public class DashboardDialog extends JDialog {
             for (String name : capNames) {
                 int k = col.getKillCount(name), c = Math.max(1, col.getCaptureCount(name));
                 int r = k / c;
-                ratioPanel.add(barRow(name, new Color(90, 170, 110), r, maxR, "1 in " + r));
+                ratioPanel.add(barRow(name, new Color(90, 170, 110), r, maxR, "1 in " + r, ""));
                 ratioPanel.add(gap(4));
             }
         }
@@ -421,7 +421,7 @@ public class DashboardDialog extends JDialog {
         diffPanel.setBorder(new EmptyBorder(0, 12, 0, 12));
         for (DifficultyTier tier : DifficultyTier.values()) {
             int cap = capByDiff.get(tier).size(), ttl = rosterByDiff.getOrDefault(tier, 0);
-            diffPanel.add(barRow(tier.label, tier.displayColor, cap, Math.max(ttl, 1), cap + " / " + ttl));
+            diffPanel.add(barRow(tier.label, tier.displayColor, cap, Math.max(ttl, 1), cap + "/" + ttl, ""));
             diffPanel.add(gap(4));
         }
         root.add(diffPanel);
@@ -475,9 +475,6 @@ public class DashboardDialog extends JDialog {
         int total = col.totalCaptures();
 
         root.add(heroStat(FMT.format(total), "TOTAL CAPTURES", ORANGE));
-        root.add(gap(10));
-        root.add(sectionHeader("BY RARITY"));
-        root.add(buildRarityBars(col));
         root.add(gap(10));
         root.add(sectionHeader("TOP 10 BY QUALITY"));
 
@@ -537,7 +534,7 @@ public class DashboardDialog extends JDialog {
                 CreatureRarity.RARE,   CreatureRarity.UNCOMMON,  CreatureRarity.COMMON}) {
             if (!avg.containsKey(r)) continue;
             int a = (int) Math.round(avg.get(r));
-            avgPanel.add(barRow(r.label, r.displayColor, a, 100, "avg " + a));
+            avgPanel.add(barRow(r.label, r.displayColor, a, 100, String.valueOf(a), ""));
             avgPanel.add(gap(4));
             any = true;
         }
@@ -635,7 +632,7 @@ public class DashboardDialog extends JDialog {
     // Shared bar row — custom-painted label + gradient fill + right value
     // =========================================================================
 
-    private JPanel barRow(String label, Color color, int value, int max, String right) {
+    private JPanel barRow(String label, Color color, int value, int max, String before, String after) {
         return new JPanel() {
             @Override protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
@@ -646,11 +643,13 @@ public class DashboardDialog extends JDialog {
                 g2.setFont(sf);
                 FontMetrics fm = g2.getFontMetrics();
 
-                int labelW  = 116;
-                int rightW  = fm.stringWidth(right) + 4;
-                int barX    = labelW + 6, barW = w - labelW - rightW - 14;
-                int barH    = 8, barY = (h - barH) / 2 + 1;
-                int base    = (h + fm.getAscent() - fm.getDescent()) / 2;
+                int labelW   = 110;
+                int beforeW  = 50;
+                int afterW   = after.isEmpty() ? 0 : fm.stringWidth(after) + 8;
+                int barX     = labelW + beforeW + 4;
+                int barW     = w - barX - afterW - 8;
+                int barH     = 8, barY = (h - barH) / 2 + 1;
+                int base     = (h + fm.getAscent() - fm.getDescent()) / 2;
 
                 // Dot + label
                 g2.setColor(color);
@@ -662,6 +661,12 @@ public class DashboardDialog extends JDialog {
                 if (name.length() < label.length()) name += "…";
                 g2.setColor(TEXT);
                 g2.drawString(name, dotW, base);
+
+                // Before text (right-aligned in before column, bright white)
+                if (!before.isEmpty()) {
+                    g2.setColor(Color.WHITE);
+                    g2.drawString(before, labelW + beforeW - fm.stringWidth(before) - 2, base);
+                }
 
                 // Track
                 g2.setColor(new Color(42, 42, 42));
@@ -676,10 +681,11 @@ public class DashboardDialog extends JDialog {
                     g2.fillRoundRect(barX, barY, fill, barH, 4, 4);
                 }
 
-                // Right text
-                g2.setColor(MUTED);
-                g2.setFont(sf);
-                g2.drawString(right, w - fm.stringWidth(right), base);
+                // After text (light accent colour)
+                if (!after.isEmpty()) {
+                    g2.setColor(new Color(170, 200, 230));
+                    g2.drawString(after, w - afterW + 4, base);
+                }
                 g2.dispose();
             }
         };
@@ -1044,7 +1050,7 @@ public class DashboardDialog extends JDialog {
         g.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         FontMetrics sfm = g.getFontMetrics();
         String capLabel = "CAPTURE LEVEL";
-        g.setColor(MUTED);
+        g.setColor(new Color(165, 165, 165));
         g.drawString(capLabel, cx - sfm.stringWidth(capLabel) / 2, cy - 30);
 
         g.setFont(FontManager.getRunescapeBoldFont().deriveFont(56f));
@@ -1057,13 +1063,13 @@ public class DashboardDialog extends JDialog {
         g.setColor(level >= 99 ? GOLD : Color.WHITE);
         g.drawString(lvlStr, lvlX, lvlY);
 
-        // Pct label below level number
+        // Pct label below level number — more vertical space so it doesn't crowd the number
         g.setFont(FontManager.getRunescapeSmallFont());
         sfm = g.getFontMetrics();
-        String pctStr = String.format("%.1f%% to next", progress * 100f);
+        String pctStr = String.format("%.1f%% to next level", progress * 100f);
         if (level >= 99) pctStr = "MAX LEVEL";
-        g.setColor(new Color(160, 160, 160));
-        g.drawString(pctStr, cx - sfm.stringWidth(pctStr) / 2, cy + 22);
+        g.setColor(new Color(200, 200, 200));
+        g.drawString(pctStr, cx - sfm.stringWidth(pctStr) / 2, cy + 32);
 
         y += arcD + 16;
 
@@ -1081,10 +1087,10 @@ public class DashboardDialog extends JDialog {
         // XP labels
         g.setFont(FontManager.getRunescapeSmallFont());
         sfm = g.getFontMetrics();
-        g.setColor(TEXT);
+        g.setColor(new Color(210, 210, 210));
         g.drawString(FMT.format(totalXp) + " XP total", barX, y + sfm.getAscent());
         String nextStr = level >= 99 ? "Max level!" : FMT.format(xpLeft) + " XP to level " + (level + 1);
-        g.setColor(MUTED);
+        g.setColor(new Color(170, 200, 230));
         g.drawString(nextStr, barX + barW - sfm.stringWidth(nextStr), y + sfm.getAscent());
         y += sfm.getHeight() + PAD;
 
@@ -1131,7 +1137,7 @@ public class DashboardDialog extends JDialog {
             long cnt = rarityCounts.getOrDefault(r, 0L);
             String pct = total2 > 0 ? String.format("%.1f%%", cnt * 100.0 / total2) : "0%";
             y = drawCardBarRow(g, r.label, r.displayColor, (int) cnt, maxRar,
-                    cnt + "  " + pct, y, PAD, W);
+                    FMT.format(cnt), pct, y, PAD, W);
         }
         y += 8;
 
@@ -1180,26 +1186,39 @@ public class DashboardDialog extends JDialog {
         return y + 22;
     }
 
+    /**
+     * before = value right-aligned in fixed column before the bar (bright white, e.g. "42")
+     * after  = optional label after the bar in accent blue-white (e.g. "2.5%"), or ""
+     */
     private static int drawCardBarRow(Graphics2D g, String label, Color color,
-                                      int value, int max, String right, int y, int PAD, int W) {
+                                      int value, int max, String before, String after,
+                                      int y, int PAD, int W) {
         g.setFont(FontManager.getRunescapeSmallFont());
         FontMetrics fm = g.getFontMetrics();
-        int rowH   = 20;
-        int dotW   = fm.stringWidth("● ");
-        int labelW = 110;
-        int rightW = fm.stringWidth(right) + 4;
-        int barX   = PAD + labelW + 6, barW = W - PAD - labelW - rightW - 14;
-        int barH   = 8, barY = y + (rowH - barH) / 2;
-        int base   = y + (rowH + fm.getAscent() - fm.getDescent()) / 2;
+        int rowH       = 22;
+        int dotW       = fm.stringWidth("● ");
+        int labelW     = 100;
+        int beforeColW = 52;
+        int afterW     = after.isEmpty() ? 0 : fm.stringWidth(after) + 8;
+        int barX       = PAD + labelW + beforeColW + 4;
+        int barW       = W - barX - PAD - afterW;
+        int barH       = 8;
+        int barY       = y + (rowH - barH) / 2;
+        int base       = y + (rowH + fm.getAscent() - fm.getDescent()) / 2;
 
         g.setColor(color);
         g.drawString("●", PAD + 2, base);
         g.setColor(TEXT);
         String lbl = label;
-        while (lbl.length() > 0 && fm.stringWidth(lbl) > labelW - dotW - 6)
+        while (lbl.length() > 0 && fm.stringWidth(lbl) > labelW - dotW - 4)
             lbl = lbl.substring(0, lbl.length() - 1);
         if (lbl.length() < label.length()) lbl += "…";
         g.drawString(lbl, PAD + dotW + 2, base);
+
+        if (!before.isEmpty()) {
+            g.setColor(Color.WHITE);
+            g.drawString(before, PAD + labelW + beforeColW - fm.stringWidth(before), base);
+        }
 
         g.setColor(new Color(36, 36, 36));
         g.fillRoundRect(barX, barY, barW, barH, 4, 4);
@@ -1210,11 +1229,13 @@ public class DashboardDialog extends JDialog {
                     barX + fill, barY, color));
             g.fillRoundRect(barX, barY, fill, barH, 4, 4);
         }
-        g.setColor(MUTED);
-        g.setFont(FontManager.getRunescapeSmallFont());
-        fm = g.getFontMetrics();
-        g.drawString(right, W - PAD - fm.stringWidth(right), base);
 
+        if (!after.isEmpty()) {
+            g.setFont(FontManager.getRunescapeSmallFont());
+            fm = g.getFontMetrics();
+            g.setColor(new Color(170, 200, 230));
+            g.drawString(after, W - PAD - fm.stringWidth(after), base);
+        }
         return y + rowH + 2;
     }
 
@@ -1265,7 +1286,7 @@ public class DashboardDialog extends JDialog {
         } else {
             int maxK = top.get(0).getValue();
             for (Map.Entry<String, Integer> e : top)
-                y = drawCardBarRow(g, e.getKey(), ORANGE, e.getValue(), maxK, FMT.format(e.getValue()), y, PAD, W);
+                y = drawCardBarRow(g, e.getKey(), ORANGE, e.getValue(), maxK, FMT.format(e.getValue()), "", y, PAD, W);
         }
         y += 8;
 
@@ -1279,7 +1300,7 @@ public class DashboardDialog extends JDialog {
             Color green = new Color(80, 190, 100);
             for (Map.Entry<String, Integer> e : ratios) {
                 int r = col.getKillCount(e.getKey()) / Math.max(1, e.getValue());
-                y = drawCardBarRow(g, e.getKey(), green, r, maxR, "1 in " + r, y, PAD, W);
+                y = drawCardBarRow(g, e.getKey(), green, r, maxR, "1 in " + r, "", y, PAD, W);
             }
         }
         y += 8;
@@ -1297,19 +1318,16 @@ public class DashboardDialog extends JDialog {
         float pct                 = total > 0 ? (float) captured / total : 0f;
         String account = resolveAccount(ds), date = todayStr();
 
-        Map<DifficultyTier, Integer> rosterByDiff = new EnumMap<>(DifficultyTier.class);
-        Map<DifficultyTier, Set<String>> capByDiff = new EnumMap<>(DifficultyTier.class);
-        for (DifficultyTier t : DifficultyTier.values()) { rosterByDiff.put(t, 0); capByDiff.put(t, new HashSet<>()); }
-        for (String name : roster) {
-            int cb = col.creatures.stream().filter(c -> c.npcName.equals(name)).findFirst().map(c -> c.npcCombatLevel).orElse(0);
-            rosterByDiff.merge(MonsterRoster.getDifficulty(name, cb), 1, Integer::sum);
-        }
-        for (CapturedCreature c : col.creatures)
-            capByDiff.get(MonsterRoster.getDifficulty(c.npcName, c.npcCombatLevel)).add(c.npcName);
+        // Top discoveries: rarest first, then highest quality
+        List<CapturedCreature> topDisc = col.creatures.stream()
+                .sorted(Comparator.comparingInt((CapturedCreature c) -> c.rarity.ordinal()).reversed()
+                        .thenComparingInt((CapturedCreature c) -> c.quality.overallRating()).reversed())
+                .limit(6).collect(Collectors.toList());
 
         final int W = 480, PAD = 24;
-        int diffTiers = DifficultyTier.values().length;
-        int H = 4 + PAD + 60 + 12 + 70 + 12 + 22 + 6 + diffTiers * 22 + 8 + 36 + PAD;
+        int arcD = 100;
+        int discRows = Math.max(1, topDisc.size());
+        int H = 4 + PAD + 60 + 12 + (arcD + 12) + 22 + 6 + discRows * 22 + 8 + 36 + PAD;
 
         BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = cardGraphics(img);
@@ -1319,28 +1337,32 @@ public class DashboardDialog extends JDialog {
                 "DEX COMPLETION", new Color(80, 200, 80), y, W, PAD);
         y += 12;
 
-        // Small completion ring
-        int arcD = 90, arcX = (W - arcD) / 2, arcY = y;
-        g.setStroke(new BasicStroke(11f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        // Completion ring
+        int arcX = (W - arcD) / 2, arcY = y;
+        g.setStroke(new BasicStroke(12f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         g.setColor(new Color(40, 40, 40));
         g.draw(new Arc2D.Double(arcX, arcY, arcD, arcD, -220, 260, Arc2D.OPEN));
         if (pct > 0.001f) {
-            g.setStroke(new BasicStroke(11f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
             g.setPaint(new GradientPaint(arcX, arcY, new Color(40, 150, 40), arcX + arcD, arcY + arcD, new Color(80, 230, 80)));
             g.draw(new Arc2D.Double(arcX, arcY, arcD, arcD, -220, (int)(-260 * pct), Arc2D.OPEN));
         }
-        g.setFont(FontManager.getRunescapeBoldFont().deriveFont(18f));
+        g.setFont(FontManager.getRunescapeBoldFont().deriveFont(20f));
         FontMetrics fm = g.getFontMetrics();
-        String pctStr = String.format("%.0f%%", pct * 100f);
+        String pctStr = String.format("%.1f%%", pct * 100f);
         g.setColor(new Color(90, 220, 90));
         g.drawString(pctStr, arcX + arcD / 2 - fm.stringWidth(pctStr) / 2, arcY + arcD / 2 + fm.getAscent() / 2 - 4);
         y += arcD + 12;
 
-        y = drawCardSectionHeader(g, "COMPLETION BY DIFFICULTY", y, W, PAD);
+        y = drawCardSectionHeader(g, "TOP DISCOVERIES", y, W, PAD);
         y += 6;
-        for (DifficultyTier tier : DifficultyTier.values()) {
-            int cap = capByDiff.get(tier).size(), ttl = rosterByDiff.getOrDefault(tier, 0);
-            y = drawCardBarRow(g, tier.label, tier.displayColor, cap, Math.max(ttl, 1), cap + " / " + ttl, y, PAD, W);
+        if (topDisc.isEmpty()) {
+            g.setFont(FontManager.getRunescapeSmallFont()); g.setColor(DIM);
+            g.drawString("No captures yet", PAD + 6, y + g.getFontMetrics().getAscent()); y += 22;
+        } else {
+            for (CapturedCreature c : topDisc) {
+                int q = c.quality.overallRating();
+                y = drawCardBarRow(g, c.npcName, c.rarity.displayColor, q, 100, c.rarity.label, "Q:" + q, y, PAD, W);
+            }
         }
         y += 8;
         drawCardFooter(g, y, W, PAD);
@@ -1354,15 +1376,16 @@ public class DashboardDialog extends JDialog {
         BestiaryCollection col = ds.getCollection();
         String account = resolveAccount(ds), date = todayStr();
 
-        Map<CreatureRarity, Long> rarityCounts = col.creatures.stream()
-                .collect(Collectors.groupingBy(c -> c.rarity, Collectors.counting()));
+        Map<CreatureRarity, Double> avgQuality = col.creatures.stream().collect(
+                Collectors.groupingBy(c -> c.rarity,
+                        Collectors.averagingInt(c -> c.quality.overallRating())));
         List<CapturedCreature> top10 = col.creatures.stream()
                 .sorted(Comparator.comparingInt((CapturedCreature c) -> c.quality.overallRating()).reversed())
                 .limit(10).collect(Collectors.toList());
 
         final int W = 480, PAD = 24;
-        int rarRows = 6, topRows = Math.max(1, top10.size());
-        int H = 4 + PAD + 60 + 12 + 70 + 12 + 22 + 6 + rarRows * 22 + 8
+        int avgRows = 6, topRows = Math.max(1, top10.size());
+        int H = 4 + PAD + 60 + 12 + 70 + 12 + 22 + 6 + avgRows * 24 + 8
                 + 22 + 6 + topRows * 24 + 8 + 36 + PAD;
 
         BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
@@ -1372,17 +1395,18 @@ public class DashboardDialog extends JDialog {
         y = drawHeroStat(g, FMT.format(col.totalCaptures()), "TOTAL CAPTURES", ORANGE, y, W, PAD);
         y += 12;
 
-        int total = col.totalCaptures();
-        int maxR  = rarityCounts.values().stream().mapToInt(Long::intValue).max().orElse(1);
         CreatureRarity[] rarOrder = {CreatureRarity.MYTHIC, CreatureRarity.LEGENDARY,
                 CreatureRarity.EPIC, CreatureRarity.RARE, CreatureRarity.UNCOMMON, CreatureRarity.COMMON};
 
-        y = drawCardSectionHeader(g, "RARITY BREAKDOWN", y, W, PAD);
+        y = drawCardSectionHeader(g, "AVERAGE QUALITY BY RARITY", y, W, PAD);
         y += 6;
         for (CreatureRarity r : rarOrder) {
-            long cnt = rarityCounts.getOrDefault(r, 0L);
-            String pct = total > 0 ? String.format("%.1f%%", cnt * 100.0 / total) : "0%";
-            y = drawCardBarRow(g, r.label, r.displayColor, (int) cnt, maxR, cnt + "  " + pct, y, PAD, W);
+            if (!avgQuality.containsKey(r)) {
+                y = drawCardBarRow(g, r.label, r.displayColor, 0, 100, "—", "", y, PAD, W);
+            } else {
+                int avg = (int) Math.round(avgQuality.get(r));
+                y = drawCardBarRow(g, r.label, r.displayColor, avg, 100, String.valueOf(avg), "", y, PAD, W);
+            }
         }
         y += 8;
 
