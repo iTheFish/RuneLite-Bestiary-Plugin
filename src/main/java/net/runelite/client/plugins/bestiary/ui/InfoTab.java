@@ -132,14 +132,26 @@ public class InfoTab extends JPanel {
     }
 
     private static JPanel buildShortcutRow(Runnable openAlbum, Runnable openFavourites, Runnable openRecap) {
-        JPanel row = new JPanel(new GridLayout(1, 3, 4, 0));
-        row.setOpaque(false);
-        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
-        row.setAlignmentX(LEFT_ALIGNMENT);
-        row.add(shortcutBtn("Open Album",     ORANGE,                  openAlbum));
-        row.add(shortcutBtn("★ Favourites",   new Color(220, 180, 60), openFavourites));
-        row.add(shortcutBtn("Session Recap",  new Color(120, 200, 120), openRecap));
-        return row;
+        JPanel container = new JPanel();
+        container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
+        container.setOpaque(false);
+        container.setAlignmentX(LEFT_ALIGNMENT);
+
+        JPanel topRow = new JPanel(new GridLayout(1, 2, 4, 0));
+        topRow.setOpaque(false);
+        topRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+        topRow.setAlignmentX(LEFT_ALIGNMENT);
+        topRow.add(shortcutBtn("Open Album",   ORANGE,                  openAlbum));
+        topRow.add(shortcutBtn("★ Favourites", new Color(220, 180, 60), openFavourites));
+
+        JButton recapBtn = shortcutBtn("Session Recap", new Color(120, 200, 120), openRecap);
+        recapBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+        recapBtn.setAlignmentX(LEFT_ALIGNMENT);
+
+        container.add(topRow);
+        container.add(Box.createVerticalStrut(4));
+        container.add(recapBtn);
+        return container;
     }
 
     private static JButton shortcutBtn(String text, Color fg, Runnable action) {

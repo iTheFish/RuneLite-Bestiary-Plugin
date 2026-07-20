@@ -426,19 +426,40 @@ public class CreatureDetailDialog extends JDialog {
                             super.remove(fb, off, len); update(fb);
                         }
                     });
-                    JPanel inputPanel = new JPanel(new BorderLayout(6, 0));
+                    JPanel inputPanel = new JPanel(new BorderLayout(6, 4));
                     inputPanel.add(new JLabel("Name (blank to clear):"), BorderLayout.NORTH);
                     inputPanel.add(field,   BorderLayout.CENTER);
                     inputPanel.add(counter, BorderLayout.EAST);
-                    int res = JOptionPane.showConfirmDialog(CreatureDetailDialog.this,
-                            inputPanel, "Name Capture",
-                            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-                    if (res == JOptionPane.OK_OPTION) {
+
+                    JButton okBtn     = new JButton("OK");
+                    JButton cancelBtn = new JButton("Cancel");
+                    JPanel btnRow = new JPanel(new GridLayout(1, 2, 4, 0));
+                    btnRow.add(okBtn);
+                    btnRow.add(cancelBtn);
+
+                    JPanel content = new JPanel(new BorderLayout(0, 8));
+                    content.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+                    content.add(inputPanel, BorderLayout.CENTER);
+                    content.add(btnRow,     BorderLayout.SOUTH);
+
+                    JDialog nickDlg = new JDialog(CreatureDetailDialog.this, "Name Capture", ModalityType.MODELESS);
+                    nickDlg.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+                    nickDlg.setResizable(false);
+                    nickDlg.setContentPane(content);
+                    nickDlg.pack();
+                    nickDlg.setLocationRelativeTo(CreatureDetailDialog.this);
+
+                    okBtn.addActionListener(ae -> {
                         String val = field.getText().trim();
                         c.nickname = val.isBlank() ? null : val;
                         buildList(currentSort);
                         if (saveCallback != null) saveCallback.run();
-                    }
+                        nickDlg.dispose();
+                    });
+                    cancelBtn.addActionListener(ae -> nickDlg.dispose());
+                    field.addActionListener(ae -> okBtn.doClick());
+
+                    nickDlg.setVisible(true);
                 });
                 menu.add(nameItem);
                 menu.show(row, e.getX(), e.getY());

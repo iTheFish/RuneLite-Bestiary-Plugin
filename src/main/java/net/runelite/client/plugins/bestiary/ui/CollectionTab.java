@@ -91,7 +91,7 @@ public class CollectionTab extends JPanel {
 
         // --- Star button: Favourites toggle, sits beside search bar ---
         starBtn = new JButton("★");
-        starBtn.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD).deriveFont(12f));
+        starBtn.setFont(new Font(Font.DIALOG, Font.BOLD, 14));
         starBtn.setContentAreaFilled(false);
         starBtn.setOpaque(false);
         starBtn.setFocusPainted(false);
@@ -161,7 +161,6 @@ public class CollectionTab extends JPanel {
                 styleToggleButton(groupedBtn,    true);
                 styleToggleButton(individualBtn, false);
                 groupedBtn.setSelected(true);
-                subToggleRow.setVisible(true);
                 starBtn.setForeground(new Color(120, 120, 120));
                 rebuildCards();
             } else {
@@ -173,7 +172,6 @@ public class CollectionTab extends JPanel {
             styleToggleButton(groupedBtn,    true);
             styleToggleButton(individualBtn, false);
             starBtn.setForeground(new Color(120, 120, 120));
-            subToggleRow.setVisible(true);
             rebuildCards();
         });
         individualBtn.addActionListener(e -> {
@@ -181,7 +179,6 @@ public class CollectionTab extends JPanel {
             styleToggleButton(groupedBtn,    false);
             styleToggleButton(individualBtn, true);
             starBtn.setForeground(new Color(120, 120, 120));
-            subToggleRow.setVisible(false);
             sortOrder.setSelectedItem("Newest first");
             rebuildCards();
         });
@@ -242,7 +239,6 @@ public class CollectionTab extends JPanel {
         styleToggleButton(groupedBtn,    false);
         styleToggleButton(individualBtn, false);
         starBtn.setForeground(new Color(255, 195, 40));
-        subToggleRow.setVisible(false);
         sortOrder.setSelectedItem("Rarity (best)");
         rebuildCards();
     }

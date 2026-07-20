@@ -146,7 +146,17 @@ public class SessionRecapDialog extends JDialog {
         copyBtn.setForeground(Color.WHITE);
         copyBtn.setFocusPainted(false);
         copyBtn.setEnabled(!captures.isEmpty());
-        copyBtn.addActionListener(e -> copyTextSummary(captures, speciesCount, rarityCounts));
+        copyBtn.addActionListener(e -> {
+            copyTextSummary(captures, speciesCount, rarityCounts);
+            copyBtn.setText("Copied!");
+            copyBtn.setForeground(new Color(120, 200, 120));
+            javax.swing.Timer t = new javax.swing.Timer(2000, ev -> {
+                copyBtn.setText("Copy Summary");
+                copyBtn.setForeground(Color.WHITE);
+            });
+            t.setRepeats(false);
+            t.start();
+        });
 
         JButton clearBtn = new JButton("Clear Session");
         clearBtn.setFont(FontManager.getRunescapeSmallFont());
@@ -275,8 +285,6 @@ public class SessionRecapDialog extends JDialog {
         String full = "```\n" + body + "```";
         Toolkit.getDefaultToolkit().getSystemClipboard()
                 .setContents(new StringSelection(full), null);
-        JOptionPane.showMessageDialog(this, "Recap copied to clipboard!\nPaste into Discord for aligned formatting.", "Copied",
-                JOptionPane.INFORMATION_MESSAGE);
     }
 
     // -------------------------------------------------------------------------
