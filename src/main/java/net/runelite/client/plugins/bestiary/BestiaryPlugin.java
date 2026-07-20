@@ -100,9 +100,11 @@ public class BestiaryPlugin extends Plugin {
         CardExportDialog.setOnCopy(msg ->
                 sendChatMessage(msg, ChatColorType.NORMAL));
 
-        net.runelite.client.plugins.bestiary.ui.CaptureRow.setOnFavouriteLimitReached(() ->
-                sendChatMessage("Favourites limit reached (20/20). Remove a star to add another.",
-                        ChatColorType.NORMAL));
+        net.runelite.client.plugins.bestiary.ui.CaptureRow.setOnFavouriteLimitReached(() -> {
+            sendChatMessage("Favourites limit reached (20/20). Remove a star to add another.",
+                    ChatColorType.NORMAL);
+            SwingUtilities.invokeLater(this::showFavouriteLimitPopup);
+        });
 
         SwingUtilities.invokeLater(panel::refresh);
         log.info("Bestiary plugin started");
@@ -336,6 +338,37 @@ public class BestiaryPlugin extends Plugin {
                 .type(ChatMessageType.GAMEMESSAGE)
                 .runeLiteFormattedMessage(formatted)
                 .build());
+    }
+
+    private void showFavouriteLimitPopup() {
+        JDialog dlg = new JDialog(SwingUtilities.getWindowAncestor(panel),
+                "Favourites Full", java.awt.Dialog.ModalityType.MODELESS);
+        dlg.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dlg.setResizable(false);
+        dlg.setAlwaysOnTop(true);
+
+        JPanel content = new JPanel(new BorderLayout(0, 12));
+        content.setBorder(BorderFactory.createEmptyBorder(16, 20, 12, 20));
+        content.setBackground(net.runelite.client.ui.ColorScheme.DARK_GRAY_COLOR);
+
+        JLabel msg = new JLabel(
+                "<html>Favourites limit reached (20/20).<br>Remove a star to add another.</html>");
+        msg.setForeground(Color.WHITE);
+        msg.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
+
+        JButton ok = new JButton("OK");
+        ok.addActionListener(e -> dlg.dispose());
+        JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        btnRow.setOpaque(false);
+        btnRow.add(ok);
+
+        content.add(msg,    BorderLayout.CENTER);
+        content.add(btnRow, BorderLayout.SOUTH);
+
+        dlg.setContentPane(content);
+        dlg.pack();
+        dlg.setLocationRelativeTo(SwingUtilities.getWindowAncestor(panel));
+        dlg.setVisible(true);
     }
 
     private String resolveRegionName(WorldPoint location) {
