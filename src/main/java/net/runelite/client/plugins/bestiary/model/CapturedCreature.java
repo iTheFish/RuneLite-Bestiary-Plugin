@@ -39,6 +39,9 @@ public class CapturedCreature {
     /** Optional user-assigned nickname for this individual capture. Null = not set. */
     public String nickname;
 
+    /** Player has starred this capture as a favourite. Persisted to disk. */
+    public boolean favourite;
+
     /**
      * How many kills of this species the player had accumulated before this
      * capture succeeded (useful for showing "lucky" catches).

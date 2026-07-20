@@ -364,9 +364,10 @@ public class CreatureDetailDialog extends JDialog {
                         : quality >= 50 ? new Color(220, 220, 80)
                         : new Color(160, 160, 160);
 
+        String star = c.favourite ? "★  " : "";
         String qualText = c.nickname != null && !c.nickname.isEmpty()
-                ? "#" + index + "  \"" + c.nickname + "\"  Q:" + quality
-                : "#" + index + "  Quality: " + quality + " / 100";
+                ? star + "#" + index + "  \"" + c.nickname + "\"  Q:" + quality
+                : star + "#" + index + "  Quality: " + quality + " / 100";
         JLabel qualLabel = new JLabel(qualText);
         qualLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         qualLabel.setForeground(qualColor);
@@ -378,6 +379,14 @@ public class CreatureDetailDialog extends JDialog {
             }
             private void showRowMenu(MouseEvent e) {
                 JPopupMenu menu = new JPopupMenu();
+
+                JMenuItem favItem = new JMenuItem(c.favourite ? "✩ Remove Favourite" : "★ Favourite");
+                favItem.addActionListener(ev -> {
+                    c.favourite = !c.favourite;
+                    buildList(currentSort);
+                    if (saveCallback != null) saveCallback.run();
+                });
+                menu.add(favItem);
 
                 JMenuItem exportItem = new JMenuItem("Export Card");
                 exportItem.addActionListener(ev ->

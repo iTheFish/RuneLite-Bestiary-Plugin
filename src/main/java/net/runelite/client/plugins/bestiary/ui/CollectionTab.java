@@ -33,7 +33,7 @@ public class CollectionTab extends JPanel {
     private final JComboBox<String> sortOrder;
     private final JPanel cardContainer;
 
-    private enum ViewMode { GROUPED, INDIVIDUAL }
+    private enum ViewMode { GROUPED, INDIVIDUAL, FAVOURITES }
     private ViewMode viewMode = ViewMode.GROUPED;
     private boolean  byMonster = false;
 
@@ -84,23 +84,27 @@ public class CollectionTab extends JPanel {
         filterRow.add(rarityFilter);
         filterRow.add(sortOrder);
 
-        // --- Main toggle: Grouped / Individual ---
-        JPanel toggleRow = new JPanel(new GridLayout(1, 2, 0, 0));
+        // --- Main toggle: Grouped / Individual / Favourites ---
+        JPanel toggleRow = new JPanel(new GridLayout(1, 3, 0, 0));
         toggleRow.setOpaque(false);
 
         JToggleButton groupedBtn    = new JToggleButton("Grouped");
         JToggleButton individualBtn = new JToggleButton("Individual");
+        JToggleButton favouritesBtn = new JToggleButton("★ Favourites");
 
         styleToggleButton(groupedBtn,    true);
         styleToggleButton(individualBtn, false);
+        styleToggleButton(favouritesBtn, false);
 
         ButtonGroup btnGroup = new ButtonGroup();
         btnGroup.add(groupedBtn);
         btnGroup.add(individualBtn);
+        btnGroup.add(favouritesBtn);
         groupedBtn.setSelected(true);
 
         toggleRow.add(groupedBtn);
         toggleRow.add(individualBtn);
+        toggleRow.add(favouritesBtn);
 
         // --- Sub-toggle (Grouped only): By Rarity / By Monster ---
         JPanel subToggleRow = new JPanel(new GridLayout(1, 2, 0, 0));
@@ -125,6 +129,7 @@ public class CollectionTab extends JPanel {
             viewMode = ViewMode.GROUPED;
             styleToggleButton(groupedBtn,    true);
             styleToggleButton(individualBtn, false);
+            styleToggleButton(favouritesBtn, false);
             subToggleRow.setVisible(true);
             rebuildCards();
         });
@@ -132,8 +137,18 @@ public class CollectionTab extends JPanel {
             viewMode = ViewMode.INDIVIDUAL;
             styleToggleButton(groupedBtn,    false);
             styleToggleButton(individualBtn, true);
+            styleToggleButton(favouritesBtn, false);
             subToggleRow.setVisible(false);
             sortOrder.setSelectedItem("Newest first");
+            rebuildCards();
+        });
+        favouritesBtn.addActionListener(e -> {
+            viewMode = ViewMode.FAVOURITES;
+            styleToggleButton(groupedBtn,    false);
+            styleToggleButton(individualBtn, false);
+            styleToggleButton(favouritesBtn, true);
+            subToggleRow.setVisible(false);
+            sortOrder.setSelectedItem("Rarity (best)");
             rebuildCards();
         });
         byRarityBtn.addActionListener(e -> {
@@ -199,7 +214,9 @@ public class CollectionTab extends JPanel {
                         || c.rarity == CreatureRarity.fromLabel(selectedRarity))
                 .collect(Collectors.toList());
 
-        if (filtered.isEmpty()) {
+        if (viewMode == ViewMode.FAVOURITES) {
+            buildFavouritesView(filtered, selectedSort);
+        } else if (filtered.isEmpty()) {
             JLabel empty = new JLabel("No creatures match.");
             empty.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
             empty.setFont(FontManager.getRunescapeSmallFont());
@@ -345,8 +362,60 @@ public class CollectionTab extends JPanel {
                 sorted.sort(Comparator.comparing((CapturedCreature c) -> c.captureTime).reversed());
         }
 
+        Runnable onFav = () -> { dataService.saveNow(); rebuildCards(); };
         for (CapturedCreature capture : sorted) {
-            cardContainer.add(new CaptureRow(capture, dataService.getCollection()));
+            cardContainer.add(new CaptureRow(capture, dataService.getCollection(), onFav));
+            cardContainer.add(Box.createVerticalStrut(2));
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Favourites mode: all starred captures, sorted by rarity then newest first
+    // -------------------------------------------------------------------------
+
+    private void buildFavouritesView(List<CapturedCreature> all, String selectedSort) {
+        List<CapturedCreature> favs = all.stream()
+                .filter(c -> c.favourite)
+                .collect(Collectors.toList());
+
+        // Header
+        JPanel header = new JPanel(new BorderLayout(8, 0));
+        header.setBackground(new Color(35, 35, 35));
+        header.setBorder(BorderFactory.createCompoundBorder(
+                new javax.swing.border.MatteBorder(0, 4, 0, 0, new Color(255, 195, 40)),
+                new EmptyBorder(5, 8, 5, 8)));
+        header.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+        JLabel headerLabel = new JLabel("★  " + favs.size() + " favourite" + (favs.size() == 1 ? "" : "s"));
+        headerLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        headerLabel.setForeground(new Color(255, 195, 40));
+        header.add(headerLabel, BorderLayout.WEST);
+        cardContainer.add(header);
+        cardContainer.add(Box.createVerticalStrut(4));
+
+        if (favs.isEmpty()) {
+            JLabel empty = new JLabel("<html><center>No favourites yet.<br>Right-click any capture to star it.</center></html>");
+            empty.setForeground(new Color(100, 100, 100));
+            empty.setFont(FontManager.getRunescapeSmallFont());
+            empty.setAlignmentX(Component.CENTER_ALIGNMENT);
+            empty.setBorder(new EmptyBorder(16, 0, 0, 0));
+            cardContainer.add(empty);
+            return;
+        }
+
+        switch (selectedSort == null ? "Rarity (best)" : selectedSort) {
+            case "Name A-Z":    favs.sort(Comparator.comparing(c -> c.npcName)); break;
+            case "Name Z-A":    favs.sort(Comparator.comparing((CapturedCreature c) -> c.npcName).reversed()); break;
+            case "Newest first": favs.sort(Comparator.comparing((CapturedCreature c) -> c.captureTime).reversed()); break;
+            case "Oldest first": favs.sort(Comparator.comparing(c -> c.captureTime)); break;
+            case "Rarity (worst)": favs.sort(Comparator.comparingInt(c -> c.rarity.ordinal())); break;
+            case "Quality (high)": favs.sort(Comparator.comparingInt((CapturedCreature c) -> c.quality.overallRating()).reversed()); break;
+            case "Quality (low)":  favs.sort(Comparator.comparingInt(c -> c.quality.overallRating())); break;
+            default: favs.sort((a, b) -> b.rarity.ordinal() - a.rarity.ordinal()); // Rarity (best)
+        }
+
+        Runnable onFav = () -> { dataService.saveNow(); rebuildCards(); };
+        for (CapturedCreature c : favs) {
+            cardContainer.add(new CaptureRow(c, dataService.getCollection(), onFav));
             cardContainer.add(Box.createVerticalStrut(2));
         }
     }

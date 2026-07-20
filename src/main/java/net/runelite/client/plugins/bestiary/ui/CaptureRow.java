@@ -30,7 +30,8 @@ public class CaptureRow extends JPanel {
     private static final DateTimeFormatter DATE_FMT =
             DateTimeFormatter.ofPattern("dd MMM HH:mm").withZone(ZoneId.systemDefault());
 
-    public CaptureRow(CapturedCreature capture, BestiaryCollection collection) {
+    public CaptureRow(CapturedCreature capture, BestiaryCollection collection,
+                      Runnable onFavouriteChanged) {
         setLayout(new GridLayout(2, 1, 0, 3));
         setBackground(ROW_BG);
         int t = borderThick(capture.rarity);
@@ -44,9 +45,10 @@ public class CaptureRow extends JPanel {
         JPanel topRow = new JPanel(new BorderLayout(4, 0));
         topRow.setOpaque(false);
 
-        JLabel nameLabel = new JLabel(capture.npcName);
+        String nameText = capture.favourite ? "★ " + capture.npcName : capture.npcName;
+        JLabel nameLabel = new JLabel(nameText);
         nameLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
-        nameLabel.setForeground(Color.WHITE);
+        nameLabel.setForeground(capture.favourite ? new Color(255, 195, 40) : Color.WHITE);
 
         JLabel rarityLabel = new JLabel("● " + capture.rarity.label);
         rarityLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
@@ -98,6 +100,14 @@ public class CaptureRow extends JPanel {
             public void mouseReleased(java.awt.event.MouseEvent e) {
                 if (e.isPopupTrigger()) {
                     JPopupMenu menu = new JPopupMenu();
+
+                    JMenuItem favItem = new JMenuItem(capture.favourite ? "✩ Remove Favourite" : "★ Favourite");
+                    favItem.addActionListener(ev -> {
+                        capture.favourite = !capture.favourite;
+                        if (onFavouriteChanged != null) onFavouriteChanged.run();
+                    });
+                    menu.add(favItem);
+
                     JMenuItem exportItem = new JMenuItem("Export Card");
                     exportItem.addActionListener(ev ->
                             CardExportDialog.open(SwingUtilities.getWindowAncestor(CaptureRow.this), capture));
