@@ -186,7 +186,6 @@ public class CardExportDialog extends JDialog {
             }
         };
         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(t, null);
-        JOptionPane.showMessageDialog(this, "Card image copied to clipboard!", "Copied", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void savePng(String npcName) {
