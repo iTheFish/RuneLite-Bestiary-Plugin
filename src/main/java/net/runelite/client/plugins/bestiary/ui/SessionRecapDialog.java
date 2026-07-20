@@ -231,22 +231,38 @@ public class SessionRecapDialog extends JDialog {
 
     private void copyTextSummary(List<CapturedCreature> captures, long species,
                                  Map<CreatureRarity, Long> counts) {
-        StringBuilder sb = new StringBuilder("=== Bestiary Session Recap ===\n");
-        sb.append(captures.size()).append(" capture").append(captures.size() == 1 ? "" : "s")
-          .append(", ").append(species).append(" species\n\n");
+        // Build the body first so we can measure the longest NPC name for column alignment
+        int maxNameLen = captures.stream().mapToInt(c -> c.npcName.length()).max().orElse(10);
+        int nameCol = Math.max(maxNameLen + 2, 14);
+
+        StringBuilder body = new StringBuilder();
+        body.append("=== Bestiary Session Recap ===\n");
+        body.append(captures.size()).append(captures.size() == 1 ? " capture" : " captures")
+            .append(", ").append(species).append(" species\n");
+
+        // Rarity breakdown on one line
+        StringBuilder rarLine = new StringBuilder();
         for (CreatureRarity r : RARITY_ORDER) {
             long n = counts.getOrDefault(r, 0L);
-            if (n > 0) sb.append(r.label).append(" x").append(n).append("\n");
+            if (n > 0) {
+                if (rarLine.length() > 0) rarLine.append("  ");
+                rarLine.append(r.label).append(" x").append(n);
+            }
         }
-        sb.append("\n");
+        body.append(rarLine).append("\n\n");
+
+        String rowFmt = "#%-3d  %-" + nameCol + "s %-10s Q:%-3d  %s\n";
         for (int i = 0; i < captures.size(); i++) {
             CapturedCreature c = captures.get(i);
-            sb.append(String.format("#%-3d %-24s %-10s Q:%-3d %s\n",
+            body.append(String.format(rowFmt,
                     i + 1, c.npcName, c.rarity.label, c.quality.overallRating(), c.regionName));
         }
+
+        // Wrap in triple backticks so Discord/Slack render it as a monospaced code block
+        String full = "```\n" + body + "```";
         Toolkit.getDefaultToolkit().getSystemClipboard()
-                .setContents(new StringSelection(sb.toString()), null);
-        JOptionPane.showMessageDialog(this, "Recap copied to clipboard!", "Copied",
+                .setContents(new StringSelection(full), null);
+        JOptionPane.showMessageDialog(this, "Recap copied to clipboard!\nPaste into Discord for aligned formatting.", "Copied",
                 JOptionPane.INFORMATION_MESSAGE);
     }
 
