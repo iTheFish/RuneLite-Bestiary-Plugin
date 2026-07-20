@@ -117,6 +117,10 @@ public class AlbumDialog extends JDialog {
         countLabel = new JLabel(capturesByNpc.size() + " / " + fullRoster.size());
         countLabel.setFont(FontManager.getRunescapeSmallFont());
         countLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+        countLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+        // Fixed width so text changes don't cause row layout shifts
+        countLabel.setPreferredSize(new Dimension(130, 16));
+        countLabel.setMinimumSize(new Dimension(130, 16));
 
         JPanel rightPanel = new JPanel(new BorderLayout(6, 0));
         rightPanel.setOpaque(false);
