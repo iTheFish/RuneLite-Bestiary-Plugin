@@ -354,7 +354,7 @@ public class BestiaryPlugin extends Plugin {
         JLabel msg = new JLabel(
                 "<html>Favourites limit reached (20/20).<br>Remove a star to add another.</html>");
         msg.setForeground(Color.WHITE);
-        msg.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
+        msg.setFont(net.runelite.client.ui.FontManager.getRunescapeBoldFont());
 
         JButton ok = new JButton("OK");
         ok.addActionListener(e -> dlg.dispose());
