@@ -1,6 +1,8 @@
 package net.runelite.client.plugins.bestiary.ui;
 
+import net.runelite.client.plugins.bestiary.BestiaryConfig;
 import net.runelite.client.plugins.bestiary.model.CapturedCreature;
+import net.runelite.client.plugins.bestiary.model.OverlayPos;
 import net.runelite.api.Client;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
@@ -27,7 +29,8 @@ import java.time.Instant;
 @Singleton
 public class BestiaryOverlay extends Overlay {
 
-    private static final int    PANEL_W          = 200;
+    private int panelW = 200;
+
     private static final long   ANIM_PHASE_FLY   = 600;  // ms: ball flies in
     private static final long   ANIM_PHASE_SHAKE = 1600; // ms: ball shakes (cumulative)
     private static final long   ANIM_PHASE_OPEN  = 2200; // ms: ball opens (cumulative)
@@ -47,11 +50,26 @@ public class BestiaryOverlay extends Overlay {
     private boolean animMissEnabled;
 
     @Inject
-    public BestiaryOverlay(Client client) {
-        setPosition(OverlayPosition.TOP_CENTER);
+    public BestiaryOverlay(Client client, BestiaryConfig config) {
         setPriority(OverlayPriority.LOW);
         setLayer(OverlayLayer.ABOVE_WIDGETS);
-        panelComponent.setPreferredSize(new Dimension(PANEL_W, 0));
+        applyConfig(config);
+    }
+
+    public void applyConfig(BestiaryConfig config) {
+        setPosition(toOverlayPosition(config.overlayPosition()));
+        panelW = config.overlayWidth();
+        panelComponent.setPreferredSize(new Dimension(panelW, 0));
+    }
+
+    private static OverlayPosition toOverlayPosition(OverlayPos pos) {
+        switch (pos) {
+            case TOP_LEFT:     return OverlayPosition.TOP_LEFT;
+            case TOP_RIGHT:    return OverlayPosition.TOP_RIGHT;
+            case BOTTOM_LEFT:  return OverlayPosition.BOTTOM_LEFT;
+            case BOTTOM_RIGHT: return OverlayPosition.BOTTOM_RIGHT;
+            default:           return OverlayPosition.TOP_CENTER;
+        }
     }
 
     // --- Public API ---
@@ -94,7 +112,7 @@ public class BestiaryOverlay extends Overlay {
 
         if (elapsed < ANIM_PHASE_OPEN) {
             drawBallAnimation(g, elapsed);
-            return new Dimension(PANEL_W, 70);
+            return new Dimension(panelW, 70);
         }
 
         // After open phase: show result (or miss text), then expire
@@ -123,7 +141,7 @@ public class BestiaryOverlay extends Overlay {
     }
 
     private void drawBallAnimation(Graphics2D g, long elapsed) {
-        int panelCx = PANEL_W / 2;
+        int panelCx = panelW / 2;
         int cy      = 30;
         int size    = 32;
 

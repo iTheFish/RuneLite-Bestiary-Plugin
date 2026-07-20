@@ -29,6 +29,7 @@ import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.chat.QueuedMessage;
 import com.google.inject.Provides;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -118,6 +119,12 @@ public class BestiaryPlugin extends Plugin {
     }
 
     // --- Event handlers ---
+
+    @Subscribe
+    public void onConfigChanged(ConfigChanged event) {
+        if (!"bestiary".equals(event.getGroup())) return;
+        overlay.applyConfig(config);
+    }
 
     @Subscribe
     public void onActorDeath(ActorDeath event) {

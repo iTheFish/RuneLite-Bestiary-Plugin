@@ -9,6 +9,7 @@ import net.runelite.client.plugins.bestiary.model.ChatNotifyMode;
 import net.runelite.client.plugins.bestiary.model.DetailSectionDefault;
 import net.runelite.client.plugins.bestiary.model.DevCaptureMode;
 import net.runelite.client.plugins.bestiary.model.DevRarityOverride;
+import net.runelite.client.plugins.bestiary.model.OverlayPos;
 
 @ConfigGroup("bestiary")
 public interface BestiaryConfig extends Config {
@@ -142,6 +143,27 @@ public interface BestiaryConfig extends Config {
     )
     default DetailSectionDefault detailSectionDefault() {
         return DetailSectionDefault.EXPANDED;
+    }
+
+    @ConfigItem(
+            keyName = "overlayPosition",
+            name = "Overlay Position",
+            description = "Where on screen the capture overlay appears",
+            position = 12
+    )
+    default OverlayPos overlayPosition() {
+        return OverlayPos.TOP_CENTER;
+    }
+
+    @Range(min = 150, max = 300)
+    @ConfigItem(
+            keyName = "overlayWidth",
+            name = "Overlay Width",
+            description = "Width of the capture overlay panel in pixels (150–300)",
+            position = 13
+    )
+    default int overlayWidth() {
+        return 200;
     }
 
     // --- Developer section ---
