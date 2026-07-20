@@ -98,9 +98,9 @@ public class CapturedCreature {
         }
     }
 
-    /** Derived: true when all primary stats for this species' archetype are ≥ 95. */
+    /** Derived: true when all primary stats for this monster's combat class are ≥ 95. */
     public boolean isShiny() {
-        return quality.isShiny(MonsterRoster.getArchetype(npcName, npcCombatLevel));
+        return quality.isShiny(MonsterRoster.getCombatClass(npcName, npcCombatLevel));
     }
 
     @Override

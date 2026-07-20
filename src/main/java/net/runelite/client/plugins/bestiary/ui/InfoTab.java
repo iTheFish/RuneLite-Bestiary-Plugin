@@ -314,7 +314,7 @@ public class InfoTab extends JPanel {
         tiles.add(tile("Quality",
                 "Every capture has six individual stats, each scored 0–100:\n" +
                 "Strength, Speed, Endurance, Intelligence, Stealth, Vitality.\n\n" +
-                "Which stats roll high depends on the monster's archetype " +
+                "Which stats roll high depends on the monster's class " +
                 "(e.g. a Brute rolls high Strength; a Nimble rolls high Speed and Stealth). " +
                 "Higher rarities shift all stats toward the top — a Mythic capture will generally " +
                 "score much higher than a Common of the same species.\n\n" +

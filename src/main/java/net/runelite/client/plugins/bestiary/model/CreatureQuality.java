@@ -28,10 +28,10 @@ public class CreatureQuality {
         return Math.round((strength + speed + endurance + intelligence + stealth + vitality) / 6f);
     }
 
-    /** True when all primary stats for the given archetype are 95 or above. */
-    public boolean isShiny(StatArchetype archetype) {
+    /** True when all primary stats for the given combat class are 95 or above. */
+    public boolean isShiny(CombatClass combatClass) {
         int[] stats = {strength, speed, endurance, intelligence, stealth, vitality};
-        for (int i : archetype.primaryIndices) {
+        for (int i : combatClass.primaryIndices) {
             if (stats[i] < 95) return false;
         }
         return true;

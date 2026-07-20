@@ -1,7 +1,7 @@
 package net.runelite.client.plugins.bestiary.util;
 
 import net.runelite.client.plugins.bestiary.model.CreatureRarity;
-import net.runelite.client.plugins.bestiary.model.StatArchetype;
+import net.runelite.client.plugins.bestiary.model.CombatClass;
 
 import java.util.Random;
 
@@ -61,12 +61,12 @@ public final class RarityRoller {
     }
 
     /**
-     * Generates quality stats shaped by the monster's archetype.
-     * Primary stats (per archetype) pull toward 100; secondary stats pull toward 0.
+     * Generates quality stats shaped by the monster's combat class.
+     * Primary stats (per class) pull toward 100; secondary stats pull toward 0.
      * Higher rarities raise the baseline mean and tighten the spread.
      */
     public static net.runelite.client.plugins.bestiary.model.CreatureQuality generateQuality(
-            StatArchetype archetype, CreatureRarity rarity, Random rng) {
+            CombatClass combatClass, CreatureRarity rarity, Random rng) {
         double mean, sd;
         switch (rarity) {
             case MYTHIC:     mean = 90; sd =  8; break;
@@ -78,7 +78,7 @@ public final class RarityRoller {
         }
         int[] stats = new int[6];
         for (int i = 0; i < 6; i++) {
-            double m = archetype.isPrimary(i)
+            double m = combatClass.isPrimary(i)
                     ? mean + 0.3 * (100 - mean)  // pull toward ceiling
                     : mean * 0.6;                 // pull toward floor
             stats[i] = rollStat(rng, m, sd);

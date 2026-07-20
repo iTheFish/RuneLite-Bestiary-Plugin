@@ -1,12 +1,12 @@
 package net.runelite.client.plugins.bestiary.model;
 
 /**
- * Combat archetype for a monster species. Determines which of the 6 stats
+ * Combat class for a monster. Determines which of the 6 stats
  * (indices: 0=STR, 1=SPD, 2=END, 3=INT, 4=STL, 5=VIT) are "primary" and roll
  * with a higher mean. Secondary stats roll with a lower mean.
  * APEX has 3 primaries — reserved for the hardest endgame bosses.
  */
-public enum StatArchetype {
+public enum CombatClass {
     NIMBLE   ("Nimble",   new int[]{1, 4}),   // SPD, STL
     BRUTE    ("Brute",    new int[]{0, 2}),   // STR, END
     TANK     ("Tank",     new int[]{2, 5}),   // END, VIT
@@ -19,7 +19,7 @@ public enum StatArchetype {
     public final String label;
     public final int[]  primaryIndices;
 
-    StatArchetype(String label, int[] primaryIndices) {
+    CombatClass(String label, int[] primaryIndices) {
         this.label = label;
         this.primaryIndices = primaryIndices;
     }

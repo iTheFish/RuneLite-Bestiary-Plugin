@@ -4,7 +4,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static net.runelite.client.plugins.bestiary.model.DifficultyTier.*;
-import static net.runelite.client.plugins.bestiary.model.StatArchetype.*;
+import static net.runelite.client.plugins.bestiary.model.CombatClass.*;
 
 /**
  * Canonical list of known OSRS NPC names and their difficulty ratings.
@@ -289,13 +289,13 @@ public class MonsterRoster {
     }
 
     // -------------------------------------------------------------------------
-    // Archetype map — determines which stats are "primary" for each species.
-    // Monsters not listed fall back to archetypeFromTier().
+    // Combat class map — determines which stats are "primary" for each monster.
+    // Monsters not listed fall back to classFromTier().
     // -------------------------------------------------------------------------
 
-    private static final Map<String, StatArchetype> ARCHETYPES;
+    private static final Map<String, CombatClass> COMBAT_CLASSES;
     static {
-        Map<String, StatArchetype> a = new HashMap<>();
+        Map<String, CombatClass> a = new HashMap<>();
 
         // NIMBLE — SPD, STL
         for (String n : Arrays.asList(
@@ -417,7 +417,7 @@ public class MonsterRoster {
             "The Leviathan"  // also in STALKER — APEX overrides
         )) { a.put(n, APEX); }
 
-        ARCHETYPES = Collections.unmodifiableMap(a);
+        COMBAT_CLASSES = Collections.unmodifiableMap(a);
     }
 
     // -------------------------------------------------------------------------
@@ -433,18 +433,18 @@ public class MonsterRoster {
         return tier != null ? tier : fromCombatLevel(combatLevel);
     }
 
-    /** Returns the stat archetype for a given NPC, falling back to tier-based default. */
-    public static StatArchetype getArchetype(String npcName, int combatLevel) {
-        StatArchetype arch = ARCHETYPES.get(npcName);
-        return arch != null ? arch : archetypeFromTier(getDifficulty(npcName, combatLevel));
+    /** Returns the combat class for a given NPC, falling back to tier-based default. */
+    public static CombatClass getCombatClass(String npcName, int combatLevel) {
+        CombatClass cls = COMBAT_CLASSES.get(npcName);
+        return cls != null ? cls : classFromTier(getDifficulty(npcName, combatLevel));
     }
 
-    private static StatArchetype archetypeFromTier(DifficultyTier tier) {
+    private static CombatClass classFromTier(DifficultyTier tier) {
         switch (tier) {
-            case BOSS:  return StatArchetype.APEX;
-            case ELITE: return StatArchetype.TITAN;
-            case HARD:  return StatArchetype.PREDATOR;
-            default:    return StatArchetype.BRUTE;
+            case BOSS:  return CombatClass.APEX;
+            case ELITE: return CombatClass.TITAN;
+            case HARD:  return CombatClass.PREDATOR;
+            default:    return CombatClass.BRUTE;
         }
     }
 
