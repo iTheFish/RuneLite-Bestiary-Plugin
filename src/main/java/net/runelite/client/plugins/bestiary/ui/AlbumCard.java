@@ -119,6 +119,14 @@ public class AlbumCard extends JPanel {
     @Nullable private Runnable unfavouriteCallback;
     public void setUnfavouriteCallback(Runnable r) { this.unfavouriteCallback = r; }
 
+    // If set, right-click menu shows fav toggle ("★ Favourite" / "✩ Remove Favourite")
+    @Nullable private Runnable favToggleCallback;
+    @Nullable private java.util.function.Supplier<Boolean> favStateSupplier;
+    public void setFavToggle(Runnable toggle, java.util.function.Supplier<Boolean> isFav) {
+        this.favToggleCallback = toggle;
+        this.favStateSupplier  = isFav;
+    }
+
     // If set, right-click menu shows "Copy Card" which fires this (instant clipboard copy)
     @Nullable private Runnable copyCallback;
     public void setCopyCallback(Runnable r) { this.copyCallback = r; }
@@ -279,7 +287,13 @@ public class AlbumCard extends JPanel {
                     menu.add(copyItem);
                     menu.addSeparator();
                 }
-                if (unfavouriteCallback != null) {
+                if (favToggleCallback != null) {
+                    boolean isFav = favStateSupplier != null && Boolean.TRUE.equals(favStateSupplier.get());
+                    JMenuItem favItem = new JMenuItem(isFav ? "✩ Remove Favourite" : "★ Favourite");
+                    favItem.addActionListener(ev -> favToggleCallback.run());
+                    menu.add(favItem);
+                    menu.addSeparator();
+                } else if (unfavouriteCallback != null) {
                     JMenuItem unfavItem = new JMenuItem("✩ Remove Favourite");
                     unfavItem.addActionListener(ev -> unfavouriteCallback.run());
                     menu.add(unfavItem);
