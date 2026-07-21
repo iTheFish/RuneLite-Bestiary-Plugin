@@ -127,7 +127,7 @@ public class CaptureRow extends JPanel {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 if (SwingUtilities.isLeftMouseButton(e)) {
-                    AlbumDialog.requestOpenDetail(capture.npcName);
+                    AlbumDialog.requestOpenDetail(capture.npcName, capture.captureTime);
                 }
             }
 

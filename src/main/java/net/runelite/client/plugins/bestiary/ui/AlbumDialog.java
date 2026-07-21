@@ -45,15 +45,35 @@ public class AlbumDialog extends JDialog {
     private static java.util.function.Consumer<String> openDetailCallback;
     public static void setOpenDetailCallback(java.util.function.Consumer<String> cb) { openDetailCallback = cb; }
 
-    /** Called by collection cards (CreatureCard, MonsterSummaryCard, CaptureRow) to open detail. */
+    // Pending filter state — set before calling the callback, consumed in focusDetail
+    private static CreatureRarity          pendingFilterRarity  = null;
+    private static java.time.Instant       pendingFilterCapture = null;
+
+    /** Open detail for a monster with all rarities shown (By Creature). */
     public static void requestOpenDetail(String monsterName) {
+        pendingFilterRarity = null; pendingFilterCapture = null;
+        if (openDetailCallback != null) openDetailCallback.accept(monsterName);
+    }
+
+    /** Open detail pre-filtered to a specific rarity (By Rarity). */
+    public static void requestOpenDetail(String monsterName, CreatureRarity rarity) {
+        pendingFilterRarity = rarity; pendingFilterCapture = null;
+        if (openDetailCallback != null) openDetailCallback.accept(monsterName);
+    }
+
+    /** Open detail showing only the capture matching captureTime (Individual). */
+    public static void requestOpenDetail(String monsterName, java.time.Instant captureTime) {
+        pendingFilterRarity = null; pendingFilterCapture = captureTime;
         if (openDetailCallback != null) openDetailCallback.accept(monsterName);
     }
 
     /** Switch to detail view if the dialog is already open; returns true if switched. */
     public static boolean focusDetail(String name) {
         if (current != null && current.isShowing()) {
-            current.showDetail(name);
+            CreatureRarity r = pendingFilterRarity;
+            java.time.Instant t = pendingFilterCapture;
+            pendingFilterRarity = null; pendingFilterCapture = null;
+            current.showDetail(name, r, t);
             current.toFront();
             return true;
         }
@@ -97,10 +117,12 @@ public class AlbumDialog extends JDialog {
     private DifficultyTier filterDifficulty = null;
 
     // Detail view state
-    private String detailMonsterName = null;
-    private int    detailPage        = 0;
-    private int    detailPageSize    = 8;
-    private String detailSort        = "Rarity (best)";
+    private String              detailMonsterName    = null;
+    private int                 detailPage           = 0;
+    private int                 detailPageSize       = 8;
+    private String              detailSort           = "Rarity (best)";
+    private CreatureRarity      detailFilterRarity   = null;
+    private java.time.Instant   detailFilterCapture  = null;
 
     // Detail bar controls
     private JPanel            topBarHolder;
@@ -473,7 +495,13 @@ public class AlbumDialog extends JDialog {
     // -------------------------------------------------------------------------
 
     public void showDetail(String name) {
-        detailMonsterName = name;
+        showDetail(name, null, null);
+    }
+
+    public void showDetail(String name, CreatureRarity filterRarity, java.time.Instant filterCapture) {
+        detailMonsterName   = name;
+        detailFilterRarity  = filterRarity;
+        detailFilterCapture = filterCapture;
         detailPage = 0;
         detailSort = "Rarity (best)";
         detailSortBox.setSelectedItem("Rarity (best)");
@@ -482,7 +510,9 @@ public class AlbumDialog extends JDialog {
     }
 
     private void showCatalog() {
-        detailMonsterName = null;
+        detailMonsterName   = null;
+        detailFilterRarity  = null;
+        detailFilterCapture = null;
         ((CardLayout) topBarHolder.getLayout()).show(topBarHolder, "CATALOG");
         rebuildGrid();
     }
@@ -592,59 +622,145 @@ public class AlbumDialog extends JDialog {
     }
 
     private void buildDetailView() {
-        List<CapturedCreature> caps = capturesByNpc.getOrDefault(detailMonsterName, Collections.emptyList());
+        List<CapturedCreature> allCaps = capturesByNpc.getOrDefault(detailMonsterName, Collections.emptyList());
+
+        // Apply filter
+        List<CapturedCreature> filtered;
+        if (detailFilterCapture != null) {
+            filtered = allCaps.stream()
+                    .filter(c -> c.captureTime.equals(detailFilterCapture))
+                    .collect(Collectors.toList());
+        } else if (detailFilterRarity != null) {
+            filtered = allCaps.stream()
+                    .filter(c -> c.rarity == detailFilterRarity)
+                    .collect(Collectors.toList());
+        } else {
+            filtered = new ArrayList<>(allCaps);
+        }
 
         // Sort
-        List<CapturedCreature> sorted = new ArrayList<>(caps);
         switch (detailSort == null ? "Rarity (best)" : detailSort) {
             case "Quality (high)":
-                sorted.sort(Comparator.comparingInt((CapturedCreature c) -> c.quality.overallRating()).reversed());
+                filtered.sort(Comparator.comparingInt((CapturedCreature c) -> c.quality.overallRating()).reversed());
                 break;
             case "Newest first":
-                sorted.sort(Comparator.comparing((CapturedCreature c) -> c.captureTime, Comparator.reverseOrder()));
+                filtered.sort(Comparator.comparing((CapturedCreature c) -> c.captureTime, Comparator.reverseOrder()));
                 break;
             default: // "Rarity (best)"
-                sorted.sort(Comparator.comparingInt((CapturedCreature c) -> c.rarity.ordinal()).reversed()
+                filtered.sort(Comparator.comparingInt((CapturedCreature c) -> c.rarity.ordinal()).reversed()
                         .thenComparingInt(c -> -c.quality.overallRating()));
                 break;
         }
 
-        int total      = sorted.size();
+        int total      = filtered.size();
         int totalPages = Math.max(1, (total + detailPageSize - 1) / detailPageSize);
         detailPage = Math.max(0, Math.min(detailPage, totalPages - 1));
 
-        // Update header
-        CreatureRarity best = total > 0 ? sorted.stream()
-                .map(c -> c.rarity)
-                .max(Comparator.comparingInt(Enum::ordinal))
-                .orElse(CreatureRarity.COMMON) : CreatureRarity.COMMON;
-        detailTitleLabel.setText(detailMonsterName + " — " + total + " capture" + (total == 1 ? "" : "s"));
+        // Update header label and pagination
+        CreatureRarity best = detailFilterRarity != null ? detailFilterRarity
+                : total > 0 ? filtered.stream().map(c -> c.rarity)
+                        .max(Comparator.comparingInt(Enum::ordinal)).orElse(CreatureRarity.COMMON)
+                : CreatureRarity.COMMON;
+        String suffix = detailFilterRarity != null ? " — " + detailFilterRarity.label
+                : detailFilterCapture != null ? " — single capture" : "";
+        detailTitleLabel.setText(detailMonsterName + " (" + total + ")" + suffix);
         detailTitleLabel.setForeground(best.displayColor);
         detailPageLabel.setText((detailPage + 1) + " / " + totalPages);
         prevPageBtn.setEnabled(detailPage > 0);
         nextPageBtn.setEnabled(detailPage < totalPages - 1);
 
-        // Build grid for this page
+        // Use BorderLayout for gridPanel so filter row sits above the card grid
+        gridPanel.setLayout(new BorderLayout());
+        gridPanel.setBorder(null);
+
+        JPanel filterRow = buildDetailFilterRow(allCaps);
+        if (filterRow != null) gridPanel.add(filterRow, BorderLayout.NORTH);
+
         int viewW = gridPanel.getParent() != null ? gridPanel.getParent().getWidth() : DEFAULT_W - SIDE_PAD * 2;
         if (viewW <= 0) viewW = DEFAULT_W - SIDE_PAD * 2;
         int cols = Math.max(1, (viewW - SIDE_PAD * 2 + CARD_GAP) / (AlbumCard.CARD_W + CARD_GAP));
-        gridPanel.setLayout(new GridLayout(0, cols, CARD_GAP, CARD_GAP));
-        gridPanel.setBorder(new EmptyBorder(SIDE_PAD, SIDE_PAD, SIDE_PAD, SIDE_PAD));
+
+        JPanel cardsPanel = new JPanel(new GridLayout(0, cols, CARD_GAP, CARD_GAP));
+        cardsPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        cardsPanel.setBorder(new EmptyBorder(SIDE_PAD, SIDE_PAD, SIDE_PAD, SIDE_PAD));
 
         int from = detailPage * detailPageSize;
         int to   = Math.min(from + detailPageSize, total);
-
-        for (CapturedCreature cap : sorted.subList(from, to)) {
+        for (CapturedCreature cap : filtered.subList(from, to)) {
             int dex = dexNumbers.getOrDefault(cap.npcName, 0);
             AlbumCard card = new AlbumCard(dex, cap.npcName, List.of(cap), collection, imageService);
             card.setShowQuality(true);
             card.setClickOverride(() -> CardExportDialog.open(AlbumDialog.this, cap));
             card.setCopyCallback(() -> CardExportDialog.copyNow(AlbumDialog.this, cap));
-            gridPanel.add(card);
+            cardsPanel.add(card);
         }
+        gridPanel.add(cardsPanel, BorderLayout.CENTER);
 
         gridPanel.revalidate();
         gridPanel.repaint();
+    }
+
+    /** Filter row shown above the card grid in detail mode. Returns null if not needed. */
+    private JPanel buildDetailFilterRow(List<CapturedCreature> allCaps) {
+        // Individual capture filter — show "Show all N" link
+        if (detailFilterCapture != null) {
+            JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
+            row.setBackground(new Color(35, 35, 35));
+            row.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(60, 60, 60)));
+            JLabel lbl = new JLabel("Showing specific capture");
+            lbl.setFont(FontManager.getRunescapeSmallFont());
+            lbl.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+            JButton showAll = new JButton("Show all " + allCaps.size());
+            showAll.setFont(FontManager.getRunescapeSmallFont());
+            showAll.setForeground(new Color(200, 153, 0));
+            showAll.setBackground(new Color(35, 35, 35));
+            showAll.setFocusPainted(false);
+            showAll.setBorderPainted(false);
+            showAll.addActionListener(e -> { detailFilterCapture = null; detailPage = 0; rebuildGrid(); });
+            row.add(lbl);
+            row.add(showAll);
+            return row;
+        }
+
+        // Rarity pills — only when monster has 2+ distinct rarities
+        Set<CreatureRarity> rarities = allCaps.stream()
+                .map(c -> c.rarity)
+                .collect(java.util.stream.Collectors.toCollection(
+                        () -> new java.util.TreeSet<>(Comparator.comparingInt((CreatureRarity r) -> r.ordinal()).reversed())));
+        if (rarities.size() < 2) return null;
+
+        JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 4));
+        row.setBackground(new Color(35, 35, 35));
+        row.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(60, 60, 60)));
+
+        JButton allBtn = makeRarityPill("All", detailFilterRarity == null, null);
+        allBtn.addActionListener(e -> { detailFilterRarity = null; detailPage = 0; rebuildGrid(); });
+        row.add(allBtn);
+
+        for (CreatureRarity r : rarities) {
+            JButton rb = makeRarityPill(r.label, r == detailFilterRarity, r.displayColor);
+            rb.addActionListener(e -> { detailFilterRarity = r; detailPage = 0; rebuildGrid(); });
+            row.add(rb);
+        }
+        return row;
+    }
+
+    private static JButton makeRarityPill(String label, boolean selected, Color rarityColor) {
+        JButton btn = new JButton(label);
+        btn.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        btn.setMargin(new Insets(1, 6, 1, 6));
+        btn.setFocusPainted(false);
+        if (selected) {
+            btn.setBackground(rarityColor != null ? rarityColor : new Color(200, 200, 200));
+            btn.setForeground(Color.BLACK);
+            btn.setBorderPainted(false);
+        } else {
+            btn.setBackground(new Color(50, 50, 50));
+            btn.setForeground(rarityColor != null ? rarityColor : Color.WHITE);
+            btn.setBorder(BorderFactory.createLineBorder(
+                    rarityColor != null ? rarityColor.darker() : new Color(120, 120, 120), 1));
+        }
+        return btn;
     }
 
     /** Sort comparator for individual starred captures based on current sort setting. */

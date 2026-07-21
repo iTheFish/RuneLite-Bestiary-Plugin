@@ -31,9 +31,11 @@ public class WikiImageService {
     private static final int    TIMEOUT_MS = 8000;
     private static final int    BATCH_SIZE = 50; // MediaWiki API max titles per request
 
-    private final Map<String, BufferedImage> cache   = new ConcurrentHashMap<>();
-    private final Set<String>               pending  = Collections.newSetFromMap(new ConcurrentHashMap<>());
-    private final Set<String>               failed   = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private final Map<String, BufferedImage>  cache            = new ConcurrentHashMap<>();
+    private final Set<String>                pending          = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private final Set<String>                failed           = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    /** Callbacks registered while an image is mid-download; fired when the image lands. */
+    private final Map<String, List<Runnable>> pendingCallbacks = new ConcurrentHashMap<>();
 
     // -------------------------------------------------------------------------
     // Public API
@@ -80,6 +82,7 @@ public class WikiImageService {
                         if (img != null) {
                             cache.put(npcName, img);
                             SwingUtilities.invokeLater(onEachLoad);
+                            firePendingCallbacks(npcName);
                         } else {
                             failed.add(npcName);
                         }
@@ -108,7 +111,11 @@ public class WikiImageService {
             return;
         }
         if (failed.contains(npcName))  return;
-        if (!pending.add(npcName))     return;
+        if (!pending.add(npcName)) {
+            // Already downloading via prefetchBatch — register callback to fire when it lands
+            pendingCallbacks.computeIfAbsent(npcName, k -> Collections.synchronizedList(new ArrayList<>())).add(onLoad);
+            return;
+        }
 
         CompletableFuture.runAsync(() -> {
             try {
@@ -118,6 +125,7 @@ public class WikiImageService {
                 if (img == null)     { failed.add(npcName); return; }
                 cache.put(npcName, img);
                 SwingUtilities.invokeLater(onLoad);
+                firePendingCallbacks(npcName);
             } catch (Exception e) {
                 log.warn("WikiImageService: failed to fetch image for '{}'", npcName, e);
                 failed.add(npcName);
@@ -229,5 +237,12 @@ public class WikiImageService {
         conn.setConnectTimeout(TIMEOUT_MS);
         conn.setReadTimeout(TIMEOUT_MS);
         return conn;
+    }
+
+    private void firePendingCallbacks(String npcName) {
+        List<Runnable> callbacks = pendingCallbacks.remove(npcName);
+        if (callbacks != null) {
+            for (Runnable cb : callbacks) SwingUtilities.invokeLater(cb);
+        }
     }
 }

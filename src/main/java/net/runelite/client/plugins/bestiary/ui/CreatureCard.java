@@ -134,7 +134,7 @@ public class CreatureCard extends JPanel {
         addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
-                AlbumDialog.requestOpenDetail(captures.get(0).npcName);
+                AlbumDialog.requestOpenDetail(npcName, rarity);
             }
 
             @Override
