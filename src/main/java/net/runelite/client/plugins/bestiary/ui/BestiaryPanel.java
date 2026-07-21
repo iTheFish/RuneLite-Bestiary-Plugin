@@ -92,10 +92,10 @@ public class BestiaryPanel extends PluginPanel {
                 view -> DashboardDialog.open(SwingUtilities.getWindowAncestor(this), dataService, progressionService, view),
                 view -> DashboardDialog.copyViewToClipboard(dataService, progressionService, view));
 
-        tabs.addTab("Info",       infoTab);
-        tabs.addTab("Collection", collectionTab);
-        tabs.addTab("Shop",       shopTab);
-        tabs.addTab("Progress",   progressTab);
+        tabs.addTab("Info",     infoTab);
+        tabs.addTab("Cards",    collectionTab);
+        tabs.addTab("Shop",     shopTab);
+        tabs.addTab("Progress", progressTab);
 
         add(header,          BorderLayout.NORTH);
         add(tabs,            BorderLayout.CENTER);

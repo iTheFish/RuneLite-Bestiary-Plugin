@@ -115,7 +115,7 @@ public class CreatureCard extends JPanel {
         if (rarity.ordinal() >= CreatureRarity.EPIC.ordinal()) {
             shimmerTimer = new javax.swing.Timer(30, e -> {
                 shimmerPhase += 0.022f;
-                if (shimmerPhase > 1.3f) { shimmerTimer.stop(); shimmerPhase = 0f; }
+                if (shimmerPhase > 1.05f) { shimmerTimer.stop(); shimmerPhase = 0f; }
                 repaint();
             });
             shimmerTimer.setRepeats(true);
@@ -170,25 +170,21 @@ public class CreatureCard extends JPanel {
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        int w       = getWidth();
-        int h       = getHeight();
-        int trail   = 80;  // long trailing fade
-        int lead    = 20;  // short leading fade — peak reaches right edge before strip exits
-        int stripW  = trail + lead;
-        // cx = peak position; starts off-screen left, exits off-screen right
-        float cx    = shimmerPhase * (w + stripW) - trail;
+        int w = getWidth();
+        int h = getHeight();
+        // Strip = 2×w so both transparent ends are always off-screen.
+        float cx = shimmerPhase * (3 * w) - w;
 
         Color mid = rarity == CreatureRarity.MYTHIC
-                ? new Color(255, 120, 120, 100)
+                ? new Color(255, 120, 120, 110)
                 : rarity == CreatureRarity.LEGENDARY
-                ? new Color(255, 210, 80,  100)
-                : new Color(210, 120, 240,  90);
+                ? new Color(255, 210, 80,  110)
+                : new Color(210, 120, 240, 100);
         Color none = new Color(mid.getRed(), mid.getGreen(), mid.getBlue(), 0);
 
-        float peakFrac = (float) trail / stripW; // 0.8 — peak 80% from left of strip
         LinearGradientPaint lgp = new LinearGradientPaint(
-                cx - trail, 0, cx + lead, 0,
-                new float[]{0f, peakFrac, 1f},
+                cx - w, 0, cx + w, 0,
+                new float[]{0f, 0.5f, 1f},
                 new Color[]{none, mid, none});
         g2.setPaint(lgp);
         g2.fillRect(0, 0, w, h);
