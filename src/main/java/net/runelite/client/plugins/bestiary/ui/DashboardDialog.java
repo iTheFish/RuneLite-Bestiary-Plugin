@@ -101,8 +101,8 @@ public class DashboardDialog extends JDialog {
         JPopupMenu copyMenu = new JPopupMenu();
         JMenuItem copyThis = new JMenuItem("Just this view");
         JMenuItem copyAll  = new JMenuItem("All views");
-        copyThis.addActionListener(e -> exportView(copyBtn));
-        copyAll.addActionListener(e  -> { copyImageToClipboard(renderAllCard(dataService, progressionService)); flashButton(copyBtn, "✓ Copied!"); });
+        copyThis.addActionListener(e -> { exportView(copyBtn); flashMenuItem(copyThis, "✓ Copied!"); });
+        copyAll.addActionListener(e  -> { copyImageToClipboard(renderAllCard(dataService, progressionService)); flashButton(copyBtn, "✓ Copied!"); flashMenuItem(copyAll, "✓ Copied!"); });
         copyMenu.add(copyThis);
         copyMenu.add(copyAll);
         copyBtn.addActionListener(e -> copyMenu.show(copyBtn, 0, copyBtn.getHeight()));
@@ -110,8 +110,8 @@ public class DashboardDialog extends JDialog {
         JPopupMenu saveMenu = new JPopupMenu();
         JMenuItem saveThis = new JMenuItem("Just this view");
         JMenuItem saveAll  = new JMenuItem("All views");
-        saveThis.addActionListener(e -> exportSingle(saveBtn));
-        saveAll.addActionListener(e  -> exportAll(saveBtn));
+        saveThis.addActionListener(e -> { exportSingle(saveBtn); flashMenuItem(saveThis, "✓ Saved!"); });
+        saveAll.addActionListener(e  -> { exportAll(saveBtn); flashMenuItem(saveAll, "✓ Saved!"); });
         saveMenu.add(saveThis);
         saveMenu.add(saveAll);
         saveBtn.addActionListener(e -> saveMenu.show(saveBtn, 0, saveBtn.getHeight()));
@@ -400,26 +400,28 @@ public class DashboardDialog extends JDialog {
         }
         root.add(ratioPanel);
         root.add(gap(10));
-        root.add(sectionHeader("UNCAUGHT — HIGHEST KILLS"));
+        root.add(sectionHeader("HARDEST HUNTS — KILLS BEFORE CAPTURE"));
 
-        List<Map.Entry<String, Integer>> uncaught = col.killCounts.entrySet().stream()
-                .filter(e -> col.getCaptureCount(e.getKey()) == 0)
+        Map<String, Integer> hardestByName = col.creatures.stream()
+                .collect(Collectors.toMap(c -> c.npcName, c -> c.killsBeforeCapture, Integer::max));
+        List<Map.Entry<String, Integer>> hardest = hardestByName.entrySet().stream()
+                .filter(e -> e.getValue() > 0)
                 .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
                 .limit(8).collect(Collectors.toList());
 
-        JPanel uncaughtPanel = col();
-        uncaughtPanel.setBorder(new EmptyBorder(0, 12, 0, 12));
-        if (uncaught.isEmpty()) {
-            uncaughtPanel.add(emptyNote("All hunted species have been captured!"));
+        JPanel hardestPanel = col();
+        hardestPanel.setBorder(new EmptyBorder(0, 12, 0, 12));
+        if (hardest.isEmpty()) {
+            hardestPanel.add(emptyNote("No kill data recorded yet."));
         } else {
-            Color curseCol = new Color(200, 75, 75);
-            int maxU = uncaught.get(0).getValue();
-            for (Map.Entry<String, Integer> e : uncaught) {
-                uncaughtPanel.add(barRow(e.getKey(), curseCol, e.getValue(), maxU, FMT.format(e.getValue()), ""));
-                uncaughtPanel.add(gap(4));
+            Color huntCol = new Color(200, 155, 40);
+            int maxH = hardest.get(0).getValue();
+            for (Map.Entry<String, Integer> e : hardest) {
+                hardestPanel.add(barRow(e.getKey(), huntCol, e.getValue(), maxH, FMT.format(e.getValue()) + " kills", ""));
+                hardestPanel.add(gap(4));
             }
         }
-        root.add(uncaughtPanel);
+        root.add(hardestPanel);
         root.add(gap(16));
         return root;
     }
@@ -932,7 +934,7 @@ public class DashboardDialog extends JDialog {
         vl.setForeground(ORANGE);
         JLabel ll = new JLabel(label, SwingConstants.CENTER);
         ll.setFont(FontManager.getRunescapeSmallFont());
-        ll.setForeground(new Color(190, 190, 190));
+        ll.setForeground(TEXT);
         card.add(vl); card.add(ll);
         return card;
     }
@@ -1041,6 +1043,14 @@ public class DashboardDialog extends JDialog {
         btn.setText(flashText);
         btn.setForeground(new Color(80, 220, 80));
         javax.swing.Timer timer = new javax.swing.Timer(1400, e -> { btn.setText(orig); btn.setForeground(ORANGE); });
+        timer.setRepeats(false);
+        timer.start();
+    }
+
+    private static void flashMenuItem(JMenuItem item, String flashText) {
+        String orig = item.getText();
+        item.setText(flashText);
+        javax.swing.Timer timer = new javax.swing.Timer(1400, e -> item.setText(orig));
         timer.setRepeats(false);
         timer.start();
     }
@@ -1344,7 +1354,7 @@ public class DashboardDialog extends JDialog {
             g.drawString(val, bx + (boxW - bfm.stringWidth(val)) / 2, y + 24);
             g.setFont(FontManager.getRunescapeSmallFont());
             sfm = g.getFontMetrics();
-            g.setColor(new Color(190, 190, 190));
+            g.setColor(TEXT);
             String lbl = stats[i][0];
             g.drawString(lbl, bx + (boxW - sfm.stringWidth(lbl)) / 2, y + 40);
         }
@@ -1491,17 +1501,19 @@ public class DashboardDialog extends JDialog {
                 .sorted(Comparator.comparingInt(e ->
                         col.getKillCount(e.getKey()) / Math.max(1, e.getValue())))
                 .limit(8).collect(Collectors.toList());
-        List<Map.Entry<String, Integer>> uncaught = col.killCounts.entrySet().stream()
-                .filter(e -> col.getCaptureCount(e.getKey()) == 0)
+        Map<String, Integer> hardestByName = col.creatures.stream()
+                .collect(Collectors.toMap(c -> c.npcName, c -> c.killsBeforeCapture, Integer::max));
+        List<Map.Entry<String, Integer>> hardest = hardestByName.entrySet().stream()
+                .filter(e -> e.getValue() > 0)
                 .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
                 .limit(8).collect(Collectors.toList());
 
         final int W = 480, PAD = 24;
         int barRows = Math.max(1, top.size()), ratioRows = Math.max(1, ratios.size());
-        int uncaughtRows = Math.max(1, uncaught.size());
+        int hardestRows = Math.max(1, hardest.size());
         int H = 4 + PAD + 60 + 12 + 70 + 12 + 22 + 6 + barRows * 22 + 8
                 + 22 + 6 + ratioRows * 22 + 8
-                + 22 + 6 + uncaughtRows * 22 + 8
+                + 22 + 6 + hardestRows * 22 + 8
                 + 36 + PAD;
 
         BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
@@ -1538,16 +1550,16 @@ public class DashboardDialog extends JDialog {
         }
         y += 8;
 
-        y = drawCardSectionHeader(g, "UNCAUGHT — HIGHEST KILLS", y, W, PAD);
+        y = drawCardSectionHeader(g, "HARDEST HUNTS — KILLS BEFORE CAPTURE", y, W, PAD);
         y += 6;
-        if (uncaught.isEmpty()) {
+        if (hardest.isEmpty()) {
             g.setFont(FontManager.getRunescapeSmallFont()); g.setColor(DIM);
-            g.drawString("All hunted species captured!", PAD + 6, y + g.getFontMetrics().getAscent()); y += 22;
+            g.drawString("No kill data recorded yet.", PAD + 6, y + g.getFontMetrics().getAscent()); y += 22;
         } else {
-            Color curseCol = new Color(200, 75, 75);
-            int maxU = uncaught.get(0).getValue();
-            for (Map.Entry<String, Integer> e : uncaught)
-                y = drawCardBarRow(g, e.getKey(), curseCol, e.getValue(), maxU, FMT.format(e.getValue()), "", y, PAD, W);
+            Color huntCol = new Color(200, 155, 40);
+            int maxH = hardest.get(0).getValue();
+            for (Map.Entry<String, Integer> e : hardest)
+                y = drawCardBarRow(g, e.getKey(), huntCol, e.getValue(), maxH, FMT.format(e.getValue()) + " kills", "", y, PAD, W);
         }
         y += 8;
 
