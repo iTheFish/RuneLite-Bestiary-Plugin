@@ -82,7 +82,6 @@ public class MonsterRoster {
         "Wyrm",
         "Wyvern", "Ancient wyvern", "Skeletal wyvern", "Fossil island wyvern",
         "Warped tortoise", "Tortoise",
-        "Mutant tarn",
         "Zombie pirate",
 
         // === Dragons ===
@@ -109,7 +108,6 @@ public class MonsterRoster {
         "Hespori",
         "Obor",
         "Bryophyta",
-        "The Mimic",
         "Cerberus",
         "Kraken",
         "Thermonuclear smoke devil",
@@ -122,7 +120,6 @@ public class MonsterRoster {
         "Vardorvis",
         "The Whisperer",
         "Nex",
-        "Tempoross",
         "TzTok-Jad",
         "TzKal-Zuk",
         "Araxxor",
@@ -219,7 +216,7 @@ public class MonsterRoster {
             "Mogre", "Molanisk",
             "Vampyre", "Feral vampyre", "Vyrewatch",
             "Smoke devil", "Dust devil", "Infernal mage",
-            "Mutant tarn", "Zombie pirate",
+            "Zombie pirate",
             "Tortoise", "Warped tortoise",
             "Troll", "Ice troll", "Mountain troll",
             "Dagannoth"
@@ -275,8 +272,6 @@ public class MonsterRoster {
             "Duke Sucellus", "The Leviathan", "Vardorvis", "The Whisperer",
             "TzTok-Jad", "TzKal-Zuk",
             "Araxxor", "Hueycoatl", "Sol Heredit", "Amoxliatl",
-            "Tempoross",
-            "The Mimic",
             "Ahrim the Blighted", "Dharok the Wretched", "Guthan the Infested",
             "Karil the Tainted",  "Torag the Corrupted",  "Verac the Defiled",
             "Tekton", "Great Olm", "Vespula",
@@ -302,41 +297,46 @@ public class MonsterRoster {
         for (String n : Arrays.asList(
             "Rat", "Giant rat", "Chicken", "Duck", "Seagull", "Imp", "Goblin",
             "Spider", "Giant spider", "Ice spider", "Fever spider",
-            "Cave bug", "Cave crawler", "Cave slime", "Fleshcrawler",
-            "Scorpion", "King scorpion",
-            "Rogue", "Pirate", "Dark warrior",
-            "Desert lizard",
-            "Mogre", "Molanisk"
+            "Cave bug", "Cave crawler", "Fleshcrawler",
+            "Desert lizard", "Molanisk",
+            "Rockslugs", "Turoth",
+            "Sarachnis"
         )) { a.put(n, NIMBLE); }
 
         // BRUTE — STR, END
         for (String n : Arrays.asList(
-            "Bear", "Grizzly bear",
+            "Grizzly bear",
             "Barbarian", "Warrior", "Guard", "Black knight", "White knight",
-            "Zombie", "Skeleton", "Ghost",
+            "Zombie", "Skeleton",
             "Hobgoblin", "Minotaur",
             "Troll", "Ice troll", "Mountain troll",
             "Hill giant", "Moss giant", "Ice giant", "Fire giant",
             "Earth warrior",
             "Lizardman", "Lizardman brute",
             "Dagannoth",
-            "Mutant tarn", "Zombie pirate",
-            "Man", "Woman", "Farmer"
+            "Zombie pirate",
+            "Man", "Woman", "Farmer",
+            "Rogue", "Pirate", "Dark warrior",
+            "Ankou",
+            "Obor", "Bryophyta"
         )) { a.put(n, BRUTE); }
 
         // TANK — END, VIT
         for (String n : Arrays.asList(
             "Rock crab", "Sand crab", "Swamp crab",
+            "Bear", "Cave slime",
             "Gargoyle",
             "Kalphite", "Kalphite soldier", "Kalphite worker", "Kalphite guardian",
             "Basilisk", "Basilisk knight",
             "Jelly", "Warped jelly",
             "Tortoise", "Warped tortoise",
-            "Rockslugs",
-            "Turoth", "Kurask",
+            "Scorpion", "King scorpion",
+            "Kurask",
             "Pyrefiend", "Nechryael", "Greater nechryael", "Nechryarch",
             "Cow", "Unicorn",
-            "Corporeal Beast", "Giant Mole",
+            "Bloodveld",
+            "Spiritual warrior",
+            "Giant Mole",
             "Dusk", "Dawn"
         )) { a.put(n, TANK); }
 
@@ -353,66 +353,68 @@ public class MonsterRoster {
             "Waterfiend",
             "Aberrant spectre", "Deviant spectre",
             "King Black Dragon", "Vorkath", "Zulrah",
-            "Araxxor", "Hueycoatl"
+            "Araxxor", "Hueycoatl",
+            "Scorpia", "Callisto", "Venenatis", "Vet'ion",
+            "Alchemical Hydra",
+            "Phantom Muspah", "Vardorvis", "The Whisperer",
+            "TzTok-Jad"
         )) { a.put(n, PREDATOR); }
 
         // MYSTIC — INT, VIT
         for (String n : Arrays.asList(
             "Wizard", "Dark wizard",
-            "Ankou", "Ghost",
+            "Ghost",
             "Banshee", "Twisted banshee",
-            "Vampyre", "Feral vampyre", "Vyrewatch",
             "Chaos druid", "Chaos druid warrior",
             "Infernal mage",
             "Spiritual mage",
+            "Mogre",
             "Abyssal Sire",
             "The Nightmare", "Phosani's Nightmare",
             "Nex",
-            "Duke Sucellus", "The Whisperer",
-            "Phantom Muspah",
-            "Tempoross",
-            "The Mimic"
+            "Duke Sucellus",
+            "Chaos Elemental", "Chaos Fanatic", "Crazy Archaeologist", "Deranged Archaeologist",
+            "Hespori",
+            "Kraken", "Thermonuclear smoke devil"
         )) { a.put(n, MYSTIC); }
 
         // STALKER — INT, STL
         for (String n : Arrays.asList(
             "Smoke devil", "Dust devil",
-            "Bloodveld", "Mutated bloodveld",
+            "Mutated bloodveld",
             "Cave horror",
             "Suqah",
             "Dark beast",
             "Lizardman shaman",
-            "Hydra", "Alchemical Hydra",
-            "Kraken",
+            "Hydra",
             "Cerberus",
-            "Thermonuclear smoke devil",
             "Scurrius",
-            "Vardorvis", "The Leviathan"
+            "The Leviathan",
+            "Vampyre", "Feral vampyre", "Vyrewatch",
+            "Spiritual ranger",
+            "Artio", "Spindel", "Calvar'ion",
+            "Amoxliatl"
         )) { a.put(n, STALKER); }
 
         // TITAN — STR, VIT
         for (String n : Arrays.asList(
             "Lesser demon",
-            "Spiritual warrior", "Spiritual ranger",
-            "Obor", "Bryophyta",
-            "Sarachnis", "Hespori",
             "Commander Zilyana", "General Graardor", "K'ril Tsutsaroth", "Kree'arra",
             "Dagannoth Rex", "Dagannoth Prime", "Dagannoth Supreme",
-            "Chaos Elemental", "Chaos Fanatic", "Crazy Archaeologist", "Deranged Archaeologist",
-            "Scorpia", "Callisto", "Artio", "Venenatis", "Spindel", "Vet'ion", "Calvar'ion",
             "Ahrim the Blighted", "Dharok the Wretched", "Guthan the Infested",
             "Karil the Tainted", "Torag the Corrupted", "Verac the Defiled",
             "Tekton", "Maiden of Sugadinti", "Pestilent Bloat", "Sotetseg",
             "Xarpus", "Verzik Vitur",
             "Akkha", "Ba-Ba", "Kephri", "Zebak",
             "Tumeken's Warden", "Elidinis' Warden",
-            "Sol Heredit", "Amoxliatl",
-            "Great Olm", "Vespula"
+            "Sol Heredit",
+            "Great Olm", "Vespula",
+            "Corporeal Beast",
+            "TzKal-Zuk"
         )) { a.put(n, TITAN); }
 
         // APEX — STR, SPD, INT (3 primaries — hardest endgame content)
         for (String n : Arrays.asList(
-            "TzTok-Jad", "TzKal-Zuk",
             "Nex",           // also in MYSTIC — APEX overrides
             "Duke Sucellus", // also in MYSTIC — APEX overrides
             "The Leviathan"  // also in STALKER — APEX overrides
@@ -513,7 +515,7 @@ public class MonsterRoster {
             "Ahrim the Blighted", "Dharok the Wretched", "Guthan the Infested",
             "Karil the Tainted", "Torag the Corrupted", "Verac the Defiled",
             "Maiden of Sugadinti", "Verzik Vitur", "Xarpus",
-            "Akkha", "Mutant tarn", "Vardorvis"
+            "Akkha", "Vardorvis"
         )) { s.put(n, UNDEAD); }
 
         // WYRM — reptilian magical creatures (hydras, wyverns, wyrms)
