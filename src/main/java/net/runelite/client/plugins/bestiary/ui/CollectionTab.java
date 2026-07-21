@@ -501,7 +501,12 @@ public class CollectionTab extends JPanel {
             AlbumCard card = new AlbumCard(dex, c.npcName,
                     java.util.List.of(c), dataService.getCollection(), imageService);
             card.setShowQuality(true);
-            card.setClickOverride(() -> AlbumDialog.requestOpenDetail(c.npcName));
+            card.setClickOverride(() -> {
+                Window p = SwingUtilities.getWindowAncestor(CollectionTab.this);
+                if (!AlbumDialog.switchToFavouritesIfOpen()) {
+                    openAlbum(p, true);
+                }
+            });
             card.setUnfavouriteCallback(() -> { c.favourite = false; onFav.run(); });
             grid.add(card);
         }
