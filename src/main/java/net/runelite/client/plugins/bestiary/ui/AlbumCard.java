@@ -396,7 +396,7 @@ public class AlbumCard extends JPanel {
         int subBaseline = COMBAT_Y + (COMBAT_H + sfm.getAscent() - sfm.getDescent()) / 2;
 
         if (!locked) {
-            String combatStr = combatLevel > 0 ? "Lvl " + combatLevel : "Non-combat";
+            String combatStr = (combatLevel > 0 ? "Lvl " + combatLevel : "Non-combat") + "  · " + combatClass.label;
             g2.setColor(ColorScheme.LIGHT_GRAY_COLOR);
             g2.drawString(combatStr, imgX + 2, subBaseline);
             // Species badge right-aligned (below the difficulty badge)

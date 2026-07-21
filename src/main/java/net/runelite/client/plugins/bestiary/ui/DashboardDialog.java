@@ -474,22 +474,22 @@ public class DashboardDialog extends JDialog {
         }
         root.add(typePanel);
         root.add(gap(10));
-        root.add(sectionHeader("TOP 5 MONSTERS"));
+        root.add(sectionHeader("TOP 5 CREATURES"));
         root.add(buildTopSpeciesSection(col));
         root.add(gap(10));
 
-        // Captured species list
-        root.add(sectionHeader("CAPTURED SPECIES  (" + captured + ")"));
+        // Captured creatures list
+        root.add(sectionHeader("CAPTURED CREATURES  (" + captured + ")"));
         JPanel specList = col();
         specList.setBorder(new EmptyBorder(0, 12, 0, 12));
 
         if (col.creatures.isEmpty()) {
-            specList.add(emptyNote("No species captured yet."));
+            specList.add(emptyNote("No creatures captured yet."));
         } else {
             col.creatures.stream()
                     .collect(Collectors.groupingBy(c -> c.npcName))
                     .entrySet().stream()
-                    .sorted(Comparator.comparing(e -> e.getKey().toLowerCase()))
+                    .sorted(Comparator.comparingInt((Map.Entry<String, List<CapturedCreature>> e) -> e.getValue().size()).reversed())
                     .forEach(e -> {
                         CreatureRarity rarest = e.getValue().stream()
                                 .map(c -> c.rarity).max(Comparator.comparingInt(Enum::ordinal))
@@ -1708,7 +1708,7 @@ public class DashboardDialog extends JDialog {
         y += 8;
 
         // Top 5 monsters — rarity breakdown table
-        y = drawCardSectionHeader(g, "TOP 5 MONSTERS", y, W, PAD);
+        y = drawCardSectionHeader(g, "TOP 5 CREATURES", y, W, PAD);
         y += 6;
         CreatureRarity[] rarOrder = {CreatureRarity.COMMON, CreatureRarity.UNCOMMON, CreatureRarity.RARE,
                 CreatureRarity.EPIC, CreatureRarity.LEGENDARY, CreatureRarity.MYTHIC};
