@@ -86,6 +86,10 @@ public class AlbumCard extends JPanel {
     private final int killCount;
     private final boolean hasShiny;
 
+    // When true, header shows Q:XX (quality) instead of no.XXX (dex). Only set in single-capture views.
+    private boolean showQuality = false;
+    public void setShowQuality(boolean b) { this.showQuality = b; }
+
     // Shimmer callback: called each repaint tick so an external panel can stay in sync
     @Nullable private Runnable shimmerCallback;
     public void setShimmerCallback(Runnable cb) { shimmerCallback = cb; }
@@ -344,8 +348,8 @@ public class AlbumCard extends JPanel {
 
         // --- Header: left side (nickname or rarity dots) + right side (dex number) ---
         FontMetrics dfm = sfm;
-        // Captured: show quality score. Locked: show dex number.
-        String dexStr = locked ? String.format("no. %03d", dexNumber) : "Q:" + overallQuality;
+        // Catalog view: dex number. Single-capture (detail/favourites) view: quality score.
+        String dexStr = (locked || !showQuality) ? String.format("no. %03d", dexNumber) : "Q:" + overallQuality;
         g2.setFont(smallFont);
         int dexX = w - PAD - dfm.stringWidth(dexStr);
         int dexY = HEADER_Y + (HEADER_H + dfm.getAscent() - dfm.getDescent()) / 2;

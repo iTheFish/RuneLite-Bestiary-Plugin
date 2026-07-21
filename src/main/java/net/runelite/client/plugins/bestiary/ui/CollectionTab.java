@@ -492,6 +492,7 @@ public class CollectionTab extends JPanel {
             int dex = net.runelite.client.plugins.bestiary.model.MonsterRoster.getDexNumber(c.npcName);
             AlbumCard card = new AlbumCard(dex, c.npcName,
                     java.util.List.of(c), dataService.getCollection(), imageService);
+            card.setShowQuality(true);
             card.setUnfavouriteCallback(() -> { c.favourite = false; onFav.run(); });
             grid.add(card);
         }
