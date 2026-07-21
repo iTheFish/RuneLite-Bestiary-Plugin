@@ -76,6 +76,7 @@ public class CardExportDialog extends JDialog {
         String ownerStr = "Captured by " + capturedBy;
         drawBanner(g2, 0, AlbumCard.CARD_H, AlbumCard.CARD_W, bottomH, cardId, ownerStr);
         g2.dispose();
+        card.removeNotify();
 
         BufferedImage exported = img;
         Transferable t = new Transferable() {

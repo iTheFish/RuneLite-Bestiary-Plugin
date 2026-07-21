@@ -247,6 +247,7 @@ public class PageExportDialog extends JDialog {
             cardG2.translate(x, y);
             card.print(cardG2);
             cardG2.dispose();
+            card.removeNotify();
 
             int bY = y + AlbumCard.CARD_H + 2;
             g2.setColor(new Color(25, 25, 25));
