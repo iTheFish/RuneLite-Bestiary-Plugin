@@ -29,7 +29,7 @@ public class PageExportDialog extends JDialog {
     private static final int GAP      = 6;
     private static final int PAD      = 8;
     private static final int SCALE    = 2;
-    private static final int BANNER_H = 26;
+    private static final int BANNER_H = 42;
     private static final int PREVIEW_MAX_W = 420;
 
     private final List<CapturedCreature> captures;
@@ -231,9 +231,6 @@ public class PageExportDialog extends JDialog {
         g2.drawString(headerText, (logW - hfm.stringWidth(headerText)) / 2,
                 (HEADER_H + hfm.getAscent() - hfm.getDescent()) / 2);
 
-        Font idFont     = FontManager.getRunescapeSmallFont().deriveFont(8f);
-        Font playerFont = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 10f);
-
         for (int i = 0; i < count; i++) {
             CapturedCreature cap = captures.get(i);
             int dex = dexNumbers.getOrDefault(cap.npcName, 0);
@@ -255,19 +252,9 @@ public class PageExportDialog extends JDialog {
             g2.setColor(new Color(25, 25, 25));
             g2.fillRoundRect(x, bY, AlbumCard.CARD_W, BANNER_H, 4, 4);
 
-            String cardId = CardId.encode(dex, cap);
-            g2.setFont(idFont);
-            FontMetrics ifm = g2.getFontMetrics();
-            g2.setColor(new Color(90, 90, 90));
-            g2.drawString(cardId, x + (AlbumCard.CARD_W - ifm.stringWidth(cardId)) / 2, bY + ifm.getAscent() + 2);
-
             String capBy = (cap.playerName != null && !cap.playerName.isEmpty()) ? cap.playerName : playerName;
-            g2.setFont(playerFont);
-            FontMetrics pfm = g2.getFontMetrics();
-            String capLine = "Captured by: " + capBy;
-            g2.setColor(new Color(200, 155, 50));
-            g2.drawString(capLine, x + (AlbumCard.CARD_W - pfm.stringWidth(capLine)) / 2,
-                    bY + ifm.getHeight() + pfm.getAscent() + 1);
+            String cardId = CardId.encode(dex, cap);
+            CardExportDialog.drawBanner(g2, x, bY, AlbumCard.CARD_W, BANNER_H, cardId, "Captured by " + capBy);
         }
 
         g2.dispose();

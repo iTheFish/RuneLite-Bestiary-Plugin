@@ -62,7 +62,7 @@ public class CardExportDialog extends JDialog {
         card.setSize(AlbumCard.CARD_W, AlbumCard.CARD_H);
 
         int scale   = 3;
-        int bottomH = 28;
+        int bottomH = 42;
         BufferedImage img = new BufferedImage(AlbumCard.CARD_W * scale,
                 (AlbumCard.CARD_H + bottomH) * scale, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2 = img.createGraphics();
@@ -73,15 +73,8 @@ public class CardExportDialog extends JDialog {
         card.print(g2);
         g2.setColor(new Color(12, 12, 12));
         g2.fillRect(0, AlbumCard.CARD_H, AlbumCard.CARD_W, bottomH);
-        g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(7f));
-        FontMetrics idFm = g2.getFontMetrics();
-        g2.setColor(new Color(90, 90, 90));
-        g2.drawString(cardId, (AlbumCard.CARD_W - idFm.stringWidth(cardId)) / 2, AlbumCard.CARD_H + idFm.getAscent() + 2);
-        g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 10f));
-        FontMetrics owFm = g2.getFontMetrics();
-        g2.setColor(new Color(200, 155, 50));
         String ownerStr = "Captured by " + capturedBy;
-        g2.drawString(ownerStr, (AlbumCard.CARD_W - owFm.stringWidth(ownerStr)) / 2, AlbumCard.CARD_H + idFm.getHeight() + owFm.getAscent() + 1);
+        drawBanner(g2, 0, AlbumCard.CARD_H, AlbumCard.CARD_W, bottomH, cardId, ownerStr);
         g2.dispose();
 
         BufferedImage exported = img;
@@ -135,9 +128,10 @@ public class CardExportDialog extends JDialog {
 
         // 2× scaled preview panel — same content (card + banner) as the actual export
         final int PREVIEW_SCALE = 2;
+        final int BOTTOM_H = 42;
         JPanel previewPanel = new JPanel() {
             { setPreferredSize(new Dimension(AlbumCard.CARD_W * PREVIEW_SCALE,
-                                             (AlbumCard.CARD_H + 28) * PREVIEW_SCALE));
+                                             (AlbumCard.CARD_H + BOTTOM_H) * PREVIEW_SCALE));
               setOpaque(false); }
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -147,18 +141,10 @@ public class CardExportDialog extends JDialog {
                 g2.scale(PREVIEW_SCALE, PREVIEW_SCALE);
                 card.setSize(AlbumCard.CARD_W, AlbumCard.CARD_H);
                 card.print(g2);
-                // Banner (mirrors renderCard)
                 g2.setColor(new Color(12, 12, 12));
-                g2.fillRect(0, AlbumCard.CARD_H, AlbumCard.CARD_W, 28);
-                g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(7f));
-                FontMetrics idFm = g2.getFontMetrics();
-                g2.setColor(new Color(90, 90, 90));
-                g2.drawString(cardId, (AlbumCard.CARD_W - idFm.stringWidth(cardId)) / 2, AlbumCard.CARD_H + idFm.getAscent() + 2);
-                g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 10f));
-                FontMetrics ownerFm = g2.getFontMetrics();
-                g2.setColor(new Color(200, 155, 50));
+                g2.fillRect(0, AlbumCard.CARD_H, AlbumCard.CARD_W, BOTTOM_H);
                 String ownerStr = "Captured by " + CardExportDialog.this.owner;
-                g2.drawString(ownerStr, (AlbumCard.CARD_W - ownerFm.stringWidth(ownerStr)) / 2, AlbumCard.CARD_H + idFm.getHeight() + ownerFm.getAscent() + 1);
+                drawBanner(g2, 0, AlbumCard.CARD_H, AlbumCard.CARD_W, BOTTOM_H, cardId, ownerStr);
                 g2.dispose();
             }
         };
@@ -218,7 +204,7 @@ public class CardExportDialog extends JDialog {
 
     private BufferedImage renderCard() {
         int scale   = 3;
-        int bottomH = 28; // ID + captured-by banner below card
+        int bottomH = 42;
 
         card.setSize(AlbumCard.CARD_W, AlbumCard.CARD_H);
 
@@ -232,27 +218,12 @@ public class CardExportDialog extends JDialog {
         g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,     RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         g2.scale(scale, scale);
 
-        // Card (nickname is rendered on the card header by AlbumCard.paintComponent)
         card.print(g2);
 
-        // Bottom banner: card ID + captured-by
         g2.setColor(new Color(12, 12, 12));
         g2.fillRect(0, AlbumCard.CARD_H, AlbumCard.CARD_W, bottomH);
-
-        g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(7f));
-        FontMetrics idFm = g2.getFontMetrics();
-        g2.setColor(new Color(90, 90, 90));
-        g2.drawString(cardId,
-                (AlbumCard.CARD_W - idFm.stringWidth(cardId)) / 2,
-                AlbumCard.CARD_H + idFm.getAscent() + 2);
-
-        g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 10f));
-        FontMetrics ownerFm = g2.getFontMetrics();
-        g2.setColor(new Color(200, 155, 50));
         String ownerStr = "Captured by " + owner;
-        g2.drawString(ownerStr,
-                (AlbumCard.CARD_W - ownerFm.stringWidth(ownerStr)) / 2,
-                AlbumCard.CARD_H + idFm.getHeight() + ownerFm.getAscent() + 1);
+        drawBanner(g2, 0, AlbumCard.CARD_H, AlbumCard.CARD_W, bottomH, cardId, ownerStr);
 
         g2.dispose();
         return img;
@@ -288,6 +259,31 @@ public class CardExportDialog extends JDialog {
             }
         }
         return false;
+    }
+
+    /** Draws 3-line banner (OSRS|BESTIARY / UniqueID / Captured by) vertically centred in the banner rect. */
+    static void drawBanner(Graphics2D g2, int bX, int bY, int bannerW, int bannerH, String cardId, String ownerStr) {
+        Font brandFont  = FontManager.getRunescapeSmallFont().deriveFont(8f);
+        Font idFont     = FontManager.getRunescapeSmallFont().deriveFont(7f);
+        Font playerFont = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 10f);
+        g2.setFont(brandFont);  FontMetrics bfm = g2.getFontMetrics();
+        g2.setFont(idFont);     FontMetrics ifm = g2.getFontMetrics();
+        g2.setFont(playerFont); FontMetrics pfm = g2.getFontMetrics();
+        int gap    = 2;
+        int totalH = bfm.getHeight() + gap + ifm.getHeight() + gap + pfm.getHeight();
+        int startY = bY + Math.max(2, (bannerH - totalH) / 2);
+        String brand = "OSRS | BESTIARY";
+        g2.setFont(brandFont);
+        g2.setColor(new Color(110, 110, 110));
+        g2.drawString(brand, bX + (bannerW - bfm.stringWidth(brand)) / 2, startY + bfm.getAscent());
+        g2.setFont(idFont);
+        g2.setColor(new Color(90, 90, 90));
+        int y2 = startY + bfm.getHeight() + gap;
+        g2.drawString(cardId, bX + (bannerW - ifm.stringWidth(cardId)) / 2, y2 + ifm.getAscent());
+        g2.setFont(playerFont);
+        g2.setColor(new Color(200, 155, 50));
+        int y3 = y2 + ifm.getHeight() + gap;
+        g2.drawString(ownerStr, bX + (bannerW - pfm.stringWidth(ownerStr)) / 2, y3 + pfm.getAscent());
     }
 
     private static void flash(JButton btn, String label) {
