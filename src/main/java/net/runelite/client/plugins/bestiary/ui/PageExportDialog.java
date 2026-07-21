@@ -232,7 +232,7 @@ public class PageExportDialog extends JDialog {
                 (HEADER_H + hfm.getAscent() - hfm.getDescent()) / 2);
 
         Font idFont     = FontManager.getRunescapeSmallFont().deriveFont(8f);
-        Font playerFont = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 8f);
+        Font playerFont = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 10f);
 
         for (int i = 0; i < count; i++) {
             CapturedCreature cap = captures.get(i);

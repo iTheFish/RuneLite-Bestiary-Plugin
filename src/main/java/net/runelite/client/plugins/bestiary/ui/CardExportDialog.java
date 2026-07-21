@@ -77,7 +77,7 @@ public class CardExportDialog extends JDialog {
         FontMetrics idFm = g2.getFontMetrics();
         g2.setColor(new Color(90, 90, 90));
         g2.drawString(cardId, (AlbumCard.CARD_W - idFm.stringWidth(cardId)) / 2, AlbumCard.CARD_H + idFm.getAscent() + 2);
-        g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 7f));
+        g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 10f));
         FontMetrics owFm = g2.getFontMetrics();
         g2.setColor(new Color(200, 155, 50));
         String ownerStr = "Captured by " + capturedBy;
@@ -154,7 +154,7 @@ public class CardExportDialog extends JDialog {
                 FontMetrics idFm = g2.getFontMetrics();
                 g2.setColor(new Color(90, 90, 90));
                 g2.drawString(cardId, (AlbumCard.CARD_W - idFm.stringWidth(cardId)) / 2, AlbumCard.CARD_H + idFm.getAscent() + 2);
-                g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 7f));
+                g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 10f));
                 FontMetrics ownerFm = g2.getFontMetrics();
                 g2.setColor(new Color(200, 155, 50));
                 String ownerStr = "Captured by " + CardExportDialog.this.owner;
@@ -246,7 +246,7 @@ public class CardExportDialog extends JDialog {
                 (AlbumCard.CARD_W - idFm.stringWidth(cardId)) / 2,
                 AlbumCard.CARD_H + idFm.getAscent() + 2);
 
-        g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 7f));
+        g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 10f));
         FontMetrics ownerFm = g2.getFontMetrics();
         g2.setColor(new Color(200, 155, 50));
         String ownerStr = "Captured by " + owner;
