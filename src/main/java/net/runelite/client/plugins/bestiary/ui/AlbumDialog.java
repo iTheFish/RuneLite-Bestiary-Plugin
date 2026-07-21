@@ -83,10 +83,9 @@ public class AlbumDialog extends JDialog {
     private static final int CARD_GAP = 6;
     private static final int SIDE_PAD = 8;
 
-    private static final String SORT_FAVOURITES = "★ Favourites";
     private static final String[] SORT_OPTIONS = {
         "Name A–Z", "Name Z–A", "Difficulty ↑", "Difficulty ↓", "Most caught",
-        "Rarity (best)", "Quality (high)", "Newest first", SORT_FAVOURITES
+        "Rarity (best)", "Quality (high)", "Newest first"
     };
 
     private final Map<String, List<CapturedCreature>> capturesByNpc;
@@ -102,14 +101,12 @@ public class AlbumDialog extends JDialog {
 
     // Catalog bar controls
     private JComboBox<String> sortBox;
-    private JToggleButton     favOnlyBtn;
     private JToggleButton     showLockedBtn;
     private JToggleButton     capturedFirstBtn;
 
     // Catalog state
     private String         currentSort      = "Name A–Z";
     private boolean        capturedFirst    = true;
-    private boolean        favouritesOnly   = false;
     private boolean        showLocked       = true;
     private String         searchTerm       = "";
     private DifficultyTier filterDifficulty = null;
@@ -193,21 +190,9 @@ public class AlbumDialog extends JDialog {
         countLabel.setPreferredSize(new Dimension(130, 16));
         countLabel.setMinimumSize(new Dimension(130, 16));
 
-        favOnlyBtn = new JToggleButton("★");
-        favOnlyBtn.setFont(new Font(Font.DIALOG, Font.BOLD, 12));
-        favOnlyBtn.setMargin(new Insets(0, 0, 0, 0));
-        favOnlyBtn.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-        favOnlyBtn.setForeground(new Color(90, 90, 90));
-        favOnlyBtn.setFocusPainted(false);
-        favOnlyBtn.setBorder(BorderFactory.createLineBorder(new Color(70, 70, 70), 1));
-        favOnlyBtn.setPreferredSize(new Dimension(26, 26));
-        favOnlyBtn.setToolTipText("Show only starred captures");
-
         JPanel btnPair = new JPanel();
         btnPair.setLayout(new BoxLayout(btnPair, BoxLayout.X_AXIS));
         btnPair.setOpaque(false);
-        btnPair.add(favOnlyBtn);
-        btnPair.add(Box.createHorizontalStrut(4));
         btnPair.add(showLockedBtn);
         btnPair.add(Box.createHorizontalStrut(4));
         btnPair.add(capturedFirstBtn);
@@ -261,16 +246,7 @@ public class AlbumDialog extends JDialog {
         // Catalog action listeners (declared after all fields are initialised)
         // -------------------------------------------------------------------------
         sortBox.addActionListener(e -> {
-            String sel = (String) sortBox.getSelectedItem();
-            if (SORT_FAVOURITES.equals(sel)) {
-                favouritesOnly = true;
-                currentSort    = "Newest first";
-                favOnlyBtn.setSelected(true);
-                favOnlyBtn.setForeground(new Color(255, 195, 40));
-                favOnlyBtn.setBackground(new Color(45, 38, 10));
-            } else {
-                currentSort = sel;
-            }
+            currentSort = (String) sortBox.getSelectedItem();
             rebuildGrid();
         });
 
@@ -294,17 +270,6 @@ public class AlbumDialog extends JDialog {
         capturedFirstBtn.addActionListener(e -> {
             capturedFirst = capturedFirstBtn.isSelected();
             styleCapturedFirstBtn(capturedFirstBtn, capturedFirst);
-            rebuildGrid();
-        });
-
-        favOnlyBtn.addActionListener(e -> {
-            favouritesOnly = favOnlyBtn.isSelected();
-            favOnlyBtn.setForeground(favouritesOnly ? new Color(255, 195, 40) : new Color(90, 90, 90));
-            favOnlyBtn.setBackground(favouritesOnly ? new Color(45, 38, 10) : ColorScheme.DARKER_GRAY_COLOR);
-            if (!favouritesOnly && SORT_FAVOURITES.equals(sortBox.getSelectedItem())) {
-                sortBox.setSelectedItem("Name A–Z");
-                currentSort = "Name A–Z";
-            }
             rebuildGrid();
         });
 
@@ -465,15 +430,11 @@ public class AlbumDialog extends JDialog {
             @Override public void windowClosing(WindowEvent e) { savedSize = getSize(); }
         });
 
-        if (startFavourites) {
-            favouritesOnly = true;
-            favOnlyBtn.setSelected(true);
-            favOnlyBtn.setForeground(new Color(255, 195, 40));
-            favOnlyBtn.setBackground(new Color(45, 38, 10));
-        }
-
         imageService.prefetchBatch(fullRoster, gridPanel::repaint);
         SwingUtilities.invokeLater(this::rebuildGrid);
+        if (startFavourites) {
+            SwingUtilities.invokeLater(this::showFavouritesDetailView);
+        }
         setVisible(true);
         toFront();
     }
@@ -503,8 +464,8 @@ public class AlbumDialog extends JDialog {
         detailFilterRarity  = null;
         detailFilterCapture = null;
         detailPage          = 0;
-        detailSort          = "Newest first";
-        detailSortBox.setSelectedItem("Newest first");
+        detailSort          = "Quality (high)";
+        detailSortBox.setSelectedItem("Quality (high)");
         ((CardLayout) topBarHolder.getLayout()).show(topBarHolder, "DETAIL");
         rebuildGrid();
     }
@@ -545,41 +506,6 @@ public class AlbumDialog extends JDialog {
         int cols = Math.max(1, (viewW - SIDE_PAD * 2 + CARD_GAP) / (AlbumCard.CARD_W + CARD_GAP));
         gridPanel.setLayout(new GridLayout(0, cols, CARD_GAP, CARD_GAP));
         gridPanel.setBorder(new EmptyBorder(SIDE_PAD, SIDE_PAD, SIDE_PAD, SIDE_PAD));
-
-        // ---- Favourites mode: one card per individual starred capture ----
-        if (favouritesOnly) {
-            String lc = searchTerm.toLowerCase();
-            List<CapturedCreature> starred = capturesByNpc.values().stream()
-                    .flatMap(List::stream)
-                    .filter(c -> c.favourite)
-                    .filter(c -> lc.isEmpty() || c.npcName.toLowerCase().contains(lc))
-                    .filter(c -> filterDifficulty == null
-                            || MonsterRoster.getDifficulty(c.npcName, c.npcCombatLevel) == filterDifficulty)
-                    .sorted(favouriteCapSort())
-                    .collect(Collectors.toList());
-
-            int n = starred.size();
-            countLabel.setForeground(n > 0 ? new Color(255, 195, 40) : new Color(170, 80, 80));
-            countLabel.setText("★ " + n + " starred");
-
-            for (CapturedCreature cap : starred) {
-                int dex = dexNumbers.getOrDefault(cap.npcName, 0);
-                AlbumCard card = new AlbumCard(dex, cap.npcName, List.of(cap), collection, imageService);
-                card.setShowQuality(true);
-                card.setClickOverride(() -> CardExportDialog.open(AlbumDialog.this, cap));
-                card.setCopyCallback(() -> CardExportDialog.copyNow(AlbumDialog.this, cap));
-                card.setUnfavouriteCallback(() -> {
-                    cap.favourite = false;
-                    rebuildGrid();
-                    if (onFavouriteChanged != null) onFavouriteChanged.run();
-                });
-                gridPanel.add(card);
-            }
-
-            gridPanel.revalidate();
-            gridPanel.repaint();
-            return;
-        }
 
         // ---- Normal catalog mode ----
         countLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
@@ -832,15 +758,19 @@ public class AlbumDialog extends JDialog {
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                int drawW = AlbumCard.CARD_W;
+                int drawH = AlbumCard.CARD_H;
+                int offX  = (getWidth()  - drawW) / 2;
+                int offY  = (getHeight() - drawH) / 2;
                 g2.setColor(new Color(40, 32, 8));
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.fillRoundRect(offX, offY, drawW, drawH, 8, 8);
                 g2.setColor(new Color(100, 78, 10));
-                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 8, 8);
+                g2.drawRoundRect(offX, offY, drawW - 1, drawH - 1, 8, 8);
 
-                int cx = getWidth() / 2;
+                int cx = offX + drawW / 2;
                 g2.setFont(new Font(Font.DIALOG, Font.BOLD, 28));
                 FontMetrics sfm = g2.getFontMetrics();
-                int starY = getHeight() / 2 - sfm.getHeight() / 2 + sfm.getAscent() - 20;
+                int starY = offY + drawH / 2 - sfm.getHeight() / 2 + sfm.getAscent() - 20;
                 g2.setColor(new Color(255, 195, 40));
                 g2.drawString("★", cx - sfm.stringWidth("★") / 2, starY);
 
@@ -870,22 +800,6 @@ public class AlbumDialog extends JDialog {
             }
         });
         return card;
-    }
-
-    /** Sort comparator for individual starred captures based on current sort setting. */
-    private Comparator<CapturedCreature> favouriteCapSort() {
-        switch (currentSort == null ? "Newest first" : currentSort) {
-            case "Name Z–A":
-                return (a, b) -> String.CASE_INSENSITIVE_ORDER.compare(b.npcName, a.npcName);
-            case "Rarity (best)":
-                return Comparator.comparingInt((CapturedCreature c) -> c.rarity.ordinal()).reversed();
-            case "Quality (high)":
-                return Comparator.comparingInt((CapturedCreature c) -> c.quality.overallRating()).reversed();
-            case "Name A–Z":
-                return Comparator.comparing((CapturedCreature c) -> c.npcName, String.CASE_INSENSITIVE_ORDER);
-            default: // "Newest first"
-                return Comparator.comparing((CapturedCreature c) -> c.captureTime, Comparator.reverseOrder());
-        }
     }
 
     // -------------------------------------------------------------------------
@@ -1058,7 +972,7 @@ public class AlbumDialog extends JDialog {
         g2.drawString(headerText, hx, hy);
 
         Font playerFont = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD);
-        Font idFont     = FontManager.getRunescapeSmallFont();
+        Font idFont     = FontManager.getRunescapeSmallFont().deriveFont(9f);
 
         for (int i = 0; i < page.size(); i++) {
             CapturedCreature cap = page.get(i);

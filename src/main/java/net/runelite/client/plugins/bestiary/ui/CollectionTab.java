@@ -452,9 +452,11 @@ public class CollectionTab extends JPanel {
     // -------------------------------------------------------------------------
 
     private void buildFavouritesView(List<CapturedCreature> all, String selectedSort) {
-        List<CapturedCreature> favs = all.stream()
+        List<CapturedCreature> allFavs = all.stream()
                 .filter(c -> c.favourite)
+                .sorted(Comparator.comparingInt((CapturedCreature c) -> c.quality.overallRating()).reversed())
                 .collect(Collectors.toList());
+        List<CapturedCreature> favs = allFavs.stream().limit(3).collect(Collectors.toList());
 
         // Header
         JPanel header = new JPanel(new BorderLayout(8, 0));
@@ -463,14 +465,17 @@ public class CollectionTab extends JPanel {
                 new javax.swing.border.MatteBorder(0, 4, 0, 0, new Color(255, 195, 40)),
                 new EmptyBorder(5, 8, 5, 8)));
         header.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
-        JLabel headerLabel = new JLabel("★  " + favs.size() + " favourite" + (favs.size() == 1 ? "" : "s"));
+        String headerTitle = allFavs.size() > 3
+                ? "★  Top 3 Favourites (of " + allFavs.size() + ")"
+                : "★  " + allFavs.size() + " favourite" + (allFavs.size() == 1 ? "" : "s");
+        JLabel headerLabel = new JLabel(headerTitle);
         headerLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         headerLabel.setForeground(new Color(255, 195, 40));
         header.add(headerLabel, BorderLayout.WEST);
         cardContainer.add(header);
         cardContainer.add(Box.createVerticalStrut(4));
 
-        if (favs.isEmpty()) {
+        if (allFavs.isEmpty()) {
             JLabel empty = new JLabel("<html><center>No favourites yet.<br>Right-click any capture to star it.</center></html>");
             empty.setForeground(new Color(100, 100, 100));
             empty.setFont(FontManager.getRunescapeSmallFont());
@@ -480,18 +485,7 @@ public class CollectionTab extends JPanel {
             return;
         }
 
-        switch (selectedSort == null ? "Rarity (best)" : selectedSort) {
-            case "Name A-Z":    favs.sort(Comparator.comparing(c -> c.npcName)); break;
-            case "Name Z-A":    favs.sort(Comparator.comparing((CapturedCreature c) -> c.npcName).reversed()); break;
-            case "Newest first": favs.sort(Comparator.comparing((CapturedCreature c) -> c.captureTime).reversed()); break;
-            case "Oldest first": favs.sort(Comparator.comparing(c -> c.captureTime)); break;
-            case "Rarity (worst)": favs.sort(Comparator.comparingInt(c -> c.rarity.ordinal())); break;
-            case "Quality (high)": favs.sort(Comparator.comparingInt((CapturedCreature c) -> c.quality.overallRating()).reversed()); break;
-            case "Quality (low)":  favs.sort(Comparator.comparingInt(c -> c.quality.overallRating())); break;
-            default: favs.sort((a, b) -> b.rarity.ordinal() - a.rarity.ordinal()); // Rarity (best)
-        }
-
-        // Album-style grid — click opens Album detail for that monster (all captures shown)
+        // Top 3 by quality — click opens Album Favourites detail view
         JPanel grid = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 6));
         grid.setOpaque(false);
         grid.setAlignmentX(Component.LEFT_ALIGNMENT);
