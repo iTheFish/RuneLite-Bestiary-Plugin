@@ -36,6 +36,7 @@ public class InfoTab extends JPanel {
 
     public InfoTab(BestiaryDataService dataService, ProgressionService progressionService,
                    Runnable openAlbum, Runnable openFavourites, Runnable openRecap,
+                   Runnable openCatchRates,
                    Consumer<DashboardDialog.DashView> openDashboard,
                    Consumer<DashboardDialog.DashView> exportDashboard) {
         this.dataService        = dataService;
@@ -63,7 +64,7 @@ public class InfoTab extends JPanel {
         // Live stats strip
         content.add(buildStatsStrip());
         content.add(Box.createVerticalStrut(6));
-        content.add(buildShortcutRow(openAlbum, openFavourites, openRecap));
+        content.add(buildShortcutRow(openAlbum, openFavourites, openRecap, openCatchRates));
         content.add(Box.createVerticalStrut(10));
 
         // Rarity quick-reference table
@@ -162,7 +163,8 @@ public class InfoTab extends JPanel {
         return l;
     }
 
-    private static JPanel buildShortcutRow(Runnable openAlbum, Runnable openFavourites, Runnable openRecap) {
+    private static JPanel buildShortcutRow(Runnable openAlbum, Runnable openFavourites,
+                                            Runnable openRecap, Runnable openCatchRates) {
         JPanel container = new JPanel();
         container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
         container.setOpaque(false);
@@ -175,13 +177,16 @@ public class InfoTab extends JPanel {
         topRow.add(shortcutBtn("Open Album",   ORANGE,                  openAlbum));
         topRow.add(shortcutBtn("★ Favourites", new Color(220, 180, 60), openFavourites));
 
-        JButton recapBtn = shortcutBtn("Session Recap", new Color(120, 200, 120), openRecap);
-        recapBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
-        recapBtn.setAlignmentX(LEFT_ALIGNMENT);
+        JPanel bottomRow = new JPanel(new GridLayout(1, 2, 4, 0));
+        bottomRow.setOpaque(false);
+        bottomRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+        bottomRow.setAlignmentX(LEFT_ALIGNMENT);
+        bottomRow.add(shortcutBtn("Session Recap", new Color(120, 200, 120), openRecap));
+        bottomRow.add(shortcutBtn("ℹ Catch Rates", new Color(100, 180, 220), openCatchRates));
 
         container.add(topRow);
         container.add(Box.createVerticalStrut(4));
-        container.add(recapBtn);
+        container.add(bottomRow);
         return container;
     }
 
