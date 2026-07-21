@@ -49,6 +49,56 @@ public class CardExportDialog extends JDialog {
         new CardExportDialog(owner, capture, collectionSupplier.get(), sharedImageService, dex);
     }
 
+    /** Copy a capture card directly to clipboard without opening the export dialog. */
+    public static void copyNow(Window owner, CapturedCreature capture) {
+        if (sharedImageService == null || collectionSupplier == null) return;
+        int dex = MonsterRoster.getDexNumber(capture.npcName);
+        String capturedBy = capture.playerName != null && !capture.playerName.isEmpty()
+                ? capture.playerName : "Unknown";
+        String cardId = CardId.encode(dex, capture);
+        AlbumCard card = new AlbumCard(dex, capture.npcName, List.of(capture),
+                collectionSupplier.get(), sharedImageService);
+        card.setShowQuality(true);
+        card.setSize(AlbumCard.CARD_W, AlbumCard.CARD_H);
+
+        int scale   = 3;
+        int bottomH = 28;
+        BufferedImage img = new BufferedImage(AlbumCard.CARD_W * scale,
+                (AlbumCard.CARD_H + bottomH) * scale, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2 = img.createGraphics();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,      RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,     RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g2.scale(scale, scale);
+        card.print(g2);
+        g2.setColor(new Color(12, 12, 12));
+        g2.fillRect(0, AlbumCard.CARD_H, AlbumCard.CARD_W, bottomH);
+        g2.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 6));
+        FontMetrics idFm = g2.getFontMetrics();
+        g2.setColor(new Color(90, 90, 90));
+        g2.drawString(cardId, (AlbumCard.CARD_W - idFm.stringWidth(cardId)) / 2, AlbumCard.CARD_H + 9);
+        g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 8f));
+        FontMetrics owFm = g2.getFontMetrics();
+        g2.setColor(new Color(200, 155, 50));
+        String ownerStr = "Captured by " + capturedBy;
+        g2.drawString(ownerStr, (AlbumCard.CARD_W - owFm.stringWidth(ownerStr)) / 2, AlbumCard.CARD_H + 22);
+        g2.dispose();
+
+        BufferedImage exported = img;
+        Transferable t = new Transferable() {
+            @Override public DataFlavor[] getTransferDataFlavors() { return new DataFlavor[]{DataFlavor.imageFlavor}; }
+            @Override public boolean isDataFlavorSupported(DataFlavor f) { return DataFlavor.imageFlavor.equals(f); }
+            @Override public Object getTransferData(DataFlavor f) throws UnsupportedFlavorException {
+                if (!DataFlavor.imageFlavor.equals(f)) throw new UnsupportedFlavorException(f);
+                return exported;
+            }
+        };
+        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(t, null);
+        if (onCopyAction != null) {
+            onCopyAction.accept("Card copied: " + capture.npcName + " — " + cardId);
+        }
+    }
+
     // -------------------------------------------------------------------------
 
     private final AlbumCard card;
@@ -68,6 +118,7 @@ public class CardExportDialog extends JDialog {
                 ? capture.playerName : "Unknown";
         this.npcName = capture.npcName;
         this.card    = new AlbumCard(dexNumber, capture.npcName, List.of(capture), collection, imageService);
+        this.card.setShowQuality(true);
         this.cardId = CardId.encode(dexNumber, capture);
         this.owner  = capturedBy;
 

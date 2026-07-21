@@ -620,6 +620,7 @@ public class AlbumDialog extends JDialog {
             AlbumCard card = new AlbumCard(dex, cap.npcName, List.of(cap), collection, imageService);
             card.setShowQuality(true);
             card.setClickOverride(() -> CardExportDialog.open(AlbumDialog.this, cap));
+            card.setCopyCallback(() -> CardExportDialog.copyNow(AlbumDialog.this, cap));
             gridPanel.add(card);
         }
 

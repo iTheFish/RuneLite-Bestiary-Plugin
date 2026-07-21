@@ -580,7 +580,7 @@ public class DashboardDialog extends JDialog {
                 rl.setForeground(MUTED);
                 JLabel cl = new JLabel("Kill #" + c.killsBeforeCapture + "  ·  Lv." + c.captureLevel);
                 cl.setFont(FontManager.getRunescapeSmallFont());
-                cl.setForeground(DIM);
+                cl.setForeground(new Color(210, 210, 210));
                 left.add(nl); left.add(rl); left.add(cl);
 
                 JLabel ql = new JLabel("Q:" + c.quality.overallRating());
@@ -1830,7 +1830,7 @@ public class DashboardDialog extends JDialog {
                 g.drawString(qs, W - PAD - fm.stringWidth(qs), y + fm.getAscent());
                 y += 15;
                 // Context line
-                g.setColor(DIM);
+                g.setColor(new Color(210, 210, 210));
                 String ctx = c.rarity.label + "  ·  Kill #" + c.killsBeforeCapture + "  ·  Lv." + c.captureLevel;
                 g.drawString(ctx, PAD + 4, y + fm.getAscent());
                 y += 19;

@@ -132,7 +132,7 @@ public class CollectionTab extends JPanel {
         subToggleRow.setOpaque(false);
 
         byRarityBtn  = new JToggleButton("By Rarity");
-        byMonsterBtn = new JToggleButton("By Monster");
+        byMonsterBtn = new JToggleButton("By Creature");
 
         styleToggleButton(byRarityBtn,  true);
         styleToggleButton(byMonsterBtn, false);

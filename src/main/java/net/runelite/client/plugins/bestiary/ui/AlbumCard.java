@@ -119,6 +119,10 @@ public class AlbumCard extends JPanel {
     @Nullable private Runnable unfavouriteCallback;
     public void setUnfavouriteCallback(Runnable r) { this.unfavouriteCallback = r; }
 
+    // If set, right-click menu shows "Copy Card" which fires this (instant clipboard copy)
+    @Nullable private Runnable copyCallback;
+    public void setCopyCallback(Runnable r) { this.copyCallback = r; }
+
     // -------------------------------------------------------------------------
     // Constructors
     // -------------------------------------------------------------------------
@@ -269,6 +273,12 @@ public class AlbumCard extends JPanel {
 
             private void showExportMenu(MouseEvent e) {
                 JPopupMenu menu = new JPopupMenu();
+                if (copyCallback != null) {
+                    JMenuItem copyItem = new JMenuItem("Copy Card");
+                    copyItem.addActionListener(ev -> copyCallback.run());
+                    menu.add(copyItem);
+                    menu.addSeparator();
+                }
                 if (unfavouriteCallback != null) {
                     JMenuItem unfavItem = new JMenuItem("✩ Remove Favourite");
                     unfavItem.addActionListener(ev -> unfavouriteCallback.run());

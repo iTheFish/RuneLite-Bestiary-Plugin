@@ -127,12 +127,9 @@ public class CaptureRow extends JPanel {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 if (SwingUtilities.isLeftMouseButton(e)) {
-                    List<CapturedCreature> allCaptures = collection.creatures.stream()
-                            .filter(c -> c.npcName.equals(capture.npcName))
-                            .collect(Collectors.toList());
                     new CreatureDetailDialog(
                             SwingUtilities.getWindowAncestor(CaptureRow.this),
-                            allCaptures, collection, "By Rarity", capture.rarity).setVisible(true);
+                            java.util.List.of(capture), collection, "Newest first", capture.rarity).setVisible(true);
                 }
             }
 
