@@ -395,39 +395,47 @@ public class AlbumCard extends JPanel {
         sfm = g2.getFontMetrics();
         int subBaseline = COMBAT_Y + (COMBAT_H + sfm.getAscent() - sfm.getDescent()) / 2;
 
+        int pillH = 12, pillPad = 4;
+        int pillY = COMBAT_Y + (COMBAT_H - pillH) / 2;
+        int pillBase = pillY + (pillH + sfm.getAscent() - sfm.getDescent()) / 2;
+
+        // Species badge — right-aligned, always shown
+        String speciesLabel = species.label;
+        int spW = sfm.stringWidth(speciesLabel) + pillPad * 2;
+        int spX = w - PAD - spW;
         if (!locked) {
-            String combatStr = (combatLevel > 0 ? "Lvl " + combatLevel : "Non-combat") + "  · " + combatClass.label;
-            g2.setColor(ColorScheme.LIGHT_GRAY_COLOR);
-            g2.drawString(combatStr, imgX + 2, subBaseline);
-            // Species badge right-aligned (below the difficulty badge)
-            String speciesLabel = species.label;
-            int spPad  = 4;
-            int spW    = sfm.stringWidth(speciesLabel) + spPad * 2;
-            int spH    = 12;
-            int spX    = w - PAD - spW;
-            int spY    = COMBAT_Y + (COMBAT_H - spH) / 2;
             g2.setColor(new Color(species.displayColor.getRed(), species.displayColor.getGreen(),
                     species.displayColor.getBlue(), 160));
-            g2.fillRoundRect(spX, spY, spW, spH, 4, 4);
-            g2.setColor(Color.WHITE);
-            g2.drawString(speciesLabel, spX + spPad,
-                    spY + (spH + sfm.getAscent() - sfm.getDescent()) / 2);
         } else {
+            g2.setColor(new Color(50, 50, 50));
+        }
+        g2.fillRoundRect(spX, pillY, spW, pillH, 4, 4);
+        g2.setColor(locked ? new Color(75, 75, 75) : Color.WHITE);
+        g2.drawString(speciesLabel, spX + pillPad, pillBase);
+
+        if (!locked) {
+            // Level pill — dark/black background, white text
+            String lvlLabel = combatLevel > 0 ? "Lvl " + combatLevel : "Non-combat";
+            int lvlW = sfm.stringWidth(lvlLabel) + pillPad * 2;
+            int lvlX = imgX + 2;
+            g2.setColor(new Color(12, 12, 12));
+            g2.fillRoundRect(lvlX, pillY, lvlW, pillH, 4, 4);
+            g2.setColor(Color.WHITE);
+            g2.drawString(lvlLabel, lvlX + pillPad, pillBase);
+
+            // Class pill — amber, same style as species
+            String clsLabel = combatClass.label;
+            int clsW = sfm.stringWidth(clsLabel) + pillPad * 2;
+            int clsX = lvlX + lvlW + 4;
+            g2.setColor(new Color(160, 110, 30, 180));
+            g2.fillRoundRect(clsX, pillY, clsW, pillH, 4, 4);
+            g2.setColor(Color.WHITE);
+            g2.drawString(clsLabel, clsX + pillPad, pillBase);
+        } else {
+            // Locked: plain kill count text
             g2.setColor(new Color(65, 65, 65));
             String killStr = killCount > 0 ? killCount + " kills" : "Not encountered";
             g2.drawString(killStr, imgX + 2, subBaseline);
-            // Species badge muted on locked cards
-            String speciesLabel = species.label;
-            int spPad  = 4;
-            int spW    = sfm.stringWidth(speciesLabel) + spPad * 2;
-            int spH    = 12;
-            int spX    = w - PAD - spW;
-            int spY    = COMBAT_Y + (COMBAT_H - spH) / 2;
-            g2.setColor(new Color(50, 50, 50));
-            g2.fillRoundRect(spX, spY, spW, spH, 4, 4);
-            g2.setColor(new Color(75, 75, 75));
-            g2.drawString(speciesLabel, spX + spPad,
-                    spY + (spH + sfm.getAscent() - sfm.getDescent()) / 2);
         }
 
         // --- Stat bars (captured) / empty outlines (locked) ---
