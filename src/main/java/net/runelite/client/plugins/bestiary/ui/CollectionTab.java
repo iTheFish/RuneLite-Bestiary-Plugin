@@ -269,6 +269,7 @@ public class CollectionTab extends JPanel {
     }
 
     public void openAlbum(Window parent, boolean startFavourites) {
+        CardExportDialog.disposeOpen();
         Map<String, List<CapturedCreature>> byNpc = dataService.getCollection().creatures.stream()
                 .collect(Collectors.groupingBy(c -> c.npcName));
         AlbumDialog.setOnFavouriteChanged(() -> { dataService.saveNow(); rebuildCards(); });

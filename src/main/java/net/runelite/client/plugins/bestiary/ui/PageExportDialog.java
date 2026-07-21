@@ -267,17 +267,18 @@ public class PageExportDialog extends JDialog {
     // -------------------------------------------------------------------------
 
     private static int defaultCols(int count) {
-        if (count <= 1) return 1;
-        if (count <= 4) return 2;
+        if (count <= 1)  return 1;
+        if (count <= 6)  return 2;
+        if (count <= 12) return 3;
         return 4;
     }
 
     private static int[] colOptions(int count) {
         if (count <= 1) return new int[]{1};
         List<Integer> opts = new ArrayList<>();
-        if (count >= 2) opts.add(2);
-        if (count >= 3) opts.add(3);
-        if (count >= 4) opts.add(4);
+        if (count >= 2 && count <= 6)  opts.add(2);
+        if (count >= 3 && count <= 12) opts.add(3);
+        if (count >= 4)                opts.add(4);
         return opts.stream().mapToInt(i -> i).toArray();
     }
 }

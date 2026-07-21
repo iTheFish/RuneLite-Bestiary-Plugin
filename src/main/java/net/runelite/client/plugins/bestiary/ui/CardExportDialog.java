@@ -32,6 +32,13 @@ public class CardExportDialog extends JDialog {
     private static WikiImageService sharedImageService;
     private static Supplier<BestiaryCollection> collectionSupplier;
     private static Consumer<String> onCopyAction;
+    private static CardExportDialog openInstance;
+
+    /** Close any open CardExportDialog — called when Album opens. */
+    public static void disposeOpen() {
+        if (openInstance != null && openInstance.isDisplayable()) openInstance.dispose();
+        openInstance = null;
+    }
 
     public static void setShared(WikiImageService imgSvc, Supplier<BestiaryCollection> supplier) {
         sharedImageService = imgSvc;
@@ -190,9 +197,14 @@ public class CardExportDialog extends JDialog {
         content.add(Box.createVerticalStrut(10));
         content.add(btnRow);
 
-        // Clean up card's shimmer registration when dialog closes
+        // Track open instance; clean up shimmer registration on close
+        if (openInstance != null && openInstance.isDisplayable()) openInstance.dispose();
+        openInstance = this;
         addWindowListener(new java.awt.event.WindowAdapter() {
-            @Override public void windowClosed(java.awt.event.WindowEvent e) { card.removeNotify(); }
+            @Override public void windowClosed(java.awt.event.WindowEvent e) {
+                card.removeNotify();
+                if (openInstance == CardExportDialog.this) openInstance = null;
+            }
         });
 
         setContentPane(content);
