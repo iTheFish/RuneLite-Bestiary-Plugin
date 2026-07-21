@@ -261,29 +261,29 @@ public class CardExportDialog extends JDialog {
         return false;
     }
 
-    /** Draws 3-line banner (OSRS|BESTIARY / UniqueID / Captured by) vertically centred in the banner rect. */
+    /** Draws 3-line banner (UniqueID / Captured by / OSRS|BESTIARY) vertically centred in the banner rect. */
     static void drawBanner(Graphics2D g2, int bX, int bY, int bannerW, int bannerH, String cardId, String ownerStr) {
-        Font brandFont  = FontManager.getRunescapeSmallFont().deriveFont(8f);
         Font idFont     = FontManager.getRunescapeSmallFont().deriveFont(7f);
         Font playerFont = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 10f);
-        g2.setFont(brandFont);  FontMetrics bfm = g2.getFontMetrics();
+        Font brandFont  = FontManager.getRunescapeSmallFont().deriveFont(8f);
         g2.setFont(idFont);     FontMetrics ifm = g2.getFontMetrics();
         g2.setFont(playerFont); FontMetrics pfm = g2.getFontMetrics();
+        g2.setFont(brandFont);  FontMetrics bfm = g2.getFontMetrics();
         int gap    = 2;
-        int totalH = bfm.getHeight() + gap + ifm.getHeight() + gap + pfm.getHeight();
+        int totalH = ifm.getHeight() + gap + pfm.getHeight() + gap + bfm.getHeight();
         int startY = bY + Math.max(2, (bannerH - totalH) / 2);
+        g2.setFont(idFont);
+        g2.setColor(new Color(90, 90, 90));
+        g2.drawString(cardId, bX + (bannerW - ifm.stringWidth(cardId)) / 2, startY + ifm.getAscent());
+        g2.setFont(playerFont);
+        g2.setColor(new Color(200, 155, 50));
+        int y2 = startY + ifm.getHeight() + gap;
+        g2.drawString(ownerStr, bX + (bannerW - pfm.stringWidth(ownerStr)) / 2, y2 + pfm.getAscent());
         String brand = "OSRS | BESTIARY";
         g2.setFont(brandFont);
         g2.setColor(new Color(110, 110, 110));
-        g2.drawString(brand, bX + (bannerW - bfm.stringWidth(brand)) / 2, startY + bfm.getAscent());
-        g2.setFont(idFont);
-        g2.setColor(new Color(90, 90, 90));
-        int y2 = startY + bfm.getHeight() + gap;
-        g2.drawString(cardId, bX + (bannerW - ifm.stringWidth(cardId)) / 2, y2 + ifm.getAscent());
-        g2.setFont(playerFont);
-        g2.setColor(new Color(200, 155, 50));
-        int y3 = y2 + ifm.getHeight() + gap;
-        g2.drawString(ownerStr, bX + (bannerW - pfm.stringWidth(ownerStr)) / 2, y3 + pfm.getAscent());
+        int y3 = y2 + pfm.getHeight() + gap;
+        g2.drawString(brand, bX + (bannerW - bfm.stringWidth(brand)) / 2, y3 + bfm.getAscent());
     }
 
     private static void flash(JButton btn, String label) {
