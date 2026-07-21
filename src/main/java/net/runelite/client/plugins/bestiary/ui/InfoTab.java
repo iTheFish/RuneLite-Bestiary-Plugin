@@ -182,7 +182,9 @@ public class InfoTab extends JPanel {
         bottomRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
         bottomRow.setAlignmentX(LEFT_ALIGNMENT);
         bottomRow.add(shortcutBtn("Session Recap", new Color(120, 200, 120), openRecap));
-        bottomRow.add(shortcutBtn("ℹ Catch Rates", new Color(100, 180, 220), openCatchRates));
+        JButton catchBtn = shortcutBtn("ℹ Catch Rates", new Color(100, 180, 220), openCatchRates);
+        catchBtn.setBackground(Color.WHITE);
+        bottomRow.add(catchBtn);
 
         container.add(topRow);
         container.add(Box.createVerticalStrut(4));
