@@ -486,7 +486,8 @@ public class CollectionTab extends JPanel {
         }
 
         // Top 3 by quality — click opens Album Favourites detail view
-        JPanel grid = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 6));
+        JPanel grid = new JPanel();
+        grid.setLayout(new BoxLayout(grid, BoxLayout.Y_AXIS));
         grid.setOpaque(false);
         grid.setAlignmentX(Component.LEFT_ALIGNMENT);
         Runnable onFav = () -> { dataService.saveNow(); rebuildCards(); };

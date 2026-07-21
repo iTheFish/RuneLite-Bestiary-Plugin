@@ -758,19 +758,17 @@ public class AlbumDialog extends JDialog {
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                int drawW = AlbumCard.CARD_W;
-                int drawH = AlbumCard.CARD_H;
-                int offX  = (getWidth()  - drawW) / 2;
-                int offY  = (getHeight() - drawH) / 2;
+                int w = getWidth();
+                int h = AlbumCard.CARD_H; // fixed height, same as AlbumCard
                 g2.setColor(new Color(40, 32, 8));
-                g2.fillRoundRect(offX, offY, drawW, drawH, 8, 8);
+                g2.fillRoundRect(0, 0, w, h, 8, 8);
                 g2.setColor(new Color(100, 78, 10));
-                g2.drawRoundRect(offX, offY, drawW - 1, drawH - 1, 8, 8);
+                g2.drawRoundRect(0, 0, w - 1, h - 1, 8, 8);
 
-                int cx = offX + drawW / 2;
+                int cx = w / 2;
                 g2.setFont(new Font(Font.DIALOG, Font.BOLD, 28));
                 FontMetrics sfm = g2.getFontMetrics();
-                int starY = offY + drawH / 2 - sfm.getHeight() / 2 + sfm.getAscent() - 20;
+                int starY = h / 2 - sfm.getHeight() / 2 + sfm.getAscent() - 20;
                 g2.setColor(new Color(255, 195, 40));
                 g2.drawString("★", cx - sfm.stringWidth("★") / 2, starY);
 
@@ -1008,7 +1006,7 @@ public class AlbumDialog extends JDialog {
             FontMetrics ifm = g2.getFontMetrics();
             int idX = x + (AlbumCard.CARD_W - ifm.stringWidth(cardId)) / 2;
             g2.setColor(new Color(90, 90, 90));
-            g2.drawString(cardId, idX, bY + pfm.getHeight() + ifm.getAscent() - 1);
+            g2.drawString(cardId, idX, bY + pfm.getHeight() + ifm.getAscent() + 2);
         }
         g2.dispose();
 
