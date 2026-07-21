@@ -138,6 +138,15 @@ public class BestiaryDataService {
         return progressionState;
     }
 
+    public long getCredits() {
+        return collection.credits;
+    }
+
+    public void awardCredits(long amount) {
+        collection.credits += amount;
+        scheduleSave();
+    }
+
     // --- Internal ---
 
     /** Upgrades captures that stored raw "Region N" IDs before RegionNames existed. */

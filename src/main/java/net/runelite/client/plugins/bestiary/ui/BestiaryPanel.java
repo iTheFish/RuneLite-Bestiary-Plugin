@@ -31,6 +31,7 @@ public class BestiaryPanel extends PluginPanel {
     private CollectionTab collectionTab;
     private ProgressTab progressTab;
     private InfoTab infoTab;
+    private ShopTab shopTab;
 
     @Inject
     public BestiaryPanel(BestiaryDataService dataService, ProgressionService progressionService,
@@ -75,6 +76,7 @@ public class BestiaryPanel extends PluginPanel {
         // Tabs
         collectionTab = new CollectionTab(dataService, imageService);
         progressTab   = new ProgressTab(progressionService, sessionTracker);
+        shopTab       = new ShopTab(dataService, progressionService);
 
         JTabbedPane tabs = new JTabbedPane();
         tabs.setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -90,6 +92,7 @@ public class BestiaryPanel extends PluginPanel {
 
         tabs.addTab("Info",       infoTab);
         tabs.addTab("Collection", collectionTab);
+        tabs.addTab("Shop",       shopTab);
         tabs.addTab("Progress",   progressTab);
 
         add(header,          BorderLayout.NORTH);
@@ -143,6 +146,7 @@ public class BestiaryPanel extends PluginPanel {
         statsLabel.setText(species + " species  |  " + captures + " captures");
 
         collectionTab.refresh();
+        shopTab.refresh();
         progressTab.refresh();
         infoTab.refresh();
     }

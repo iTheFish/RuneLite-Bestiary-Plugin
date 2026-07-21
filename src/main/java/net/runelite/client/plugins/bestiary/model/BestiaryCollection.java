@@ -20,6 +20,9 @@ public class BestiaryCollection {
     /** npcName -> total successful captures. */
     public Map<String, Integer> captureCountByNpc = new HashMap<>();
 
+    /** Bestiary Credits — earned on capture, spent in the Shop. */
+    public long credits = 0;
+
     // --- mutators called by BestiaryDataService ---
 
     public void addCapture(CapturedCreature c) {
