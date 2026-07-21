@@ -8,7 +8,6 @@ import net.runelite.api.NPC;
 import net.runelite.api.events.ActorDeath;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.HitsplatApplied;
-import net.runelite.api.events.InteractingChanged;
 import net.runelite.api.events.NpcDespawned;
 
 import javax.inject.Inject;
@@ -20,10 +19,11 @@ import java.util.Optional;
 /**
  * Tracks which NPCs the local player is fighting and confirms kills.
  *
- * Primary kill signal:  {@link ActorDeath} \u00e2\u20ac" fires when any actor's health hits 0.
- * Combat tracking:      {@link HitsplatApplied} with {@code hitsplat.isMine()} to identify
- *                       NPCs the local player is actively damaging.
- * Backup tracking:      {@link InteractingChanged} for the initial attack target.
+ * Kill signal:     {@link ActorDeath} fires when any actor's health hits 0.
+ * Combat tracking: {@link HitsplatApplied} with {@code hitsplat.isMine()} \u2014 only NPCs the
+ *                  local player has dealt at least 1 damage to are eligible for a kill credit.
+ *                  InteractingChanged is intentionally NOT used: clicking a monster in
+ *                  single combat (0 damage dealt) must not award a kill.
  */
 @Slf4j
 @Singleton
@@ -57,23 +57,6 @@ public class KillTracker {
         NPC npc = (NPC) actor;
         attackedNpcs.put(npc.getIndex(), npc);
         log.debug("Hitsplat on {} (index {})", npc.getName(), npc.getIndex());
-    }
-
-    /**
-     * Backup: record the initial interaction target when the player first clicks
-     * to attack an NPC (before the first hitsplat lands).
-     */
-    public void onInteractingChanged(InteractingChanged event) {
-        Actor source = event.getSource();
-        if (source != client.getLocalPlayer()) {
-            return;
-        }
-        Actor target = event.getTarget();
-        if (target instanceof NPC) {
-            NPC npc = (NPC) target;
-            attackedNpcs.put(npc.getIndex(), npc);
-            log.debug("Interacting with {} (index {})", npc.getName(), npc.getIndex());
-        }
     }
 
     /**

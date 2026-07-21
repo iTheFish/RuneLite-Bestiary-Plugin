@@ -21,7 +21,6 @@ import net.runelite.api.events.ActorDeath;
 import net.runelite.api.GameState;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.HitsplatApplied;
-import net.runelite.api.events.InteractingChanged;
 import net.runelite.api.events.NpcDespawned;
 import net.runelite.client.chat.ChatColorType;
 import net.runelite.client.chat.ChatMessageBuilder;
@@ -150,11 +149,6 @@ public class BestiaryPlugin extends Plugin {
     @Subscribe
     public void onNpcDespawned(NpcDespawned event) {
         killTracker.onNpcDespawned(event);
-    }
-
-    @Subscribe
-    public void onInteractingChanged(InteractingChanged event) {
-        killTracker.onInteractingChanged(event);
     }
 
     @Subscribe
