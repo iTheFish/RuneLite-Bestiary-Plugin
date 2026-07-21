@@ -231,8 +231,8 @@ public class PageExportDialog extends JDialog {
         g2.drawString(headerText, (logW - hfm.stringWidth(headerText)) / 2,
                 (HEADER_H + hfm.getAscent() - hfm.getDescent()) / 2);
 
-        Font idFont     = FontManager.getRunescapeSmallFont();
-        Font playerFont = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD);
+        Font idFont     = FontManager.getRunescapeSmallFont().deriveFont(8f);
+        Font playerFont = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 8f);
 
         for (int i = 0; i < count; i++) {
             CapturedCreature cap = captures.get(i);

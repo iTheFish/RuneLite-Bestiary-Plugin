@@ -422,7 +422,8 @@ public class AlbumCard extends JPanel {
             g2.fillRoundRect(0, 0, w, CARD_H, 8, 8);
             g2.setColor(LOCKED_ACCENT);
         } else {
-            g2.setColor(hovered ? HOVER_BG : NORMAL_BG);
+            boolean shimmerLit = shimmerTimer != null && shimmerTimer.isRunning();
+            g2.setColor((hovered || shimmerLit) ? HOVER_BG : NORMAL_BG);
             g2.fillRoundRect(0, 0, w, CARD_H, 8, 8);
             g2.setColor(rarest.displayColor);
         }
