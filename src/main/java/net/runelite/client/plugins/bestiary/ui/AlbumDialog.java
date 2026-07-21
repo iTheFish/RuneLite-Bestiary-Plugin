@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 /**
  * Resizable Pokédex-style grid showing every known monster — captured ones in
  * full colour, uncaptured locked slots in dark grey. Columns reflow on resize.
+ * Clicking a captured card drills into a paginated detail view for that monster.
  */
 public class AlbumDialog extends JDialog {
 
@@ -60,7 +61,7 @@ public class AlbumDialog extends JDialog {
     private final JPanel gridPanel;
     private final JLabel countLabel;
 
-    // Fields for cross-listener access
+    // Catalog bar controls
     private JComboBox<String> sortBox;
     private JToggleButton     favOnlyBtn;
     private JToggleButton     showLockedBtn;
@@ -68,12 +69,27 @@ public class AlbumDialog extends JDialog {
     private JPanel            exportRow;
     private JLabel            exportHint;
 
+    // Catalog state
     private String         currentSort      = "Name A–Z";
     private boolean        capturedFirst    = true;
     private boolean        favouritesOnly   = false;
     private boolean        showLocked       = true;
     private String         searchTerm       = "";
     private DifficultyTier filterDifficulty = null;
+
+    // Detail view state
+    private String detailMonsterName = null;
+    private int    detailPage        = 0;
+    private int    detailPageSize    = 8;
+    private String detailSort        = "Rarity (best)";
+
+    // Detail bar controls
+    private JPanel            topBarHolder;
+    private JLabel            detailTitleLabel;
+    private JLabel            detailPageLabel;
+    private JComboBox<String> detailSortBox;
+    private JButton           prevPageBtn;
+    private JButton           nextPageBtn;
 
     public AlbumDialog(Window owner, Map<String, List<CapturedCreature>> capturesByNpc,
                        Map<String, Integer> killCounts, BestiaryCollection collection,
@@ -92,7 +108,7 @@ public class AlbumDialog extends JDialog {
         setResizable(true);
 
         // -------------------------------------------------------------------------
-        // Top bar
+        // Catalog top bar
         // -------------------------------------------------------------------------
         JPanel topBar = new JPanel();
         topBar.setLayout(new BoxLayout(topBar, BoxLayout.Y_AXIS));
@@ -125,7 +141,6 @@ public class AlbumDialog extends JDialog {
         capturedFirstBtn = new JToggleButton();
         capturedFirstBtn.setSelected(capturedFirst);
         styleCapturedFirstBtn(capturedFirstBtn, capturedFirst);
-        // Fixed size prevents layout shift when the button is made invisible
         capturedFirstBtn.setPreferredSize(new Dimension(90, 22));
         capturedFirstBtn.setMinimumSize(new Dimension(90, 22));
 
@@ -227,7 +242,7 @@ public class AlbumDialog extends JDialog {
         topBar.add(exportRow);
 
         // -------------------------------------------------------------------------
-        // Action listeners (declared after all fields are initialised)
+        // Catalog action listeners (declared after all fields are initialised)
         // -------------------------------------------------------------------------
         sortBox.addActionListener(e -> {
             String sel = (String) sortBox.getSelectedItem();
@@ -247,8 +262,6 @@ public class AlbumDialog extends JDialog {
         showLockedBtn.addActionListener(e -> {
             showLocked = showLockedBtn.isSelected();
             styleShowLockedBtn(showLockedBtn, showLocked);
-            // Don't use setVisible — it collapses the component and shifts layout.
-            // Instead, make the button appear invisible while it still occupies its fixed size.
             if (showLocked) {
                 capturedFirstBtn.setEnabled(true);
                 capturedFirstBtn.setContentAreaFilled(true);
@@ -282,6 +295,118 @@ public class AlbumDialog extends JDialog {
         });
 
         // -------------------------------------------------------------------------
+        // Detail top bar
+        // -------------------------------------------------------------------------
+        JPanel detailBar = new JPanel();
+        detailBar.setLayout(new BoxLayout(detailBar, BoxLayout.Y_AXIS));
+        detailBar.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        detailBar.setBorder(new EmptyBorder(6, 8, 6, 8));
+
+        // Detail row 1: Back | Monster name + count | Page size [8][12][16]
+        JPanel dRow1 = new JPanel(new BorderLayout(6, 0));
+        dRow1.setOpaque(false);
+        dRow1.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+
+        JButton backBtn = new JButton("← Back");
+        backBtn.setFont(FontManager.getRunescapeSmallFont());
+        backBtn.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        backBtn.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+        backBtn.setFocusPainted(false);
+        backBtn.addActionListener(e -> showCatalog());
+
+        detailTitleLabel = new JLabel();
+        detailTitleLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        detailTitleLabel.setForeground(Color.WHITE);
+        detailTitleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        JPanel pageSizePanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
+        pageSizePanel.setOpaque(false);
+        ButtonGroup pageSizeGroup = new ButtonGroup();
+        for (int ps : new int[]{8, 12, 16}) {
+            final int size = ps;
+            JToggleButton pb = new JToggleButton(String.valueOf(ps));
+            pb.setFont(FontManager.getRunescapeSmallFont());
+            pb.setMargin(new Insets(1, 5, 1, 5));
+            pb.setFocusPainted(false);
+            pb.setSelected(ps == detailPageSize);
+            pb.addActionListener(e -> {
+                detailPageSize = size;
+                detailPage = 0;
+                rebuildGrid();
+            });
+            pageSizeGroup.add(pb);
+            pageSizePanel.add(pb);
+        }
+
+        dRow1.add(backBtn,        BorderLayout.WEST);
+        dRow1.add(detailTitleLabel, BorderLayout.CENTER);
+        dRow1.add(pageSizePanel,  BorderLayout.EAST);
+
+        // Detail row 2: Sort | ← Prev | page X / Y | Next →
+        JPanel dRow2 = new JPanel(new BorderLayout(6, 0));
+        dRow2.setOpaque(false);
+        dRow2.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
+        dRow2.setBorder(new EmptyBorder(4, 0, 0, 0));
+
+        JLabel dSortLabel = new JLabel("Sort:");
+        dSortLabel.setFont(FontManager.getRunescapeSmallFont());
+        dSortLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+
+        detailSortBox = new JComboBox<>(new String[]{"Rarity (best)", "Quality (high)", "Newest first"});
+        detailSortBox.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        detailSortBox.setForeground(Color.WHITE);
+        detailSortBox.setFont(FontManager.getRunescapeSmallFont());
+        detailSortBox.addActionListener(e -> {
+            detailSort = (String) detailSortBox.getSelectedItem();
+            detailPage = 0;
+            rebuildGrid();
+        });
+
+        JPanel dSortRow = new JPanel(new BorderLayout(4, 0));
+        dSortRow.setOpaque(false);
+        dSortRow.add(dSortLabel,    BorderLayout.WEST);
+        dSortRow.add(detailSortBox, BorderLayout.CENTER);
+
+        prevPageBtn = new JButton("← Prev");
+        prevPageBtn.setFont(FontManager.getRunescapeSmallFont());
+        prevPageBtn.setForeground(Color.WHITE);
+        prevPageBtn.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        prevPageBtn.setFocusPainted(false);
+        prevPageBtn.addActionListener(e -> { if (detailPage > 0) { detailPage--; rebuildGrid(); } });
+
+        detailPageLabel = new JLabel("1 / 1");
+        detailPageLabel.setFont(FontManager.getRunescapeSmallFont());
+        detailPageLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+        detailPageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        detailPageLabel.setPreferredSize(new Dimension(50, 16));
+
+        nextPageBtn = new JButton("Next →");
+        nextPageBtn.setFont(FontManager.getRunescapeSmallFont());
+        nextPageBtn.setForeground(Color.WHITE);
+        nextPageBtn.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        nextPageBtn.setFocusPainted(false);
+        nextPageBtn.addActionListener(e -> { detailPage++; rebuildGrid(); });
+
+        JPanel pageNavPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+        pageNavPanel.setOpaque(false);
+        pageNavPanel.add(prevPageBtn);
+        pageNavPanel.add(detailPageLabel);
+        pageNavPanel.add(nextPageBtn);
+
+        dRow2.add(dSortRow,     BorderLayout.CENTER);
+        dRow2.add(pageNavPanel, BorderLayout.EAST);
+
+        detailBar.add(dRow1);
+        detailBar.add(dRow2);
+
+        // -------------------------------------------------------------------------
+        // Top-bar card holder (catalog vs detail)
+        // -------------------------------------------------------------------------
+        topBarHolder = new JPanel(new CardLayout());
+        topBarHolder.add(topBar,   "CATALOG");
+        topBarHolder.add(detailBar, "DETAIL");
+
+        // -------------------------------------------------------------------------
         // Grid + scroll
         // -------------------------------------------------------------------------
         gridPanel = new JPanel();
@@ -299,8 +424,8 @@ public class AlbumDialog extends JDialog {
 
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(ColorScheme.DARK_GRAY_COLOR);
-        root.add(topBar, BorderLayout.NORTH);
-        root.add(scroll, BorderLayout.CENTER);
+        root.add(topBarHolder, BorderLayout.NORTH);
+        root.add(scroll,       BorderLayout.CENTER);
 
         setContentPane(root);
         setSize(savedSize != null ? savedSize : new Dimension(DEFAULT_W, DEFAULT_H));
@@ -325,11 +450,35 @@ public class AlbumDialog extends JDialog {
     }
 
     // -------------------------------------------------------------------------
+    // Detail view navigation
+    // -------------------------------------------------------------------------
+
+    private void showDetail(String name) {
+        detailMonsterName = name;
+        detailPage = 0;
+        detailSort = "Rarity (best)";
+        detailSortBox.setSelectedItem("Rarity (best)");
+        ((CardLayout) topBarHolder.getLayout()).show(topBarHolder, "DETAIL");
+        rebuildGrid();
+    }
+
+    private void showCatalog() {
+        detailMonsterName = null;
+        ((CardLayout) topBarHolder.getLayout()).show(topBarHolder, "CATALOG");
+        rebuildGrid();
+    }
+
+    // -------------------------------------------------------------------------
     // Grid construction
     // -------------------------------------------------------------------------
 
     private void rebuildGrid() {
         gridPanel.removeAll();
+
+        if (detailMonsterName != null) {
+            buildDetailView();
+            return;
+        }
 
         int viewW = gridPanel.getParent() != null ? gridPanel.getParent().getWidth() : DEFAULT_W - SIDE_PAD * 2;
         if (viewW <= 0) viewW = DEFAULT_W - SIDE_PAD * 2;
@@ -370,7 +519,7 @@ public class AlbumDialog extends JDialog {
             return;
         }
 
-        // ---- Normal mode ----
+        // ---- Normal catalog mode ----
         countLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 
         String lc = searchTerm.toLowerCase();
@@ -410,11 +559,68 @@ public class AlbumDialog extends JDialog {
         for (String name : ordered) {
             int dexNum = dexNumbers.getOrDefault(name, 0);
             if (capturesByNpc.containsKey(name)) {
-                gridPanel.add(new AlbumCard(dexNum, name, capturesByNpc.get(name), collection, imageService));
+                AlbumCard card = new AlbumCard(dexNum, name, capturesByNpc.get(name), collection, imageService);
+                card.setClickOverride(() -> showDetail(name));
+                gridPanel.add(card);
             } else if (showLocked) {
                 int kills = killCounts.getOrDefault(name, 0);
                 gridPanel.add(new AlbumCard(dexNum, name, kills, imageService));
             }
+        }
+
+        gridPanel.revalidate();
+        gridPanel.repaint();
+    }
+
+    private void buildDetailView() {
+        List<CapturedCreature> caps = capturesByNpc.getOrDefault(detailMonsterName, Collections.emptyList());
+
+        // Sort
+        List<CapturedCreature> sorted = new ArrayList<>(caps);
+        switch (detailSort == null ? "Rarity (best)" : detailSort) {
+            case "Quality (high)":
+                sorted.sort(Comparator.comparingInt((CapturedCreature c) -> c.quality.overallRating()).reversed());
+                break;
+            case "Newest first":
+                sorted.sort(Comparator.comparing((CapturedCreature c) -> c.captureTime, Comparator.reverseOrder()));
+                break;
+            default: // "Rarity (best)"
+                sorted.sort(Comparator.comparingInt((CapturedCreature c) -> c.rarity.ordinal()).reversed()
+                        .thenComparingInt(c -> -c.quality.overallRating()));
+                break;
+        }
+
+        int total      = sorted.size();
+        int totalPages = Math.max(1, (total + detailPageSize - 1) / detailPageSize);
+        detailPage = Math.max(0, Math.min(detailPage, totalPages - 1));
+
+        // Update header
+        CreatureRarity best = total > 0 ? sorted.stream()
+                .map(c -> c.rarity)
+                .max(Comparator.comparingInt(Enum::ordinal))
+                .orElse(CreatureRarity.COMMON) : CreatureRarity.COMMON;
+        detailTitleLabel.setText(detailMonsterName + " — " + total + " capture" + (total == 1 ? "" : "s"));
+        detailTitleLabel.setForeground(best.displayColor);
+        detailPageLabel.setText((detailPage + 1) + " / " + totalPages);
+        prevPageBtn.setEnabled(detailPage > 0);
+        nextPageBtn.setEnabled(detailPage < totalPages - 1);
+
+        // Build grid for this page
+        int viewW = gridPanel.getParent() != null ? gridPanel.getParent().getWidth() : DEFAULT_W - SIDE_PAD * 2;
+        if (viewW <= 0) viewW = DEFAULT_W - SIDE_PAD * 2;
+        int cols = Math.max(1, (viewW - SIDE_PAD * 2 + CARD_GAP) / (AlbumCard.CARD_W + CARD_GAP));
+        gridPanel.setLayout(new GridLayout(0, cols, CARD_GAP, CARD_GAP));
+        gridPanel.setBorder(new EmptyBorder(SIDE_PAD, SIDE_PAD, SIDE_PAD, SIDE_PAD));
+
+        int from = detailPage * detailPageSize;
+        int to   = Math.min(from + detailPageSize, total);
+
+        for (CapturedCreature cap : sorted.subList(from, to)) {
+            int dex = dexNumbers.getOrDefault(cap.npcName, 0);
+            AlbumCard card = new AlbumCard(dex, cap.npcName, List.of(cap), collection, imageService);
+            card.setShowQuality(true);
+            card.setClickOverride(() -> CardExportDialog.open(AlbumDialog.this, cap));
+            gridPanel.add(card);
         }
 
         gridPanel.revalidate();
@@ -432,13 +638,13 @@ public class AlbumDialog extends JDialog {
                 return Comparator.comparingInt((CapturedCreature c) -> c.quality.overallRating()).reversed();
             case "Name A–Z":
                 return Comparator.comparing((CapturedCreature c) -> c.npcName, String.CASE_INSENSITIVE_ORDER);
-            default: // "Newest first" and any others
+            default: // "Newest first"
                 return Comparator.comparing((CapturedCreature c) -> c.captureTime, Comparator.reverseOrder());
         }
     }
 
     // -------------------------------------------------------------------------
-    // Sorting (normal mode)
+    // Sorting (catalog mode)
     // -------------------------------------------------------------------------
 
     private void sortNames(List<String> names, boolean isCaptured) {
@@ -562,7 +768,7 @@ public class AlbumDialog extends JDialog {
     }
 
     // -------------------------------------------------------------------------
-    // Favourites grid export — one card per starred capture, up to 9
+    // Favourites grid export
     // -------------------------------------------------------------------------
 
     private void exportFavouritesGrid(JButton btn) {
@@ -609,11 +815,9 @@ public class AlbumDialog extends JDialog {
         g2.setRenderingHint(RenderingHints.KEY_RENDERING,         RenderingHints.VALUE_RENDER_QUALITY);
         g2.scale(SCALE, SCALE);
 
-        // Background
         g2.setColor(new Color(18, 18, 18));
         g2.fillRect(0, 0, logW, logH);
 
-        // Header strip
         g2.setColor(new Color(28, 28, 28));
         g2.fillRect(0, 0, logW, HEADER_H);
         String headerText = playerName + "'s Favourites";
@@ -624,7 +828,6 @@ public class AlbumDialog extends JDialog {
         g2.setColor(new Color(255, 195, 40));
         g2.drawString(headerText, hx, hy);
 
-        // Cards + per-card banners
         Font playerFont = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD);
         Font idFont     = FontManager.getRunescapeSmallFont();
 
@@ -644,7 +847,6 @@ public class AlbumDialog extends JDialog {
             card.print(cardG2);
             cardG2.dispose();
 
-            // Banner below card
             int bY = y + AlbumCard.CARD_H + 2;
             g2.setColor(new Color(25, 25, 25));
             g2.fillRoundRect(x, bY, AlbumCard.CARD_W, BANNER_H, 4, 4);
