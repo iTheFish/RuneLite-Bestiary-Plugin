@@ -483,11 +483,19 @@ public class CollectionTab extends JPanel {
             default: favs.sort((a, b) -> b.rarity.ordinal() - a.rarity.ordinal()); // Rarity (best)
         }
 
+        // Album-style grid — one AlbumCard per starred capture
+        JPanel grid = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 6));
+        grid.setOpaque(false);
+        grid.setAlignmentX(Component.LEFT_ALIGNMENT);
         Runnable onFav = () -> { dataService.saveNow(); rebuildCards(); };
         for (CapturedCreature c : favs) {
-            cardContainer.add(new CaptureRow(c, dataService.getCollection(), onFav));
-            cardContainer.add(Box.createVerticalStrut(2));
+            int dex = net.runelite.client.plugins.bestiary.model.MonsterRoster.getDexNumber(c.npcName);
+            AlbumCard card = new AlbumCard(dex, c.npcName,
+                    java.util.List.of(c), dataService.getCollection(), imageService);
+            card.setUnfavouriteCallback(() -> { c.favourite = false; onFav.run(); });
+            grid.add(card);
         }
+        cardContainer.add(grid);
     }
 
     // -------------------------------------------------------------------------

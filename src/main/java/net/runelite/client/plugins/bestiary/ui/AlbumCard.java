@@ -80,10 +80,25 @@ public class AlbumCard extends JPanel {
     @Nullable private final List<CreatureRarity> rarityDots;
     private final int combatLevel;
     private final int[] avgStats;
+    private final int overallQuality; // 0 for locked
 
     // Locked-only
     private final int killCount;
     private final boolean hasShiny;
+
+    // Shimmer callback: called each repaint tick so an external panel can stay in sync
+    @Nullable private Runnable shimmerCallback;
+    public void setShimmerCallback(Runnable cb) { shimmerCallback = cb; }
+    public void hoverStart() {
+        hovered = true;
+        if (shimmerTimer != null) { shimmerPhase = 0f; shimmerTimer.restart(); }
+    }
+    public void hoverStop() {
+        hovered = false;
+        if (shimmerTimer != null) shimmerTimer.stop();
+        repaint();
+        if (shimmerCallback != null) shimmerCallback.run();
+    }
 
     // Optional override: if set, clicking opens detail dialog with these captures instead of `captures`
     @Nullable private List<CapturedCreature> detailCaptures;
@@ -145,10 +160,11 @@ public class AlbumCard extends JPanel {
             best.quality.vitality,
         };
 
-        this.difficulty = MonsterRoster.getDifficulty(npcName, combatLevel);
-        this.combatClass = MonsterRoster.getCombatClass(npcName, combatLevel);
-        this.species    = MonsterRoster.getSpecies(npcName, combatLevel);
-        this.hasShiny   = captures.stream().anyMatch(CapturedCreature::isShiny);
+        this.difficulty     = MonsterRoster.getDifficulty(npcName, combatLevel);
+        this.combatClass    = MonsterRoster.getCombatClass(npcName, combatLevel);
+        this.species        = MonsterRoster.getSpecies(npcName, combatLevel);
+        this.hasShiny       = captures.stream().anyMatch(CapturedCreature::isShiny);
+        this.overallQuality = best.quality.overallRating();
         init(imageService, true);
     }
 
@@ -167,10 +183,11 @@ public class AlbumCard extends JPanel {
         this.rarityDots   = null;
         this.avgStats     = new int[6];
 
-        this.difficulty = MonsterRoster.getDifficulty(npcName, 0);
-        this.combatClass = MonsterRoster.getCombatClass(npcName, 0);
-        this.species    = MonsterRoster.getSpecies(npcName, 0);
-        this.hasShiny   = false;
+        this.difficulty     = MonsterRoster.getDifficulty(npcName, 0);
+        this.combatClass    = MonsterRoster.getCombatClass(npcName, 0);
+        this.species        = MonsterRoster.getSpecies(npcName, 0);
+        this.hasShiny       = false;
+        this.overallQuality = 0;
         init(imageService, imageService != null);
     }
 
@@ -198,6 +215,7 @@ public class AlbumCard extends JPanel {
                     }
                 }
                 repaint();
+                if (shimmerCallback != null) shimmerCallback.run();
             });
             shimmerTimer.setRepeats(true);
             SHIMMER_CARDS.add(this);
@@ -326,11 +344,12 @@ public class AlbumCard extends JPanel {
 
         // --- Header: left side (nickname or rarity dots) + right side (dex number) ---
         FontMetrics dfm = sfm;
-        String dexStr = String.format("no. %03d", dexNumber);
+        // Captured: show quality score. Locked: show dex number.
+        String dexStr = locked ? String.format("no. %03d", dexNumber) : "Q:" + overallQuality;
         g2.setFont(smallFont);
         int dexX = w - PAD - dfm.stringWidth(dexStr);
         int dexY = HEADER_Y + (HEADER_H + dfm.getAscent() - dfm.getDescent()) / 2;
-        g2.setColor(locked ? new Color(75, 75, 75) : ColorScheme.LIGHT_GRAY_COLOR);
+        g2.setColor(locked ? new Color(75, 75, 75) : rarest.displayColor);
         g2.drawString(dexStr, dexX, dexY);
         if (hasShiny) {
             String star = "✦";
@@ -467,7 +486,7 @@ public class AlbumCard extends JPanel {
             // Level pill — dark/black background, white text
             String lvlLabel = combatLevel > 0 ? "Lvl " + combatLevel : "Non-combat";
             int lvlW = sfm.stringWidth(lvlLabel) + pillPad * 2;
-            int lvlX = imgX + 2;
+            int lvlX = imgX - 2;
             g2.setColor(new Color(12, 12, 12));
             g2.fillRoundRect(lvlX, pillY, lvlW, pillH, 4, 4);
             g2.setColor(Color.WHITE);

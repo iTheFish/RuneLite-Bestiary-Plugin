@@ -112,6 +112,12 @@ public class CardExportDialog extends JDialog {
             }
         };
         imageService.requestImage(npcName, previewPanel::repaint);
+        card.setShimmerCallback(previewPanel::repaint);
+        previewPanel.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+        previewPanel.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override public void mouseEntered(java.awt.event.MouseEvent e) { card.hoverStart(); }
+            @Override public void mouseExited(java.awt.event.MouseEvent  e) { card.hoverStop();  }
+        });
 
         // Buttons
         JButton copyBtn = new JButton("Copy Image");
