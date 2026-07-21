@@ -82,17 +82,36 @@ public class CardExportDialog extends JDialog {
                     "By Rarity", capture.rarity).setVisible(true);
         });
 
-        // Card ID label
-        JLabel idLabel = new JLabel(cardId);
-        idLabel.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 10));
-        idLabel.setForeground(new Color(130, 130, 130));
-        idLabel.setHorizontalAlignment(SwingConstants.CENTER);
-
-        // Owner label
-        JLabel ownerLabel = new JLabel("Captured by " + this.owner);
-        ownerLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
-        ownerLabel.setForeground(new Color(220, 170, 60));
-        ownerLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        // 2× scaled preview panel — same content (card + banner) as the actual export
+        final int PREVIEW_SCALE = 2;
+        JPanel previewPanel = new JPanel() {
+            { setPreferredSize(new Dimension(AlbumCard.CARD_W * PREVIEW_SCALE,
+                                             (AlbumCard.CARD_H + 28) * PREVIEW_SCALE));
+              setOpaque(false); }
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                g2.scale(PREVIEW_SCALE, PREVIEW_SCALE);
+                card.setSize(AlbumCard.CARD_W, AlbumCard.CARD_H);
+                card.print(g2);
+                // Banner (mirrors renderCard)
+                g2.setColor(new Color(12, 12, 12));
+                g2.fillRect(0, AlbumCard.CARD_H, AlbumCard.CARD_W, 28);
+                g2.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 6));
+                FontMetrics idFm = g2.getFontMetrics();
+                g2.setColor(new Color(90, 90, 90));
+                g2.drawString(cardId, (AlbumCard.CARD_W - idFm.stringWidth(cardId)) / 2, AlbumCard.CARD_H + 9);
+                g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 8f));
+                FontMetrics ownerFm = g2.getFontMetrics();
+                g2.setColor(new Color(200, 155, 50));
+                String ownerStr = "Captured by " + CardExportDialog.this.owner;
+                g2.drawString(ownerStr, (AlbumCard.CARD_W - ownerFm.stringWidth(ownerStr)) / 2, AlbumCard.CARD_H + 22);
+                g2.dispose();
+            }
+        };
+        imageService.requestImage(npcName, previewPanel::repaint);
 
         // Buttons
         JButton copyBtn = new JButton("Copy Image");
@@ -100,14 +119,14 @@ public class CardExportDialog extends JDialog {
         copyBtn.setBackground(new Color(255, 153, 0));
         copyBtn.setForeground(Color.BLACK);
         copyBtn.setFocusPainted(false);
-        copyBtn.addActionListener(e -> copyToClipboard());
+        copyBtn.addActionListener(e -> { copyToClipboard(); flash(copyBtn, "✓ Copied!"); });
 
         JButton saveBtn = new JButton("Save PNG…");
         saveBtn.setFont(FontManager.getRunescapeSmallFont());
         saveBtn.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         saveBtn.setForeground(Color.WHITE);
         saveBtn.setFocusPainted(false);
-        saveBtn.addActionListener(e -> savePng(capture.npcName));
+        saveBtn.addActionListener(e -> { if (savePng(capture.npcName)) flash(saveBtn, "✓ Saved!"); });
 
         JPanel btnRow = new JPanel(new GridLayout(1, 2, 6, 0));
         btnRow.setOpaque(false);
@@ -120,18 +139,17 @@ public class CardExportDialog extends JDialog {
         content.setBackground(ColorScheme.DARK_GRAY_COLOR);
         content.setBorder(new EmptyBorder(12, 12, 12, 12));
 
-        card.setAlignmentX(Component.CENTER_ALIGNMENT);
-        idLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        ownerLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        previewPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         btnRow.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        content.add(card);
-        content.add(Box.createVerticalStrut(6));
-        content.add(idLabel);
-        content.add(Box.createVerticalStrut(2));
-        content.add(ownerLabel);
+        content.add(previewPanel);
         content.add(Box.createVerticalStrut(10));
         content.add(btnRow);
+
+        // Clean up card's shimmer registration when dialog closes
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override public void windowClosed(java.awt.event.WindowEvent e) { card.removeNotify(); }
+        });
 
         setContentPane(content);
         pack();
@@ -199,17 +217,30 @@ public class CardExportDialog extends JDialog {
         }
     }
 
-    private void savePng(String npcName) {
+    private boolean savePng(String npcName) {
         JFileChooser chooser = new JFileChooser();
         String fileName = "bestiary_" + npcName.toLowerCase().replace(" ", "_") + ".png";
         chooser.setSelectedFile(new File(System.getProperty("user.home"), fileName));
         if (chooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
             try {
                 ImageIO.write(renderCard(), "PNG", chooser.getSelectedFile());
+                return true;
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Failed to save: " + ex.getMessage(),
                         "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
+        return false;
+    }
+
+    private static void flash(JButton btn, String label) {
+        String orig = btn.getText();
+        btn.setText(label);
+        btn.setEnabled(false);
+        new javax.swing.Timer(1500, e -> {
+            btn.setText(orig);
+            btn.setEnabled(true);
+            ((javax.swing.Timer) e.getSource()).stop();
+        }).start();
     }
 }
