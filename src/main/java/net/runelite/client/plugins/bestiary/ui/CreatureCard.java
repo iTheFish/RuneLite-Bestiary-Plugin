@@ -26,6 +26,7 @@ public class CreatureCard extends JPanel {
     private final CreatureRarity rarity;
     private float shimmerPhase = 0f;
     private javax.swing.Timer shimmerTimer;
+    private boolean hovered = false;
 
     private JLabel rarityLabelRef;
     private JLabel statsLabelRef;
@@ -115,7 +116,15 @@ public class CreatureCard extends JPanel {
         if (rarity.ordinal() >= CreatureRarity.EPIC.ordinal()) {
             shimmerTimer = new javax.swing.Timer(30, e -> {
                 shimmerPhase += 0.022f;
-                if (shimmerPhase > 1.05f) { shimmerTimer.stop(); shimmerPhase = 0f; }
+                if (shimmerPhase > 1.05f) {
+                    shimmerTimer.stop(); shimmerPhase = 0f;
+                    if (hovered) {
+                        javax.swing.Timer repeat = new javax.swing.Timer(500, ev -> {
+                            if (hovered) { shimmerPhase = 0f; shimmerTimer.restart(); }
+                        });
+                        repeat.setRepeats(false); repeat.start();
+                    }
+                }
                 repaint();
             });
             shimmerTimer.setRepeats(true);
@@ -140,6 +149,7 @@ public class CreatureCard extends JPanel {
 
             @Override
             public void mouseEntered(java.awt.event.MouseEvent e) {
+                hovered = true;
                 setBackground(CARD_HOVER);
                 if (shimmerTimer != null) { shimmerPhase = 0f; shimmerTimer.restart(); }
                 repaint();
@@ -147,6 +157,7 @@ public class CreatureCard extends JPanel {
 
             @Override
             public void mouseExited(java.awt.event.MouseEvent e) {
+                hovered = false;
                 setBackground(CARD_BG);
                 if (shimmerTimer != null) shimmerTimer.stop();
                 repaint();

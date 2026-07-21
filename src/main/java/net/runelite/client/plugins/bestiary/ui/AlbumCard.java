@@ -188,7 +188,15 @@ public class AlbumCard extends JPanel {
         if (!locked && rarest != null && rarest.ordinal() >= CreatureRarity.EPIC.ordinal()) {
             shimmerTimer = new javax.swing.Timer(30, e -> {
                 shimmerPhase += 0.022f;
-                if (shimmerPhase > 1.05f) { shimmerTimer.stop(); shimmerPhase = 0f; }
+                if (shimmerPhase > 1.05f) {
+                    shimmerTimer.stop(); shimmerPhase = 0f;
+                    if (hovered) {
+                        javax.swing.Timer repeat = new javax.swing.Timer(500, ev -> {
+                            if (hovered) { shimmerPhase = 0f; shimmerTimer.restart(); }
+                        });
+                        repeat.setRepeats(false); repeat.start();
+                    }
+                }
                 repaint();
             });
             shimmerTimer.setRepeats(true);
@@ -513,21 +521,22 @@ public class AlbumCard extends JPanel {
             }
         }
 
-        // Shimmer overlay for Epic+. Strip = 2×CARD_W so both transparent ends are always
-        // off-screen — the peak is fully bright when it crosses the card's right edge.
+        // Shimmer overlay for Epic+. Strip = 2×actual width so both transparent ends
+        // are always off-screen — peak is fully bright when it crosses the right edge.
         if (shimmerTimer != null && shimmerTimer.isRunning()) {
-            float cx   = shimmerPhase * (3 * CARD_W) - CARD_W;
-            Color mid  = rarest == CreatureRarity.MYTHIC
+            int sw    = getWidth(); // use actual layout width, not the constant
+            float cx  = shimmerPhase * (3 * sw) - sw;
+            Color mid = rarest == CreatureRarity.MYTHIC
                     ? new Color(255, 120, 120, 110)
                     : rarest == CreatureRarity.LEGENDARY
                     ? new Color(255, 210, 80,  110)
                     : new Color(210, 120, 240, 100);
             Color none = new Color(mid.getRed(), mid.getGreen(), mid.getBlue(), 0);
             g2.setPaint(new java.awt.LinearGradientPaint(
-                    cx - CARD_W, 0, cx + CARD_W, 0,
+                    cx - sw, 0, cx + sw, 0,
                     new float[]{0f, 0.5f, 1f},
                     new Color[]{none, mid, none}));
-            g2.fillRoundRect(0, 0, CARD_W, CARD_H, 8, 8);
+            g2.fillRoundRect(0, 0, sw, CARD_H, 8, 8);
         }
 
         g2.dispose();
