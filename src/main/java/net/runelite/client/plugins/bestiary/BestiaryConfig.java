@@ -144,6 +144,16 @@ public interface BestiaryConfig extends Config {
         return 200;
     }
 
+    @ConfigItem(
+            keyName = "autoShimmer",
+            name = "Auto-shimmer EPIC+ Cards",
+            description = "Automatically play the foil shimmer on Epic+ cards in the Album view every 10 seconds",
+            position = 15
+    )
+    default boolean autoShimmer() {
+        return true;
+    }
+
     // --- Developer section ---
 
     @ConfigItem(

@@ -44,6 +44,7 @@ public class BestiaryPanel extends PluginPanel {
         CreatureDetailDialog.setConfig(config);
         CreatureDetailDialog.setSaveCallback(dataService::saveNow);
         CardExportDialog.setShared(imageService, dataService::getCollection);
+        AlbumCard.setConfig(config);
 
         setLayout(new BorderLayout(0, 6));
         setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -81,6 +82,7 @@ public class BestiaryPanel extends PluginPanel {
         JTabbedPane tabs = new JTabbedPane();
         tabs.setBackground(ColorScheme.DARK_GRAY_COLOR);
         tabs.setForeground(Color.WHITE);
+        tabs.setFont(FontManager.getRunescapeSmallFont());
 
         infoTab = new InfoTab(dataService, progressionService,
                 () -> collectionTab.openAlbum(SwingUtilities.getWindowAncestor(this)),

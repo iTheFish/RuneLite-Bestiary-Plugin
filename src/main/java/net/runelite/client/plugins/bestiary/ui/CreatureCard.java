@@ -163,17 +163,20 @@ public class CreatureCard extends JPanel {
     }
 
     @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
+    public void paint(Graphics g) {
+        super.paint(g); // background + children + border first
         if (shimmerTimer == null || !shimmerTimer.isRunning()) return;
 
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        int w      = getWidth();
-        int h      = getHeight();
-        int stripW = 55;
-        float cx   = shimmerPhase * (w + stripW) - stripW / 2f;
+        int w       = getWidth();
+        int h       = getHeight();
+        int trail   = 80;  // long trailing fade
+        int lead    = 20;  // short leading fade — peak reaches right edge before strip exits
+        int stripW  = trail + lead;
+        // cx = peak position; starts off-screen left, exits off-screen right
+        float cx    = shimmerPhase * (w + stripW) - trail;
 
         Color mid = rarity == CreatureRarity.MYTHIC
                 ? new Color(255, 120, 120, 100)
@@ -182,9 +185,10 @@ public class CreatureCard extends JPanel {
                 : new Color(210, 120, 240,  90);
         Color none = new Color(mid.getRed(), mid.getGreen(), mid.getBlue(), 0);
 
+        float peakFrac = (float) trail / stripW; // 0.8 — peak 80% from left of strip
         LinearGradientPaint lgp = new LinearGradientPaint(
-                cx - stripW / 2f, 0, cx + stripW / 2f, 0,
-                new float[]{0f, 0.5f, 1f},
+                cx - trail, 0, cx + lead, 0,
+                new float[]{0f, peakFrac, 1f},
                 new Color[]{none, mid, none});
         g2.setPaint(lgp);
         g2.fillRect(0, 0, w, h);

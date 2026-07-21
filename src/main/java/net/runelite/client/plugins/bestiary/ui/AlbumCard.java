@@ -1,5 +1,6 @@
 package net.runelite.client.plugins.bestiary.ui;
 
+import net.runelite.client.plugins.bestiary.BestiaryConfig;
 import net.runelite.client.plugins.bestiary.model.BestiaryCollection;
 import net.runelite.client.plugins.bestiary.model.CapturedCreature;
 import net.runelite.client.plugins.bestiary.model.CreatureRarity;
@@ -26,6 +27,9 @@ import java.util.List;
  *   Locked   — dark/grey, wiki image with dark overlay, difficulty badge, kill count.
  */
 public class AlbumCard extends JPanel {
+
+    private static BestiaryConfig sharedConfig;
+    public static void setConfig(BestiaryConfig cfg) { sharedConfig = cfg; }
 
     public static final int CARD_W = 165;
     public static final int CARD_H = 300;
@@ -64,6 +68,7 @@ public class AlbumCard extends JPanel {
     private boolean hovered = false;
     private float shimmerPhase = 0f;
     private javax.swing.Timer shimmerTimer;
+    private javax.swing.Timer autoShimmerTimer;
     private final boolean locked;
 
     // Captured-only
@@ -181,10 +186,19 @@ public class AlbumCard extends JPanel {
         if (!locked && rarest != null && rarest.ordinal() >= CreatureRarity.EPIC.ordinal()) {
             shimmerTimer = new javax.swing.Timer(30, e -> {
                 shimmerPhase += 0.022f;
-                if (shimmerPhase > 1.3f) { shimmerTimer.stop(); shimmerPhase = 0f; }
+                if (shimmerPhase > 1.4f) { shimmerTimer.stop(); shimmerPhase = 0f; }
                 repaint();
             });
             shimmerTimer.setRepeats(true);
+
+            autoShimmerTimer = new javax.swing.Timer(10_000, e -> {
+                if (sharedConfig != null && !sharedConfig.autoShimmer()) return;
+                shimmerPhase = 0f;
+                shimmerTimer.restart();
+            });
+            autoShimmerTimer.setInitialDelay((int)(Math.random() * 8_000) + 2_000); // stagger cards
+            autoShimmerTimer.setRepeats(true);
+            autoShimmerTimer.start();
         }
 
         addMouseListener(new MouseAdapter() {
@@ -260,6 +274,13 @@ public class AlbumCard extends JPanel {
                 menu.show(AlbumCard.this, e.getX(), e.getY());
             }
         });
+    }
+
+    @Override
+    public void removeNotify() {
+        super.removeNotify();
+        if (shimmerTimer     != null) shimmerTimer.stop();
+        if (autoShimmerTimer != null) autoShimmerTimer.stop();
     }
 
     // -------------------------------------------------------------------------
@@ -492,8 +513,9 @@ public class AlbumCard extends JPanel {
 
         // Shimmer overlay for Epic+
         if (shimmerTimer != null && shimmerTimer.isRunning()) {
-            int stripW = 55;
-            float cx   = shimmerPhase * (CARD_W + stripW) - stripW / 2f;
+            int trail  = 80;  // long trailing fade
+            int lead   = 20;  // short leading fade — peak reaches right edge before strip exits
+            float cx   = shimmerPhase * (CARD_W + trail + lead) - trail;
             Color mid  = rarest == CreatureRarity.MYTHIC
                     ? new Color(255, 120, 120, 100)
                     : rarest == CreatureRarity.LEGENDARY
@@ -501,8 +523,8 @@ public class AlbumCard extends JPanel {
                     : new Color(210, 120, 240,  90);
             Color none = new Color(mid.getRed(), mid.getGreen(), mid.getBlue(), 0);
             g2.setPaint(new java.awt.LinearGradientPaint(
-                    cx - stripW / 2f, 0, cx + stripW / 2f, 0,
-                    new float[]{0f, 0.5f, 1f},
+                    cx - trail, 0, cx + lead, 0,
+                    new float[]{0f, (float) trail / (trail + lead), 1f},
                     new Color[]{none, mid, none}));
             g2.fillRoundRect(0, 0, CARD_W, CARD_H, 8, 8);
         }
