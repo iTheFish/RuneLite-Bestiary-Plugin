@@ -353,11 +353,11 @@ public class DashboardDialog extends JDialog {
 
         root.add(heroStat(FMT.format(col.totalKills()), "TOTAL KILLS", ORANGE));
         root.add(gap(10));
-        root.add(sectionHeader("TOP KILLS BY SPECIES"));
+        root.add(sectionHeader("TOP 5 SPECIES BY KILLS"));
 
         List<Map.Entry<String, Integer>> sorted = col.killCounts.entrySet().stream()
                 .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-                .limit(15)
+                .limit(5)
                 .collect(Collectors.toList());
 
         JPanel bars = col();
@@ -373,14 +373,14 @@ public class DashboardDialog extends JDialog {
         }
         root.add(bars);
         root.add(gap(10));
-        root.add(sectionHeader("KILLS PER CAPTURE  (best → worst)"));
+        root.add(sectionHeader("TOP 5 KILLS PER CAPTURE  (best → worst)"));
 
         List<String> capNames = col.captureCountByNpc.entrySet().stream()
                 .filter(e -> e.getValue() > 0)
                 .sorted(Comparator.comparingDouble(e ->
                         (double) col.getKillCount(e.getKey()) / Math.max(1, e.getValue())))
                 .map(Map.Entry::getKey)
-                .limit(12)
+                .limit(5)
                 .collect(Collectors.toList());
 
         JPanel ratioPanel = col();
@@ -400,28 +400,8 @@ public class DashboardDialog extends JDialog {
         }
         root.add(ratioPanel);
         root.add(gap(10));
-        root.add(sectionHeader("HARDEST HUNTS — KILLS BEFORE CAPTURE"));
-
-        Map<String, Integer> hardestByName = col.creatures.stream()
-                .collect(Collectors.toMap(c -> c.npcName, c -> c.killsBeforeCapture, Integer::max));
-        List<Map.Entry<String, Integer>> hardest = hardestByName.entrySet().stream()
-                .filter(e -> e.getValue() > 0)
-                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-                .limit(8).collect(Collectors.toList());
-
-        JPanel hardestPanel = col();
-        hardestPanel.setBorder(new EmptyBorder(0, 12, 0, 12));
-        if (hardest.isEmpty()) {
-            hardestPanel.add(emptyNote("No kill data recorded yet."));
-        } else {
-            Color huntCol = new Color(200, 155, 40);
-            int maxH = hardest.get(0).getValue();
-            for (Map.Entry<String, Integer> e : hardest) {
-                hardestPanel.add(barRow(e.getKey(), huntCol, e.getValue(), maxH, FMT.format(e.getValue()) + " kills", ""));
-                hardestPanel.add(gap(4));
-            }
-        }
-        root.add(hardestPanel);
+        root.add(sectionHeader("MOST HUNTED"));
+        root.add(buildMostHuntedSection(col));
         root.add(gap(16));
         return root;
     }
@@ -787,6 +767,106 @@ public class DashboardDialog extends JDialog {
                         String cs = cnt > 0 ? String.valueOf(cnt) : "–";
                         g2.setColor(cnt > 0 ? rarOrder[i].displayColor : new Color(55, 55, 55));
                         g2.drawString(cs, firstColW + i * colW + (colW - fm.stringWidth(cs)) / 2, base);
+                    }
+                    g2.dispose();
+                }
+            };
+            row.setOpaque(false);
+            row.setPreferredSize(new Dimension(0, 22));
+            row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 22));
+            root.add(row);
+            root.add(gap(3));
+        }
+        return root;
+    }
+
+    private JPanel buildMostHuntedSection(BestiaryCollection col) {
+        JPanel root = col();
+        root.setBorder(new EmptyBorder(0, 12, 0, 12));
+
+        List<Map.Entry<String, Integer>> top5 = col.killCounts.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .limit(5).collect(Collectors.toList());
+
+        if (top5.isEmpty()) {
+            root.add(emptyNote("No kills recorded yet."));
+            return root;
+        }
+
+        CreatureRarity[] rarOrder = {CreatureRarity.COMMON, CreatureRarity.UNCOMMON, CreatureRarity.RARE,
+                CreatureRarity.EPIC, CreatureRarity.LEGENDARY, CreatureRarity.MYTHIC};
+        String[] rarAbbr = {"C", "U", "R", "E", "L", "M"};
+        final int killsColW = 40, rarColW = 22;
+
+        JPanel header = new JPanel() {
+            @Override protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = g2(g);
+                int w = getWidth(), h = getHeight();
+                int nameW = w - killsColW - rarOrder.length * rarColW;
+                Font sf = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD);
+                g2.setFont(sf);
+                FontMetrics fm = g2.getFontMetrics();
+                int base = (h + fm.getAscent() - fm.getDescent()) / 2;
+                g2.setColor(MUTED);
+                g2.drawString("Name", 0, base);
+                g2.setColor(ORANGE);
+                String kh = "Kills";
+                g2.drawString(kh, nameW + killsColW - fm.stringWidth(kh), base);
+                for (int i = 0; i < rarAbbr.length; i++) {
+                    g2.setColor(rarOrder[i].displayColor);
+                    g2.drawString(rarAbbr[i], nameW + killsColW + i * rarColW + (rarColW - fm.stringWidth(rarAbbr[i])) / 2, base);
+                }
+                g2.dispose();
+            }
+        };
+        header.setOpaque(false);
+        header.setPreferredSize(new Dimension(0, 18));
+        header.setMaximumSize(new Dimension(Integer.MAX_VALUE, 18));
+        root.add(header);
+
+        JPanel divider = new JPanel();
+        divider.setBackground(new Color(60, 60, 60));
+        divider.setPreferredSize(new Dimension(0, 1));
+        divider.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+        root.add(divider);
+        root.add(gap(3));
+
+        for (Map.Entry<String, Integer> e : top5) {
+            String npcName = e.getKey();
+            int kills = e.getValue();
+            List<CapturedCreature> caps = col.creatures.stream()
+                    .filter(c -> c.npcName.equals(npcName))
+                    .collect(Collectors.toList());
+            Map<CreatureRarity, Long> rarCounts = caps.stream()
+                    .collect(Collectors.groupingBy(c -> c.rarity, Collectors.counting()));
+            CreatureRarity rarest = caps.isEmpty() ? null :
+                    caps.stream().map(c -> c.rarity).max(Comparator.comparingInt(Enum::ordinal)).orElse(null);
+            Color nameColor = rarest != null ? rarest.displayColor : DIM;
+            String killsStr = FMT.format(kills);
+
+            JPanel row = new JPanel() {
+                @Override protected void paintComponent(Graphics g) {
+                    super.paintComponent(g);
+                    Graphics2D g2 = g2(g);
+                    int w = getWidth(), h = getHeight();
+                    int nameW = w - killsColW - rarOrder.length * rarColW;
+                    Font sf = FontManager.getRunescapeSmallFont();
+                    g2.setFont(sf);
+                    FontMetrics fm = g2.getFontMetrics();
+                    int base = (h + fm.getAscent() - fm.getDescent()) / 2;
+                    String disp = "● " + npcName;
+                    while (fm.stringWidth(disp) > nameW - 4 && disp.length() > 3)
+                        disp = disp.substring(0, disp.length() - 1);
+                    g2.setColor(nameColor);
+                    g2.drawString(disp, 0, base);
+                    g2.setColor(ORANGE);
+                    g2.drawString(killsStr, nameW + killsColW - fm.stringWidth(killsStr) - 2, base);
+                    for (int i = 0; i < rarOrder.length; i++) {
+                        long cnt = rarCounts.getOrDefault(rarOrder[i], 0L);
+                        String cs = cnt > 0 ? String.valueOf(cnt) : "–";
+                        g2.setColor(cnt > 0 ? rarOrder[i].displayColor : new Color(55, 55, 55));
+                        g2.drawString(cs, nameW + killsColW + i * rarColW + (rarColW - fm.stringWidth(cs)) / 2, base);
                     }
                     g2.dispose();
                 }
@@ -1495,25 +1575,22 @@ public class DashboardDialog extends JDialog {
 
         List<Map.Entry<String, Integer>> top = col.killCounts.entrySet().stream()
                 .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-                .limit(12).collect(Collectors.toList());
+                .limit(5).collect(Collectors.toList());
         List<Map.Entry<String, Integer>> ratios = col.captureCountByNpc.entrySet().stream()
                 .filter(e -> e.getValue() > 0)
                 .sorted(Comparator.comparingInt(e ->
                         col.getKillCount(e.getKey()) / Math.max(1, e.getValue())))
-                .limit(8).collect(Collectors.toList());
-        Map<String, Integer> hardestByName = col.creatures.stream()
-                .collect(Collectors.toMap(c -> c.npcName, c -> c.killsBeforeCapture, Integer::max));
-        List<Map.Entry<String, Integer>> hardest = hardestByName.entrySet().stream()
-                .filter(e -> e.getValue() > 0)
+                .limit(5).collect(Collectors.toList());
+        List<Map.Entry<String, Integer>> mostHunted = col.killCounts.entrySet().stream()
                 .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-                .limit(8).collect(Collectors.toList());
+                .limit(5).collect(Collectors.toList());
 
         final int W = 480, PAD = 24;
         int barRows = Math.max(1, top.size()), ratioRows = Math.max(1, ratios.size());
-        int hardestRows = Math.max(1, hardest.size());
+        int huntedRows = Math.max(1, mostHunted.size());
         int H = 4 + PAD + 60 + 12 + 70 + 12 + 22 + 6 + barRows * 22 + 8
                 + 22 + 6 + ratioRows * 22 + 8
-                + 22 + 6 + hardestRows * 22 + 8
+                + 22 + 6 + 16 + 6 + huntedRows * 20 + 8
                 + 36 + PAD;
 
         BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
@@ -1523,7 +1600,7 @@ public class DashboardDialog extends JDialog {
         y = drawHeroStat(g, FMT.format(col.totalKills()), "TOTAL KILLS", ORANGE, y, W, PAD);
         y += 12;
 
-        y = drawCardSectionHeader(g, "TOP SPECIES BY KILLS", y, W, PAD);
+        y = drawCardSectionHeader(g, "TOP 5 SPECIES BY KILLS", y, W, PAD);
         y += 6;
         if (top.isEmpty()) {
             g.setFont(FontManager.getRunescapeSmallFont()); g.setColor(DIM);
@@ -1535,7 +1612,7 @@ public class DashboardDialog extends JDialog {
         }
         y += 8;
 
-        y = drawCardSectionHeader(g, "KILLS PER CAPTURE", y, W, PAD);
+        y = drawCardSectionHeader(g, "TOP 5 KILLS PER CAPTURE", y, W, PAD);
         y += 6;
         if (ratios.isEmpty()) {
             g.setFont(FontManager.getRunescapeSmallFont()); g.setColor(DIM);
@@ -1550,16 +1627,62 @@ public class DashboardDialog extends JDialog {
         }
         y += 8;
 
-        y = drawCardSectionHeader(g, "HARDEST HUNTS — KILLS BEFORE CAPTURE", y, W, PAD);
+        y = drawCardSectionHeader(g, "MOST HUNTED", y, W, PAD);
         y += 6;
-        if (hardest.isEmpty()) {
+        CreatureRarity[] mhRarOrder = {CreatureRarity.COMMON, CreatureRarity.UNCOMMON, CreatureRarity.RARE,
+                CreatureRarity.EPIC, CreatureRarity.LEGENDARY, CreatureRarity.MYTHIC};
+        String[] mhRarAbbr = {"C", "U", "R", "E", "L", "M"};
+        int mhKillsColW = 44, mhRarColW = 22;
+        int mhNameW = W - PAD * 2 - mhKillsColW - mhRarOrder.length * mhRarColW;
+        // column header
+        g.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        FontMetrics mhHfm = g.getFontMetrics();
+        g.setColor(MUTED);
+        g.drawString("Name", PAD, y + mhHfm.getAscent());
+        g.setColor(ORANGE);
+        String kh = "Kills";
+        g.drawString(kh, PAD + mhNameW + mhKillsColW - mhHfm.stringWidth(kh), y + mhHfm.getAscent());
+        for (int i = 0; i < mhRarAbbr.length; i++) {
+            g.setColor(mhRarOrder[i].displayColor);
+            g.drawString(mhRarAbbr[i], PAD + mhNameW + mhKillsColW + i * mhRarColW + (mhRarColW - mhHfm.stringWidth(mhRarAbbr[i])) / 2, y + mhHfm.getAscent());
+        }
+        y += 16;
+        g.setColor(new Color(60, 60, 60));
+        g.fillRect(PAD, y, W - PAD * 2, 1);
+        y += 5;
+        if (mostHunted.isEmpty()) {
             g.setFont(FontManager.getRunescapeSmallFont()); g.setColor(DIM);
-            g.drawString("No kill data recorded yet.", PAD + 6, y + g.getFontMetrics().getAscent()); y += 22;
+            g.drawString("No kills recorded yet.", PAD + 6, y + g.getFontMetrics().getAscent()); y += 20;
         } else {
-            Color huntCol = new Color(200, 155, 40);
-            int maxH = hardest.get(0).getValue();
-            for (Map.Entry<String, Integer> e : hardest)
-                y = drawCardBarRow(g, e.getKey(), huntCol, e.getValue(), maxH, FMT.format(e.getValue()) + " kills", "", y, PAD, W);
+            g.setFont(FontManager.getRunescapeSmallFont());
+            FontMetrics mhFm = g.getFontMetrics();
+            for (Map.Entry<String, Integer> e : mostHunted) {
+                String npcName = e.getKey();
+                int npcKills = e.getValue();
+                List<CapturedCreature> caps = col.creatures.stream()
+                        .filter(c -> c.npcName.equals(npcName)).collect(Collectors.toList());
+                Map<CreatureRarity, Long> rarCounts = caps.stream()
+                        .collect(Collectors.groupingBy(c -> c.rarity, Collectors.counting()));
+                CreatureRarity rarest = caps.isEmpty() ? null :
+                        caps.stream().map(c -> c.rarity).max(Comparator.comparingInt(Enum::ordinal)).orElse(null);
+                Color nameColor = rarest != null ? rarest.displayColor : DIM;
+                String disp = npcName;
+                while (disp.length() > 0 && mhFm.stringWidth("● " + disp) > mhNameW - 4)
+                    disp = disp.substring(0, disp.length() - 1);
+                if (disp.length() < npcName.length()) disp += "…";
+                g.setColor(nameColor);
+                g.drawString("● " + disp, PAD, y + mhFm.getAscent());
+                String killsStr = FMT.format(npcKills);
+                g.setColor(ORANGE);
+                g.drawString(killsStr, PAD + mhNameW + mhKillsColW - mhFm.stringWidth(killsStr), y + mhFm.getAscent());
+                for (int i = 0; i < mhRarOrder.length; i++) {
+                    long cnt = rarCounts.getOrDefault(mhRarOrder[i], 0L);
+                    String cs = cnt > 0 ? String.valueOf(cnt) : "–";
+                    g.setColor(cnt > 0 ? mhRarOrder[i].displayColor : DIM);
+                    g.drawString(cs, PAD + mhNameW + mhKillsColW + i * mhRarColW + (mhRarColW - mhFm.stringWidth(cs)) / 2, y + mhFm.getAscent());
+                }
+                y += 20;
+            }
         }
         y += 8;
 
