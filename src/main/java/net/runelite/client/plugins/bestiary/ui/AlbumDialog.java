@@ -407,7 +407,13 @@ public class AlbumDialog extends JDialog {
         gridPanel = new JPanel();
         gridPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-        JScrollPane scroll = new JScrollPane(gridPanel);
+        // Wrap in a NORTH-anchored panel so the viewport can't stretch gridPanel
+        // vertically (which would make GridLayout cells taller than CARD_H)
+        JPanel gridWrapper = new JPanel(new BorderLayout());
+        gridWrapper.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        gridWrapper.add(gridPanel, BorderLayout.NORTH);
+
+        JScrollPane scroll = new JScrollPane(gridWrapper);
         scroll.setBorder(null);
         scroll.getViewport().setBackground(ColorScheme.DARK_GRAY_COLOR);
         scroll.getVerticalScrollBar().setUnitIncrement(20);
@@ -993,20 +999,20 @@ public class AlbumDialog extends JDialog {
             g2.setColor(new Color(25, 25, 25));
             g2.fillRoundRect(x, bY, AlbumCard.CARD_W, BANNER_H, 4, 4);
 
+            String cardId = CardId.encode(dex, cap);
+            g2.setFont(idFont);
+            FontMetrics ifm = g2.getFontMetrics();
+            int idX = x + (AlbumCard.CARD_W - ifm.stringWidth(cardId)) / 2;
+            g2.setColor(new Color(90, 90, 90));
+            g2.drawString(cardId, idX, bY + ifm.getAscent() + 2);
+
             String capPlayer = (cap.playerName != null && !cap.playerName.isEmpty()) ? cap.playerName : playerName;
             g2.setFont(playerFont);
             FontMetrics pfm = g2.getFontMetrics();
             String capLine = "Captured by: " + capPlayer;
             int capX = x + (AlbumCard.CARD_W - pfm.stringWidth(capLine)) / 2;
             g2.setColor(new Color(200, 155, 50));
-            g2.drawString(capLine, capX, bY + pfm.getAscent() + 1);
-
-            String cardId = CardId.encode(dex, cap);
-            g2.setFont(idFont);
-            FontMetrics ifm = g2.getFontMetrics();
-            int idX = x + (AlbumCard.CARD_W - ifm.stringWidth(cardId)) / 2;
-            g2.setColor(new Color(90, 90, 90));
-            g2.drawString(cardId, idX, bY + pfm.getHeight() + ifm.getAscent() + 2);
+            g2.drawString(capLine, capX, bY + ifm.getHeight() + pfm.getAscent() + 1);
         }
         g2.dispose();
 

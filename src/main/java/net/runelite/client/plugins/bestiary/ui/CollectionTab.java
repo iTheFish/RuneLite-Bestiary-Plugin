@@ -485,9 +485,8 @@ public class CollectionTab extends JPanel {
             return;
         }
 
-        // Top 3 by quality — click opens Album Favourites detail view
-        JPanel grid = new JPanel();
-        grid.setLayout(new BoxLayout(grid, BoxLayout.Y_AXIS));
+        // Top 3 by quality — click opens CardExportDialog; right-click: copy + unfavourite
+        JPanel grid = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 4));
         grid.setOpaque(false);
         grid.setAlignmentX(Component.LEFT_ALIGNMENT);
         Runnable onFav = () -> { dataService.saveNow(); rebuildCards(); };
@@ -498,9 +497,11 @@ public class CollectionTab extends JPanel {
             card.setShowQuality(true);
             card.setClickOverride(() -> {
                 Window p = SwingUtilities.getWindowAncestor(CollectionTab.this);
-                if (!AlbumDialog.switchToFavouritesIfOpen()) {
-                    openAlbum(p, true);
-                }
+                CardExportDialog.open(p, c);
+            });
+            card.setCopyCallback(() -> {
+                Window p = SwingUtilities.getWindowAncestor(CollectionTab.this);
+                CardExportDialog.copyNow(p, c);
             });
             card.setUnfavouriteCallback(() -> { c.favourite = false; onFav.run(); });
             grid.add(card);
