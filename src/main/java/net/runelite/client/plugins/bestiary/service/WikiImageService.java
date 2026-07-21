@@ -11,6 +11,7 @@ import javax.imageio.ImageIO;
 import javax.inject.Singleton;
 import javax.swing.*;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -29,7 +30,7 @@ public class WikiImageService {
     private static final String USER_AGENT = "RuneLite Bestiary Plugin 1.0";
     private static final int    THUMB_W    = 130;
     private static final int    TIMEOUT_MS = 8000;
-    private static final int    BATCH_SIZE = 50; // MediaWiki API max titles per request
+    private static final int    BATCH_SIZE = 50;
 
     private final Map<String, BufferedImage>  cache            = new ConcurrentHashMap<>();
     private final Set<String>                pending          = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -37,23 +38,43 @@ public class WikiImageService {
     /** Callbacks registered while an image is mid-download; fired when the image lands. */
     private final Map<String, List<Runnable>> pendingCallbacks = new ConcurrentHashMap<>();
 
+    /** Disk cache directory: ~/.runelite/bestiary/images/ — shared across all profiles. */
+    private final File imageCacheDir;
+
+    public WikiImageService() {
+        imageCacheDir = new File(System.getProperty("user.home"),
+                ".runelite" + File.separator + "bestiary" + File.separator + "images");
+    }
+
     // -------------------------------------------------------------------------
     // Public API
     // -------------------------------------------------------------------------
 
     /**
-     * Batch-prefetches images for a list of NPC names. Makes ceil(N/50) API
-     * calls to resolve thumbnail URLs, then downloads all images concurrently.
-     * {@code onEachLoad} is called via invokeLater each time an image arrives.
+     * Batch-prefetches images for a list of NPC names. Loads from disk cache
+     * first; only fetches from network what isn't on disk. {@code onEachLoad}
+     * is called via invokeLater each time an image arrives.
      */
     public void prefetchBatch(List<String> names, Runnable onEachLoad) {
-        List<String> toFetch = names.stream()
+        // Load from disk synchronously (fast — just file I/O) before scheduling network
+        List<String> diskMisses = new ArrayList<>();
+        for (String name : names) {
+            if (cache.containsKey(name) || failed.contains(name) || pending.contains(name)) continue;
+            BufferedImage img = loadFromDisk(name);
+            if (img != null) {
+                cache.put(name, img);
+                SwingUtilities.invokeLater(onEachLoad);
+            } else {
+                diskMisses.add(name);
+            }
+        }
+
+        List<String> toFetch = diskMisses.stream()
                 .filter(n -> !cache.containsKey(n) && !failed.contains(n) && pending.add(n))
                 .collect(Collectors.toList());
         if (toFetch.isEmpty()) return;
 
         CompletableFuture.runAsync(() -> {
-            // Resolve thumbnail URLs in batches of BATCH_SIZE
             Map<String, String> urlsByName = new LinkedHashMap<>();
             for (int i = 0; i < toFetch.size(); i += BATCH_SIZE) {
                 List<String> chunk = toFetch.subList(i, Math.min(i + BATCH_SIZE, toFetch.size()));
@@ -62,7 +83,6 @@ public class WikiImageService {
                 } catch (Exception e) {
                     log.warn("WikiImageService: batch URL fetch failed (chunk {})", i / BATCH_SIZE, e);
                 }
-                // Mark names with no URL as failed
                 for (String n : chunk) {
                     if (!urlsByName.containsKey(n)) {
                         failed.add(n);
@@ -71,7 +91,6 @@ public class WikiImageService {
                 }
             }
 
-            // Download images concurrently (one CF per image, CDN handles load fine)
             List<CompletableFuture<Void>> downloads = new ArrayList<>();
             for (Map.Entry<String, String> entry : urlsByName.entrySet()) {
                 String npcName  = entry.getKey();
@@ -81,6 +100,7 @@ public class WikiImageService {
                         BufferedImage img = downloadImage(imageUrl);
                         if (img != null) {
                             cache.put(npcName, img);
+                            saveToDisk(npcName, img);
                             SwingUtilities.invokeLater(onEachLoad);
                             firePendingCallbacks(npcName);
                         } else {
@@ -93,7 +113,6 @@ public class WikiImageService {
                     }
                 }));
             }
-            // Wait for all downloads (so logs show completion clearly)
             CompletableFuture.allOf(downloads.toArray(new CompletableFuture[0])).join();
             log.debug("WikiImageService: prefetch complete — {} cached, {} failed",
                     cache.size(), failed.size());
@@ -101,18 +120,25 @@ public class WikiImageService {
     }
 
     /**
-     * Asynchronously fetches a single NPC image. If already cached, {@code onLoad}
-     * runs immediately on the EDT. Otherwise fetches in background and calls
-     * {@code onLoad} via invokeLater when ready.
+     * Asynchronously fetches a single NPC image. Checks memory cache, then disk
+     * cache, then network. {@code onLoad} is called via invokeLater when ready.
      */
     public void requestImage(String npcName, Runnable onLoad) {
         if (cache.containsKey(npcName)) {
             onLoad.run();
             return;
         }
-        if (failed.contains(npcName))  return;
+        if (failed.contains(npcName)) return;
+
+        // Check disk cache before hitting the network
+        BufferedImage disk = loadFromDisk(npcName);
+        if (disk != null) {
+            cache.put(npcName, disk);
+            onLoad.run();
+            return;
+        }
+
         if (!pending.add(npcName)) {
-            // Already downloading via prefetchBatch — register callback to fire when it lands
             pendingCallbacks.computeIfAbsent(npcName, k -> Collections.synchronizedList(new ArrayList<>())).add(onLoad);
             return;
         }
@@ -122,8 +148,9 @@ public class WikiImageService {
                 String thumbUrl = fetchThumbUrlSingle(npcName);
                 if (thumbUrl == null) { failed.add(npcName); return; }
                 BufferedImage img = downloadImage(thumbUrl);
-                if (img == null)     { failed.add(npcName); return; }
+                if (img == null) { failed.add(npcName); return; }
                 cache.put(npcName, img);
+                saveToDisk(npcName, img);
                 SwingUtilities.invokeLater(onLoad);
                 firePendingCallbacks(npcName);
             } catch (Exception e) {
@@ -141,23 +168,46 @@ public class WikiImageService {
     }
 
     // -------------------------------------------------------------------------
+    // Disk cache helpers
+    // -------------------------------------------------------------------------
+
+    private File diskFile(String npcName) {
+        // Sanitize name to a safe filename; spaces → underscores, drop non-safe chars
+        String safe = npcName.replaceAll("[^a-zA-Z0-9_\\-]", "_");
+        return new File(imageCacheDir, safe + ".png");
+    }
+
+    @Nullable
+    private BufferedImage loadFromDisk(String npcName) {
+        File f = diskFile(npcName);
+        if (!f.exists()) return null;
+        try {
+            return ImageIO.read(f);
+        } catch (Exception e) {
+            log.debug("WikiImageService: disk cache read failed for '{}': {}", npcName, e.getMessage());
+            return null;
+        }
+    }
+
+    private void saveToDisk(String npcName, BufferedImage img) {
+        try {
+            imageCacheDir.mkdirs();
+            ImageIO.write(img, "PNG", diskFile(npcName));
+        } catch (Exception e) {
+            log.debug("WikiImageService: disk cache write failed for '{}': {}", npcName, e.getMessage());
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Internals
     // -------------------------------------------------------------------------
 
-    /**
-     * Resolves thumbnail URLs for up to 50 NPC names in a single API request.
-     * Handles MediaWiki title normalisation so "Giant rat" matches page "Giant rat".
-     *
-     * @return map of npcName → thumbnail URL (only for names that have a wiki image)
-     */
     private Map<String, String> fetchThumbUrlBatch(List<String> names) throws Exception {
-        // Case-insensitive lookup: lowercaseName → original npcName
         Map<String, String> lowerToName = new LinkedHashMap<>();
         for (String n : names) {
             lowerToName.put(n.toLowerCase(), n);
         }
 
-        // Build pipe-separated titles param (%7C = URL-encoded |)
         StringBuilder titlesParam = new StringBuilder();
         for (int i = 0; i < names.size(); i++) {
             if (i > 0) titlesParam.append("%7C");
@@ -180,7 +230,6 @@ public class WikiImageService {
         JsonObject query = root.has("query") ? root.getAsJsonObject("query") : null;
         if (query == null) return Collections.emptyMap();
 
-        // Apply normalisation mappings so "giant_rat" → "Giant rat" still resolves
         if (query.has("normalized")) {
             JsonArray normalised = query.getAsJsonArray("normalized");
             for (JsonElement el : normalised) {
@@ -194,7 +243,6 @@ public class WikiImageService {
             }
         }
 
-        // Extract thumbnail URLs from page objects
         Map<String, String> result = new LinkedHashMap<>();
         JsonObject pages = query.has("pages") ? query.getAsJsonObject("pages") : null;
         if (pages == null) return result;
@@ -211,7 +259,6 @@ public class WikiImageService {
         return result;
     }
 
-    /** Single-name variant of the URL lookup (used by requestImage). */
     @Nullable
     private String fetchThumbUrlSingle(String npcName) throws Exception {
         Map<String, String> result = fetchThumbUrlBatch(Collections.singletonList(npcName));

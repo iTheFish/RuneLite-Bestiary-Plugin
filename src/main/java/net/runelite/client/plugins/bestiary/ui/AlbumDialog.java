@@ -131,6 +131,8 @@ public class AlbumDialog extends JDialog {
     private JComboBox<String> detailSortBox;
     private JButton           prevPageBtn;
     private JButton           nextPageBtn;
+    private JButton           detailExportBtn;
+    private CapturedCreature  detailExportCap = null;
 
     public AlbumDialog(Window owner, Map<String, List<CapturedCreature>> capturesByNpc,
                        Map<String, Integer> killCounts, BestiaryCollection collection,
@@ -360,8 +362,20 @@ public class AlbumDialog extends JDialog {
         detailTitleLabel.setForeground(Color.WHITE);
         detailTitleLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-        JPanel pageSizePanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
-        pageSizePanel.setOpaque(false);
+        JPanel dRow1East = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+        dRow1East.setOpaque(false);
+
+        detailExportBtn = new JButton("Export");
+        detailExportBtn.setFont(FontManager.getRunescapeSmallFont());
+        detailExportBtn.setBackground(new Color(0, 120, 40));
+        detailExportBtn.setForeground(Color.WHITE);
+        detailExportBtn.setFocusPainted(false);
+        detailExportBtn.setVisible(false);
+        detailExportBtn.addActionListener(e -> {
+            if (detailExportCap != null) CardExportDialog.open(AlbumDialog.this, detailExportCap);
+        });
+        dRow1East.add(detailExportBtn);
+
         ButtonGroup pageSizeGroup = new ButtonGroup();
         for (int ps : new int[]{8, 12, 16}) {
             final int size = ps;
@@ -376,12 +390,12 @@ public class AlbumDialog extends JDialog {
                 rebuildGrid();
             });
             pageSizeGroup.add(pb);
-            pageSizePanel.add(pb);
+            dRow1East.add(pb);
         }
 
-        dRow1.add(backBtn,        BorderLayout.WEST);
+        dRow1.add(backBtn,          BorderLayout.WEST);
         dRow1.add(detailTitleLabel, BorderLayout.CENTER);
-        dRow1.add(pageSizePanel,  BorderLayout.EAST);
+        dRow1.add(dRow1East,        BorderLayout.EAST);
 
         // Detail row 2: Sort | ← Prev | page X / Y | Next →
         JPanel dRow2 = new JPanel(new BorderLayout(6, 0));
@@ -555,6 +569,9 @@ public class AlbumDialog extends JDialog {
             for (CapturedCreature cap : starred) {
                 int dex = dexNumbers.getOrDefault(cap.npcName, 0);
                 AlbumCard card = new AlbumCard(dex, cap.npcName, List.of(cap), collection, imageService);
+                card.setShowQuality(true);
+                card.setClickOverride(() -> showDetail(cap.npcName, null, cap.captureTime));
+                card.setCopyCallback(() -> CardExportDialog.copyNow(AlbumDialog.this, cap));
                 card.setUnfavouriteCallback(() -> {
                     cap.favourite = false;
                     rebuildGrid();
@@ -669,6 +686,15 @@ public class AlbumDialog extends JDialog {
         prevPageBtn.setEnabled(detailPage > 0);
         nextPageBtn.setEnabled(detailPage < totalPages - 1);
 
+        // Update export button — only visible when showing a single specific capture
+        if (detailFilterCapture != null && !filtered.isEmpty()) {
+            detailExportCap = filtered.get(0);
+            detailExportBtn.setVisible(true);
+        } else {
+            detailExportCap = null;
+            detailExportBtn.setVisible(false);
+        }
+
         // Use BorderLayout for gridPanel so filter row sits above the card grid
         gridPanel.setLayout(new BorderLayout());
         gridPanel.setBorder(null);
@@ -722,12 +748,11 @@ public class AlbumDialog extends JDialog {
             return row;
         }
 
-        // Rarity pills — only when monster has 2+ distinct rarities
+        // Rarity pills — always show so user can see what rarity they're viewing
         Set<CreatureRarity> rarities = allCaps.stream()
                 .map(c -> c.rarity)
                 .collect(java.util.stream.Collectors.toCollection(
                         () -> new java.util.TreeSet<>(Comparator.comparingInt((CreatureRarity r) -> r.ordinal()).reversed())));
-        if (rarities.size() < 2) return null;
 
         JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 4));
         row.setBackground(new Color(35, 35, 35));
