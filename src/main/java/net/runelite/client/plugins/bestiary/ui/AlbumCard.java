@@ -3,6 +3,7 @@ package net.runelite.client.plugins.bestiary.ui;
 import net.runelite.client.plugins.bestiary.model.BestiaryCollection;
 import net.runelite.client.plugins.bestiary.model.CapturedCreature;
 import net.runelite.client.plugins.bestiary.model.CreatureRarity;
+import net.runelite.client.plugins.bestiary.model.CreatureSpecies;
 import net.runelite.client.plugins.bestiary.model.DifficultyTier;
 import net.runelite.client.plugins.bestiary.model.MonsterRoster;
 import net.runelite.client.plugins.bestiary.model.CombatClass;
@@ -58,6 +59,7 @@ public class AlbumCard extends JPanel {
     private final int dexNumber;
     private final DifficultyTier difficulty;
     private final CombatClass combatClass;
+    private final CreatureSpecies species;
     @Nullable private final WikiImageService imageService;
     private boolean hovered = false;
     private final boolean locked;
@@ -136,6 +138,7 @@ public class AlbumCard extends JPanel {
 
         this.difficulty = MonsterRoster.getDifficulty(npcName, combatLevel);
         this.combatClass = MonsterRoster.getCombatClass(npcName, combatLevel);
+        this.species    = MonsterRoster.getSpecies(npcName, combatLevel);
         this.hasShiny   = captures.stream().anyMatch(CapturedCreature::isShiny);
         init(imageService, true);
     }
@@ -157,6 +160,7 @@ public class AlbumCard extends JPanel {
 
         this.difficulty = MonsterRoster.getDifficulty(npcName, 0);
         this.combatClass = MonsterRoster.getCombatClass(npcName, 0);
+        this.species    = MonsterRoster.getSpecies(npcName, 0);
         this.hasShiny   = false;
         init(imageService, imageService != null);
     }
@@ -395,14 +399,35 @@ public class AlbumCard extends JPanel {
             String combatStr = combatLevel > 0 ? "Lvl " + combatLevel : "Non-combat";
             g2.setColor(ColorScheme.LIGHT_GRAY_COLOR);
             g2.drawString(combatStr, imgX + 2, subBaseline);
-            // Archetype label right-aligned
-            g2.setColor(new Color(180, 140, 60));
-            String archStr = "· " + combatClass.label;
-            g2.drawString(archStr, w - PAD - sfm.stringWidth(archStr), subBaseline);
+            // Species badge right-aligned (below the difficulty badge)
+            String speciesLabel = species.label;
+            int spPad  = 4;
+            int spW    = sfm.stringWidth(speciesLabel) + spPad * 2;
+            int spH    = 12;
+            int spX    = w - PAD - spW;
+            int spY    = COMBAT_Y + (COMBAT_H - spH) / 2;
+            g2.setColor(new Color(species.displayColor.getRed(), species.displayColor.getGreen(),
+                    species.displayColor.getBlue(), 160));
+            g2.fillRoundRect(spX, spY, spW, spH, 4, 4);
+            g2.setColor(Color.WHITE);
+            g2.drawString(speciesLabel, spX + spPad,
+                    spY + (spH + sfm.getAscent() - sfm.getDescent()) / 2);
         } else {
             g2.setColor(new Color(65, 65, 65));
             String killStr = killCount > 0 ? killCount + " kills" : "Not encountered";
             g2.drawString(killStr, imgX + 2, subBaseline);
+            // Species badge muted on locked cards
+            String speciesLabel = species.label;
+            int spPad  = 4;
+            int spW    = sfm.stringWidth(speciesLabel) + spPad * 2;
+            int spH    = 12;
+            int spX    = w - PAD - spW;
+            int spY    = COMBAT_Y + (COMBAT_H - spH) / 2;
+            g2.setColor(new Color(50, 50, 50));
+            g2.fillRoundRect(spX, spY, spW, spH, 4, 4);
+            g2.setColor(new Color(75, 75, 75));
+            g2.drawString(speciesLabel, spX + spPad,
+                    spY + (spH + sfm.getAscent() - sfm.getDescent()) / 2);
         }
 
         // --- Stat bars (captured) / empty outlines (locked) ---
