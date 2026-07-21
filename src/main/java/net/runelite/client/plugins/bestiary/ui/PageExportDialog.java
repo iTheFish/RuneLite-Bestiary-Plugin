@@ -117,6 +117,15 @@ public class PageExportDialog extends JDialog {
         content.add(previewScroll, BorderLayout.CENTER);
         content.add(bottomBar,     BorderLayout.SOUTH);
 
+        // Fix the scroll pane size to the tallest possible layout (fewest cols = most rows)
+        // so the dialog never resizes when the user changes column count.
+        int minCols = colOpts.length > 0 ? colOpts[0] : selectedCols;
+        BufferedImage tallest = renderGrid(minCols);
+        double fixScale = Math.min(1.0, (double) PREVIEW_MAX_W / tallest.getWidth());
+        int fixedW = (int) (tallest.getWidth()  * fixScale);
+        int fixedH = Math.min((int) (tallest.getHeight() * fixScale), 600);
+        previewScroll.setPreferredSize(new Dimension(fixedW + 4, fixedH + 4));
+
         setContentPane(content);
         updatePreview();
         pack();
@@ -135,16 +144,14 @@ public class PageExportDialog extends JDialog {
 
     private void updatePreview() {
         BufferedImage grid = renderGrid(selectedCols);
-        // Scale to fit within PREVIEW_MAX_W, keeping aspect ratio
         double scale = Math.min(1.0, (double) PREVIEW_MAX_W / grid.getWidth());
         int pw = (int) (grid.getWidth()  * scale);
         int ph = (int) (grid.getHeight() * scale);
         Image scaled = grid.getScaledInstance(pw, ph, Image.SCALE_SMOOTH);
         previewLabel.setIcon(new ImageIcon(scaled));
         previewLabel.setPreferredSize(new Dimension(pw, ph));
-        // Cap preview height at 600 so dialog doesn't grow taller than screen
-        previewScroll.setPreferredSize(new Dimension(pw + 4, Math.min(ph + 4, 600)));
-        pack();
+        previewLabel.revalidate();
+        previewLabel.repaint();
     }
 
     private void copyGrid() {

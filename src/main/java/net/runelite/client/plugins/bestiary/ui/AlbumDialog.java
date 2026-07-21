@@ -424,8 +424,7 @@ public class AlbumDialog extends JDialog {
         scroll.getViewport().setBackground(ColorScheme.DARK_GRAY_COLOR);
         scroll.getVerticalScrollBar().setUnitIncrement(20);
         scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-        scroll.getVerticalScrollBar().setPreferredSize(new Dimension(0, 0));
+        scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 
         scroll.getViewport().addComponentListener(new ComponentAdapter() {
             @Override public void componentResized(ComponentEvent e) { rebuildGrid(); }

@@ -248,7 +248,9 @@ public class AlbumCard extends JPanel {
             if (GLOBAL_SHIMMER_TIMER == null) {
                 GLOBAL_SHIMMER_TIMER = new javax.swing.Timer(10_000, e -> {
                     if (sharedConfig != null && !sharedConfig.autoShimmer()) return;
-                    for (AlbumCard c : SHIMMER_CARDS) { c.shimmerPhase = 0f; c.shimmerTimer.restart(); }
+                    for (AlbumCard c : new java.util.ArrayList<>(SHIMMER_CARDS)) {
+                        if (!c.getVisibleRect().isEmpty()) { c.shimmerPhase = 0f; c.shimmerTimer.restart(); }
+                    }
                 });
                 GLOBAL_SHIMMER_TIMER.setRepeats(true);
                 GLOBAL_SHIMMER_TIMER.start();

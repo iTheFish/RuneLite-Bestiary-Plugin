@@ -472,6 +472,7 @@ public class CollectionTab extends JPanel {
         headerLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         headerLabel.setForeground(new Color(255, 195, 40));
         header.add(headerLabel, BorderLayout.WEST);
+        header.setAlignmentX(Component.LEFT_ALIGNMENT);
         cardContainer.add(header);
         cardContainer.add(Box.createVerticalStrut(4));
 
@@ -495,7 +496,7 @@ public class CollectionTab extends JPanel {
                     java.util.List.of(c), dataService.getCollection(), imageService);
             card.setShowQuality(true);
             card.setPreferredWidth(190);
-            card.setAlignmentX(Component.CENTER_ALIGNMENT);
+            card.setAlignmentX(Component.LEFT_ALIGNMENT);
             card.setClickOverride(() -> {
                 Window p = SwingUtilities.getWindowAncestor(CollectionTab.this);
                 CardExportDialog.open(p, c);
