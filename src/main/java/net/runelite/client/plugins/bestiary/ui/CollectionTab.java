@@ -494,6 +494,7 @@ public class CollectionTab extends JPanel {
             AlbumCard card = new AlbumCard(dex, c.npcName,
                     java.util.List.of(c), dataService.getCollection(), imageService);
             card.setShowQuality(true);
+            card.setPreferredWidth(190);
             card.setAlignmentX(Component.CENTER_ALIGNMENT);
             card.setClickOverride(() -> {
                 Window p = SwingUtilities.getWindowAncestor(CollectionTab.this);

@@ -135,6 +135,12 @@ public class AlbumCard extends JPanel {
     @Nullable private Runnable nicknameCallback;
     public void setNicknameCallback(Runnable r) { this.nicknameCallback = r; }
 
+    public void setPreferredWidth(int w) {
+        setPreferredSize(new Dimension(w, CARD_H));
+        setMinimumSize(new Dimension(w, CARD_H));
+        setMaximumSize(new Dimension(w, CARD_H));
+    }
+
     // -------------------------------------------------------------------------
     // Constructors
     // -------------------------------------------------------------------------

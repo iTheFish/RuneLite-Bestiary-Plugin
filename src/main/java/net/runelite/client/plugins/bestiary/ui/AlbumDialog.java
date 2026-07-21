@@ -311,7 +311,13 @@ public class AlbumDialog extends JDialog {
             if (detailExportCap != null) {
                 CardExportDialog.open(AlbumDialog.this, detailExportCap);
             } else {
-                exportPageGrid(detailExportBtn);
+                Map<String, Integer> pageDex = new java.util.HashMap<>();
+                for (CapturedCreature cap : detailCurrentPage) {
+                    pageDex.put(cap.npcName, dexNumbers.getOrDefault(cap.npcName, 0));
+                }
+                String label = detailMonsterName != null ? detailMonsterName : "Page";
+                new PageExportDialog(AlbumDialog.this, new java.util.ArrayList<>(detailCurrentPage),
+                        label, pageDex, imageService, collection);
             }
         });
         dRow1East.add(detailExportBtn);
@@ -419,6 +425,7 @@ public class AlbumDialog extends JDialog {
         scroll.getVerticalScrollBar().setUnitIncrement(20);
         scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        scroll.getVerticalScrollBar().setPreferredSize(new Dimension(0, 0));
 
         scroll.getViewport().addComponentListener(new ComponentAdapter() {
             @Override public void componentResized(ComponentEvent e) { rebuildGrid(); }
