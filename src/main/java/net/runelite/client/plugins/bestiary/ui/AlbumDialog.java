@@ -441,6 +441,7 @@ public class AlbumDialog extends JDialog {
 
         addWindowListener(new WindowAdapter() {
             @Override public void windowClosing(WindowEvent e) { savedSize = getSize(); }
+            @Override public void windowClosed(WindowEvent e)  { CardExportDialog.disposeOpen(); }
         });
 
         imageService.prefetchBatch(fullRoster, gridPanel::repaint);

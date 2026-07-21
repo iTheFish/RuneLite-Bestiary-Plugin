@@ -387,7 +387,8 @@ public class InfoTab extends JPanel {
                 "Copy to clipboard or save as PNG. " +
                 "Each card footer shows the unique 28-character ID, your player name, and the OSRS | Bestiary stamp.\n\n" +
                 "In the Album detail view, use 'Export Page' to export the current page as a grid image " +
-                "(2–4 columns depending on page size)."));
+                "(2–4 columns depending on page size).\n\n" +
+                "You can also right-click capture rows directly to copy a card to clipboard without opening the export preview."));
         tiles.add(tile("Session Recap",
                 "A button on the Progress tab shows all captures made since you last logged in.\n\n" +
                 "The recap lists every capture with its rarity (colour-coded), quality score, " +
