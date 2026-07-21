@@ -368,17 +368,26 @@ public class InfoTab extends JPanel {
                 "(e.g. '3× Common Goblin captured!  Kill #42  Q:28, 35, 41')."));
         tiles.add(tile("Album",
                 "A full dex grid showing every capturable species in the game. " +
-                "Open it via the 'Open Album' button at the top of the By Monster view.\n\n" +
-                "Each card shows the species image, average stats, combat level, difficulty tier, " +
-                "and rarity dots for all rarities you have caught. " +
-                "Use the search box or difficulty dropdown to filter the grid."));
+                "Open it via the 'Open Album' button visible in all Collection views and on this tab.\n\n" +
+                "Clicking a species card opens a detail view showing all your captures of that species, " +
+                "paginated (8 / 12 / 16 per page) with a sort dropdown and rarity filter.\n\n" +
+                "Each catalog card shows the species image, combat level, difficulty tier, " +
+                "and rarity dots for rarities you have caught. " +
+                "Use the search box or difficulty dropdown to filter the catalog."));
+        tiles.add(tile("Favourites",
+                "Right-click any capture card or row → 'Add to Favourites' to star it. " +
+                "Up to 20 captures can be starred. Remove a star the same way.\n\n" +
+                "The ★ Favourites button in the Collection header shows all starred cards. " +
+                "Click a card to open its export preview; right-click to copy, rename, or unstar.\n\n" +
+                "In the Album, a ★ Favourites shortcut opens a detail view of all starred captures " +
+                "across every species, with a golden grid export option."));
         tiles.add(tile("Export",
-                "Right-click any card in the Collection or Album views, or right-click a capture " +
-                "row in the detail dialog → 'Export Card'.\n\n" +
-                "Opens a preview of the capture as a large card. " +
-                "Copy to clipboard or save as a PNG. " +
-                "Each card has a unique 28-character fingerprint encoding the species, " +
-                "all six stat values, rarity, and your player name."));
+                "Right-click any card in the Collection, Favourites, or Album views → 'Export Card'.\n\n" +
+                "Opens a preview of the capture at 3× scale. " +
+                "Copy to clipboard or save as PNG. " +
+                "Each card footer shows the unique 28-character ID, your player name, and the OSRS | Bestiary stamp.\n\n" +
+                "In the Album detail view, use 'Export Page' to export the current page as a grid image " +
+                "(2–4 columns depending on page size)."));
         tiles.add(tile("Session Recap",
                 "A button on the Progress tab shows all captures made since you last logged in.\n\n" +
                 "The recap lists every capture with its rarity (colour-coded), quality score, " +
