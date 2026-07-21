@@ -569,7 +569,7 @@ public class DashboardDialog extends JDialog {
                         new MatteBorder(0, 3, 0, 0, c.rarity.displayColor),
                         new EmptyBorder(6, 8, 6, 8)));
 
-                JPanel left = new JPanel(new GridLayout(2, 1, 0, 2));
+                JPanel left = new JPanel(new GridLayout(3, 1, 0, 1));
                 left.setOpaque(false);
                 JLabel nl = new JLabel((i + 1) + ".  " + c.npcName);
                 nl.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
@@ -578,7 +578,10 @@ public class DashboardDialog extends JDialog {
                         + (c.nickname != null && !c.nickname.isEmpty() ? "  \"" + c.nickname + "\"" : ""));
                 rl.setFont(FontManager.getRunescapeSmallFont());
                 rl.setForeground(MUTED);
-                left.add(nl); left.add(rl);
+                JLabel cl = new JLabel("Kill #" + c.killsBeforeCapture + "  ·  Lv." + c.captureLevel);
+                cl.setFont(FontManager.getRunescapeSmallFont());
+                cl.setForeground(DIM);
+                left.add(nl); left.add(rl); left.add(cl);
 
                 JLabel ql = new JLabel("Q:" + c.quality.overallRating());
                 ql.setFont(FontManager.getRunescapeFont().deriveFont(Font.BOLD));
@@ -1782,7 +1785,7 @@ public class DashboardDialog extends JDialog {
         final int W = 480, PAD = 24;
         int avgRows = 6, topRows = Math.max(1, top10.size());
         int H = 4 + PAD + 60 + 12 + 70 + 12 + 22 + 6 + avgRows * 24 + 8
-                + 22 + 6 + topRows * 24 + 8 + 36 + PAD;
+                + 22 + 6 + topRows * 34 + 8 + 36 + PAD;
 
         BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = cardGraphics(img);
@@ -1814,17 +1817,23 @@ public class DashboardDialog extends JDialog {
         } else {
             for (int i = 0; i < top10.size(); i++) {
                 CapturedCreature c = top10.get(i);
+                int q = c.quality.overallRating();
+                // Name line
                 g.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
                 FontMetrics fm = g.getFontMetrics();
                 g.setColor(c.rarity.displayColor);
                 g.drawString((i + 1) + ".  " + c.npcName, PAD + 4, y + fm.getAscent());
-                int q = c.quality.overallRating();
                 String qs = "Q:" + q;
                 g.setFont(FontManager.getRunescapeSmallFont());
                 fm = g.getFontMetrics();
                 g.setColor(qualColor(q));
                 g.drawString(qs, W - PAD - fm.stringWidth(qs), y + fm.getAscent());
-                y += 24;
+                y += 15;
+                // Context line
+                g.setColor(DIM);
+                String ctx = c.rarity.label + "  ·  Kill #" + c.killsBeforeCapture + "  ·  Lv." + c.captureLevel;
+                g.drawString(ctx, PAD + 4, y + fm.getAscent());
+                y += 19;
             }
         }
         y += 8;
