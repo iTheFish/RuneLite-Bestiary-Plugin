@@ -182,8 +182,27 @@ public class InfoTab extends JPanel {
         bottomRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
         bottomRow.setAlignmentX(LEFT_ALIGNMENT);
         bottomRow.add(shortcutBtn("Session Recap", new Color(120, 200, 120), openRecap));
-        JButton catchBtn = shortcutBtn("ℹ Catch Rates", new Color(100, 180, 220), openCatchRates);
-        catchBtn.setBackground(Color.WHITE);
+        JButton catchBtn = shortcutBtn(" Catch Rates", new Color(100, 180, 220), openCatchRates);
+        final int iD = 13;
+        catchBtn.setIcon(new Icon() {
+            @Override public int getIconWidth()  { return iD; }
+            @Override public int getIconHeight() { return iD; }
+            @Override public void paintIcon(Component c, Graphics g, int x, int y) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,      RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                g2.setColor(Color.WHITE);
+                g2.fillOval(x, y, iD, iD);
+                g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+                FontMetrics fm = g2.getFontMetrics();
+                g2.setColor(new Color(30, 30, 30));
+                String ch = "i";
+                g2.drawString(ch, x + (iD - fm.stringWidth(ch)) / 2,
+                        y + (iD + fm.getAscent() - fm.getDescent()) / 2);
+                g2.dispose();
+            }
+        });
+        catchBtn.setIconTextGap(3);
         bottomRow.add(catchBtn);
 
         container.add(topRow);
