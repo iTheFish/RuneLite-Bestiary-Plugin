@@ -111,8 +111,8 @@ public class CreatureCard extends JPanel {
         add(rightCol, BorderLayout.EAST);
 
 
-        // Foil shimmer: one sweep per hover for Legendary / Mythic
-        if (rarity == CreatureRarity.LEGENDARY || rarity == CreatureRarity.MYTHIC) {
+        // Foil shimmer: one sweep per hover for Epic and above
+        if (rarity.ordinal() >= CreatureRarity.EPIC.ordinal()) {
             shimmerTimer = new javax.swing.Timer(30, e -> {
                 shimmerPhase += 0.022f;
                 if (shimmerPhase > 1.3f) { shimmerTimer.stop(); shimmerPhase = 0f; }
@@ -177,7 +177,9 @@ public class CreatureCard extends JPanel {
 
         Color mid = rarity == CreatureRarity.MYTHIC
                 ? new Color(255, 120, 120, 100)
-                : new Color(255, 210, 80,  100);
+                : rarity == CreatureRarity.LEGENDARY
+                ? new Color(255, 210, 80,  100)
+                : new Color(210, 120, 240,  90);
         Color none = new Color(mid.getRed(), mid.getGreen(), mid.getBlue(), 0);
 
         LinearGradientPaint lgp = new LinearGradientPaint(

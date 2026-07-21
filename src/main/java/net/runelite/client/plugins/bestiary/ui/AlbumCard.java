@@ -62,6 +62,8 @@ public class AlbumCard extends JPanel {
     private final CreatureSpecies species;
     @Nullable private final WikiImageService imageService;
     private boolean hovered = false;
+    private float shimmerPhase = 0f;
+    private javax.swing.Timer shimmerTimer;
     private final boolean locked;
 
     // Captured-only
@@ -176,9 +178,26 @@ public class AlbumCard extends JPanel {
             imgService.requestImage(npcName, this::repaint);
         }
 
+        if (!locked && rarest != null && rarest.ordinal() >= CreatureRarity.EPIC.ordinal()) {
+            shimmerTimer = new javax.swing.Timer(30, e -> {
+                shimmerPhase += 0.022f;
+                if (shimmerPhase > 1.3f) { shimmerTimer.stop(); shimmerPhase = 0f; }
+                repaint();
+            });
+            shimmerTimer.setRepeats(true);
+        }
+
         addMouseListener(new MouseAdapter() {
-            @Override public void mouseEntered(MouseEvent e) { hovered = true;  repaint(); }
-            @Override public void mouseExited(MouseEvent e)  { hovered = false; repaint(); }
+            @Override public void mouseEntered(MouseEvent e) {
+                hovered = true;
+                if (shimmerTimer != null) { shimmerPhase = 0f; shimmerTimer.restart(); }
+                repaint();
+            }
+            @Override public void mouseExited(MouseEvent e) {
+                hovered = false;
+                if (shimmerTimer != null) shimmerTimer.stop();
+                repaint();
+            }
 
             @Override
             public void mouseReleased(MouseEvent e) {
@@ -469,6 +488,23 @@ public class AlbumCard extends JPanel {
                 g2.setColor(Color.WHITE);
                 g2.drawString(valStr, imgX + imgW - vfm.stringWidth(valStr), baseline);
             }
+        }
+
+        // Shimmer overlay for Epic+
+        if (shimmerTimer != null && shimmerTimer.isRunning()) {
+            int stripW = 55;
+            float cx   = shimmerPhase * (CARD_W + stripW) - stripW / 2f;
+            Color mid  = rarest == CreatureRarity.MYTHIC
+                    ? new Color(255, 120, 120, 100)
+                    : rarest == CreatureRarity.LEGENDARY
+                    ? new Color(255, 210, 80,  100)
+                    : new Color(210, 120, 240,  90);
+            Color none = new Color(mid.getRed(), mid.getGreen(), mid.getBlue(), 0);
+            g2.setPaint(new java.awt.LinearGradientPaint(
+                    cx - stripW / 2f, 0, cx + stripW / 2f, 0,
+                    new float[]{0f, 0.5f, 1f},
+                    new Color[]{none, mid, none}));
+            g2.fillRoundRect(0, 0, CARD_W, CARD_H, 8, 8);
         }
 
         g2.dispose();
