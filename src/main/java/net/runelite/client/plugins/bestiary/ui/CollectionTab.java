@@ -59,6 +59,14 @@ public class CollectionTab extends JPanel {
         setBackground(ColorScheme.DARK_GRAY_COLOR);
         setBorder(new EmptyBorder(8, 8, 8, 8));
 
+        AlbumDialog.setOpenDetailCallback(name -> {
+            Window parent = SwingUtilities.getWindowAncestor(CollectionTab.this);
+            if (!AlbumDialog.focusDetail(name)) {
+                openAlbum(parent, false);
+                SwingUtilities.invokeLater(() -> AlbumDialog.focusDetail(name));
+            }
+        });
+
         // --- Controls ---
         JPanel controls = new JPanel(new BorderLayout(0, 4));
         controls.setOpaque(false);

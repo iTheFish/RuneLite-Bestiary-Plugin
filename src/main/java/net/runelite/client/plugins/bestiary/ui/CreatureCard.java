@@ -134,17 +134,7 @@ public class CreatureCard extends JPanel {
         addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
-                // Pass all captures for this NPC (not just this rarity) so the dialog
-                // can show every rarity section; auto-expand the one that was clicked.
-                String npcName = captures.get(0).npcName;
-                CreatureRarity clickedRarity = captures.get(0).rarity;
-                java.util.List<net.runelite.client.plugins.bestiary.model.CapturedCreature> allCaptures =
-                    collection.creatures.stream()
-                        .filter(c -> c.npcName.equals(npcName))
-                        .collect(java.util.stream.Collectors.toList());
-                new CreatureDetailDialog(
-                        SwingUtilities.getWindowAncestor(CreatureCard.this),
-                        allCaptures, collection, "By Rarity", clickedRarity);
+                AlbumDialog.requestOpenDetail(captures.get(0).npcName);
             }
 
             @Override

@@ -41,6 +41,25 @@ public class AlbumDialog extends JDialog {
     private static Runnable onFavouriteChanged;
     public static void setOnFavouriteChanged(Runnable r) { onFavouriteChanged = r; }
 
+    /** Callback set by CollectionTab so cards can open the Album to a monster's detail view. */
+    private static java.util.function.Consumer<String> openDetailCallback;
+    public static void setOpenDetailCallback(java.util.function.Consumer<String> cb) { openDetailCallback = cb; }
+
+    /** Called by collection cards (CreatureCard, MonsterSummaryCard, CaptureRow) to open detail. */
+    public static void requestOpenDetail(String monsterName) {
+        if (openDetailCallback != null) openDetailCallback.accept(monsterName);
+    }
+
+    /** Switch to detail view if the dialog is already open; returns true if switched. */
+    public static boolean focusDetail(String name) {
+        if (current != null && current.isShowing()) {
+            current.showDetail(name);
+            current.toFront();
+            return true;
+        }
+        return false;
+    }
+
     private static final int CARD_GAP = 6;
     private static final int SIDE_PAD = 8;
 
@@ -453,7 +472,7 @@ public class AlbumDialog extends JDialog {
     // Detail view navigation
     // -------------------------------------------------------------------------
 
-    private void showDetail(String name) {
+    public void showDetail(String name) {
         detailMonsterName = name;
         detailPage = 0;
         detailSort = "Rarity (best)";

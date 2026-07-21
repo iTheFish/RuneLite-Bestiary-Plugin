@@ -94,9 +94,7 @@ public class MonsterSummaryCard extends JPanel {
             @Override public void mouseEntered(MouseEvent e) { setBackground(HOVER_BG); }
             @Override public void mouseExited(MouseEvent e)  { setBackground(NORMAL_BG); }
             @Override public void mouseClicked(MouseEvent e) {
-                new CreatureDetailDialog(
-                        SwingUtilities.getWindowAncestor(MonsterSummaryCard.this),
-                        captures, collection, "By Rarity", null);
+                AlbumDialog.requestOpenDetail(captures.get(0).npcName);
             }
         });
     }

@@ -127,9 +127,7 @@ public class CaptureRow extends JPanel {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 if (SwingUtilities.isLeftMouseButton(e)) {
-                    new CreatureDetailDialog(
-                            SwingUtilities.getWindowAncestor(CaptureRow.this),
-                            java.util.List.of(capture), collection, "Newest first", capture.rarity).setVisible(true);
+                    AlbumDialog.requestOpenDetail(capture.npcName);
                 }
             }
 
