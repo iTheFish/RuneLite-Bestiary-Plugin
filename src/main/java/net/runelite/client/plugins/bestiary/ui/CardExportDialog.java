@@ -262,7 +262,7 @@ public class CardExportDialog extends JDialog {
         return false;
     }
 
-    /** Draws 3-line banner (UniqueID / Captured by / OSRS|BESTIARY) vertically centred in the banner rect. */
+    /** Draws 3-line banner: UniqueID + Captured by centred, OSRS|BESTIARY pinned to bottom. */
     static void drawBanner(Graphics2D g2, int bX, int bY, int bannerW, int bannerH, String cardId, String ownerStr) {
         Font idFont     = FontManager.getRunescapeSmallFont().deriveFont(7f);
         Font playerFont = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 10f);
@@ -270,9 +270,17 @@ public class CardExportDialog extends JDialog {
         g2.setFont(idFont);     FontMetrics ifm = g2.getFontMetrics();
         g2.setFont(playerFont); FontMetrics pfm = g2.getFontMetrics();
         g2.setFont(brandFont);  FontMetrics bfm = g2.getFontMetrics();
+        // OSRS | BESTIARY pinned 2px from bottom
+        String brand = "OSRS | BESTIARY";
+        int brandY = bY + bannerH - bfm.getDescent() - 2;
+        g2.setFont(brandFont);
+        g2.setColor(new Color(110, 110, 110));
+        g2.drawString(brand, bX + (bannerW - bfm.stringWidth(brand)) / 2, brandY);
+        // UniqueID + Captured by centred in the space above the brand line
+        int upperH = bannerH - bfm.getHeight() - 2;
         int gap    = 2;
-        int totalH = ifm.getHeight() + gap + pfm.getHeight() + gap + bfm.getHeight();
-        int startY = bY + Math.max(2, (bannerH - totalH) / 2);
+        int twoLineH = ifm.getHeight() + gap + pfm.getHeight();
+        int startY = bY + Math.max(2, (upperH - twoLineH) / 2);
         g2.setFont(idFont);
         g2.setColor(new Color(90, 90, 90));
         g2.drawString(cardId, bX + (bannerW - ifm.stringWidth(cardId)) / 2, startY + ifm.getAscent());
@@ -280,11 +288,6 @@ public class CardExportDialog extends JDialog {
         g2.setColor(new Color(200, 155, 50));
         int y2 = startY + ifm.getHeight() + gap;
         g2.drawString(ownerStr, bX + (bannerW - pfm.stringWidth(ownerStr)) / 2, y2 + pfm.getAscent());
-        String brand = "OSRS | BESTIARY";
-        g2.setFont(brandFont);
-        g2.setColor(new Color(110, 110, 110));
-        int y3 = y2 + pfm.getHeight() + gap;
-        g2.drawString(brand, bX + (bannerW - bfm.stringWidth(brand)) / 2, y3 + bfm.getAscent());
     }
 
     private static void flash(JButton btn, String label) {
