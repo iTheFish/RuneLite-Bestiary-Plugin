@@ -131,6 +131,10 @@ public class AlbumCard extends JPanel {
     @Nullable private Runnable copyCallback;
     public void setCopyCallback(Runnable r) { this.copyCallback = r; }
 
+    // If set, right-click menu shows "Name capture…"/"Rename…" when captures.size() == 1
+    @Nullable private Runnable nicknameCallback;
+    public void setNicknameCallback(Runnable r) { this.nicknameCallback = r; }
+
     // -------------------------------------------------------------------------
     // Constructors
     // -------------------------------------------------------------------------
@@ -327,9 +331,62 @@ public class AlbumCard extends JPanel {
                     }
                     menu.add(sub);
                 }
+                if (!locked && captures != null && captures.size() == 1) {
+                    CapturedCreature nickCap = captures.get(0);
+                    String nickLabel = (nickCap.nickname != null && !nickCap.nickname.isEmpty()) ? "Rename…" : "Name capture…";
+                    JMenuItem nickItem = new JMenuItem(nickLabel);
+                    nickItem.addActionListener(ev -> openNicknameDialog(nickCap));
+                    menu.add(nickItem);
+                }
                 menu.show(AlbumCard.this, e.getX(), e.getY());
             }
         });
+    }
+
+    private void openNicknameDialog(CapturedCreature c) {
+        JTextField field = new JTextField(c.nickname != null ? c.nickname : "", 20);
+        JLabel counter = new JLabel(field.getText().length() + " / 20");
+        counter.setFont(FontManager.getRunescapeSmallFont());
+        counter.setForeground(Color.GRAY);
+        ((javax.swing.text.AbstractDocument) field.getDocument()).setDocumentFilter(new javax.swing.text.DocumentFilter() {
+            private void upd(FilterBypass fb) { counter.setText(fb.getDocument().getLength() + " / 20"); }
+            @Override public void insertString(FilterBypass fb, int off, String s, javax.swing.text.AttributeSet a) throws javax.swing.text.BadLocationException {
+                if (fb.getDocument().getLength() + (s == null ? 0 : s.length()) <= 20) { super.insertString(fb, off, s, a); upd(fb); }
+            }
+            @Override public void replace(FilterBypass fb, int off, int len, String s, javax.swing.text.AttributeSet a) throws javax.swing.text.BadLocationException {
+                if (fb.getDocument().getLength() - len + (s == null ? 0 : s.length()) <= 20) { super.replace(fb, off, len, s, a); upd(fb); }
+            }
+            @Override public void remove(FilterBypass fb, int off, int len) throws javax.swing.text.BadLocationException { super.remove(fb, off, len); upd(fb); }
+        });
+        JPanel inputPanel = new JPanel(new BorderLayout(6, 4));
+        inputPanel.add(new JLabel("Name (blank to clear):"), BorderLayout.NORTH);
+        inputPanel.add(field, BorderLayout.CENTER);
+        inputPanel.add(counter, BorderLayout.EAST);
+        JButton okBtn = new JButton("OK");
+        JButton cancelBtn = new JButton("Cancel");
+        JPanel btnRow = new JPanel(new GridLayout(1, 2, 4, 0));
+        btnRow.add(okBtn); btnRow.add(cancelBtn);
+        JPanel content = new JPanel(new BorderLayout(0, 8));
+        content.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        content.add(inputPanel, BorderLayout.CENTER);
+        content.add(btnRow, BorderLayout.SOUTH);
+        Window owner = SwingUtilities.getWindowAncestor(this);
+        JDialog dlg = new JDialog(owner, "Name Capture", java.awt.Dialog.ModalityType.MODELESS);
+        dlg.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dlg.setResizable(false);
+        dlg.setContentPane(content);
+        dlg.pack();
+        dlg.setLocationRelativeTo(this);
+        okBtn.addActionListener(ae -> {
+            String val = field.getText().trim();
+            c.nickname = val.isBlank() ? null : val;
+            repaint();
+            if (nicknameCallback != null) nicknameCallback.run();
+            dlg.dispose();
+        });
+        cancelBtn.addActionListener(ae -> dlg.dispose());
+        field.addActionListener(ae -> okBtn.doClick());
+        dlg.setVisible(true);
     }
 
     @Override
@@ -390,13 +447,17 @@ public class AlbumCard extends JPanel {
                 && captures.get(0).nickname != null && !captures.get(0).nickname.isEmpty())
                 ? captures.get(0).nickname : null;
         if (headerNickname != null) {
+            int dotSize = 7, dotY = HEADER_Y + (HEADER_H - dotSize) / 2, dotX = PAD + 2;
+            g2.setColor(rarest.displayColor);
+            g2.fillOval(dotX, dotY, dotSize, dotSize);
+            int nickStartX = dotX + dotSize + 4;
             Font nickFont = smallFont.deriveFont(Font.BOLD | Font.ITALIC, 11f);
             g2.setFont(nickFont);
             FontMetrics nfm = g2.getFontMetrics();
-            int maxNickW = dexX - PAD - 6;
+            int maxNickW = dexX - nickStartX - 4;
             String nick = truncate(headerNickname, nfm, maxNickW);
             g2.setColor(new Color(200, 155, 50));
-            g2.drawString(nick, PAD + 2, dexY);
+            g2.drawString(nick, nickStartX, dexY);
             g2.setFont(smallFont);
         } else if (!locked && rarityDots != null) {
             int dotSize = 7, dotY = HEADER_Y + (HEADER_H - 7) / 2, dotX = PAD + 2;

@@ -73,15 +73,15 @@ public class CardExportDialog extends JDialog {
         card.print(g2);
         g2.setColor(new Color(12, 12, 12));
         g2.fillRect(0, AlbumCard.CARD_H, AlbumCard.CARD_W, bottomH);
-        g2.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 6));
+        g2.setFont(FontManager.getRunescapeSmallFont());
         FontMetrics idFm = g2.getFontMetrics();
         g2.setColor(new Color(90, 90, 90));
-        g2.drawString(cardId, (AlbumCard.CARD_W - idFm.stringWidth(cardId)) / 2, AlbumCard.CARD_H + 9);
-        g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 8f));
+        g2.drawString(cardId, (AlbumCard.CARD_W - idFm.stringWidth(cardId)) / 2, AlbumCard.CARD_H + idFm.getAscent() + 2);
+        g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         FontMetrics owFm = g2.getFontMetrics();
         g2.setColor(new Color(200, 155, 50));
         String ownerStr = "Captured by " + capturedBy;
-        g2.drawString(ownerStr, (AlbumCard.CARD_W - owFm.stringWidth(ownerStr)) / 2, AlbumCard.CARD_H + 22);
+        g2.drawString(ownerStr, (AlbumCard.CARD_W - owFm.stringWidth(ownerStr)) / 2, AlbumCard.CARD_H + idFm.getHeight() + owFm.getAscent() + 1);
         g2.dispose();
 
         BufferedImage exported = img;
@@ -150,15 +150,15 @@ public class CardExportDialog extends JDialog {
                 // Banner (mirrors renderCard)
                 g2.setColor(new Color(12, 12, 12));
                 g2.fillRect(0, AlbumCard.CARD_H, AlbumCard.CARD_W, 28);
-                g2.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 6));
+                g2.setFont(FontManager.getRunescapeSmallFont());
                 FontMetrics idFm = g2.getFontMetrics();
                 g2.setColor(new Color(90, 90, 90));
-                g2.drawString(cardId, (AlbumCard.CARD_W - idFm.stringWidth(cardId)) / 2, AlbumCard.CARD_H + 9);
-                g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 8f));
+                g2.drawString(cardId, (AlbumCard.CARD_W - idFm.stringWidth(cardId)) / 2, AlbumCard.CARD_H + idFm.getAscent() + 2);
+                g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
                 FontMetrics ownerFm = g2.getFontMetrics();
                 g2.setColor(new Color(200, 155, 50));
                 String ownerStr = "Captured by " + CardExportDialog.this.owner;
-                g2.drawString(ownerStr, (AlbumCard.CARD_W - ownerFm.stringWidth(ownerStr)) / 2, AlbumCard.CARD_H + 22);
+                g2.drawString(ownerStr, (AlbumCard.CARD_W - ownerFm.stringWidth(ownerStr)) / 2, AlbumCard.CARD_H + idFm.getHeight() + ownerFm.getAscent() + 1);
                 g2.dispose();
             }
         };
@@ -239,20 +239,20 @@ public class CardExportDialog extends JDialog {
         g2.setColor(new Color(12, 12, 12));
         g2.fillRect(0, AlbumCard.CARD_H, AlbumCard.CARD_W, bottomH);
 
-        g2.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 6));
+        g2.setFont(FontManager.getRunescapeSmallFont());
         FontMetrics idFm = g2.getFontMetrics();
         g2.setColor(new Color(90, 90, 90));
         g2.drawString(cardId,
                 (AlbumCard.CARD_W - idFm.stringWidth(cardId)) / 2,
-                AlbumCard.CARD_H + 9);
+                AlbumCard.CARD_H + idFm.getAscent() + 2);
 
-        g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 8f));
+        g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         FontMetrics ownerFm = g2.getFontMetrics();
         g2.setColor(new Color(200, 155, 50));
         String ownerStr = "Captured by " + owner;
         g2.drawString(ownerStr,
                 (AlbumCard.CARD_W - ownerFm.stringWidth(ownerStr)) / 2,
-                AlbumCard.CARD_H + 22);
+                AlbumCard.CARD_H + idFm.getHeight() + ownerFm.getAscent() + 1);
 
         g2.dispose();
         return img;

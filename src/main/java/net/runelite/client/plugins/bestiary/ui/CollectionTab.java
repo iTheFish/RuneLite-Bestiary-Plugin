@@ -494,7 +494,7 @@ public class CollectionTab extends JPanel {
             AlbumCard card = new AlbumCard(dex, c.npcName,
                     java.util.List.of(c), dataService.getCollection(), imageService);
             card.setShowQuality(true);
-            card.setAlignmentX(Component.LEFT_ALIGNMENT);
+            card.setAlignmentX(Component.CENTER_ALIGNMENT);
             card.setClickOverride(() -> {
                 Window p = SwingUtilities.getWindowAncestor(CollectionTab.this);
                 CardExportDialog.open(p, c);
@@ -504,6 +504,7 @@ public class CollectionTab extends JPanel {
                 CardExportDialog.copyNow(p, c);
             });
             card.setUnfavouriteCallback(() -> { c.favourite = false; onFav.run(); });
+            card.setNicknameCallback(onFav);
             cardContainer.add(card);
             if (i < favs.size() - 1) cardContainer.add(Box.createVerticalStrut(4));
         }
