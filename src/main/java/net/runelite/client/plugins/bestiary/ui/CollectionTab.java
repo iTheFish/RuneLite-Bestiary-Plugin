@@ -485,16 +485,16 @@ public class CollectionTab extends JPanel {
             return;
         }
 
-        // Top 3 by quality — click opens CardExportDialog; right-click: copy + unfavourite
-        JPanel grid = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 4));
-        grid.setOpaque(false);
-        grid.setAlignmentX(Component.LEFT_ALIGNMENT);
+        // Top 3 by quality — cards go directly into cardContainer (BoxLayout Y_AXIS)
+        // so preferred height is calculated correctly and all 3 stack vertically
         Runnable onFav = () -> { dataService.saveNow(); rebuildCards(); };
-        for (CapturedCreature c : favs) {
+        for (int i = 0; i < favs.size(); i++) {
+            CapturedCreature c = favs.get(i);
             int dex = net.runelite.client.plugins.bestiary.model.MonsterRoster.getDexNumber(c.npcName);
             AlbumCard card = new AlbumCard(dex, c.npcName,
                     java.util.List.of(c), dataService.getCollection(), imageService);
             card.setShowQuality(true);
+            card.setAlignmentX(Component.LEFT_ALIGNMENT);
             card.setClickOverride(() -> {
                 Window p = SwingUtilities.getWindowAncestor(CollectionTab.this);
                 CardExportDialog.open(p, c);
@@ -504,9 +504,9 @@ public class CollectionTab extends JPanel {
                 CardExportDialog.copyNow(p, c);
             });
             card.setUnfavouriteCallback(() -> { c.favourite = false; onFav.run(); });
-            grid.add(card);
+            cardContainer.add(card);
+            if (i < favs.size() - 1) cardContainer.add(Box.createVerticalStrut(4));
         }
-        cardContainer.add(grid);
     }
 
     // -------------------------------------------------------------------------

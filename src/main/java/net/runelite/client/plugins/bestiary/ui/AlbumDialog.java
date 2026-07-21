@@ -976,7 +976,7 @@ public class AlbumDialog extends JDialog {
         g2.drawString(headerText, hx, hy);
 
         Font playerFont = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD);
-        Font idFont     = FontManager.getRunescapeSmallFont().deriveFont(9f);
+        Font idFont     = FontManager.getRunescapeSmallFont();
 
         for (int i = 0; i < page.size(); i++) {
             CapturedCreature cap = page.get(i);
