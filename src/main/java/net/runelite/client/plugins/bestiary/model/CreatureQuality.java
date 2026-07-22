@@ -38,7 +38,7 @@ public class CreatureQuality {
     }
 
     private static int clamp(int v) {
-        return Math.max(1, Math.min(100, v));
+        return Math.max(1, Math.min(99, v));
     }
 
     @Override

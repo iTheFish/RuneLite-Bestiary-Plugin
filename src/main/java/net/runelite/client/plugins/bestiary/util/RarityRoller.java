@@ -89,7 +89,7 @@ public final class RarityRoller {
 
     private static int rollStat(Random rng, double mean, double sd) {
         double value = mean + rng.nextGaussian() * sd;
-        return Math.max(1, Math.min(100, (int) Math.round(value)));
+        return Math.max(1, Math.min(99, (int) Math.round(value)));
     }
 }
 
