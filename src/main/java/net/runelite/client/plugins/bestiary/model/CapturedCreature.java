@@ -79,6 +79,7 @@ public class CapturedCreature {
         private int killsBeforeCapture = 0;
         private String playerName = "";
 
+        public Builder id(String v)              { this.id = v; return this; }
         public Builder npcId(int v)             { this.npcId = v; return this; }
         public Builder npcName(String v)         { this.npcName = v; return this; }
         public Builder npcCombatLevel(int v)     { this.npcCombatLevel = v; return this; }

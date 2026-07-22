@@ -111,7 +111,7 @@ public class BestiaryPlugin extends Plugin {
 
     @Override
     protected void shutDown() {
-        dataService.saveNow();
+        dataService.shutdown();
         overlayManager.remove(overlay);
         clientToolbar.removeNavigation(navButton);
         navButton = null;
@@ -157,11 +157,16 @@ public class BestiaryPlugin extends Plugin {
         if (event.getGameState() == GameState.LOGGED_IN && client.getLocalPlayer() != null) {
             String name = client.getLocalPlayer().getName();
             if (name != null && !name.isEmpty()) {
+                boolean anyBackfilled = false;
                 for (net.runelite.client.plugins.bestiary.model.CapturedCreature c
                         : dataService.getCollection().creatures) {
                     if (c.playerName == null || c.playerName.isEmpty()) {
                         c.playerName = name;
+                        anyBackfilled = true;
                     }
+                }
+                if (anyBackfilled) {
+                    dataService.saveNow();
                 }
             }
             sessionTracker.clear();

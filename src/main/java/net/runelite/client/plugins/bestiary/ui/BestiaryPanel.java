@@ -26,6 +26,7 @@ public class BestiaryPanel extends PluginPanel {
     private final BestiaryDataService dataService;
     private final ProgressionService progressionService;
     private final SessionTracker sessionTracker;
+    private final net.runelite.client.plugins.bestiary.BestiaryConfig config;
 
     private final JLabel statsLabel;
     private CollectionTab collectionTab;
@@ -41,6 +42,7 @@ public class BestiaryPanel extends PluginPanel {
         this.dataService        = dataService;
         this.progressionService = progressionService;
         this.sessionTracker     = sessionTracker;
+        this.config             = config;
         CreatureDetailDialog.setConfig(config);
         CreatureDetailDialog.setSaveCallback(dataService::saveNow);
         CardExportDialog.setShared(imageService, dataService::getCollection);
@@ -99,7 +101,34 @@ public class BestiaryPanel extends PluginPanel {
 
         add(header,          BorderLayout.NORTH);
         add(tabs,            BorderLayout.CENTER);
-        add(buildWipeBtn(),  BorderLayout.SOUTH);
+        add(buildSouthPanel(), BorderLayout.SOUTH);
+    }
+
+    private JPanel buildSouthPanel() {
+        JPanel panel = new JPanel();
+        panel.setOpaque(false);
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+        boolean devMode = config.devCaptureMode() != net.runelite.client.plugins.bestiary.model.DevCaptureMode.NORMAL;
+        if (devMode) {
+            JButton seedBtn = new JButton("[DEV] Seed Test Data");
+            seedBtn.setFont(FontManager.getRunescapeSmallFont());
+            seedBtn.setBackground(new Color(20, 50, 80));
+            seedBtn.setForeground(new Color(100, 180, 255));
+            seedBtn.setBorderPainted(false);
+            seedBtn.setFocusPainted(false);
+            seedBtn.setToolTipText("Wipe collection and insert 1 capture per rarity for every roster monster");
+            seedBtn.setAlignmentX(CENTER_ALIGNMENT);
+            seedBtn.addActionListener(e -> {
+                dataService.seedTestCollection();
+                refresh();
+            });
+            panel.add(seedBtn);
+            panel.add(Box.createVerticalStrut(3));
+        }
+
+        panel.add(buildWipeBtn());
+        return panel;
     }
 
     private JButton buildWipeBtn() {
