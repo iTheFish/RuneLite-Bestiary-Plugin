@@ -162,17 +162,15 @@ public class BestiaryDataService {
 
         for (String name : MonsterRoster.ROSTER) {
             int combatLevel = combatLevelForSeed(name);
-            rng.setSeed(name.hashCode());
+            net.runelite.client.plugins.bestiary.model.CombatClass combatClass =
+                MonsterRoster.getCombatClass(name, combatLevel);
 
             for (int r = 0; r < CreatureRarity.values().length; r++) {
                 CreatureRarity rarity = CreatureRarity.values()[r];
                 rng.setSeed((long) name.hashCode() * 31 + r);
 
-                CreatureQuality quality = new CreatureQuality(
-                    20 + rng.nextInt(81), 20 + rng.nextInt(81),
-                    20 + rng.nextInt(81), 20 + rng.nextInt(81),
-                    20 + rng.nextInt(81), 20 + rng.nextInt(81)
-                );
+                CreatureQuality quality = net.runelite.client.plugins.bestiary.util.RarityRoller
+                    .generateQuality(combatClass, rarity, rng);
 
                 CapturedCreature c = CapturedCreature.builder()
                     .npcId(0)
@@ -191,9 +189,13 @@ public class BestiaryDataService {
                 db.insertCapture(c);
                 idx++;
             }
+            rng.setSeed(name.hashCode());
             collection.killCounts.put(name, killsBefore[5] + rng.nextInt(200));
             db.upsertKillCount(name, collection.killCounts.get(name));
         }
+
+        // Set Bestiary level to 99
+        progressionState.totalXp = 13_034_431L;
         saveMetadata();
         log.info("Dev seed complete: {} captures across {} monsters",
             collection.totalCaptures(), MonsterRoster.ROSTER.size());

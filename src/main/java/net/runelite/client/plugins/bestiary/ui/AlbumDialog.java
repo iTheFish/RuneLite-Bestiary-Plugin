@@ -558,9 +558,9 @@ public class AlbumDialog extends JDialog {
             sortAllMixed(ordered);
         }
 
-        // Favourites shortcut card — only when there are starred captures
+        // Favourites shortcut card — always shown when no search/filter active
         long favCount = capturesByNpc.values().stream().flatMap(List::stream).filter(c -> c.favourite).count();
-        if (favCount > 0 && searchTerm.isEmpty() && filterDifficulty == null) {
+        if (searchTerm.isEmpty() && filterDifficulty == null) {
             gridPanel.add(buildFavouritesShortcutCard((int) favCount));
         }
 
