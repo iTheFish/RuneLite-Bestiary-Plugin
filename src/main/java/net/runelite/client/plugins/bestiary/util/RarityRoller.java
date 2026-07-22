@@ -83,6 +83,32 @@ public final class RarityRoller {
         return new CreatureQuality(stats[0], stats[1], stats[2], stats[3], stats[4], stats[5]);
     }
 
+    /**
+     * Per-stat floor variant: each stat has its own base derived from actual OSRS data.
+     * Primary stats still spike toward 99; secondary and tertiary are capped relative
+     * to their individual base so rarity remains the dominant power driver.
+     */
+    public static CreatureQuality generateQuality(CombatClass cls, CreatureRarity rarity,
+                                                  int[] bases, Random rng) {
+        double boost = rarity.ordinal() / (double)(CreatureRarity.values().length - 1);
+        int[] stats = new int[6];
+        for (int i = 0; i < 6; i++) {
+            int base = bases[i];
+            double target;
+            if (cls.isPrimary(i)) {
+                target = base + boost * (99 - base);
+            } else if (cls.isTertiary(i)) {
+                double tertiCeil = Math.max(base + 5, Math.min(base + 15, (int)(base + (99 - base) * 0.20)));
+                target = base + boost * (tertiCeil - base);
+            } else {
+                double secondCeil = Math.max(base + 10, Math.min(base + 30, (int)(base + (99 - base) * 0.55)));
+                target = base + boost * (secondCeil - base);
+            }
+            stats[i] = rollStat(rng, target, 7);
+        }
+        return new CreatureQuality(stats[0], stats[1], stats[2], stats[3], stats[4], stats[5]);
+    }
+
     private static int rollStat(Random rng, double mean, double sd) {
         double value = mean + rng.nextGaussian() * sd;
         return Math.max(1, Math.min(99, (int) Math.round(value)));
