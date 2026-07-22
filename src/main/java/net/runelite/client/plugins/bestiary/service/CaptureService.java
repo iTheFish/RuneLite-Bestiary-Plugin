@@ -81,7 +81,8 @@ public class CaptureService {
                 ? CreatureRarity.fromLabel(forceRarity.name())
                 : RarityRoller.roll(rng, captureLevel);
         CombatClass combatClass = MonsterRoster.getCombatClass(npcName, npc.getCombatLevel());
-        CreatureQuality quality = RarityRoller.generateQuality(combatClass, rarity, rng);
+        int statFloor = MonsterRoster.getStatFloor(npcName, npc.getCombatLevel());
+        CreatureQuality quality = RarityRoller.generateQuality(combatClass, rarity, statFloor, rng);
 
         CapturedCreature creature = CapturedCreature.builder()
                 .npcId(npc.getId())

@@ -169,8 +169,9 @@ public class BestiaryDataService {
                 CreatureRarity rarity = CreatureRarity.values()[r];
                 rng.setSeed((long) name.hashCode() * 31 + r);
 
+                int statFloor = MonsterRoster.getStatFloor(name, combatLevel);
                 CreatureQuality quality = net.runelite.client.plugins.bestiary.util.RarityRoller
-                    .generateQuality(combatClass, rarity, rng);
+                    .generateQuality(combatClass, rarity, statFloor, rng);
 
                 CapturedCreature c = CapturedCreature.builder()
                     .npcId(0)

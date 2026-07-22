@@ -404,20 +404,22 @@ public class MonsterRoster {
             "Ahrim the Blighted", "Dharok the Wretched", "Guthan the Infested",
             "Karil the Tainted", "Torag the Corrupted", "Verac the Defiled",
             "Tekton", "Maiden of Sugadinti", "Pestilent Bloat", "Sotetseg",
-            "Xarpus", "Verzik Vitur",
+            "Xarpus",
             "Akkha", "Ba-Ba", "Kephri", "Zebak",
-            "Tumeken's Warden", "Elidinis' Warden",
-            "Sol Heredit",
-            "Great Olm", "Vespula",
-            "Corporeal Beast",
-            "TzKal-Zuk"
+            "Vespula",
+            "Corporeal Beast"
         )) { a.put(n, TITAN); }
 
         // APEX — STR, SPD, INT (3 primaries — hardest endgame content)
         for (String n : Arrays.asList(
-            "Nex",           // also in MYSTIC — APEX overrides
-            "Duke Sucellus", // also in MYSTIC — APEX overrides
-            "The Leviathan"  // also in STALKER — APEX overrides
+            "Nex",
+            "Duke Sucellus",
+            "The Leviathan",
+            "Sol Heredit",
+            "TzKal-Zuk",
+            "Verzik Vitur",
+            "Great Olm",
+            "Tumeken's Warden", "Elidinis' Warden"
         )) { a.put(n, APEX); }
 
         COMBAT_CLASSES = Collections.unmodifiableMap(a);
@@ -606,6 +608,48 @@ public class MonsterRoster {
             if (e.getKey().equalsIgnoreCase(npcName)) return e.getValue();
         }
         return 0;
+    }
+
+    // -------------------------------------------------------------------------
+    // Stat floor — used by RarityRoller to lift secondary/tertiary stats for
+    // harder monsters so high-tier bosses always feel impressive.
+    // -------------------------------------------------------------------------
+
+    private static final java.util.Set<String> ACCESSIBLE_BOSSES = new java.util.HashSet<>(Arrays.asList(
+        "Obor", "Bryophyta", "Giant Mole", "Hespori", "Scurrius", "Sarachnis", "Gemstone crab",
+        "Chaos Fanatic", "Crazy Archaeologist", "Deranged Archaeologist", "Scorpia",
+        "Ahrim the Blighted", "Dharok the Wretched", "Guthan the Infested",
+        "Karil the Tainted", "Torag the Corrupted", "Verac the Defiled",
+        "Dusk", "Dawn"
+    ));
+
+    private static final java.util.Set<String> ENDGAME_BOSSES = new java.util.HashSet<>(Arrays.asList(
+        "TzTok-Jad", "TzKal-Zuk", "Nex",
+        "Duke Sucellus", "The Leviathan", "Vardorvis", "The Whisperer",
+        "Araxxor", "Hueycoatl", "Sol Heredit", "Amoxliatl",
+        "Tekton", "Great Olm", "Vespula",
+        "Maiden of Sugadinti", "Pestilent Bloat", "Sotetseg", "Xarpus", "Verzik Vitur",
+        "Akkha", "Ba-Ba", "Kephri", "Zebak", "Tumeken's Warden", "Elidinis' Warden"
+    ));
+
+    /**
+     * Returns the stat floor used by RarityRoller when generating quality stats.
+     * Higher floors mean even secondary/tertiary stats are elevated for hard monsters.
+     */
+    public static int getStatFloor(String npcName, int combatLevel) {
+        DifficultyTier tier = getDifficulty(npcName, combatLevel);
+        switch (tier) {
+            case BEGINNER: return 5;
+            case EASY:     return 12;
+            case MEDIUM:   return 22;
+            case HARD:     return 33;
+            case ELITE:    return 44;
+            case BOSS:
+                if (ENDGAME_BOSSES.contains(npcName))    return 72;
+                if (ACCESSIBLE_BOSSES.contains(npcName)) return 52;
+                return 62; // mid-tier boss default
+            default:       return 22;
+        }
     }
 
     /** Assigns stable alphabetical dex numbers to the full roster. */
