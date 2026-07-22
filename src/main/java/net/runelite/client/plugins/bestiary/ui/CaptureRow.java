@@ -95,9 +95,9 @@ public class CaptureRow extends JPanel {
         add(botRow);
 
         setToolTipText(String.format(
-                "<html>STR:%d&nbsp;&nbsp;SPD:%d&nbsp;&nbsp;END:%d<br>INT:%d&nbsp;&nbsp;STL:%d&nbsp;&nbsp;VIT:%d</html>",
-                capture.quality.strength, capture.quality.speed, capture.quality.endurance,
-                capture.quality.intelligence, capture.quality.stealth, capture.quality.vitality));
+                "<html>ATK:%d&nbsp;&nbsp;STR:%d&nbsp;&nbsp;DEF:%d<br>MAG:%d&nbsp;&nbsp;RNG:%d&nbsp;&nbsp;AGI:%d</html>",
+                capture.quality.attack, capture.quality.strength, capture.quality.defence,
+                capture.quality.magic, capture.quality.ranged, capture.quality.agility));
 
         addMouseListener(new java.awt.event.MouseAdapter() {
             @Override

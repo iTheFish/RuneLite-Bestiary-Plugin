@@ -57,7 +57,7 @@ public class AlbumCard extends JPanel {
     private static final Color LOCKED_ACCENT  = new Color(48, 48, 48);
     private static final Color IMAGE_BG       = new Color(22, 22, 22);
 
-    private static final String[] STAT_LABELS = {"STR", "SPD", "END", "INT", "STL", "VIT"};
+    private static final String[] STAT_LABELS = {"ATK", "STR", "DEF", "MAG", "RNG", "AGI"};
 
     private final String npcName;
     private final int dexNumber;
@@ -178,12 +178,12 @@ public class AlbumCard extends JPanel {
 
         // Stats displayed are the best capture's individual stats, not an average
         this.avgStats = new int[]{
+            best.quality.attack,
             best.quality.strength,
-            best.quality.speed,
-            best.quality.endurance,
-            best.quality.intelligence,
-            best.quality.stealth,
-            best.quality.vitality,
+            best.quality.defence,
+            best.quality.magic,
+            best.quality.ranged,
+            best.quality.agility,
         };
 
         this.difficulty     = MonsterRoster.getDifficulty(npcName, combatLevel);

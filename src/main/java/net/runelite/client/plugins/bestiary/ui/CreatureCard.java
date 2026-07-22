@@ -87,12 +87,12 @@ public class CreatureCard extends JPanel {
         statsLabelRef.setFont(FontManager.getRunescapeSmallFont());
         statsLabelRef.setForeground(rarity.displayColor);
 
+        int aAtk = (int) captures.stream().mapToInt(c -> c.quality.attack).average().orElse(0);
         int aStr = (int) captures.stream().mapToInt(c -> c.quality.strength).average().orElse(0);
-        int aSpd = (int) captures.stream().mapToInt(c -> c.quality.speed).average().orElse(0);
-        int aEnd = (int) captures.stream().mapToInt(c -> c.quality.endurance).average().orElse(0);
-        int aInt = (int) captures.stream().mapToInt(c -> c.quality.intelligence).average().orElse(0);
-        int aStl = (int) captures.stream().mapToInt(c -> c.quality.stealth).average().orElse(0);
-        int aVit = (int) captures.stream().mapToInt(c -> c.quality.vitality).average().orElse(0);
+        int aDef = (int) captures.stream().mapToInt(c -> c.quality.defence).average().orElse(0);
+        int aMag = (int) captures.stream().mapToInt(c -> c.quality.magic).average().orElse(0);
+        int aRng = (int) captures.stream().mapToInt(c -> c.quality.ranged).average().orElse(0);
+        int aAgi = (int) captures.stream().mapToInt(c -> c.quality.agility).average().orElse(0);
         String yourRate = kills > 0
                 ? "Your rate: 1 in " + Math.round((double) kills / Math.max(1, captures.size())) + " kills"
                 : "No kills recorded yet";
@@ -101,8 +101,8 @@ public class CreatureCard extends JPanel {
                 rarity.label, rarity.probability * 100,
                 Math.round(1.0 / rarity.probability), yourRate);
         statsTooltip = String.format(
-                "<html>%d captures  |  %d total kills<br>Avg stats:  STR:%d  SPD:%d  END:%d  INT:%d  STL:%d  VIT:%d</html>",
-                captures.size(), kills, aStr, aSpd, aEnd, aInt, aStl, aVit);
+                "<html>%d captures  |  %d total kills<br>Avg:  ATK:%d  STR:%d  DEF:%d  MAG:%d  RNG:%d  AGI:%d</html>",
+                captures.size(), kills, aAtk, aStr, aDef, aMag, aRng, aAgi);
         ToolTipManager.sharedInstance().registerComponent(this);
 
         rightCol.add(rarityLabelRef);

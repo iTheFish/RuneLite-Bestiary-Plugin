@@ -2,19 +2,19 @@ package net.runelite.client.plugins.bestiary.model;
 
 /**
  * Combat class for a monster. Determines primary (high), secondary (mid), and
- * tertiary (dump) stats across the 6 indices: 0=STR 1=SPD 2=END 3=INT 4=STL 5=VIT.
+ * tertiary (dump) stats across the 6 indices: 0=ATK 1=STR 2=DEF 3=MAG 4=RNG 5=AGI.
  * Any index not listed as primary or tertiary is implicitly secondary.
- * APEX has 3 primaries and only 1 tertiary (STL), making it the most well-rounded class.
+ * APEX has 3 primaries and only 1 tertiary (AGI), making it the most dominant class.
  */
 public enum CombatClass {
-    NIMBLE   ("Nimble",   new int[]{1, 4},    new int[]{0, 2}),   // P: SPD STL  | T: STR END
-    BRUTE    ("Brute",    new int[]{0, 2},    new int[]{3, 4}),   // P: STR END  | T: INT STL
-    TANK     ("Tank",     new int[]{2, 5},    new int[]{1, 4}),   // P: END VIT  | T: SPD STL
-    PREDATOR ("Predator", new int[]{0, 1},    new int[]{3, 4}),   // P: STR SPD  | T: INT STL
-    MYSTIC   ("Mystic",   new int[]{3, 5},    new int[]{0, 1}),   // P: INT VIT  | T: STR SPD
-    STALKER  ("Stalker",  new int[]{3, 4},    new int[]{0, 2}),   // P: INT STL  | T: STR END
-    TITAN    ("Titan",    new int[]{0, 5},    new int[]{1, 4}),   // P: STR VIT  | T: SPD STL
-    APEX     ("Apex",     new int[]{0, 1, 3}, new int[]{4});      // P: STR SPD INT | T: STL
+    NIMBLE   ("Nimble",   new int[]{4, 5},    new int[]{1, 2}),   // P: RNG AGI  | T: STR DEF
+    BRUTE    ("Brute",    new int[]{0, 1},    new int[]{3, 4}),   // P: ATK STR  | T: MAG RNG
+    TANK     ("Tank",     new int[]{1, 2},    new int[]{4, 5}),   // P: STR DEF  | T: RNG AGI
+    PREDATOR ("Predator", new int[]{0, 5},    new int[]{2, 3}),   // P: ATK AGI  | T: DEF MAG
+    MYSTIC   ("Mystic",   new int[]{2, 3},    new int[]{0, 1}),   // P: DEF MAG  | T: ATK STR
+    STALKER  ("Stalker",  new int[]{3, 4},    new int[]{0, 2}),   // P: MAG RNG  | T: ATK DEF
+    TITAN    ("Titan",    new int[]{1, 3},    new int[]{4, 5}),   // P: STR MAG  | T: RNG AGI
+    APEX     ("Apex",     new int[]{0, 1, 3}, new int[]{5});      // P: ATK STR MAG | T: AGI
 
     public final String label;
     public final int[]  primaryIndices;

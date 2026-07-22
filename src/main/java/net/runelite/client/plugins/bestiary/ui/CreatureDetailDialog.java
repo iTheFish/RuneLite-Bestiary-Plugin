@@ -528,9 +528,9 @@ public class CreatureDetailDialog extends JDialog {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,      RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
-                int[] vals = {q.strength, q.speed, q.endurance,
-                              q.intelligence, q.stealth, q.vitality};
-                String[] labs = {"STR", "SPD", "END", "INT", "STL", "VIT"};
+                int[] vals = {q.attack, q.strength, q.defence,
+                              q.magic, q.ranged, q.agility};
+                String[] labs = {"ATK", "STR", "DEF", "MAG", "RNG", "AGI"};
                 int n      = vals.length;
                 int w      = getWidth();
                 int h      = getHeight();
@@ -593,7 +593,7 @@ public class CreatureDetailDialog extends JDialog {
         int[] best = new int[6];
         for (CapturedCreature c : list) {
             CreatureQuality q = c.quality;
-            int[] v = {q.strength, q.speed, q.endurance, q.intelligence, q.stealth, q.vitality};
+            int[] v = {q.attack, q.strength, q.defence, q.magic, q.ranged, q.agility};
             for (int i = 0; i < 6; i++) best[i] = Math.max(best[i], v[i]);
         }
         return best;

@@ -30,6 +30,7 @@ import java.util.Map;
 public class BestiaryDatabase {
 
     private static final String DB_NAME = "bestiary.db";
+    private static final int    SCHEMA_VERSION = 2;
 
     private final File dbFile;
     private Connection conn;
@@ -55,7 +56,7 @@ public class BestiaryDatabase {
                 st.execute("PRAGMA synchronous=NORMAL");
                 st.execute("PRAGMA foreign_keys=ON");
             }
-            createSchema();
+            migrateSchema();
             log.info("Bestiary DB opened: {}", dbFile.getAbsolutePath());
         } catch (SQLException e) {
             log.error("Failed to open bestiary DB", e);
@@ -74,7 +75,24 @@ public class BestiaryDatabase {
     // Schema
     // -------------------------------------------------------------------------
 
-    private void createSchema() throws SQLException {
+    private void migrateSchema() throws SQLException {
+        // Create metadata first so we can read/write schema version
+        try (Statement st = conn.createStatement()) {
+            st.executeUpdate(
+                "CREATE TABLE IF NOT EXISTS metadata (" +
+                "  key   TEXT PRIMARY KEY," +
+                "  value TEXT NOT NULL" +
+                ")"
+            );
+        }
+        String storedVersion = getMetadata("schema_version", "0");
+        if (!String.valueOf(SCHEMA_VERSION).equals(storedVersion)) {
+            log.info("Bestiary DB schema v{} → v{}: rebuilding tables", storedVersion, SCHEMA_VERSION);
+            try (Statement st = conn.createStatement()) {
+                st.executeUpdate("DROP TABLE IF EXISTS captures");
+                st.executeUpdate("DROP TABLE IF EXISTS kill_counts");
+            }
+        }
         try (Statement st = conn.createStatement()) {
             st.executeUpdate(
                 "CREATE TABLE IF NOT EXISTS captures (" +
@@ -83,12 +101,12 @@ public class BestiaryDatabase {
                 "  npc_name             TEXT    NOT NULL," +
                 "  npc_combat_level     INTEGER NOT NULL DEFAULT -1," +
                 "  rarity               TEXT    NOT NULL," +
+                "  stat_atk             INTEGER NOT NULL DEFAULT 50," +
                 "  stat_str             INTEGER NOT NULL DEFAULT 50," +
-                "  stat_spd             INTEGER NOT NULL DEFAULT 50," +
-                "  stat_end             INTEGER NOT NULL DEFAULT 50," +
-                "  stat_int             INTEGER NOT NULL DEFAULT 50," +
-                "  stat_stl             INTEGER NOT NULL DEFAULT 50," +
-                "  stat_vit             INTEGER NOT NULL DEFAULT 50," +
+                "  stat_def             INTEGER NOT NULL DEFAULT 50," +
+                "  stat_mag             INTEGER NOT NULL DEFAULT 50," +
+                "  stat_rng             INTEGER NOT NULL DEFAULT 50," +
+                "  stat_agi             INTEGER NOT NULL DEFAULT 50," +
                 "  capture_time         INTEGER NOT NULL," +
                 "  region_name          TEXT    NOT NULL DEFAULT ''," +
                 "  capture_level        INTEGER NOT NULL DEFAULT 1," +
@@ -104,13 +122,8 @@ public class BestiaryDatabase {
                 "  kills    INTEGER NOT NULL DEFAULT 0" +
                 ")"
             );
-            st.executeUpdate(
-                "CREATE TABLE IF NOT EXISTS metadata (" +
-                "  key   TEXT PRIMARY KEY," +
-                "  value TEXT NOT NULL" +
-                ")"
-            );
         }
+        setMetadata("schema_version", String.valueOf(SCHEMA_VERSION));
     }
 
     // -------------------------------------------------------------------------
@@ -121,7 +134,7 @@ public class BestiaryDatabase {
         String sql =
             "INSERT OR REPLACE INTO captures " +
             "(id, npc_id, npc_name, npc_combat_level, rarity," +
-            " stat_str, stat_spd, stat_end, stat_int, stat_stl, stat_vit," +
+            " stat_atk, stat_str, stat_def, stat_mag, stat_rng, stat_agi," +
             " capture_time, region_name, capture_level, kills_before_capture," +
             " player_name, nickname, favourite)" +
             " VALUES (?,?,?,?,?, ?,?,?,?,?,?, ?,?,?,?, ?,?,?)";
@@ -131,12 +144,12 @@ public class BestiaryDatabase {
             ps.setString(3, c.npcName);
             ps.setInt(4, c.npcCombatLevel);
             ps.setString(5, c.rarity.name());
-            ps.setInt(6, c.quality.strength);
-            ps.setInt(7, c.quality.speed);
-            ps.setInt(8, c.quality.endurance);
-            ps.setInt(9, c.quality.intelligence);
-            ps.setInt(10, c.quality.stealth);
-            ps.setInt(11, c.quality.vitality);
+            ps.setInt(6, c.quality.attack);
+            ps.setInt(7, c.quality.strength);
+            ps.setInt(8, c.quality.defence);
+            ps.setInt(9, c.quality.magic);
+            ps.setInt(10, c.quality.ranged);
+            ps.setInt(11, c.quality.agility);
             ps.setLong(12, c.captureTime.getEpochSecond());
             ps.setString(13, c.regionName != null ? c.regionName : "");
             ps.setInt(14, c.captureLevel);
@@ -201,15 +214,15 @@ public class BestiaryDatabase {
         List<CapturedCreature> result = new ArrayList<>();
         String sql =
             "SELECT id, npc_id, npc_name, npc_combat_level, rarity," +
-            " stat_str, stat_spd, stat_end, stat_int, stat_stl, stat_vit," +
+            " stat_atk, stat_str, stat_def, stat_mag, stat_rng, stat_agi," +
             " capture_time, region_name, capture_level, kills_before_capture," +
             " player_name, nickname, favourite" +
             " FROM captures ORDER BY capture_time ASC";
         try (Statement st = conn.createStatement(); ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
                 CreatureQuality quality = new CreatureQuality(
-                    rs.getInt("stat_str"), rs.getInt("stat_spd"), rs.getInt("stat_end"),
-                    rs.getInt("stat_int"), rs.getInt("stat_stl"), rs.getInt("stat_vit")
+                    rs.getInt("stat_atk"), rs.getInt("stat_str"), rs.getInt("stat_def"),
+                    rs.getInt("stat_mag"), rs.getInt("stat_rng"), rs.getInt("stat_agi")
                 );
                 CapturedCreature c = CapturedCreature.builder()
                     .id(rs.getString("id"))
