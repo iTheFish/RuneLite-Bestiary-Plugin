@@ -42,7 +42,7 @@ public class MonsterRoster {
         "Black knight", "White knight",
         "Hobgoblin",
         "Chaos druid",
-        "Rock crab", "Sand crab", "Swamp crab",
+        "Rock crab", "Sand crab", "Swamp crab", "Gemstone crab",
         "Pirate", "Rogue",
 
         // === Slayer monsters ===
@@ -69,8 +69,8 @@ public class MonsterRoster {
         "Kalphite", "Kalphite soldier", "Kalphite guardian", "Kalphite worker",
         "Kurask",
         "Lizardman", "Lizardman brute", "Lizardman shaman",
-        "Mogre", "Molanisk",
-        "Nechryael", "Greater nechryael", "Nechryarch",
+        "Mogre",
+        "Nechryael", "Greater nechryael",
         "Pyrefiend",
         "Rockslugs",
         "Smoke devil",
@@ -213,7 +213,7 @@ public class MonsterRoster {
             "Blue dragon", "Red dragon", "Green dragon", "Bronze dragon", "Iron dragon",
             "Spiritual warrior", "Spiritual mage", "Spiritual ranger",
             "Lizardman", "Lizardman brute",
-            "Mogre", "Molanisk",
+            "Mogre",
             "Vampyre", "Feral vampyre", "Vyrewatch",
             "Smoke devil", "Dust devil", "Infernal mage",
             "Zombie pirate",
@@ -226,7 +226,7 @@ public class MonsterRoster {
         for (String n : Arrays.asList(
             "Greater demon", "Black demon", "Abyssal demon",
             "Gargoyle", "Hellhound", "Dark beast",
-            "Greater nechryael", "Nechryarch", "Mutated bloodveld",
+            "Greater nechryael", "Mutated bloodveld",
             "Kalphite guardian",
             "Basilisk knight",
             "Kurask",
@@ -250,7 +250,7 @@ public class MonsterRoster {
 
         // Boss — endgame encounters requiring preparation/skill
         for (String n : Arrays.asList(
-            "Scurrius",
+            "Scurrius", "Gemstone crab",
             "Alchemical Hydra",
             "Giant Mole",
             "Sarachnis", "Hespori", "Obor", "Bryophyta",
@@ -298,7 +298,7 @@ public class MonsterRoster {
             "Rat", "Giant rat", "Chicken", "Duck", "Seagull", "Imp", "Goblin",
             "Spider", "Giant spider", "Ice spider", "Fever spider",
             "Cave bug", "Cave crawler", "Fleshcrawler",
-            "Desert lizard", "Molanisk",
+            "Desert lizard",
             "Rockslugs", "Turoth",
             "Sarachnis"
         )) { a.put(n, NIMBLE); }
@@ -323,7 +323,7 @@ public class MonsterRoster {
 
         // TANK — END, VIT
         for (String n : Arrays.asList(
-            "Rock crab", "Sand crab", "Swamp crab",
+            "Rock crab", "Sand crab", "Swamp crab", "Gemstone crab",
             "Bear", "Cave slime",
             "Gargoyle",
             "Kalphite", "Kalphite soldier", "Kalphite worker", "Kalphite guardian",
@@ -332,7 +332,7 @@ public class MonsterRoster {
             "Tortoise", "Warped tortoise",
             "Scorpion", "King scorpion",
             "Kurask",
-            "Pyrefiend", "Nechryael", "Greater nechryael", "Nechryarch",
+            "Pyrefiend", "Nechryael", "Greater nechryael",
             "Cow", "Unicorn",
             "Bloodveld",
             "Spiritual warrior",
@@ -436,8 +436,8 @@ public class MonsterRoster {
         for (String n : Arrays.asList(
             "Chicken", "Cow", "Cow calf", "Duck", "Ram", "Seagull",
             "Rat", "Giant rat", "Bear", "Grizzly bear", "Unicorn",
-            "Rock crab", "Sand crab", "Swamp crab",
-            "Desert lizard", "Molanisk", "Warped tortoise", "Tortoise",
+            "Rock crab", "Sand crab", "Swamp crab", "Gemstone crab",
+            "Desert lizard", "Warped tortoise", "Tortoise",
             "Giant Mole", "Callisto", "Artio", "Scurrius", "Kraken",
             "Ba-Ba", "Zebak", "Amoxliatl"
         )) { s.put(n, ANIMAL); }
@@ -447,7 +447,7 @@ public class MonsterRoster {
             "Imp", "Lesser demon", "Greater demon", "Black demon", "Abyssal demon",
             "Bloodveld", "Mutated bloodveld", "Pyrefiend", "Waterfiend",
             "Dust devil", "Smoke devil", "Thermonuclear smoke devil",
-            "Hellhound", "Nechryael", "Greater nechryael", "Nechryarch",
+            "Hellhound", "Nechryael", "Greater nechryael",
             "Cerberus", "Abyssal Sire", "K'ril Tsutsaroth",
             "Infernal mage", "Duke Sucellus", "Sotetseg"
         )) { s.put(n, DEMON); }
