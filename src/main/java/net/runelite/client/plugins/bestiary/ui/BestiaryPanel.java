@@ -44,6 +44,7 @@ public class BestiaryPanel extends PluginPanel {
         CreatureDetailDialog.setConfig(config);
         CreatureDetailDialog.setSaveCallback(dataService::saveNow);
         CardExportDialog.setShared(imageService, dataService::getCollection);
+        CardExportDialog.setOnMutate(() -> { dataService.saveNow(); refresh(); });
         AlbumCard.setConfig(config);
 
         setLayout(new BorderLayout(0, 6));

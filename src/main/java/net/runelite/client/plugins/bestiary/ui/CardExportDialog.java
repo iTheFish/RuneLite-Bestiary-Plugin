@@ -32,7 +32,13 @@ public class CardExportDialog extends JDialog {
     private static WikiImageService sharedImageService;
     private static Supplier<BestiaryCollection> collectionSupplier;
     private static Consumer<String> onCopyAction;
+    private static Runnable onMutate;   // persist + refresh after favourite / album-cover changes
     private static CardExportDialog openInstance;
+
+    /** Wire a callback that persists and refreshes the panel after a right-click mutation. */
+    public static void setOnMutate(Runnable callback) {
+        onMutate = callback;
+    }
 
     /** Close any open CardExportDialog — called when Album opens. */
     public static void disposeOpen() {
@@ -162,6 +168,41 @@ public class CardExportDialog extends JDialog {
         previewPanel.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override public void mouseEntered(java.awt.event.MouseEvent e) { card.hoverStart(); }
             @Override public void mouseExited(java.awt.event.MouseEvent  e) { card.hoverStop();  }
+            @Override public void mousePressed(java.awt.event.MouseEvent e)  { popup(e); }
+            @Override public void mouseReleased(java.awt.event.MouseEvent e) { popup(e); }
+            private void popup(java.awt.event.MouseEvent e) {
+                if (!e.isPopupTrigger()) return;
+                BestiaryCollection live = collectionSupplier.get();
+                JPopupMenu menu = new JPopupMenu();
+
+                JMenuItem fav = new JMenuItem(capture.favourite ? "✩ Remove Favourite" : "★ Favourite");
+                fav.addActionListener(ev -> {
+                    if (!capture.favourite && live.countFavourites() >= 20) return;
+                    capture.favourite = !capture.favourite;
+                    previewPanel.repaint();
+                    if (onMutate != null) onMutate.run();
+                });
+                menu.add(fav);
+
+                JMenuItem cover = new JMenuItem(capture.albumCover ? "Remove album cover" : "Set as album cover");
+                cover.addActionListener(ev -> {
+                    if (capture.albumCover) capture.albumCover = false;
+                    else live.setAlbumCover(capture);
+                    previewPanel.repaint();
+                    if (onMutate != null) onMutate.run();
+                });
+                menu.add(cover);
+
+                menu.addSeparator();
+                JMenuItem copy = new JMenuItem("Copy Image");
+                copy.addActionListener(ev -> copyToClipboard());
+                menu.add(copy);
+                JMenuItem save = new JMenuItem("Save PNG…");
+                save.addActionListener(ev -> savePng(capture.npcName));
+                menu.add(save);
+
+                menu.show(previewPanel, e.getX(), e.getY());
+            }
         });
 
         // Buttons

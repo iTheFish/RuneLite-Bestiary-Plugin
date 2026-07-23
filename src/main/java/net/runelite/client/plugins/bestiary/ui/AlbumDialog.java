@@ -97,6 +97,8 @@ public class AlbumDialog extends JDialog {
     private final Map<String, Integer> dexNumbers;
 
     private final JPanel gridPanel;
+    private JScrollPane gridScroll;
+    private int savedCatalogScroll = 0;
     private final JLabel countLabel;
 
     // Catalog bar controls
@@ -118,6 +120,7 @@ public class AlbumDialog extends JDialog {
     private String              detailSort           = "Rarity (best)";
     private CreatureRarity      detailFilterRarity   = null;
     private java.time.Instant   detailFilterCapture  = null;
+    private boolean             detailFilterShiny    = false;
 
     // Detail bar controls
     private JPanel            topBarHolder;
@@ -420,6 +423,7 @@ public class AlbumDialog extends JDialog {
         gridWrapper.add(gridPanel, BorderLayout.NORTH);
 
         JScrollPane scroll = new JScrollPane(gridWrapper);
+        gridScroll = scroll;
         scroll.setBorder(null);
         scroll.getViewport().setBackground(ColorScheme.DARK_GRAY_COLOR);
         scroll.getVerticalScrollBar().setUnitIncrement(20);
@@ -462,9 +466,13 @@ public class AlbumDialog extends JDialog {
     }
 
     public void showDetail(String name, CreatureRarity filterRarity, java.time.Instant filterCapture) {
+        if (detailMonsterName == null && gridScroll != null) {   // leaving the catalog
+            savedCatalogScroll = gridScroll.getVerticalScrollBar().getValue();
+        }
         detailMonsterName   = name;
         detailFilterRarity  = filterRarity;
         detailFilterCapture = filterCapture;
+        detailFilterShiny   = false;
         detailPage = 0;
         detailSort = "Rarity (best)";
         detailSortBox.setSelectedItem("Rarity (best)");
@@ -474,9 +482,13 @@ public class AlbumDialog extends JDialog {
 
     /** Opens the detail pane showing all starred captures (cross-monster). */
     private void showFavouritesDetailView() {
+        if (detailMonsterName == null && gridScroll != null) {   // leaving the catalog
+            savedCatalogScroll = gridScroll.getVerticalScrollBar().getValue();
+        }
         detailMonsterName   = "★ Favourites";   // ★ sentinel
         detailFilterRarity  = null;
         detailFilterCapture = null;
+        detailFilterShiny   = false;
         detailPage          = 0;
         detailSort          = "Quality (high)";
         detailSortBox.setSelectedItem("Quality (high)");
@@ -498,8 +510,14 @@ public class AlbumDialog extends JDialog {
         detailMonsterName   = null;
         detailFilterRarity  = null;
         detailFilterCapture = null;
+        detailFilterShiny   = false;
         ((CardLayout) topBarHolder.getLayout()).show(topBarHolder, "CATALOG");
         rebuildGrid();
+        // Restore the catalog scroll position we were at before opening a card
+        if (gridScroll != null) {
+            SwingUtilities.invokeLater(() ->
+                    gridScroll.getVerticalScrollBar().setValue(savedCatalogScroll));
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -595,6 +613,10 @@ public class AlbumDialog extends JDialog {
         if (detailFilterCapture != null) {
             filtered = allCaps.stream()
                     .filter(c -> c.captureTime.equals(detailFilterCapture))
+                    .collect(Collectors.toList());
+        } else if (detailFilterShiny) {
+            filtered = allCaps.stream()
+                    .filter(CapturedCreature::isShiny)
                     .collect(Collectors.toList());
         } else if (detailFilterRarity != null) {
             filtered = allCaps.stream()
@@ -727,8 +749,12 @@ public class AlbumDialog extends JDialog {
         row.setBackground(new Color(35, 35, 35));
         row.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(60, 60, 60)));
 
-        JButton allBtn = makeRarityPill("All", detailFilterRarity == null, null, false);
-        allBtn.addActionListener(e -> { detailFilterRarity = null; detailPage = 0; rebuildGrid(); });
+        boolean anyShiny = allCaps.stream().anyMatch(CapturedCreature::isShiny);
+
+        JButton allBtn = makeRarityPill("All", detailFilterRarity == null && !detailFilterShiny, null, false);
+        allBtn.addActionListener(e -> {
+            detailFilterRarity = null; detailFilterShiny = false; detailPage = 0; rebuildGrid();
+        });
         row.add(allBtn);
 
         CreatureRarity[] allRarities = {
@@ -736,10 +762,23 @@ public class AlbumDialog extends JDialog {
             CreatureRarity.RARE,   CreatureRarity.UNCOMMON,  CreatureRarity.COMMON
         };
         for (CreatureRarity r : allRarities) {
+            // Shiny pill sits just before Common (orthogonal to rarity — filters shiny captures)
+            if (r == CreatureRarity.COMMON) {
+                JButton shinyBtn = makeRarityPill("✦ Shiny", detailFilterShiny,
+                        new Color(255, 235, 120), !anyShiny);
+                if (anyShiny) {
+                    shinyBtn.addActionListener(e -> {
+                        detailFilterShiny = true; detailFilterRarity = null; detailPage = 0; rebuildGrid();
+                    });
+                }
+                row.add(shinyBtn);
+            }
             boolean has = presentRarities.contains(r);
             JButton rb = makeRarityPill(r.label, r == detailFilterRarity, r.displayColor, !has);
             if (has) {
-                rb.addActionListener(e -> { detailFilterRarity = r; detailPage = 0; rebuildGrid(); });
+                rb.addActionListener(e -> {
+                    detailFilterRarity = r; detailFilterShiny = false; detailPage = 0; rebuildGrid();
+                });
             }
             row.add(rb);
         }
