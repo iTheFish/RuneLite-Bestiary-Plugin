@@ -223,54 +223,80 @@ public class BestiaryOverlay extends Overlay {
         drawJar(g, bx, cy, 1f, essence, openAmount, elapsed / 300.0);
     }
 
-    /** An OSRS-style glass containment jar with a cork and swirling rarity essence. */
+    /**
+     * OSRS-style collection jar: a tall cylindrical glass body (tinted by the capture's
+     * rarity essence, with cylinder shading + an open rim) and a chunky dark-grey
+     * hexagonal stopper that lifts as {@code openAmount} rises.
+     */
     private void drawJar(Graphics2D g, int bx, int cy, float alpha, Color essence,
                          double openAmount, double phase) {
         Composite orig = g.getComposite();
         g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
 
-        int bodyW = 26, bodyH = 24, bodyX = bx - bodyW / 2, bodyY = cy - 4;
+        int bw = 22, bh = 26, bx0 = bx - bw / 2;
+        int topY = cy - 10, rimH = 8;
 
-        // Essence glow inside (brighter as the jar opens)
-        int eAlpha = (int) (90 + 120 * openAmount);
-        g.setColor(new Color(essence.getRed(), essence.getGreen(), essence.getBlue(), Math.min(255, eAlpha)));
-        g.fillRoundRect(bodyX + 2, bodyY + 3, bodyW - 4, bodyH - 5, 8, 8);
-        // Swirling essence specks
-        Color bright = new Color(Math.min(255, essence.getRed() + 60),
-                Math.min(255, essence.getGreen() + 60), Math.min(255, essence.getBlue() + 60), 220);
-        g.setColor(bright);
+        Color hi   = mix(essence, Color.WHITE, 0.55);            // lit centre
+        Color edge = mix(essence, new Color(40, 40, 60), 0.35);  // shaded sides
+        Color hiT   = new Color(hi.getRed(), hi.getGreen(), hi.getBlue(), 220);
+        Color edgeT = new Color(edge.getRed(), edge.getGreen(), edge.getBlue(), 220);
+
+        // Bottom ellipse
+        g.setColor(edgeT);
+        g.fillOval(bx0, topY + bh - rimH / 2, bw, rimH);
+        // Cylinder wall with left→centre→right shading
+        g.setPaint(new LinearGradientPaint(bx0, 0, bx0 + bw, 0,
+                new float[]{0f, 0.5f, 1f}, new Color[]{edgeT, hiT, edgeT}));
+        g.fillRect(bx0, topY, bw, bh);
+
+        // Swirling essence specks inside
+        Color spark = new Color(Math.min(255, essence.getRed() + 70),
+                Math.min(255, essence.getGreen() + 70), Math.min(255, essence.getBlue() + 70),
+                Math.min(255, (int) (120 + 120 * openAmount)));
+        g.setColor(spark);
         for (int i = 0; i < 3; i++) {
-            double ang = phase + i * 2.094;
-            int ox = bx + (int) (Math.cos(ang) * 6);
-            int oy = cy + 9 + (int) (Math.sin(ang) * 6);
+            double a = phase + i * 2.094;
+            int ox = bx + (int) (Math.cos(a) * 5);
+            int oy = cy + 4 + (int) (Math.sin(a) * 7);
             g.fillOval(ox - 2, oy - 2, 4, 4);
         }
 
-        // Glass body (translucent) + outline + highlight
-        g.setColor(new Color(170, 205, 225, 60));
-        g.fillRoundRect(bodyX, bodyY, bodyW, bodyH, 9, 9);
-        g.setColor(new Color(215, 238, 250, 210));
-        g.setStroke(new BasicStroke(2f));
-        g.drawRoundRect(bodyX, bodyY, bodyW, bodyH, 9, 9);
-        g.setColor(new Color(255, 255, 255, 110));
-        g.drawLine(bodyX + 5, bodyY + 5, bodyX + 5, bodyY + bodyH - 7);
+        // Open rim (darker mouth) + side/highlight lines
+        g.setColor(mix(edge, Color.BLACK, 0.25));
+        g.fillOval(bx0, topY - rimH / 2, bw, rimH);
+        g.setColor(new Color(235, 242, 252, 150));
+        g.setStroke(new BasicStroke(1.5f));
+        g.drawOval(bx0, topY - rimH / 2, bw, rimH);
+        g.drawLine(bx0, topY, bx0, topY + bh);
+        g.drawLine(bx0 + bw, topY, bx0 + bw, topY + bh);
+        g.setColor(new Color(255, 255, 255, 90));
+        g.drawLine(bx0 + 5, topY + 3, bx0 + 5, topY + bh - 4);
 
-        // Neck
-        int neckW = 14, neckX = bx - neckW / 2, neckY = cy - 12, neckH = 8;
-        g.setColor(new Color(170, 205, 225, 80));
-        g.fillRect(neckX, neckY, neckW, neckH);
-        g.setColor(new Color(215, 238, 250, 210));
-        g.drawRect(neckX, neckY, neckW, neckH);
-
-        // Cork (lifts as the jar opens)
-        int lift = (int) (openAmount * 9);
-        int corkW = 16, corkX = bx - corkW / 2, corkH = 7, corkY = neckY - corkH - lift;
-        g.setColor(new Color(155, 105, 60));
-        g.fillRoundRect(corkX, corkY, corkW, corkH, 3, 3);
-        g.setColor(new Color(110, 70, 35));
-        g.drawRoundRect(corkX, corkY, corkW, corkH, 3, 3);
+        // Chunky dark-grey hexagonal stopper (lifts on open)
+        int lift = (int) (openAmount * 10);
+        int lidW = bw + 4, lidX = bx - lidW / 2, lidY = topY - rimH / 2 - 11 - lift;
+        int[] hx = {lidX, lidX + lidW / 4, lidX + 3 * lidW / 4, lidX + lidW, lidX + 3 * lidW / 4, lidX + lidW / 4};
+        int[] hy = {lidY + 7, lidY + 2, lidY + 2, lidY + 7, lidY + 12, lidY + 12};
+        g.setColor(new Color(64, 64, 72));                         // skirt shadow
+        g.fillRect(lidX + 2, lidY + 8, lidW - 4, 5);
+        g.setColor(new Color(98, 98, 108));                        // body
+        g.fillPolygon(hx, hy, 6);
+        int[] hx2 = {lidX + 2, lidX + lidW / 4 + 1, lidX + 3 * lidW / 4 - 1, lidX + lidW - 2, lidX + 3 * lidW / 4 - 1, lidX + lidW / 4 + 1};
+        int[] hy2 = {lidY + 6, lidY + 3, lidY + 3, lidY + 6, lidY + 9, lidY + 9};
+        g.setColor(new Color(124, 124, 136));                      // top facet highlight
+        g.fillPolygon(hx2, hy2, 6);
+        g.setColor(new Color(38, 38, 44));
+        g.setStroke(new BasicStroke(1.5f));
+        g.drawPolygon(hx, hy, 6);
 
         g.setComposite(orig);
+    }
+
+    private static Color mix(Color a, Color b, double t) {
+        return new Color(
+                (int) (a.getRed()   * (1 - t) + b.getRed()   * t),
+                (int) (a.getGreen() * (1 - t) + b.getGreen() * t),
+                (int) (a.getBlue()  * (1 - t) + b.getBlue()  * t));
     }
 
     /** A ring of small sparkles expanding outward and fading. */
@@ -293,33 +319,41 @@ public class BestiaryOverlay extends Overlay {
         }
     }
 
-    /** The jar's cork pops off and the trapped essence escapes upward and fades — a "miss". */
+    /** The stopper pops off and the trapped essence escapes upward and fades — a "miss". */
     private void drawJarBurst(Graphics2D g, int cx, int cy, double p) {
         int alpha = (int) (255 * (1.0 - p));
-        // Empty jar body, fading
-        int bodyW = 26, bodyH = 24, bodyX = cx - bodyW / 2, bodyY = cy - 4;
+        int bw = 22, bh = 26, bx0 = cx - bw / 2, topY = cy - 10, rimH = 8;
+
+        // Empty glass cylinder, fading
         Composite orig = g.getComposite();
         g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.max(0f, 1f - (float) p * 0.7f)));
-        g.setColor(new Color(170, 205, 225, 55));
-        g.fillRoundRect(bodyX, bodyY, bodyW, bodyH, 9, 9);
-        g.setColor(new Color(215, 238, 250, 200));
-        g.setStroke(new BasicStroke(2f));
-        g.drawRoundRect(bodyX, bodyY, bodyW, bodyH, 9, 9);
+        g.setColor(new Color(150, 160, 200, 110));
+        g.fillOval(bx0, topY + bh - rimH / 2, bw, rimH);
+        g.setColor(new Color(178, 188, 226, 120));
+        g.fillRect(bx0, topY, bw, bh);
+        g.setColor(new Color(70, 75, 110, 150));
+        g.fillOval(bx0, topY - rimH / 2, bw, rimH);   // open mouth
+        g.setColor(new Color(235, 242, 252, 130));
+        g.setStroke(new BasicStroke(1.5f));
+        g.drawLine(bx0, topY, bx0, topY + bh);
+        g.drawLine(bx0 + bw, topY, bx0 + bw, topY + bh);
         g.setComposite(orig);
 
-        // Cork tumbles up and to the side
-        int lift = (int) (8 + p * 26);
-        int corkX = cx - 8 + (int) (p * 10), corkY = cy - 19 - lift;
-        g.setColor(new Color(155, 105, 60, Math.max(0, alpha)));
-        g.fillRoundRect(corkX, corkY, 16, 7, 3, 3);
+        // Stopper tumbles up and to the side
+        int lift = (int) (11 + p * 26);
+        int lidW = bw + 4, lidX = cx - lidW / 2 + (int) (p * 10), lidY = topY - 20 - lift;
+        int[] hx = {lidX, lidX + lidW / 4, lidX + 3 * lidW / 4, lidX + lidW, lidX + 3 * lidW / 4, lidX + lidW / 4};
+        int[] hy = {lidY + 7, lidY + 2, lidY + 2, lidY + 7, lidY + 12, lidY + 12};
+        g.setColor(new Color(98, 98, 108, Math.max(0, alpha)));
+        g.fillPolygon(hx, hy, 6);
 
-        // Escaping essence: wisps rising out of the neck, dissipating
-        g.setColor(new Color(200, 205, 215, Math.max(0, alpha)));
+        // Escaping essence wisps rising out of the mouth
+        g.setColor(new Color(205, 210, 225, Math.max(0, alpha)));
         for (int i = 0; i < 6; i++) {
             double ang = -Math.PI / 2 + (i - 2.5) * 0.28;
             int rise = (int) (p * 30);
             int x = cx + (int) (Math.cos(ang) * (4 + p * 12));
-            int y = cy - 6 - rise + (int) (Math.sin(ang) * 2);
+            int y = topY - rise + (int) (Math.sin(ang) * 2);
             int s = Math.max(1, 3 - (int) (p * 2));
             g.fillOval(x - s, y - s, s * 2, s * 2);
         }
