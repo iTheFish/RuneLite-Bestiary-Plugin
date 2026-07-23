@@ -342,8 +342,7 @@ public class MonsterRoster {
             "Kalphite guardian",
             "Kurask",
             "Bloodveld",
-            "Torag the Corrupted",
-            "Tekton"
+            "Torag the Corrupted"
         )) { a.put(n, TANK); }
 
         // PREDATOR — P: ATK+AGI  |  quick striker, mobile hunter
@@ -385,15 +384,19 @@ public class MonsterRoster {
             "Cave horror",
             "Smoke devil",
             "Hydra",
-            "Spiritual ranger",
             "Wyrm",
             "Vyrewatch",
-            "Crazy Archaeologist", "Deranged Archaeologist",
-            "Thermonuclear smoke devil",
-            "Karil the Tainted",
             "Vespula",
             "Xarpus"
         )) { a.put(n, STALKER); }
+
+        // RANGER — P: RNG+AGI  |  pure ranged attackers, mobile archers
+        for (String n : Arrays.asList(
+            "Spiritual ranger",
+            "Crazy Archaeologist", "Deranged Archaeologist",
+            "Thermonuclear smoke devil",
+            "Karil the Tainted"
+        )) { a.put(n, RANGER); }
 
         // TITAN — P: STR+MAG  |  powerful melee+magic hybrids
         for (String n : Arrays.asList(
@@ -411,38 +414,56 @@ public class MonsterRoster {
             "Dharok the Wretched"
         )) { a.put(n, TITAN); }
 
-        // APEX — P: ATK+STR+MAG  |  masters of all combat, endgame threats
+        // APEX — P: ATK+STR+MAG  |  true melee-mage hybrid bosses
         for (String n : Arrays.asList(
-            "Mithril dragon", "Adamant dragon", "Rune dragon",
-            "Brutal black dragon", "Brutal red dragon", "Brutal blue dragon",
+            "Rune dragon",
             "Scurrius",
-            "Giant Mole",
-            "King Black Dragon",
             "Chaos Elemental",
             "Sarachnis",
-            "Cerberus",
-            "Alchemical Hydra",
-            "Zulrah", "Vorkath",
             "Phantom Muspah",
-            "Duke Sucellus", "The Leviathan", "Vardorvis", "The Whisperer",
-            "Nex",
-            "TzTok-Jad", "TzKal-Zuk",
-            "Araxxor", "Hueycoatl",
-            "Sol Heredit",
-            "Callisto", "Artio",
+            "TzTok-Jad",
+            "Hueycoatl",
             "Venenatis", "Spindel",
-            "Vet'ion", "Calvar'ion",
-            "Corporeal Beast",
-            "Commander Zilyana", "General Graardor", "K'ril Tsutsaroth", "Kree'arra",
-            "Dagannoth Rex", "Dagannoth Prime", "Dagannoth Supreme",
+            "K'ril Tsutsaroth",
             "Dusk", "Dawn",
             "The Nightmare", "Phosani's Nightmare",
-            "Great Olm",
-            "Maiden of Sugadinti", "Pestilent Bloat", "Sotetseg", "Verzik Vitur",
+            "Maiden of Sugadinti", "Pestilent Bloat",
             "Akkha", "Zebak",
             "Tumeken's Warden", "Elidinis' Warden",
             "Abyssal Sire"
         )) { a.put(n, APEX); }
+
+        // JUGGERNAUT — P: ATK+STR+DEF  |  physical powerhouse bosses, no magic
+        for (String n : Arrays.asList(
+            "Mithril dragon", "Adamant dragon",
+            "Brutal black dragon", "Brutal red dragon", "Brutal blue dragon",
+            "King Black Dragon",
+            "Giant Mole",
+            "Cerberus",
+            "Duke Sucellus", "Vardorvis",
+            "Araxxor",
+            "Sol Heredit",
+            "Callisto", "Artio",
+            "Vet'ion", "Calvar'ion",
+            "Corporeal Beast",
+            "General Graardor",
+            "Dagannoth Rex",
+            "Tekton"
+        )) { a.put(n, JUGGERNAUT); }
+
+        // ARCHON — P: DEF+MAG+RNG  |  arcane/ranged bosses, weak melee
+        for (String n : Arrays.asList(
+            "Alchemical Hydra",
+            "Zulrah", "Vorkath",
+            "The Leviathan", "The Whisperer",
+            "Nex",
+            "TzKal-Zuk",
+            "Commander Zilyana", "Kree'arra",
+            "Dagannoth Prime", "Dagannoth Supreme",
+            "Great Olm",
+            "Sotetseg",
+            "Verzik Vitur"
+        )) { a.put(n, ARCHON); }
 
         COMBAT_CLASSES = Collections.unmodifiableMap(a);
     }

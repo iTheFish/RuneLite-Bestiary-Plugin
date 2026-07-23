@@ -13,8 +13,11 @@ public enum CombatClass {
     PREDATOR ("Predator", new int[]{0, 5},    new int[]{2, 3}),   // P: ATK AGI  | T: DEF MAG
     MYSTIC   ("Mystic",   new int[]{2, 3},    new int[]{0, 1}),   // P: DEF MAG  | T: ATK STR
     STALKER  ("Stalker",  new int[]{3, 4},    new int[]{0, 2}),   // P: MAG RNG  | T: ATK DEF
+    RANGER   ("Ranger",   new int[]{4, 5},    new int[]{1, 3}),   // P: RNG AGI  | T: STR MAG
     TITAN    ("Titan",    new int[]{1, 3},    new int[]{4, 5}),   // P: STR MAG  | T: RNG AGI
-    APEX     ("Apex",     new int[]{0, 1, 3}, new int[]{5});      // P: ATK STR MAG | T: AGI
+    APEX     ("Apex",     new int[]{0, 1, 3},  new int[]{5}),     // P: ATK STR MAG | T: AGI
+    JUGGERNAUT("Juggernaut", new int[]{0, 1, 2}, new int[]{3}),   // P: ATK STR DEF | T: MAG
+    ARCHON   ("Archon",   new int[]{2, 3, 4},  new int[]{1});     // P: DEF MAG RNG | T: STR
 
     public final String label;
     public final int[]  primaryIndices;
