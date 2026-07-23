@@ -134,8 +134,9 @@ public class CaptureService {
     /**
      * Independent shiny chance, scaled by Bestiary level.
      * 0.2% at level 1 → 2% at level 99 (linear). Rarity does not affect this.
+     * Static so the dev seed can roll shinies the same way as live captures.
      */
-    double shinyChance(int captureLevel) {
+    static double shinyChance(int captureLevel) {
         double t = Math.max(0, Math.min(98, captureLevel - 1)) / 98.0;
         return 0.002 + t * (0.02 - 0.002);
     }

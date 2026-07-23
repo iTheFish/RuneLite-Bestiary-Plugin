@@ -167,14 +167,16 @@ public class BestiaryDataService {
 
             for (int r = 0; r < CreatureRarity.values().length; r++) {
                 CreatureRarity rarity = CreatureRarity.values()[r];
-                rng.setSeed((long) name.hashCode() * 31 + r);
 
                 int[] statBases = MonsterRoster.getStatBases(name, combatLevel);
+                // Roll shiny the same way live captures do: independent roll scaled by the
+                // card's capture level, then generate quality with the shiny flag applied.
+                // Dev-seed only: 3x boost so the test collection shows ~20 shinies for visual
+                // testing (live captures use the real 0.2%-2% rate).
+                rng.setSeed((long) name.hashCode() * 31 + r);
+                boolean shiny = rng.nextDouble() < CaptureService.shinyChance(captureLevels[r]) * 3.0;
                 CreatureQuality quality = net.runelite.client.plugins.bestiary.util.RarityRoller
-                    .generateQuality(combatClass, rarity, statBases, rng);
-                // Seed shiny using the legacy all-primaries-≥95 heuristic so the album
-                // still shows some shiny stars for visual testing.
-                boolean shiny = quality.isShiny(combatClass);
+                    .generateQuality(combatClass, rarity, statBases, rng, shiny);
 
                 CapturedCreature c = CapturedCreature.builder()
                     .npcId(0)
