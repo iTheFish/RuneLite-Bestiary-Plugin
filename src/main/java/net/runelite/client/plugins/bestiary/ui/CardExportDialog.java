@@ -175,6 +175,11 @@ public class CardExportDialog extends JDialog {
                 BestiaryCollection live = collectionSupplier.get();
                 JPopupMenu menu = new JPopupMenu();
 
+                JMenuItem copy = new JMenuItem("Copy Card");
+                copy.addActionListener(ev -> copyToClipboard());
+                menu.add(copy);
+                menu.addSeparator();
+
                 JMenuItem fav = new JMenuItem(capture.favourite ? "✩ Remove Favourite" : "★ Favourite");
                 fav.addActionListener(ev -> {
                     if (!capture.favourite && live.countFavourites() >= 20) return;
@@ -192,11 +197,17 @@ public class CardExportDialog extends JDialog {
                     if (onMutate != null) onMutate.run();
                 });
                 menu.add(cover);
-
                 menu.addSeparator();
-                JMenuItem copy = new JMenuItem("Copy Image");
-                copy.addActionListener(ev -> copyToClipboard());
-                menu.add(copy);
+
+                String nickLabel = (capture.nickname != null && !capture.nickname.isEmpty())
+                        ? "Rename…" : "Name capture…";
+                JMenuItem name = new JMenuItem(nickLabel);
+                name.addActionListener(ev -> AlbumCard.openNicknameDialog(previewPanel, capture, () -> {
+                    previewPanel.repaint();
+                    if (onMutate != null) onMutate.run();
+                }));
+                menu.add(name);
+
                 JMenuItem save = new JMenuItem("Save PNG…");
                 save.addActionListener(ev -> savePng(capture.npcName));
                 menu.add(save);

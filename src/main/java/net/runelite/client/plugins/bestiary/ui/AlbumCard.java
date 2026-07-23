@@ -362,7 +362,10 @@ public class AlbumCard extends JPanel {
                     CapturedCreature nickCap = captures.get(0);
                     String nickLabel = (nickCap.nickname != null && !nickCap.nickname.isEmpty()) ? "Rename…" : "Name capture…";
                     JMenuItem nickItem = new JMenuItem(nickLabel);
-                    nickItem.addActionListener(ev -> openNicknameDialog(nickCap));
+                    nickItem.addActionListener(ev -> openNicknameDialog(AlbumCard.this, nickCap, () -> {
+                        repaint();
+                        if (nicknameCallback != null) nicknameCallback.run();
+                    }));
                     menu.add(nickItem);
                 }
                 menu.show(AlbumCard.this, e.getX(), e.getY());
@@ -370,7 +373,12 @@ public class AlbumCard extends JPanel {
         });
     }
 
-    private void openNicknameDialog(CapturedCreature c) {
+    /**
+     * Opens the shared MODELESS "Name capture" editor for a capture, anchored to
+     * {@code anchor}. Runs {@code onSaved} after the nickname is committed so callers
+     * can repaint / persist. Static so both AlbumCard and CardExportDialog use one editor.
+     */
+    static void openNicknameDialog(Component anchor, CapturedCreature c, Runnable onSaved) {
         JTextField field = new JTextField(c.nickname != null ? c.nickname : "", 20);
         JLabel counter = new JLabel(field.getText().length() + " / 20");
         counter.setFont(FontManager.getRunescapeSmallFont());
@@ -397,18 +405,17 @@ public class AlbumCard extends JPanel {
         content.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
         content.add(inputPanel, BorderLayout.CENTER);
         content.add(btnRow, BorderLayout.SOUTH);
-        Window owner = SwingUtilities.getWindowAncestor(this);
+        Window owner = SwingUtilities.getWindowAncestor(anchor);
         JDialog dlg = new JDialog(owner, "Name Capture", java.awt.Dialog.ModalityType.MODELESS);
         dlg.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         dlg.setResizable(false);
         dlg.setContentPane(content);
         dlg.pack();
-        dlg.setLocationRelativeTo(this);
+        dlg.setLocationRelativeTo(anchor);
         okBtn.addActionListener(ae -> {
             String val = field.getText().trim();
             c.nickname = val.isBlank() ? null : val;
-            repaint();
-            if (nicknameCallback != null) nicknameCallback.run();
+            if (onSaved != null) onSaved.run();
             dlg.dispose();
         });
         cancelBtn.addActionListener(ae -> dlg.dispose());
