@@ -45,6 +45,9 @@ public class CapturedCreature {
     /** True when this capture won the independent shiny roll at capture time. Persisted. */
     public final boolean shiny;
 
+    /** Player has chosen this capture as the album catalog cover for its monster. Persisted; one per npcName. */
+    public boolean albumCover;
+
     /**
      * How many kills of this species the player had accumulated before this
      * capture succeeded (useful for showing "lucky" catches).

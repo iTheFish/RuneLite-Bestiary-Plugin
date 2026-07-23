@@ -156,8 +156,10 @@ public class AlbumCard extends JPanel {
         this.locked       = false;
         this.killCount    = 0;
 
-        // Best capture = highest rarity, then highest overall quality as tiebreaker
-        CapturedCreature best = captures.stream()
+        // Card appearance is driven by the player-chosen album cover if one is set;
+        // otherwise the "best" capture (highest rarity, then highest overall quality).
+        CapturedCreature cover = captures.stream().filter(c -> c.albumCover).findFirst().orElse(null);
+        CapturedCreature best = cover != null ? cover : captures.stream()
                 .max(Comparator.comparingInt((CapturedCreature c) -> c.rarity.ordinal())
                         .thenComparingInt(c -> c.quality.overallRating()))
                 .orElse(captures.get(0));
@@ -189,7 +191,9 @@ public class AlbumCard extends JPanel {
         this.difficulty     = MonsterRoster.getDifficulty(npcName, combatLevel);
         this.combatClass    = MonsterRoster.getCombatClass(npcName, combatLevel);
         this.species        = MonsterRoster.getSpecies(npcName, combatLevel);
-        this.hasShiny       = captures.stream().anyMatch(CapturedCreature::isShiny);
+        // If a cover is chosen, its shiny status drives the card look; otherwise any shiny.
+        this.hasShiny       = cover != null ? cover.isShiny()
+                                            : captures.stream().anyMatch(CapturedCreature::isShiny);
         this.overallQuality = best.quality.overallRating();
         init(imageService, true);
     }

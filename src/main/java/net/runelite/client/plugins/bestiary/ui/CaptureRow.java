@@ -116,6 +116,18 @@ public class CaptureRow extends JPanel {
                     });
                     menu.add(favItem);
 
+                    JMenuItem coverItem = new JMenuItem(
+                            capture.albumCover ? "Remove album cover" : "Set as album cover");
+                    coverItem.addActionListener(ev -> {
+                        if (capture.albumCover) {
+                            capture.albumCover = false;
+                        } else {
+                            collection.setAlbumCover(capture); // clears any other cover for this monster
+                        }
+                        if (onFavouriteChanged != null) onFavouriteChanged.run();
+                    });
+                    menu.add(coverItem);
+
                     JMenuItem exportItem = new JMenuItem("Export Card");
                     exportItem.addActionListener(ev ->
                             CardExportDialog.open(SwingUtilities.getWindowAncestor(CaptureRow.this), capture));
