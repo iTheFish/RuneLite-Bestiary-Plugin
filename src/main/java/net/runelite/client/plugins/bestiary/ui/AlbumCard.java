@@ -686,19 +686,21 @@ public class AlbumCard extends JPanel {
      * the animation timer is running), giving a shimmering feel on hover / pulse.
      */
     private void drawShinySparkles(Graphics2D g2, int w) {
-        int[][] pts = {
-            { (int) (w * 0.16f), 22 }, { (int) (w * 0.74f), 30 },
-            { (int) (w * 0.42f), 58 }, { (int) (w * 0.86f), 74 },
-            { (int) (w * 0.26f), 92 },
+        // Confine sparkles to the image box only (x in [PAD, w-PAD], y in [IMAGE_Y, IMAGE_Y+IMAGE_H]).
+        int x0 = PAD, y0 = IMAGE_Y, iw = w - PAD * 2, ih = IMAGE_H;
+        float[][] frac = {
+            { 0.15f, 0.13f }, { 0.76f, 0.22f }, { 0.42f, 0.54f },
+            { 0.85f, 0.70f }, { 0.23f, 0.83f },
         };
         java.awt.Stroke old = g2.getStroke();
         g2.setStroke(new java.awt.BasicStroke(1f));
-        for (int i = 0; i < pts.length; i++) {
+        for (int i = 0; i < frac.length; i++) {
+            int x = x0 + Math.round(frac[i][0] * iw);
+            int y = y0 + Math.round(frac[i][1] * ih);
             double phase = ((shimmerPhase * 2.0) + i * 0.41) % 1.0;
             double b     = Math.abs(Math.sin(phase * Math.PI)); // 0..1 twinkle
             int alpha    = (int) (70 + 150 * b);
             int size     = 2 + (int) Math.round(3 * b);
-            int x = pts[i][0], y = pts[i][1];
             g2.setColor(new Color(255, 244, 180, Math.min(255, alpha)));
             g2.drawLine(x - size, y, x + size, y);
             g2.drawLine(x, y - size, x, y + size);

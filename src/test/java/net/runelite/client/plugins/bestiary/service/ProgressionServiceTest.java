@@ -49,7 +49,7 @@ public class ProgressionServiceTest {
 
     @Test
     public void xpTableIsStrictlyIncreasing() {
-        for (int lvl = 2; lvl <= 99; lvl++) {
+        for (int lvl = 2; lvl <= 126; lvl++) {
             assertTrue("XP for " + lvl + " should exceed XP for " + (lvl - 1),
                     XpTable.xpForLevel(lvl) > XpTable.xpForLevel(lvl - 1));
         }
@@ -61,8 +61,8 @@ public class ProgressionServiceTest {
     }
 
     @Test
-    public void levelForMaxXpIs99() {
-        assertEquals(99, XpTable.levelForXp(XpTable.maxXp()));
+    public void levelForMaxXpIs126() {
+        assertEquals(126, XpTable.levelForXp(XpTable.maxXp()));
     }
 
     // --- Kill XP ---
