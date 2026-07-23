@@ -230,14 +230,16 @@ public class BestiaryPlugin extends Plugin {
 
             // Chat notification
             if (config.notifyOnCapture()) {
-                boolean shouldNotify = !config.notifyRareOnly()
+                boolean shouldNotify = creature.isShiny()          // shinies always announce
+                        || !config.notifyRareOnly()
                         || creature.rarity.ordinal() >= CreatureRarity.RARE.ordinal();
                 if (shouldNotify) {
-                    if (config.chatNotifyMode() == ChatNotifyMode.BATCHED) {
+                    if (config.chatNotifyMode() == ChatNotifyMode.BATCHED && !creature.isShiny()) {
                         // Submit to executor so batch maps are only touched on one thread
                         executor.execute(() -> accumulateBatch(creature));
                     } else {
-                        // Verbose: include quality so identical captures produce unique messages
+                        // Verbose (and always for shinies): include quality so identical
+                        // captures produce unique messages, and a shiny is never buried in a batch
                         notifyCapture(creature);
                     }
                 }
@@ -296,12 +298,19 @@ public class BestiaryPlugin extends Plugin {
                 .build());
     }
 
+    /** Colour used for the SHINY marker in capture chat messages. */
+    private static final java.awt.Color SHINY_CHAT_COLOR = new java.awt.Color(255, 235, 120);
+
     private void notifyCapture(CapturedCreature creature) {
         int quality = creature.quality.overallRating();
         int killNum = creature.killsBeforeCapture; // already includes current kill
         // kill# and quality together ensure no two consecutive messages are identical
         // (RuneLite silently drops duplicate chat messages)
-        String message = new ChatMessageBuilder()
+        ChatMessageBuilder builder = new ChatMessageBuilder();
+        if (creature.isShiny()) {
+            builder.append(SHINY_CHAT_COLOR, "✦ SHINY ✦ ");
+        }
+        String message = builder
                 .append(creature.rarity.displayColor, creature.rarity.label)
                 .append(ChatColorType.HIGHLIGHT)
                 .append(" " + creature.npcName + " captured!")

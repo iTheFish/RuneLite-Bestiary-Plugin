@@ -228,7 +228,7 @@ public class AlbumCard extends JPanel {
             imgService.requestImage(npcName, this::repaint);
         }
 
-        if (!locked && rarest != null && rarest.ordinal() >= CreatureRarity.EPIC.ordinal()) {
+        if (!locked && ((rarest != null && rarest.ordinal() >= CreatureRarity.EPIC.ordinal()) || hasShiny)) {
             shimmerTimer = new javax.swing.Timer(30, e -> {
                 shimmerPhase += 0.022f;
                 if (shimmerPhase > 1.05f) {
@@ -425,6 +425,13 @@ public class AlbumCard extends JPanel {
             boolean shimmerLit = shimmerTimer != null && shimmerTimer.isRunning();
             g2.setColor((hovered || shimmerLit) ? HOVER_BG : NORMAL_BG);
             g2.fillRoundRect(0, 0, w, CARD_H, 8, 8);
+            if (hasShiny) {
+                // Golden wash so shiny cards read differently from normal ones
+                g2.setPaint(new java.awt.GradientPaint(
+                        0, 0, new Color(255, 224, 120, 60),
+                        0, CARD_H, new Color(255, 196, 60, 16)));
+                g2.fillRoundRect(0, 0, w, CARD_H, 8, 8);
+            }
             g2.setColor(rarest.displayColor);
         }
         g2.fillRoundRect(0, 0, 4, CARD_H, 4, 4);
@@ -640,7 +647,8 @@ public class AlbumCard extends JPanel {
 
         // Shimmer overlay for Epic+. Strip = 2×actual width so both transparent ends
         // are always off-screen — peak is fully bright when it crosses the right edge.
-        if (shimmerTimer != null && shimmerTimer.isRunning()) {
+        if (shimmerTimer != null && shimmerTimer.isRunning()
+                && rarest != null && rarest.ordinal() >= CreatureRarity.EPIC.ordinal()) {
             int sw    = getWidth(); // use actual layout width, not the constant
             float cx  = shimmerPhase * (3 * sw) - sw;
             Color mid = rarest == CreatureRarity.MYTHIC
@@ -656,12 +664,47 @@ public class AlbumCard extends JPanel {
             g2.fillRoundRect(0, 0, sw, CARD_H, 8, 8);
         }
 
+        // Shiny: twinkling sparkles + a gold border. Sparkles animate while the
+        // timer runs (on hover, and during the periodic global pulse).
+        if (hasShiny && !locked) {
+            drawShinySparkles(g2, w);
+            g2.setStroke(new java.awt.BasicStroke(1.4f));
+            g2.setColor(new Color(255, 216, 130, 205));
+            g2.drawRoundRect(1, 1, w - 3, CARD_H - 3, 8, 8);
+        }
+
         g2.dispose();
     }
 
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    /**
+     * Draws a handful of small twinkling sparkle stars over a shiny card. Each
+     * sparkle's brightness/size is modulated by shimmerPhase (which advances while
+     * the animation timer is running), giving a shimmering feel on hover / pulse.
+     */
+    private void drawShinySparkles(Graphics2D g2, int w) {
+        int[][] pts = {
+            { (int) (w * 0.16f), 22 }, { (int) (w * 0.74f), 30 },
+            { (int) (w * 0.42f), 58 }, { (int) (w * 0.86f), 74 },
+            { (int) (w * 0.26f), 92 },
+        };
+        java.awt.Stroke old = g2.getStroke();
+        g2.setStroke(new java.awt.BasicStroke(1f));
+        for (int i = 0; i < pts.length; i++) {
+            double phase = ((shimmerPhase * 2.0) + i * 0.41) % 1.0;
+            double b     = Math.abs(Math.sin(phase * Math.PI)); // 0..1 twinkle
+            int alpha    = (int) (70 + 150 * b);
+            int size     = 2 + (int) Math.round(3 * b);
+            int x = pts[i][0], y = pts[i][1];
+            g2.setColor(new Color(255, 244, 180, Math.min(255, alpha)));
+            g2.drawLine(x - size, y, x + size, y);
+            g2.drawLine(x, y - size, x, y + size);
+        }
+        g2.setStroke(old);
+    }
 
     private static Graphics2D makeG2(Graphics g) {
         Graphics2D g2 = (Graphics2D) g.create();
