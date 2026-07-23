@@ -198,6 +198,9 @@ public class BestiaryPlugin extends Plugin {
                 sendChatMessage("Capture Level up! You are now level " + newLevel + ".",
                         ChatColorType.HIGHLIGHT);
             }
+            if (config.showCaptureAnimation() || config.showOverlay()) {
+                overlay.enqueueLevelUp(newLevel);
+            }
             SwingUtilities.invokeLater(panel::refresh);
         }
 
