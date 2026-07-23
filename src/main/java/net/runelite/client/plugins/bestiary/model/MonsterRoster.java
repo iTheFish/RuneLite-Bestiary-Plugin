@@ -502,7 +502,7 @@ public class MonsterRoster {
         b.put("Rock crab",           new int[]{ 1,  1,  1,  1,  1, 15});
         b.put("Sand crab",           new int[]{ 1,  1,  1,  1,  1, 15});
         b.put("Swamp crab",          new int[]{ 1,  1, 15, 15,  1, 15});
-        b.put("Gemstone crab",       new int[]{ 1,  1,  1,  1,  1, 15});
+        b.put("Gemstone crab",       new int[]{ 1,  1,  1,  1,  1, 33});
         b.put("Pirate",              new int[]{ 6,  6,  6,  1,  1, 45});
         b.put("Rogue",               new int[]{ 4,  4,  4,  1,  1, 75});
         // Slayer monsters
@@ -593,7 +593,7 @@ public class MonsterRoster {
         // Bosses
         b.put("Scurrius",            new int[]{90, 30, 18, 15, 15, 60});
         b.put("Giant Mole",          new int[]{60, 60, 60, 60,  1, 45});
-        b.put("King Black Dragon",   new int[]{72, 72, 72, 72,  1, 30});
+        b.put("King Black Dragon",   new int[]{72, 72, 72, 72, 65, 30});
         b.put("Chaos Elemental",     new int[]{81, 81, 81, 81, 81, 75});
         b.put("Chaos Fanatic",       new int[]{ 1,  1, 66, 60,  1, 45});
         b.put("Crazy Archaeologist", new int[]{ 1,  1, 54,  1, 59, 60});
@@ -604,7 +604,7 @@ public class MonsterRoster {
         b.put("Obor",                new int[]{27, 30, 18,  1, 36, 30});
         b.put("Bryophyta",           new int[]{39, 30, 30, 27,  1, 15});
         b.put("Cerberus",            new int[]{66, 66, 30, 66, 66, 45});
-        b.put("Kraken",              new int[]{ 1,  1,  1,  1,  1, 30});
+        b.put("Kraken",              new int[]{ 1,  1, 50, 50,  1,  1});
         b.put("Thermonuclear smoke devil", new int[]{69, 66, 90,  1, 90, 60});
         b.put("Alchemical Hydra",    new int[]{30, 30, 30, 78, 78, 45});
         b.put("Zulrah",              new int[]{ 1,  1, 90, 90, 90, 45});
