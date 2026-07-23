@@ -90,6 +90,16 @@ public final class RarityRoller {
      */
     public static CreatureQuality generateQuality(CombatClass cls, CreatureRarity rarity,
                                                   int[] bases, Random rng) {
+        return generateQuality(cls, rarity, bases, rng, false);
+    }
+
+    /**
+     * Shiny-aware variant. When {@code shiny} is true, every stat lands at the top of
+     * its normal band plus a flat bonus (target + {@link #SHINY_BONUS}, capped at 99)
+     * with no randomness — a shiny is always its best possible roll for the rarity.
+     */
+    public static CreatureQuality generateQuality(CombatClass cls, CreatureRarity rarity,
+                                                  int[] bases, Random rng, boolean shiny) {
         double boost = rarity.ordinal() / (double)(CreatureRarity.values().length - 1);
         int[] stats = new int[6];
         for (int i = 0; i < 6; i++) {
@@ -104,10 +114,15 @@ public final class RarityRoller {
                 double secondCeil = Math.max(base + 10, Math.min(base + 30, (int)(base + (99 - base) * 0.55)));
                 target = base + boost * (secondCeil - base);
             }
-            stats[i] = rollStat(rng, target, 7);
+            stats[i] = shiny
+                ? Math.max(1, Math.min(99, (int) Math.round(target) + SHINY_BONUS))
+                : rollStat(rng, target, 7);
         }
         return new CreatureQuality(stats[0], stats[1], stats[2], stats[3], stats[4], stats[5]);
     }
+
+    /** Flat bonus added to every stat's target when a capture is shiny (top of band + this). */
+    private static final int SHINY_BONUS = 12;
 
     private static int rollStat(Random rng, double mean, double sd) {
         double value = mean + rng.nextGaussian() * sd;

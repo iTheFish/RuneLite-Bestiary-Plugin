@@ -172,6 +172,9 @@ public class BestiaryDataService {
                 int[] statBases = MonsterRoster.getStatBases(name, combatLevel);
                 CreatureQuality quality = net.runelite.client.plugins.bestiary.util.RarityRoller
                     .generateQuality(combatClass, rarity, statBases, rng);
+                // Seed shiny using the legacy all-primaries-≥95 heuristic so the album
+                // still shows some shiny stars for visual testing.
+                boolean shiny = quality.isShiny(combatClass);
 
                 CapturedCreature c = CapturedCreature.builder()
                     .npcId(0)
@@ -184,6 +187,7 @@ public class BestiaryDataService {
                     .captureLevel(captureLevels[r])
                     .killsBeforeCapture(killsBefore[r])
                     .playerName("Dev")
+                    .shiny(shiny)
                     .build();
 
                 collection.addCapture(c);

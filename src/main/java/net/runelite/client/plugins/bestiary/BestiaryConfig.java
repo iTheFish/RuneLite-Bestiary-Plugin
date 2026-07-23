@@ -177,4 +177,15 @@ public interface BestiaryConfig extends Config {
     default DevCaptureMode devCaptureMode() {
         return DevCaptureMode.NORMAL;
     }
+
+    @ConfigItem(
+            keyName = "devForceShiny",
+            name = "Always Roll Shiny",
+            description = "When enabled, every successful capture is shiny. For testing the shiny visuals.",
+            position = 23,
+            section = "devSection"
+    )
+    default boolean devForceShiny() {
+        return false;
+    }
 }

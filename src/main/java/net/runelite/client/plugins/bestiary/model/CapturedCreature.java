@@ -42,6 +42,9 @@ public class CapturedCreature {
     /** Player has starred this capture as a favourite. Persisted to disk. */
     public boolean favourite;
 
+    /** True when this capture won the independent shiny roll at capture time. Persisted. */
+    public final boolean shiny;
+
     /**
      * How many kills of this species the player had accumulated before this
      * capture succeeded (useful for showing "lucky" catches).
@@ -60,6 +63,7 @@ public class CapturedCreature {
         this.captureLevel      = b.captureLevel;
         this.killsBeforeCapture = b.killsBeforeCapture;
         this.playerName        = b.playerName != null ? b.playerName : "";
+        this.shiny             = b.shiny;
     }
 
     public static Builder builder() {
@@ -78,6 +82,7 @@ public class CapturedCreature {
         private int captureLevel = 1;
         private int killsBeforeCapture = 0;
         private String playerName = "";
+        private boolean shiny = false;
 
         public Builder id(String v)              { this.id = v; return this; }
         public Builder npcId(int v)             { this.npcId = v; return this; }
@@ -90,6 +95,7 @@ public class CapturedCreature {
         public Builder captureLevel(int v)       { this.captureLevel = v; return this; }
         public Builder killsBeforeCapture(int v) { this.killsBeforeCapture = v; return this; }
         public Builder playerName(String v)       { this.playerName = v; return this; }
+        public Builder shiny(boolean v)           { this.shiny = v; return this; }
 
         public CapturedCreature build() {
             if (quality == null) {
@@ -99,9 +105,9 @@ public class CapturedCreature {
         }
     }
 
-    /** Derived: true when all primary stats for this monster's combat class are ≥ 95. */
+    /** True when this capture won the independent shiny roll at capture time. */
     public boolean isShiny() {
-        return quality.isShiny(MonsterRoster.getCombatClass(npcName, npcCombatLevel));
+        return shiny;
     }
 
     @Override

@@ -30,7 +30,7 @@ import java.util.Map;
 public class BestiaryDatabase {
 
     private static final String DB_NAME = "bestiary.db";
-    private static final int    SCHEMA_VERSION = 2;
+    private static final int    SCHEMA_VERSION = 3;
 
     private final File dbFile;
     private Connection conn;
@@ -113,7 +113,8 @@ public class BestiaryDatabase {
                 "  kills_before_capture INTEGER NOT NULL DEFAULT 0," +
                 "  player_name          TEXT    NOT NULL DEFAULT ''," +
                 "  nickname             TEXT," +
-                "  favourite            INTEGER NOT NULL DEFAULT 0" +
+                "  favourite            INTEGER NOT NULL DEFAULT 0," +
+                "  shiny                INTEGER NOT NULL DEFAULT 0" +
                 ")"
             );
             st.executeUpdate(
@@ -136,8 +137,8 @@ public class BestiaryDatabase {
             "(id, npc_id, npc_name, npc_combat_level, rarity," +
             " stat_atk, stat_str, stat_def, stat_mag, stat_rng, stat_agi," +
             " capture_time, region_name, capture_level, kills_before_capture," +
-            " player_name, nickname, favourite)" +
-            " VALUES (?,?,?,?,?, ?,?,?,?,?,?, ?,?,?,?, ?,?,?)";
+            " player_name, nickname, favourite, shiny)" +
+            " VALUES (?,?,?,?,?, ?,?,?,?,?,?, ?,?,?,?, ?,?,?,?)";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, c.id);
             ps.setInt(2, c.npcId);
@@ -157,6 +158,7 @@ public class BestiaryDatabase {
             ps.setString(16, c.playerName != null ? c.playerName : "");
             ps.setString(17, c.nickname);
             ps.setInt(18, c.favourite ? 1 : 0);
+            ps.setInt(19, c.shiny ? 1 : 0);
             ps.executeUpdate();
         } catch (SQLException e) {
             log.error("Failed to insert capture {}", c.id, e);
@@ -216,7 +218,7 @@ public class BestiaryDatabase {
             "SELECT id, npc_id, npc_name, npc_combat_level, rarity," +
             " stat_atk, stat_str, stat_def, stat_mag, stat_rng, stat_agi," +
             " capture_time, region_name, capture_level, kills_before_capture," +
-            " player_name, nickname, favourite" +
+            " player_name, nickname, favourite, shiny" +
             " FROM captures ORDER BY capture_time ASC";
         try (Statement st = conn.createStatement(); ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
@@ -236,6 +238,7 @@ public class BestiaryDatabase {
                     .captureLevel(rs.getInt("capture_level"))
                     .killsBeforeCapture(rs.getInt("kills_before_capture"))
                     .playerName(rs.getString("player_name"))
+                    .shiny(rs.getInt("shiny") == 1)
                     .build();
                 c.nickname  = rs.getString("nickname");
                 c.favourite = rs.getInt("favourite") == 1;
