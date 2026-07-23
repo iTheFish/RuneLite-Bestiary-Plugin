@@ -199,8 +199,9 @@ public class BestiaryDataService {
             db.upsertKillCount(name, collection.killCounts.get(name));
         }
 
-        // Set Bestiary level to 99
+        // Set Bestiary level to 99 and grant demo credits so the Shop has a balance
         progressionState.totalXp = 13_034_431L;
+        collection.credits       = 25_000L;
         saveMetadata();
         log.info("Dev seed complete: {} captures across {} monsters",
             collection.totalCaptures(), MonsterRoster.ROSTER.size());

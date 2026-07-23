@@ -221,6 +221,13 @@ public class BestiaryPlugin extends Plugin {
             sessionTracker.add(creature);
             dataService.addCapture(creature);
 
+            // Award Bestiary Credits (difficulty × rarity, shiny doubles)
+            long credits = net.runelite.client.plugins.bestiary.util.CreditCalculator.forCapture(
+                    net.runelite.client.plugins.bestiary.model.MonsterRoster.getDifficulty(
+                            creature.npcName, creature.npcCombatLevel),
+                    creature.rarity, creature.isShiny());
+            dataService.awardCredits(credits);
+
             if (config.captureXpEnabled()) {
                 long ckXp       = Math.max(10L, (long) Math.max(1, creature.npcCombatLevel) * 10);
                 long captureXp  = Math.round(ckXp * creature.rarity.xpMultiplier);
