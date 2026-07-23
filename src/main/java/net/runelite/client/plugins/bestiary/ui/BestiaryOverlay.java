@@ -23,9 +23,11 @@ import java.util.Random;
  * all play in order (no dropped animations).
  *
  * Each queued event is one of:
- *  - CAPTURE (animated): ball flies in, shakes, cracks open with a sparkle burst,
- *    then reveals a styled card (shiny cards shimmer gold). Simple mode skips the ball.
- *  - MISS: ball flies in, shakes, then bursts open empty with a puff — "Got away!".
+ *  - CAPTURE (animated): an OSRS-style containment jar flies in, shakes, its cork
+ *    pops with a sparkle burst, then a styled card is revealed (shiny cards shimmer
+ *    gold). Simple mode skips the jar.
+ *  - MISS: the jar flies in, shakes, then the cork pops off and the essence escapes
+ *    upward and fades — "Got away!".
  *  - LEVEL_UP: a glowing "Capture Level N!" banner.
  */
 @Singleton
@@ -143,8 +145,8 @@ public class BestiaryOverlay extends Overlay {
     private Dimension renderCapture(Graphics2D g, Event e, long elapsed) {
         int cx = panelW / 2;
         if (e.animated && elapsed < OPEN_END) {
-            drawBall(g, cx, 34, elapsed, false);
-            // Sparkle burst as the ball cracks open
+            drawJarAnim(g, cx, 34, elapsed, e.capture.rarity.displayColor);
+            // Sparkle burst as the jar's cork pops
             if (elapsed > SHAKE_END) {
                 double p = (elapsed - SHAKE_END) / (double) (OPEN_END - SHAKE_END);
                 drawSparkleBurst(g, cx, 34, p, e.capture.rarity.displayColor);
@@ -159,12 +161,12 @@ public class BestiaryOverlay extends Overlay {
     private Dimension renderMiss(Graphics2D g, long elapsed) {
         int cx = panelW / 2;
         if (elapsed < SHAKE_END) {
-            drawBall(g, cx, 34, elapsed, false);
+            drawJarAnim(g, cx, 34, elapsed, new Color(120, 120, 130));
             return new Dimension(panelW, 74);
         }
         if (elapsed < SHAKE_END + BURST_MS) {
             double p = (elapsed - SHAKE_END) / (double) BURST_MS;
-            drawExplosion(g, cx, 34, p);
+            drawJarBurst(g, cx, 34, p);
             return new Dimension(panelW, 74);
         }
         // "Got away!" fade
@@ -202,9 +204,11 @@ public class BestiaryOverlay extends Overlay {
 
     // --- Drawing helpers ---
 
-    /** Draws the poké-style ball. During fly it slides in; during shake it wobbles. */
-    private void drawBall(Graphics2D g, int cx, int cy, long elapsed, boolean unused) {
-        int size = 34;
+    /**
+     * Fly-in + shake motion for the containment jar. During the crack-open window
+     * (SHAKE_END..OPEN_END) the cork lifts. Essence inside is tinted by {@code essence}.
+     */
+    private void drawJarAnim(Graphics2D g, int cx, int cy, long elapsed, Color essence) {
         int bx;
         if (elapsed < FLY_MS) {
             double t = elapsed / (double) FLY_MS;
@@ -214,25 +218,58 @@ public class BestiaryOverlay extends Overlay {
             double wobble = Math.sin(t * Math.PI * 5) * 9 * (1.0 - t);
             bx = cx + (int) wobble;
         }
-        drawBallShape(g, bx, cy, size, 1f);
+        double openAmount = elapsed <= SHAKE_END ? 0.0
+                : Math.min(1.0, (elapsed - SHAKE_END) / (double) (OPEN_END - SHAKE_END));
+        drawJar(g, bx, cy, 1f, essence, openAmount, elapsed / 300.0);
     }
 
-    private void drawBallShape(Graphics2D g, int bx, int cy, int size, float alpha) {
+    /** An OSRS-style glass containment jar with a cork and swirling rarity essence. */
+    private void drawJar(Graphics2D g, int bx, int cy, float alpha, Color essence,
+                         double openAmount, double phase) {
         Composite orig = g.getComposite();
         g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
-        g.setColor(new Color(230, 60, 50));   // top red
-        g.fillArc(bx - size / 2, cy - size / 2, size, size, 0, 180);
-        g.setColor(new Color(240, 240, 240));  // bottom white
-        g.fillArc(bx - size / 2, cy - size / 2, size, size, 180, 180);
-        g.setColor(Color.BLACK);
-        g.setStroke(new BasicStroke(2));
-        g.drawOval(bx - size / 2, cy - size / 2, size, size);
-        g.drawLine(bx - size / 2, cy, bx + size / 2, cy);
-        g.setColor(Color.WHITE);
-        g.fillOval(bx - 6, cy - 6, 12, 12);
-        g.setColor(Color.BLACK);
-        g.setStroke(new BasicStroke(1.5f));
-        g.drawOval(bx - 6, cy - 6, 12, 12);
+
+        int bodyW = 26, bodyH = 24, bodyX = bx - bodyW / 2, bodyY = cy - 4;
+
+        // Essence glow inside (brighter as the jar opens)
+        int eAlpha = (int) (90 + 120 * openAmount);
+        g.setColor(new Color(essence.getRed(), essence.getGreen(), essence.getBlue(), Math.min(255, eAlpha)));
+        g.fillRoundRect(bodyX + 2, bodyY + 3, bodyW - 4, bodyH - 5, 8, 8);
+        // Swirling essence specks
+        Color bright = new Color(Math.min(255, essence.getRed() + 60),
+                Math.min(255, essence.getGreen() + 60), Math.min(255, essence.getBlue() + 60), 220);
+        g.setColor(bright);
+        for (int i = 0; i < 3; i++) {
+            double ang = phase + i * 2.094;
+            int ox = bx + (int) (Math.cos(ang) * 6);
+            int oy = cy + 9 + (int) (Math.sin(ang) * 6);
+            g.fillOval(ox - 2, oy - 2, 4, 4);
+        }
+
+        // Glass body (translucent) + outline + highlight
+        g.setColor(new Color(170, 205, 225, 60));
+        g.fillRoundRect(bodyX, bodyY, bodyW, bodyH, 9, 9);
+        g.setColor(new Color(215, 238, 250, 210));
+        g.setStroke(new BasicStroke(2f));
+        g.drawRoundRect(bodyX, bodyY, bodyW, bodyH, 9, 9);
+        g.setColor(new Color(255, 255, 255, 110));
+        g.drawLine(bodyX + 5, bodyY + 5, bodyX + 5, bodyY + bodyH - 7);
+
+        // Neck
+        int neckW = 14, neckX = bx - neckW / 2, neckY = cy - 12, neckH = 8;
+        g.setColor(new Color(170, 205, 225, 80));
+        g.fillRect(neckX, neckY, neckW, neckH);
+        g.setColor(new Color(215, 238, 250, 210));
+        g.drawRect(neckX, neckY, neckW, neckH);
+
+        // Cork (lifts as the jar opens)
+        int lift = (int) (openAmount * 9);
+        int corkW = 16, corkX = bx - corkW / 2, corkH = 7, corkY = neckY - corkH - lift;
+        g.setColor(new Color(155, 105, 60));
+        g.fillRoundRect(corkX, corkY, corkW, corkH, 3, 3);
+        g.setColor(new Color(110, 70, 35));
+        g.drawRoundRect(corkX, corkY, corkW, corkH, 3, 3);
+
         g.setComposite(orig);
     }
 
@@ -256,31 +293,35 @@ public class BestiaryOverlay extends Overlay {
         }
     }
 
-    /** Ball halves fly apart, an expanding ring, and a grey puff — a "miss". */
-    private void drawExplosion(Graphics2D g, int cx, int cy, double p) {
-        int size = 34;
-        int spread = (int) (p * 22);
+    /** The jar's cork pops off and the trapped essence escapes upward and fades — a "miss". */
+    private void drawJarBurst(Graphics2D g, int cx, int cy, double p) {
         int alpha = (int) (255 * (1.0 - p));
-        // Expanding ring
-        g.setColor(new Color(200, 200, 200, Math.max(0, alpha)));
-        g.setStroke(new BasicStroke(2f));
-        int r = (int) (p * 26);
-        g.drawOval(cx - r, cy - r, r * 2, r * 2);
-        // Top half flies up, bottom half flies down
+        // Empty jar body, fading
+        int bodyW = 26, bodyH = 24, bodyX = cx - bodyW / 2, bodyY = cy - 4;
         Composite orig = g.getComposite();
-        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.max(0f, 1f - (float) p)));
-        g.setColor(new Color(230, 60, 50));
-        g.fillArc(cx - size / 2, cy - size / 2 - spread, size, size, 0, 180);
-        g.setColor(new Color(240, 240, 240));
-        g.fillArc(cx - size / 2, cy - size / 2 + spread, size, size, 180, 180);
+        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.max(0f, 1f - (float) p * 0.7f)));
+        g.setColor(new Color(170, 205, 225, 55));
+        g.fillRoundRect(bodyX, bodyY, bodyW, bodyH, 9, 9);
+        g.setColor(new Color(215, 238, 250, 200));
+        g.setStroke(new BasicStroke(2f));
+        g.drawRoundRect(bodyX, bodyY, bodyW, bodyH, 9, 9);
         g.setComposite(orig);
-        // Puff particles
-        g.setColor(new Color(150, 150, 150, Math.max(0, alpha)));
+
+        // Cork tumbles up and to the side
+        int lift = (int) (8 + p * 26);
+        int corkX = cx - 8 + (int) (p * 10), corkY = cy - 19 - lift;
+        g.setColor(new Color(155, 105, 60, Math.max(0, alpha)));
+        g.fillRoundRect(corkX, corkY, 16, 7, 3, 3);
+
+        // Escaping essence: wisps rising out of the neck, dissipating
+        g.setColor(new Color(200, 205, 215, Math.max(0, alpha)));
         for (int i = 0; i < 6; i++) {
-            double ang = Math.PI * 2 * i / 6;
-            int x = cx + (int) (Math.cos(ang) * r);
-            int y = cy + (int) (Math.sin(ang) * r);
-            g.fillOval(x - 2, y - 2, 4, 4);
+            double ang = -Math.PI / 2 + (i - 2.5) * 0.28;
+            int rise = (int) (p * 30);
+            int x = cx + (int) (Math.cos(ang) * (4 + p * 12));
+            int y = cy - 6 - rise + (int) (Math.sin(ang) * 2);
+            int s = Math.max(1, 3 - (int) (p * 2));
+            g.fillOval(x - s, y - s, s * 2, s * 2);
         }
     }
 
