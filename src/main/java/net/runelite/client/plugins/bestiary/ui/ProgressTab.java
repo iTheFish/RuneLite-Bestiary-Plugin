@@ -108,15 +108,23 @@ public class ProgressTab extends JPanel {
 
         levelLabel.setText("Capture Level " + level);
 
-        if (level < 100) {
+        if (level < XpTable.MAX_LEVEL) {
             long xpThisLevel  = totalXp - XpTable.xpForLevel(level);
             long xpLevelRange = XpTable.xpForLevel(level + 1) - XpTable.xpForLevel(level);
             int pct = (int) (100L * xpThisLevel / Math.max(1, xpLevelRange));
             xpBar.setValue(pct);
             xpLabel.setText(String.format("%,d XP  |  Next level in %,d XP", totalXp, toNext));
         } else {
-            xpBar.setValue(100);
-            xpLabel.setText(String.format("%,d XP  |  Maximum level reached!", totalXp));
+            // Level 99 reached: bar now tracks progress toward the 200M XP cap.
+            long lvl99  = XpTable.xpForLevel(XpTable.MAX_LEVEL);
+            long range  = XpTable.maxXp() - lvl99;
+            int pct = (int) (100L * (totalXp - lvl99) / Math.max(1, range));
+            xpBar.setValue(Math.min(100, pct));
+            if (totalXp >= XpTable.maxXp()) {
+                xpLabel.setText(String.format("%,d XP  |  200M XP reached!", totalXp));
+            } else {
+                xpLabel.setText(String.format("%,d XP  |  %,d XP to 200M", totalXp, XpTable.maxXp() - totalXp));
+            }
         }
 
         // Rebuild achievement rows

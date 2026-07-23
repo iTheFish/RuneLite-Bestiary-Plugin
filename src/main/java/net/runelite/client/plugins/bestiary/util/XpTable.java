@@ -1,7 +1,7 @@
 package net.runelite.client.plugins.bestiary.util;
 
 /**
- * Maps between Capture Level (1-100) and cumulative XP.
+ * Maps between Capture Level (1-99) and cumulative XP.
  *
  * Uses the official OSRS XP formula: Points(L) = floor((L + 300 * 2^(L/7)) / 4).
  * XP required for level L = sum of Points(1) to Points(L-1).
@@ -12,28 +12,34 @@ package net.runelite.client.plugins.bestiary.util;
  *   Level 50 =    101,333 XP
  *   Level 75 =  1,210,421 XP
  *   Level 99 = 13,034,431 XP
- * Level 100 cap continues the curve beyond the standard OSRS table.
+ * Level 99 is the max level; XP continues to accrue past it up to the 200M
+ * cap (as in OSRS) without advancing the level.
  */
 public final class XpTable {
 
+    /** Maximum Capture Level. */
+    public static final int MAX_LEVEL = 99;
+
+    /** OSRS-style experience cap. Level stays 99 but XP keeps counting to here. */
+    public static final long MAX_XP = 200_000_000L;
+
     /** XP_FOR_LEVEL[L] = XP needed to reach level L (index 0 and 1 are both 0). */
-    private static final long[] XP_FOR_LEVEL = new long[101];
+    private static final long[] XP_FOR_LEVEL = new long[MAX_LEVEL + 1];
 
     static {
         double accumulator = 0;
-        for (int level = 1; level <= 99; level++) {
-            double points = Math.floor((level + 300.0 * Math.pow(2.0, level / 7.0)) / 4.0);
+        for (int level = 1; level <= MAX_LEVEL; level++) {
             XP_FOR_LEVEL[level] = (long) accumulator;
+            double points = Math.floor((level + 300.0 * Math.pow(2.0, level / 7.0)) / 4.0);
             accumulator += points;
         }
-        XP_FOR_LEVEL[100] = (long) accumulator;
     }
 
     private XpTable() {}
 
-    /** Returns the level (1\u00e2\u20ac"100) for a given total XP amount. */
+    /** Returns the level (1-99) for a given total XP amount. */
     public static int levelForXp(long xp) {
-        for (int level = 100; level >= 1; level--) {
+        for (int level = MAX_LEVEL; level >= 1; level--) {
             if (xp >= XP_FOR_LEVEL[level]) {
                 return level;
             }
@@ -43,21 +49,20 @@ public final class XpTable {
 
     /** Returns the total XP required to reach the given level. */
     public static long xpForLevel(int level) {
-        if (level < 1)   return 0;
-        if (level > 100) return XP_FOR_LEVEL[100];
+        if (level < 1)          return 0;
+        if (level > MAX_LEVEL)  return XP_FOR_LEVEL[MAX_LEVEL];
         return XP_FOR_LEVEL[level];
     }
 
-    /** Returns the XP still needed to advance from the current total to the next level. */
+    /** Returns the XP still needed to advance from the current total to the next level (0 at max). */
     public static long xpToNextLevel(long currentXp) {
         int currentLevel = levelForXp(currentXp);
-        if (currentLevel >= 100) return 0;
+        if (currentLevel >= MAX_LEVEL) return 0;
         return XP_FOR_LEVEL[currentLevel + 1] - currentXp;
     }
 
-    /** XP required for level 100 (the cap). */
+    /** The 200M XP cap. */
     public static long maxXp() {
-        return XP_FOR_LEVEL[100];
+        return MAX_XP;
     }
 }
-

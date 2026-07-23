@@ -138,6 +138,9 @@ public class ProgressionService {
             case TEN_CATCHES:
             case FIFTY_CATCHES:
             case HUNDRED_CATCHES:
+            case TWO_FIFTY_CATCHES:
+            case FIVE_HUNDRED_CATCHES:
+            case THOUSAND_CATCHES:
                 return !a.isSpeciesBased && totalCaps >= a.countThreshold;
 
             case FIVE_SPECIES:
@@ -156,25 +159,37 @@ public class ProgressionService {
                         || capture.rarity == CreatureRarity.MYTHIC);
             case MYTHIC_CATCH:
                 return capture != null && capture.rarity == CreatureRarity.MYTHIC;
+            case SHINY_CATCH:
+                return capture != null && capture.isShiny();
 
             case FIVE_HUNDRED_KILLS:
             case FIVE_K_KILLS:
                 return false; // handled by checkKillAchievements()
 
+            case LEVEL_5:   return level >= 5;
             case LEVEL_10:  return level >= 10;
             case LEVEL_25:  return level >= 25;
+            case LEVEL_30:  return level >= 30;
+            case LEVEL_40:  return level >= 40;
             case LEVEL_50:  return level >= 50;
+            case LEVEL_60:  return level >= 60;
+            case LEVEL_70:  return level >= 70;
             case LEVEL_75:  return level >= 75;
-            case LEVEL_100: return level >= 100;
+            case LEVEL_80:  return level >= 80;
+            case LEVEL_85:  return level >= 85;
+            case LEVEL_90:  return level >= 90;
+            case LEVEL_92:  return level >= 92;
+            case LEVEL_95:  return level >= 95;
+            case LEVEL_99:  return level >= 99;
 
             default: return false;
         }
     }
 
-    /** Adds XP and returns the new level if a level-up occurred, otherwise 0. */
+    /** Adds XP (capped at the 200M max) and returns the new level if a level-up occurred, otherwise 0. */
     private int addXp(long xp) {
         int before       = getLevel();
-        state.totalXp   += xp;
+        state.totalXp    = Math.min(XpTable.maxXp(), state.totalXp + xp);
         int after        = getLevel();
         return after > before ? after : 0;
     }

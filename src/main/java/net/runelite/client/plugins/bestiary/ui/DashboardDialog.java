@@ -166,7 +166,7 @@ public class DashboardDialog extends JDialog {
         int    level              = progressionService.getLevel();
         long   totalXp            = progressionService.getTotalXp();
         long   levelStart         = XpTable.xpForLevel(level);
-        long   levelEnd           = XpTable.xpForLevel(Math.min(level + 1, 100));
+        long   levelEnd           = XpTable.xpForLevel(Math.min(level + 1, XpTable.MAX_LEVEL));
         long   xpInLevel          = totalXp - levelStart;
         long   xpSpan             = Math.max(1, levelEnd - levelStart);
         long   xpLeft             = progressionService.getXpToNextLevel();
@@ -1299,7 +1299,7 @@ public class DashboardDialog extends JDialog {
         int    level              = ps.getLevel();
         long   totalXp            = ps.getTotalXp();
         long   levelStart         = XpTable.xpForLevel(level);
-        long   levelEnd           = XpTable.xpForLevel(Math.min(level + 1, 100));
+        long   levelEnd           = XpTable.xpForLevel(Math.min(level + 1, XpTable.MAX_LEVEL));
         long   xpInLevel          = totalXp - levelStart;
         long   xpSpan             = Math.max(1, levelEnd - levelStart);
         long   xpLeft             = ps.getXpToNextLevel();
