@@ -706,6 +706,11 @@ public class AlbumDialog extends JDialog {
                 cap.favourite = !cap.favourite;
                 if (onFavouriteChanged != null) onFavouriteChanged.run();
             }, () -> cap.favourite);
+            card.setAlbumCoverToggle(() -> {
+                if (cap.albumCover) cap.albumCover = false;
+                else collection.setAlbumCover(cap); // clears any other cover for this monster
+                if (onFavouriteChanged != null) onFavouriteChanged.run();
+            }, () -> cap.albumCover);
             card.setNicknameCallback(() -> {
                 if (onFavouriteChanged != null) onFavouriteChanged.run();
                 rebuildGrid();
@@ -762,26 +767,27 @@ public class AlbumDialog extends JDialog {
             CreatureRarity.RARE,   CreatureRarity.UNCOMMON,  CreatureRarity.COMMON
         };
         for (CreatureRarity r : allRarities) {
-            // Shiny pill sits just before Common (orthogonal to rarity — filters shiny captures)
-            if (r == CreatureRarity.COMMON) {
-                JButton shinyBtn = makeRarityPill("✦ Shiny", detailFilterShiny,
-                        new Color(255, 235, 120), !anyShiny);
-                if (anyShiny) {
-                    shinyBtn.addActionListener(e -> {
-                        detailFilterShiny = true; detailFilterRarity = null; detailPage = 0; rebuildGrid();
-                    });
-                }
-                row.add(shinyBtn);
-            }
             boolean has = presentRarities.contains(r);
             JButton rb = makeRarityPill(r.label, r == detailFilterRarity, r.displayColor, !has);
             if (has) {
                 rb.addActionListener(e -> {
-                    detailFilterRarity = r; detailFilterShiny = false; detailPage = 0; rebuildGrid();
+                    // Clicking the active filter toggles back to All
+                    detailFilterRarity = (detailFilterRarity == r) ? null : r;
+                    detailFilterShiny = false; detailPage = 0; rebuildGrid();
                 });
             }
             row.add(rb);
         }
+
+        // Shiny pill sits after Common (orthogonal to rarity — filters shiny captures)
+        JButton shinyBtn = makeRarityPill("✦ Shiny", detailFilterShiny, new Color(255, 235, 120), !anyShiny);
+        if (anyShiny) {
+            shinyBtn.addActionListener(e -> {
+                detailFilterShiny = !detailFilterShiny;   // clicking again toggles back to All
+                detailFilterRarity = null; detailPage = 0; rebuildGrid();
+            });
+        }
+        row.add(shinyBtn);
         return row;
     }
 

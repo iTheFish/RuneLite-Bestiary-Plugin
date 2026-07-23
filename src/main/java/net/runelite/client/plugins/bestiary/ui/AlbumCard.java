@@ -127,6 +127,14 @@ public class AlbumCard extends JPanel {
         this.favStateSupplier  = isFav;
     }
 
+    // If set, right-click menu shows an album-cover toggle in the favourites section
+    @Nullable private Runnable albumCoverToggleCallback;
+    @Nullable private java.util.function.Supplier<Boolean> albumCoverStateSupplier;
+    public void setAlbumCoverToggle(Runnable toggle, java.util.function.Supplier<Boolean> isCover) {
+        this.albumCoverToggleCallback = toggle;
+        this.albumCoverStateSupplier  = isCover;
+    }
+
     // If set, right-click menu shows "Copy Card" which fires this (instant clipboard copy)
     @Nullable private Runnable copyCallback;
     public void setCopyCallback(Runnable r) { this.copyCallback = r; }
@@ -308,6 +316,13 @@ public class AlbumCard extends JPanel {
                     JMenuItem favItem = new JMenuItem(isFav ? "✩ Remove Favourite" : "★ Favourite");
                     favItem.addActionListener(ev -> favToggleCallback.run());
                     menu.add(favItem);
+                    if (albumCoverToggleCallback != null) {
+                        boolean isCover = albumCoverStateSupplier != null
+                                && Boolean.TRUE.equals(albumCoverStateSupplier.get());
+                        JMenuItem coverItem = new JMenuItem(isCover ? "Remove album cover" : "Set as album cover");
+                        coverItem.addActionListener(ev -> albumCoverToggleCallback.run());
+                        menu.add(coverItem);
+                    }
                     menu.addSeparator();
                 } else if (unfavouriteCallback != null) {
                     JMenuItem unfavItem = new JMenuItem("✩ Remove Favourite");
