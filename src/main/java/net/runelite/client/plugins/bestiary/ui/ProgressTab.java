@@ -78,6 +78,10 @@ public class ProgressTab extends JPanel {
         JScrollPane scroll = new JScrollPane(achievementPanel);
         scroll.setBorder(null);
         scroll.getViewport().setBackground(ColorScheme.DARK_GRAY_COLOR);
+        scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        // Invisible vertical scrollbar (no width taken) — mouse wheel still scrolls
+        scroll.getVerticalScrollBar().setPreferredSize(new java.awt.Dimension(0, 0));
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
 
         JLabel achievementHeader = new JLabel("Achievements");
         achievementHeader.setFont(FontManager.getRunescapeBoldFont());

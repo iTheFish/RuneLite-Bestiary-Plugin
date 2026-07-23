@@ -39,7 +39,7 @@ public enum Achievement {
     LEVEL_80           ("Elite Hunter",          "Reach Capture Level 80",               0,    false, new Color(255, 180, 80)),
     LEVEL_85           ("Grandmaster Hunter",    "Reach Capture Level 85",               0,    false, new Color(255, 180, 80)),
     LEVEL_90           ("Legendary Hunter",      "Reach Capture Level 90",               0,    false, new Color(255, 165, 0)),
-    LEVEL_92           ("Halfway There",         "Reach Capture Level 92 (half the XP to 99)", 0, false, new Color(255, 165, 0)),
+    LEVEL_92           ("Halfway There",         "Reach Capture Level 92",               0,    false, new Color(255, 165, 0)),
     LEVEL_95           ("Almost There",          "Reach Capture Level 95",               0,    false, new Color(255, 165, 0)),
     LEVEL_99           ("Capture Master",        "Reach Capture Level 99",               0,    false, new Color(255, 120, 20));
 
