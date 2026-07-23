@@ -115,14 +115,20 @@ public final class RarityRoller {
                 target = base + boost * (secondCeil - base);
             }
             stats[i] = shiny
-                ? Math.max(1, Math.min(99, (int) Math.round(target) + SHINY_BONUS))
+                ? Math.max(1, Math.min(99, (int) Math.round(target)
+                    + SHINY_MIN_BONUS + rng.nextInt(SHINY_MAX_BONUS - SHINY_MIN_BONUS + 1)))
                 : rollStat(rng, target, 7);
         }
         return new CreatureQuality(stats[0], stats[1], stats[2], stats[3], stats[4], stats[5]);
     }
 
-    /** Flat bonus added to every stat's target when a capture is shiny (top of band + this). */
-    private static final int SHINY_BONUS = 12;
+    /**
+     * Bonus added to each stat's target when a capture is shiny — rolled per stat in
+     * [SHINY_MIN_BONUS, SHINY_MAX_BONUS]. The spread lets a lucky low-rarity shiny
+     * occasionally outrank an unlucky higher-rarity one.
+     */
+    private static final int SHINY_MIN_BONUS = 11;
+    private static final int SHINY_MAX_BONUS = 16;
 
     private static int rollStat(Random rng, double mean, double sd) {
         double value = mean + rng.nextGaussian() * sd;

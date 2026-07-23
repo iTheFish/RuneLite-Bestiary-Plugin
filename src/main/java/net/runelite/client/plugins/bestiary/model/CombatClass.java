@@ -7,7 +7,7 @@ package net.runelite.client.plugins.bestiary.model;
  * APEX has 3 primaries and only 1 tertiary (AGI), making it the most dominant class.
  */
 public enum CombatClass {
-    NIMBLE   ("Nimble",   new int[]{4, 5},    new int[]{1, 2}),   // P: RNG AGI  | T: STR DEF
+    NIMBLE   ("Nimble",   new int[]{1, 5},    new int[]{2, 3}),   // P: STR AGI  | T: DEF MAG
     BRUTE    ("Brute",    new int[]{0, 1},    new int[]{3, 4}),   // P: ATK STR  | T: MAG RNG
     TANK     ("Tank",     new int[]{1, 2},    new int[]{4, 5}),   // P: STR DEF  | T: RNG AGI
     PREDATOR ("Predator", new int[]{0, 5},    new int[]{2, 3}),   // P: ATK AGI  | T: DEF MAG
