@@ -35,7 +35,7 @@ public class MonsterRoster {
         "Bear", "Grizzly bear",
         "Unicorn",
         "Spider", "Giant spider",
-        "Scorpion", "King scorpion",
+        "Scorpion",
         "Hill giant", "Moss giant", "Fire giant", "Ice giant",
         "Earth warrior",
         "Lesser demon", "Greater demon", "Black demon",
@@ -55,7 +55,6 @@ public class MonsterRoster {
         "Cave bug", "Cave crawler", "Cave slime", "Cave horror",
         "Dagannoth",
         "Dark beast",
-        "Desert lizard",
         "Drake",
         "Dust devil",
         "Fever spider",
@@ -66,7 +65,7 @@ public class MonsterRoster {
         "Ice troll", "Mountain troll", "Troll",
         "Infernal mage",
         "Jelly", "Warped jelly",
-        "Kalphite", "Kalphite soldier", "Kalphite guardian", "Kalphite worker",
+        "Kalphite soldier", "Kalphite guardian", "Kalphite worker",
         "Kurask",
         "Lizardman", "Lizardman brute", "Lizardman shaman",
         "Mogre",
@@ -77,7 +76,7 @@ public class MonsterRoster {
         "Spiritual warrior", "Spiritual mage", "Spiritual ranger",
         "Suqah",
         "Turoth",
-        "Vampyre", "Feral vampyre", "Vyrewatch",
+        "Vampyre", "Vyrewatch",
         "Waterfiend",
         "Wyrm",
         "Wyvern", "Ancient wyvern", "Skeletal wyvern", "Fossil island wyvern",
@@ -92,7 +91,7 @@ public class MonsterRoster {
         "Brutal black dragon", "Brutal red dragon", "Brutal blue dragon", "Brutal green dragon",
 
         // === Wilderness / other ===
-        "Chaos druid warrior", "Dark warrior",
+        "Dark warrior",
         "Ice warrior", "Ice spider",
 
         // === Solo bosses ===
@@ -183,38 +182,39 @@ public class MonsterRoster {
             "Bear", "Grizzly bear",
             "Dark wizard", "Minotaur",
             "Cave bug",
-            "Rock crab", "Sand crab"
+            "Rock crab", "Sand crab",
+            "Barbarian", "Banshee",
+            "Baby blue dragon", "Baby green dragon"
         )) { d.put(n, BEGINNER); }
 
         // Easy — early/mid F2P, basic slayer
         for (String n : Arrays.asList(
-            "Guard", "Barbarian", "Warrior", "Wizard",
-            "Giant spider", "Scorpion", "King scorpion",
+            "Guard", "Warrior", "Wizard",
+            "Giant spider", "Scorpion",
             "Zombie", "Skeleton", "Ghost", "Pirate", "Rogue",
             "Swamp crab",
             "Hobgoblin", "Chaos druid",
             "Cave crawler", "Cave slime",
-            "Desert lizard", "Fever spider", "Pyrefiend", "Rockslugs",
+            "Fever spider", "Pyrefiend", "Rockslugs",
             "Fleshcrawler", "Ice warrior", "Ice spider",
             "Hill giant", "Moss giant", "Ice giant", "Earth warrior",
-            "Baby blue dragon", "Baby green dragon",
-            "Banshee", "Basilisk", "Black knight"
+            "Ankou",
+            "Basilisk", "Black knight"
         )) { d.put(n, EASY); }
 
         // Medium — mid-game slayer, accessible dungeon monsters
         for (String n : Arrays.asList(
             "Fire giant",
             "Lesser demon", "White knight",
-            "Ankou",
             "Twisted banshee", "Bloodveld",
             "Cave horror", "Jelly", "Warped jelly",
-            "Kalphite", "Kalphite soldier", "Kalphite worker",
+            "Kalphite soldier", "Kalphite worker",
             "Turoth", "Nechryael",
             "Blue dragon", "Red dragon", "Green dragon", "Bronze dragon", "Iron dragon",
             "Spiritual warrior", "Spiritual mage", "Spiritual ranger",
             "Lizardman", "Lizardman brute",
             "Mogre",
-            "Vampyre", "Feral vampyre", "Vyrewatch",
+            "Vampyre", "Vyrewatch",
             "Smoke devil", "Dust devil", "Infernal mage",
             "Zombie pirate",
             "Tortoise", "Warped tortoise",
@@ -238,7 +238,7 @@ public class MonsterRoster {
             "Lizardman shaman",
             "Brutal black dragon", "Brutal red dragon",
             "Brutal blue dragon", "Brutal green dragon",
-            "Lava dragon", "Dark warrior", "Chaos druid warrior"
+            "Lava dragon", "Dark warrior"
         )) { d.put(n, HARD); }
 
         // Elite — challenging late-game PvM (pre-boss tier)
@@ -507,7 +507,6 @@ public class MonsterRoster {
         b.put("Spider",              new int[]{ 1,  1,  1,  1,  1, 75});
         b.put("Giant spider",        new int[]{ 6,  7,  6,  1,  1, 45});
         b.put("Scorpion",            new int[]{ 3,  4,  3,  1,  1, 60});
-        b.put("King scorpion",       new int[]{ 9,  9,  7,  1,  1, 45});
         b.put("Hill giant",          new int[]{ 5,  7,  8,  1,  1, 15});
         b.put("Moss giant",          new int[]{ 9,  9,  9,  1,  1, 15});
         b.put("Fire giant",          new int[]{20, 20, 20,  1,  1, 15});
@@ -543,7 +542,6 @@ public class MonsterRoster {
         b.put("Cave horror",         new int[]{24, 23, 19, 24,  1, 45});
         b.put("Dagannoth",           new int[]{20, 21, 15,  1,  1, 60});
         b.put("Dark beast",          new int[]{42, 48, 36, 48,  1, 30});
-        b.put("Desert lizard",       new int[]{ 6,  7,  6,  1,  1, 60});
         b.put("Drake",               new int[]{42, 35, 36, 34, 42, 45});
         b.put("Dust devil",          new int[]{32, 21, 12,  1,  1, 60});
         b.put("Fever spider",        new int[]{18,  9, 12,  1,  1, 60});
@@ -557,7 +555,6 @@ public class MonsterRoster {
         b.put("Infernal mage",       new int[]{ 1,  1, 18, 23,  1, 45});
         b.put("Jelly",               new int[]{14, 14, 36, 14,  1, 30});
         b.put("Warped jelly",        new int[]{29, 27, 21, 29,  1, 30});
-        b.put("Kalphite",            new int[]{ 6,  6,  6,  1,  1, 45});
         b.put("Kalphite soldier",    new int[]{21, 21, 21,  1,  1, 30});
         b.put("Kalphite guardian",   new int[]{33, 33, 33,  1,  1, 30});
         b.put("Kalphite worker",     new int[]{ 6,  6,  6,  1,  1, 45});
@@ -577,7 +574,6 @@ public class MonsterRoster {
         b.put("Suqah",               new int[]{29, 29, 29,  1,  1, 45});
         b.put("Turoth",              new int[]{16, 25, 25,  1,  1, 45});
         b.put("Vampyre",             new int[]{17, 18, 17, 12,  1, 45});
-        b.put("Feral vampyre",       new int[]{17, 18, 17, 12,  1, 45});
         b.put("Vyrewatch",           new int[]{32, 26, 26, 32, 32, 60});
         b.put("Waterfiend",          new int[]{ 1,  1, 38, 32, 32, 30});
         b.put("Wyrm",                new int[]{26, 18, 24, 24, 24, 45});
@@ -607,7 +603,6 @@ public class MonsterRoster {
         b.put("Brutal blue dragon",  new int[]{90, 60, 60, 60,  1, 30});
         b.put("Brutal green dragon", new int[]{80, 50, 50, 50,  1, 30});
         // Wilderness / other
-        b.put("Chaos druid warrior", new int[]{10, 10,  8,  1,  1, 45});
         b.put("Dark warrior",        new int[]{23, 23, 17,  1,  1, 45});
         b.put("Ice warrior",         new int[]{14, 14, 14,  1,  1, 30});
         b.put("Ice spider",          new int[]{15, 17, 13,  1,  1, 45});
@@ -698,7 +693,7 @@ public class MonsterRoster {
             "Chicken", "Cow", "Cow calf", "Duck", "Ram", "Seagull",
             "Rat", "Giant rat", "Bear", "Grizzly bear", "Unicorn",
             "Rock crab", "Sand crab", "Swamp crab", "Gemstone crab",
-            "Desert lizard", "Warped tortoise", "Tortoise",
+            "Warped tortoise", "Tortoise",
             "Giant Mole", "Callisto", "Artio", "Scurrius", "Kraken",
             "Ba-Ba", "Zebak", "Amoxliatl"
         )) { s.put(n, ANIMAL); }
@@ -740,7 +735,7 @@ public class MonsterRoster {
             "Guard", "Barbarian", "Warrior", "Wizard", "Dark wizard",
             "Black knight", "White knight",
             "Pirate", "Rogue",
-            "Chaos druid", "Chaos druid warrior", "Dark warrior",
+            "Chaos druid", "Dark warrior",
             "Ice warrior",
             "Crazy Archaeologist", "Deranged Archaeologist", "Chaos Fanatic",
             "Sol Heredit"
@@ -750,14 +745,14 @@ public class MonsterRoster {
         for (String n : Arrays.asList(
             "Spider", "Giant spider", "Ice spider", "Fever spider",
             "Cave bug", "Cave crawler", "Cave slime", "Fleshcrawler",
-            "Scorpion", "King scorpion", "Scorpia",
+            "Scorpion", "Scorpia",
             "Araxxor", "Venenatis", "Spindel", "Sarachnis",
             "Vespula", "Kephri"
         )) { s.put(n, INSECT); }
 
         // KALPHITE — kalphite species
         for (String n : Arrays.asList(
-            "Kalphite", "Kalphite soldier", "Kalphite worker", "Kalphite guardian"
+            "Kalphite soldier", "Kalphite worker", "Kalphite guardian"
         )) { s.put(n, KALPHITE); }
 
         // TROLL — trolls
@@ -770,7 +765,7 @@ public class MonsterRoster {
             "Zombie", "Skeleton", "Ghost", "Zombie pirate",
             "Ankou", "Banshee", "Twisted banshee",
             "Aberrant spectre", "Deviant spectre",
-            "Vampyre", "Feral vampyre", "Vyrewatch",
+            "Vampyre", "Vyrewatch",
             "Spiritual warrior", "Spiritual mage", "Spiritual ranger",
             "Vet'ion", "Calvar'ion",
             "Ahrim the Blighted", "Dharok the Wretched", "Guthan the Infested",
@@ -879,13 +874,14 @@ public class MonsterRoster {
         "Chaos Fanatic", "Crazy Archaeologist", "Deranged Archaeologist", "Scorpia",
         "Ahrim the Blighted", "Dharok the Wretched", "Guthan the Infested",
         "Karil the Tainted", "Torag the Corrupted", "Verac the Defiled",
-        "Dusk", "Dawn"
+        "Dusk", "Dawn",
+        "Amoxliatl", "Chaos Elemental", "Hueycoatl", "King Black Dragon"
     ));
 
     private static final java.util.Set<String> ENDGAME_BOSSES = new java.util.HashSet<>(Arrays.asList(
         "TzTok-Jad", "TzKal-Zuk", "Nex",
         "Duke Sucellus", "The Leviathan", "Vardorvis", "The Whisperer",
-        "Araxxor", "Hueycoatl", "Sol Heredit", "Amoxliatl",
+        "Sol Heredit",
         "Tekton", "Great Olm", "Vespula",
         "Maiden of Sugadinti", "Pestilent Bloat", "Sotetseg", "Xarpus", "Verzik Vitur",
         "Akkha", "Ba-Ba", "Kephri", "Zebak", "Tumeken's Warden", "Elidinis' Warden"
