@@ -32,6 +32,54 @@ public class WikiImageService {
     private static final int    TIMEOUT_MS = 8000;
     private static final int    BATCH_SIZE = 50;
 
+    /**
+     * Maps our in-game NPC name to the correct OSRS Wiki page title when they differ.
+     * The wiki API is case-sensitive on non-first characters, so "Rock crab" won't find
+     * "Rock Crab". Disambiguation pages ("Troll", "Wyvern") also need directing.
+     */
+    private static final java.util.Map<String, String> WIKI_IMAGE_NAMES;
+    static {
+        java.util.Map<String, String> m = new java.util.HashMap<>();
+        // Capitalisation differences (second word capitalised on wiki)
+        m.put("Rock crab",           "Rock Crab");
+        m.put("Sand crab",           "Sand Crab");
+        m.put("Swamp crab",          "Swamp Crab");
+        m.put("Gemstone crab",       "Gemstone Crab");
+        m.put("King scorpion",       "King Scorpion");
+        m.put("Twisted banshee",     "Twisted Banshee");
+        m.put("Mutated bloodveld",   "Mutated Bloodveld");
+        m.put("Greater nechryael",   "Greater Nechryael");
+        m.put("Warped jelly",        "Warped Jelly");
+        m.put("Basilisk knight",     "Basilisk Knight");
+        m.put("Black knight",        "Black Knight");
+        m.put("White knight",        "White Knight");
+        m.put("Desert lizard",       "Desert Lizard");
+        m.put("Infernal mage",       "Infernal Mage");
+        m.put("Skeletal wyvern",     "Skeletal Wyvern");
+        m.put("Ancient wyvern",      "Ancient Wyvern");
+        m.put("Warped tortoise",     "Warped Tortoise");
+        m.put("Feral vampyre",       "Feral Vampyre");
+        m.put("Kalphite soldier",    "Kalphite Soldier");
+        m.put("Kalphite guardian",   "Kalphite Guardian");
+        m.put("Kalphite worker",     "Kalphite Worker");
+        m.put("Ice warrior",         "Ice Warrior");
+        m.put("Ice spider",          "Ice Spider");
+        m.put("Dark warrior",        "Dark Warrior");
+        // Name/structure differences
+        m.put("Rockslugs",           "Rockslug");
+        m.put("Fleshcrawler",        "Flesh Crawler");
+        m.put("Vampyre",             "Feral Vampyre");      // race overview page, not a monster
+        m.put("Warrior",             "Al Kharid warrior");  // disambiguation
+        m.put("Bear",                "Grizzly bear");        // disambiguation
+        m.put("Wyvern",              "Skeletal Wyvern");     // disambiguation
+        m.put("Kalphite",            "Kalphite Worker");     // disambiguation
+        m.put("Fossil island wyvern","Long-tailed Wyvern");  // no generic page
+        m.put("Scurrius",            "Scurrius, the Rat King");
+        m.put("Maiden of Sugadinti", "The Maiden of Sugadinti");
+        // "Troll" has no usable representative page — omit so it gets no image gracefully
+        WIKI_IMAGE_NAMES = java.util.Collections.unmodifiableMap(m);
+    }
+
     private final Map<String, BufferedImage>  cache            = new ConcurrentHashMap<>();
     private final Set<String>                pending          = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private final Set<String>                failed           = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -203,15 +251,20 @@ public class WikiImageService {
     // -------------------------------------------------------------------------
 
     private Map<String, String> fetchThumbUrlBatch(List<String> names) throws Exception {
+        // Translate NPC names to wiki page titles; keep a reverse map for results
         Map<String, String> lowerToName = new LinkedHashMap<>();
+        List<String> queryTitles = new ArrayList<>();
         for (String n : names) {
-            lowerToName.put(n.toLowerCase(), n);
+            String wikiTitle = WIKI_IMAGE_NAMES.getOrDefault(n, n);
+            queryTitles.add(wikiTitle);
+            lowerToName.put(wikiTitle.toLowerCase(), n);
+            lowerToName.put(n.toLowerCase(), n); // keep original as fallback
         }
 
         StringBuilder titlesParam = new StringBuilder();
-        for (int i = 0; i < names.size(); i++) {
+        for (int i = 0; i < queryTitles.size(); i++) {
             if (i > 0) titlesParam.append("%7C");
-            titlesParam.append(URLEncoder.encode(names.get(i), StandardCharsets.UTF_8.name()));
+            titlesParam.append(URLEncoder.encode(queryTitles.get(i), StandardCharsets.UTF_8.name()));
         }
 
         String urlStr = API_BASE + "?action=query&titles=" + titlesParam

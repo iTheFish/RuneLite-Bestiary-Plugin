@@ -80,10 +80,16 @@ public class CaptureService {
         CreatureRarity rarity = (forceRarity != null && forceRarity != DevRarityOverride.NONE)
                 ? CreatureRarity.fromLabel(forceRarity.name())
                 : RarityRoller.roll(rng, captureLevel);
+        // Independent shiny roll — orthogonal to rarity. Base 0.2% at Bestiary level 1,
+        // scaling linearly to 2% at level 99. Future shop unlocks / passives can multiply this.
+        boolean shiny = config.devForceShiny() || rng.nextDouble() < shinyChance(captureLevel);
+
         CombatClass combatClass = MonsterRoster.getCombatClass(npcName, npc.getCombatLevel());
-        CreatureQuality quality = RarityRoller.generateQuality(combatClass, rarity, rng);
+        int[] statBases = MonsterRoster.getStatBases(npcName, npc.getCombatLevel());
+        CreatureQuality quality = RarityRoller.generateQuality(combatClass, rarity, statBases, rng, shiny);
 
         CapturedCreature creature = CapturedCreature.builder()
+                .shiny(shiny)
                 .npcId(npc.getId())
                 .npcName(npcName)
                 .npcCombatLevel(npc.getCombatLevel())
@@ -123,6 +129,16 @@ public class CaptureService {
             default:       base = 0.10; perLevel = 0.0030; cap = 0.40; break;
         }
         return Math.min(base + (captureLevel - 1) * perLevel, cap);
+    }
+
+    /**
+     * Independent shiny chance, scaled by Bestiary level.
+     * 0.2% at level 1 → 2% at level 99 (linear). Rarity does not affect this.
+     * Static so the dev seed can roll shinies the same way as live captures.
+     */
+    static double shinyChance(int captureLevel) {
+        double t = Math.max(0, Math.min(98, captureLevel - 1)) / 98.0;
+        return 0.002 + t * (0.02 - 0.002);
     }
 }
 

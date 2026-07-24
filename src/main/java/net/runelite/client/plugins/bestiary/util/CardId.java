@@ -28,12 +28,12 @@ public final class CardId {
         CreatureQuality q = capture.quality;
         return String.format("%03d%s%s%s%s%s%s%d%s",
                 dexNumber,
+                encodeStat(q.attack),
                 encodeStat(q.strength),
-                encodeStat(q.speed),
-                encodeStat(q.endurance),
-                encodeStat(q.intelligence),
-                encodeStat(q.stealth),
-                encodeStat(q.vitality),
+                encodeStat(q.defence),
+                encodeStat(q.magic),
+                encodeStat(q.ranged),
+                encodeStat(q.agility),
                 rarityDigit(capture.rarity),
                 encodePlayer(capture.playerName));
     }

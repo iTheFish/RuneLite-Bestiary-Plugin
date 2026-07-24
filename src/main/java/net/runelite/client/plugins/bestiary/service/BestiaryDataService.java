@@ -1,137 +1,129 @@
 package net.runelite.client.plugins.bestiary.service;
 
+import net.runelite.client.plugins.bestiary.model.Achievement;
 import net.runelite.client.plugins.bestiary.model.BestiaryCollection;
 import net.runelite.client.plugins.bestiary.model.CapturedCreature;
-import net.runelite.client.plugins.bestiary.util.InstantAdapter;
-import net.runelite.client.plugins.bestiary.util.RegionNames;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import net.runelite.client.plugins.bestiary.model.CreatureQuality;
+import net.runelite.client.plugins.bestiary.model.CreatureRarity;
+import net.runelite.client.plugins.bestiary.model.MonsterRoster;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.time.Instant;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Random;
+import java.util.stream.Collectors;
 
 /**
- * Loads and saves the bestiary collection and progression state to
- * {@code ~/.runelite/bestiary/}.  Saves are debounced: the first mutating
- * call after a quiet period schedules a disk write 5 s later.
+ * Loads and saves the bestiary collection and progression state via SQLite.
+ * Mutations to captures and kill counts are written immediately. Mutable
+ * creature fields (favourite, nickname, playerName, regionName) are flushed
+ * as a batch by saveNow(), which is called from UI callbacks after changes.
  */
 @Slf4j
 @Singleton
 public class BestiaryDataService {
 
-    private static final String SUBDIR           = "bestiary";
-    private static final String COLLECTION_FILE  = "collection.json";
-    private static final String PROGRESS_FILE    = "progress.json";
-    private static final long   SAVE_DELAY_SECS  = 5;
+    private static final String META_CREDITS      = "credits";
+    private static final String META_TOTAL_XP     = "total_xp";
+    private static final String META_ACHIEVEMENTS = "achievements";
 
     private final ProgressionService progressionService;
-    private final Gson gson;
-    private final File bestiaryDir;
-    private final ScheduledExecutorService executor;
+    private final BestiaryDatabase db;
 
     @Getter
     private BestiaryCollection collection = new BestiaryCollection();
     private ProgressionService.ProgressionState progressionState = new ProgressionService.ProgressionState();
 
-    /** Pending debounced save; replaced on each call to scheduleSave(). */
-    private ScheduledFuture<?> pendingSave;
-
-    /** Snapshot captured on the client thread, written to disk on the executor. */
-    private volatile String pendingCollectionJson;
-    private volatile String pendingProgressJson;
-
     @Inject
-    public BestiaryDataService(ProgressionService progressionService) {
+    public BestiaryDataService(ProgressionService progressionService, BestiaryDatabase db) {
         this.progressionService = progressionService;
-        this.gson = new GsonBuilder()
-                .registerTypeAdapter(Instant.class, new InstantAdapter())
-                .setPrettyPrinting()
-                .disableHtmlEscaping()
-                .create();
-        this.bestiaryDir = new File(System.getProperty("user.home"), ".runelite" + File.separator + SUBDIR);
-        this.executor    = Executors.newSingleThreadScheduledExecutor(
-                r -> { Thread t = new Thread(r, "bestiary-save"); t.setDaemon(true); return t; });
+        this.db = db;
     }
 
-    // --- Lifecycle ---
+    // -------------------------------------------------------------------------
+    // Lifecycle
+    // -------------------------------------------------------------------------
 
     /** Must be called from the client thread during plugin startUp. */
     public void load() {
-        bestiaryDir.mkdirs();
+        db.open();
+        collection = new BestiaryCollection();
 
-        collection       = loadJson(new File(bestiaryDir, COLLECTION_FILE),  BestiaryCollection.class,
-                                    new BestiaryCollection());
-        progressionState = loadJson(new File(bestiaryDir, PROGRESS_FILE),
-                                    ProgressionService.ProgressionState.class,
-                                    new ProgressionService.ProgressionState());
-
-        // Guard against null maps/lists after Gson deserialisation of empty JSON.
-        if (collection.creatures     == null) collection.creatures     = new java.util.ArrayList<>();
-        if (collection.killCounts    == null) collection.killCounts    = new java.util.HashMap<>();
-        if (collection.captureCountByNpc == null) collection.captureCountByNpc = new java.util.HashMap<>();
-        if (progressionState.unlockedAchievements == null) {
-            progressionState.unlockedAchievements = java.util.EnumSet.noneOf(net.runelite.client.plugins.bestiary.model.Achievement.class);
+        List<CapturedCreature> captures = db.loadAllCaptures();
+        for (CapturedCreature c : captures) {
+            collection.creatures.add(c);
+            collection.captureCountByNpc.merge(c.npcName, 1, Integer::sum);
         }
 
-        migrateRegionNames();
+        collection.killCounts = db.loadKillCounts();
+        collection.credits    = parseLong(db.getMetadata(META_CREDITS, "0"), 0L);
+
+        progressionState = new ProgressionService.ProgressionState();
+        progressionState.totalXp = parseLong(db.getMetadata(META_TOTAL_XP, "0"), 0L);
+        progressionState.unlockedAchievements = loadAchievements();
+
         progressionService.init(progressionState, collection);
-        log.info("Bestiary loaded: {} captures", collection.totalCaptures());
+        log.info("Bestiary loaded from DB: {} captures", collection.totalCaptures());
     }
 
     /**
-     * Forces an immediate synchronous write.  Call from plugin shutDown to
-     * ensure data is not lost when the client closes.
+     * Flushes all mutable creature fields and metadata to disk. Called from UI
+     * callbacks after favourite/nickname/playerName changes.
      */
     public void saveNow() {
-        if (pendingSave != null) {
-            pendingSave.cancel(false);
-            pendingSave = null;
-        }
-        snapshotAndWrite();
+        db.batchUpdateMutable(collection.creatures);
+        saveMetadata();
     }
 
-    /** Debounced save \u00e2\u20ac" safe to call after every kill/capture. */
+    /** No-op: individual mutations are written immediately. Kept for API compatibility. */
     public void scheduleSave() {
-        // Snapshot JSON on the client thread (holds the lock on the data model).
-        pendingCollectionJson = gson.toJson(collection);
-        pendingProgressJson   = gson.toJson(progressionState);
-
-        if (pendingSave != null && !pendingSave.isDone()) {
-            pendingSave.cancel(false);
-        }
-        pendingSave = executor.schedule(this::writePendingToDisk, SAVE_DELAY_SECS, TimeUnit.SECONDS);
+        saveNow();
     }
 
-    /** Permanently deletes all capture and progression data. */
+    /** Permanently deletes all data and resets in-memory state. */
     public void wipeCollection() {
+        db.deleteAllCaptures();
+        db.deleteAllKillCounts();
+        db.deleteAllMetadata();
         collection       = new BestiaryCollection();
         progressionState = new ProgressionService.ProgressionState();
         progressionService.init(progressionState, collection);
-        saveNow();
         log.info("Bestiary collection wiped");
     }
 
-    // --- Mutators (call from client thread) ---
+    /** Closes the database connection. Call from plugin shutDown. */
+    public void shutdown() {
+        saveNow();
+        db.close();
+    }
+
+    // -------------------------------------------------------------------------
+    // Mutators (call from client thread)
+    // -------------------------------------------------------------------------
 
     public void addCapture(CapturedCreature c) {
         collection.addCapture(c);
-        scheduleSave();
+        db.insertCapture(c);
+        saveMetadata();
     }
 
     public void incrementKillCount(String npcName) {
         collection.incrementKillCount(npcName);
-        scheduleSave();
+        db.upsertKillCount(npcName, collection.getKillCount(npcName));
+        saveMetadata();
+    }
+
+    /**
+     * Persists mutable fields of a single creature immediately. Use this after
+     * targeted changes (e.g. a single card's favourite or nickname was just changed)
+     * when you want to avoid a full batch flush.
+     */
+    public void updateCapture(CapturedCreature c) {
+        db.updateCaptureMutable(c);
     }
 
     public ProgressionService.ProgressionState getProgressionState() {
@@ -144,63 +136,120 @@ public class BestiaryDataService {
 
     public void awardCredits(long amount) {
         collection.credits += amount;
-        scheduleSave();
+        db.setMetadata(META_CREDITS, String.valueOf(collection.credits));
     }
 
-    // --- Internal ---
+    public void saveProgressionState() {
+        saveMetadata();
+    }
 
-    /** Upgrades captures that stored raw "Region N" IDs before RegionNames existed. */
-    private void migrateRegionNames() {
-        boolean dirty = false;
-        for (CapturedCreature c : collection.creatures) {
-            if (c.regionName != null && c.regionName.startsWith("Region ")) {
+    // -------------------------------------------------------------------------
+    // Dev tools
+    // -------------------------------------------------------------------------
+
+    /**
+     * Wipes the collection and inserts one capture per rarity for every roster
+     * monster. Stats are seeded from the monster name so the same data is
+     * produced each run. Only call this from a dev build.
+     */
+    public void seedTestCollection() {
+        wipeCollection();
+        Random rng = new Random();
+        Instant base = Instant.now().minusSeconds(60L * 60 * 24 * 365); // spread over a year
+        int idx = 0;
+        int[] captureLevels = {1, 20, 40, 60, 80, 95};
+        int[] killsBefore   = {3, 12, 30, 80, 200, 500};
+
+        for (String name : MonsterRoster.ROSTER) {
+            int combatLevel = combatLevelForSeed(name);
+            net.runelite.client.plugins.bestiary.model.CombatClass combatClass =
+                MonsterRoster.getCombatClass(name, combatLevel);
+
+            for (int r = 0; r < CreatureRarity.values().length; r++) {
+                CreatureRarity rarity = CreatureRarity.values()[r];
+
+                int[] statBases = MonsterRoster.getStatBases(name, combatLevel);
+                // Roll shiny the same way live captures do: independent roll scaled by the
+                // card's capture level, then generate quality with the shiny flag applied.
+                // Dev-seed only: 3x boost so the test collection shows ~20 shinies for visual
+                // testing (live captures use the real 0.2%-2% rate).
+                rng.setSeed((long) name.hashCode() * 31 + r);
+                boolean shiny = rng.nextDouble() < CaptureService.shinyChance(captureLevels[r]) * 3.0;
+                CreatureQuality quality = net.runelite.client.plugins.bestiary.util.RarityRoller
+                    .generateQuality(combatClass, rarity, statBases, rng, shiny);
+
+                CapturedCreature c = CapturedCreature.builder()
+                    .npcId(0)
+                    .npcName(name)
+                    .npcCombatLevel(combatLevel)
+                    .rarity(rarity)
+                    .quality(quality)
+                    .captureTime(base.plusSeconds((long) idx * 600))
+                    .regionName("Dev Seed")
+                    .captureLevel(captureLevels[r])
+                    .killsBeforeCapture(killsBefore[r])
+                    .playerName("Dev")
+                    .shiny(shiny)
+                    .build();
+
+                collection.addCapture(c);
+                db.insertCapture(c);
+                idx++;
+            }
+            rng.setSeed(name.hashCode());
+            collection.killCounts.put(name, killsBefore[5] + rng.nextInt(200));
+            db.upsertKillCount(name, collection.killCounts.get(name));
+        }
+
+        // Set Bestiary level to 99 and grant demo credits so the Shop has a balance
+        progressionState.totalXp = 13_034_431L;
+        collection.credits       = 25_000L;
+        saveMetadata();
+        log.info("Dev seed complete: {} captures across {} monsters",
+            collection.totalCaptures(), MonsterRoster.ROSTER.size());
+    }
+
+    private static int combatLevelForSeed(String npcName) {
+        switch (MonsterRoster.getDifficulty(npcName, -1)) {
+            case BEGINNER: return 5;
+            case EASY:     return 30;
+            case MEDIUM:   return 80;
+            case HARD:     return 150;
+            case ELITE:    return 250;
+            default:       return 400; // BOSS
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Internal
+    // -------------------------------------------------------------------------
+
+    private void saveMetadata() {
+        db.setMetadata(META_CREDITS,  String.valueOf(collection.credits));
+        db.setMetadata(META_TOTAL_XP, String.valueOf(progressionState.totalXp));
+        String achievements = progressionState.unlockedAchievements.stream()
+            .map(Enum::name)
+            .collect(Collectors.joining(","));
+        db.setMetadata(META_ACHIEVEMENTS, achievements);
+    }
+
+    private EnumSet<Achievement> loadAchievements() {
+        EnumSet<Achievement> set = EnumSet.noneOf(Achievement.class);
+        String raw = db.getMetadata(META_ACHIEVEMENTS, "");
+        if (!raw.isEmpty()) {
+            for (String name : raw.split(",")) {
                 try {
-                    int id = Integer.parseInt(c.regionName.substring(7).trim());
-                    String resolved = RegionNames.get(id);
-                    if (!resolved.equals(c.regionName)) {
-                        c.regionName = resolved;
-                        dirty = true;
-                    }
-                } catch (NumberFormatException ignored) {
+                    set.add(Achievement.valueOf(name.trim()));
+                } catch (IllegalArgumentException ignored) {
+                    log.warn("Unknown achievement in DB: {}", name);
                 }
             }
         }
-        if (dirty) {
-            scheduleSave();
-        }
+        return set;
     }
 
-    private void snapshotAndWrite() {
-        pendingCollectionJson = gson.toJson(collection);
-        pendingProgressJson   = gson.toJson(progressionState);
-        writePendingToDisk();
-    }
-
-    private void writePendingToDisk() {
-        writeToFile(pendingCollectionJson, new File(bestiaryDir, COLLECTION_FILE));
-        writeToFile(pendingProgressJson,   new File(bestiaryDir, PROGRESS_FILE));
-    }
-
-    private void writeToFile(String json, File file) {
-        try (FileWriter writer = new FileWriter(file)) {
-            writer.write(json);
-            log.debug("Saved {}", file.getName());
-        } catch (IOException e) {
-            log.error("Failed to write {}", file.getAbsolutePath(), e);
-        }
-    }
-
-    private <T> T loadJson(File file, Class<T> type, T defaultValue) {
-        if (!file.exists()) {
-            return defaultValue;
-        }
-        try (FileReader reader = new FileReader(file)) {
-            T result = gson.fromJson(reader, type);
-            return result != null ? result : defaultValue;
-        } catch (Exception e) {
-            log.error("Failed to load {}: {}", file.getName(), e.getMessage());
-            return defaultValue;
-        }
+    private static long parseLong(String s, long defaultValue) {
+        try { return Long.parseLong(s); }
+        catch (NumberFormatException e) { return defaultValue; }
     }
 }
-

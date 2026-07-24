@@ -1,36 +1,37 @@
 package net.runelite.client.plugins.bestiary.model;
 
 /**
- * Six randomized stats for a captured creature, each in the range [1, 100].
+ * Six randomised stats for a captured creature, each in [1, 99].
+ * Indices: 0=ATK  1=STR  2=DEF  3=MAG  4=RNG  5=AGI
  * Generated once at capture time; never changes for a given capture record.
  */
 public class CreatureQuality {
 
+    public final int attack;
     public final int strength;
-    public final int speed;
-    public final int endurance;
-    public final int intelligence;
-    public final int stealth;
-    public final int vitality;
+    public final int defence;
+    public final int magic;
+    public final int ranged;
+    public final int agility;
 
-    public CreatureQuality(int strength, int speed, int endurance,
-                           int intelligence, int stealth, int vitality) {
-        this.strength     = clamp(strength);
-        this.speed        = clamp(speed);
-        this.endurance    = clamp(endurance);
-        this.intelligence = clamp(intelligence);
-        this.stealth      = clamp(stealth);
-        this.vitality     = clamp(vitality);
+    public CreatureQuality(int attack, int strength, int defence,
+                           int magic, int ranged, int agility) {
+        this.attack   = clamp(attack);
+        this.strength = clamp(strength);
+        this.defence  = clamp(defence);
+        this.magic    = clamp(magic);
+        this.ranged   = clamp(ranged);
+        this.agility  = clamp(agility);
     }
 
     /** Average of all six stats, rounded to the nearest integer. */
     public int overallRating() {
-        return Math.round((strength + speed + endurance + intelligence + stealth + vitality) / 6f);
+        return Math.round((attack + strength + defence + magic + ranged + agility) / 6f);
     }
 
     /** True when all primary stats for the given combat class are 95 or above. */
     public boolean isShiny(CombatClass combatClass) {
-        int[] stats = {strength, speed, endurance, intelligence, stealth, vitality};
+        int[] stats = {attack, strength, defence, magic, ranged, agility};
         for (int i : combatClass.primaryIndices) {
             if (stats[i] < 95) return false;
         }
@@ -38,13 +39,12 @@ public class CreatureQuality {
     }
 
     private static int clamp(int v) {
-        return Math.max(1, Math.min(100, v));
+        return Math.max(1, Math.min(99, v));
     }
 
     @Override
     public String toString() {
-        return String.format("STR:%d SPD:%d END:%d INT:%d STL:%d VIT:%d",
-                strength, speed, endurance, intelligence, stealth, vitality);
+        return String.format("ATK:%d STR:%d DEF:%d MAG:%d RNG:%d AGI:%d",
+                attack, strength, defence, magic, ranged, agility);
     }
 }
-

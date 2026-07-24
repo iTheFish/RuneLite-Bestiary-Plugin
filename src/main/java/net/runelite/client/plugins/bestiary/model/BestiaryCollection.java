@@ -6,8 +6,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Container for the player's entire bestiary.
- * This is the root object serialised to collection.json.
+ * Container for the player's entire bestiary — the in-memory model.
+ * Persistence is handled by BestiaryDatabase (SQLite); this object is loaded
+ * from / synced to the DB by BestiaryDataService.
  */
 public class BestiaryCollection {
 
@@ -56,6 +57,19 @@ public class BestiaryCollection {
 
     public int countFavourites() {
         return (int) creatures.stream().filter(c -> c.favourite).count();
+    }
+
+    /**
+     * Marks {@code target} as the album cover for its monster, clearing any previous
+     * cover on the same npcName (one cover per monster). Returns the affected captures
+     * so callers can persist just those if desired.
+     */
+    public void setAlbumCover(CapturedCreature target) {
+        for (CapturedCreature c : creatures) {
+            if (c.npcName.equals(target.npcName)) {
+                c.albumCover = (c == target);
+            }
+        }
     }
 }
 

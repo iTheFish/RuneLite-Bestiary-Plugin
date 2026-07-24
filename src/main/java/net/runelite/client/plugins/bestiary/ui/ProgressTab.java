@@ -78,6 +78,10 @@ public class ProgressTab extends JPanel {
         JScrollPane scroll = new JScrollPane(achievementPanel);
         scroll.setBorder(null);
         scroll.getViewport().setBackground(ColorScheme.DARK_GRAY_COLOR);
+        scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        // Invisible vertical scrollbar (no width taken) — mouse wheel still scrolls
+        scroll.getVerticalScrollBar().setPreferredSize(new java.awt.Dimension(0, 0));
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
 
         JLabel achievementHeader = new JLabel("Achievements");
         achievementHeader.setFont(FontManager.getRunescapeBoldFont());
@@ -108,15 +112,17 @@ public class ProgressTab extends JPanel {
 
         levelLabel.setText("Capture Level " + level);
 
-        if (level < 100) {
+        if (level < XpTable.MAX_VIRTUAL_LEVEL) {
+            // Normal per-level progress, including virtual levels 100-126 past the skill cap.
             long xpThisLevel  = totalXp - XpTable.xpForLevel(level);
             long xpLevelRange = XpTable.xpForLevel(level + 1) - XpTable.xpForLevel(level);
             int pct = (int) (100L * xpThisLevel / Math.max(1, xpLevelRange));
             xpBar.setValue(pct);
             xpLabel.setText(String.format("%,d XP  |  Next level in %,d XP", totalXp, toNext));
         } else {
+            // Level 126 / 200M XP: fully maxed.
             xpBar.setValue(100);
-            xpLabel.setText(String.format("%,d XP  |  Maximum level reached!", totalXp));
+            xpLabel.setText(String.format("%,d XP  |  200M XP reached!", totalXp));
         }
 
         // Rebuild achievement rows

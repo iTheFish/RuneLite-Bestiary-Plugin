@@ -57,7 +57,7 @@ public class AlbumCard extends JPanel {
     private static final Color LOCKED_ACCENT  = new Color(48, 48, 48);
     private static final Color IMAGE_BG       = new Color(22, 22, 22);
 
-    private static final String[] STAT_LABELS = {"STR", "SPD", "END", "INT", "STL", "VIT"};
+    private static final String[] STAT_LABELS = {"ATK", "STR", "DEF", "MAG", "RNG", "AGI"};
 
     private final String npcName;
     private final int dexNumber;
@@ -127,6 +127,14 @@ public class AlbumCard extends JPanel {
         this.favStateSupplier  = isFav;
     }
 
+    // If set, right-click menu shows an album-cover toggle in the favourites section
+    @Nullable private Runnable albumCoverToggleCallback;
+    @Nullable private java.util.function.Supplier<Boolean> albumCoverStateSupplier;
+    public void setAlbumCoverToggle(Runnable toggle, java.util.function.Supplier<Boolean> isCover) {
+        this.albumCoverToggleCallback = toggle;
+        this.albumCoverStateSupplier  = isCover;
+    }
+
     // If set, right-click menu shows "Copy Card" which fires this (instant clipboard copy)
     @Nullable private Runnable copyCallback;
     public void setCopyCallback(Runnable r) { this.copyCallback = r; }
@@ -156,8 +164,10 @@ public class AlbumCard extends JPanel {
         this.locked       = false;
         this.killCount    = 0;
 
-        // Best capture = highest rarity, then highest overall quality as tiebreaker
-        CapturedCreature best = captures.stream()
+        // Card appearance is driven by the player-chosen album cover if one is set;
+        // otherwise the "best" capture (highest rarity, then highest overall quality).
+        CapturedCreature cover = captures.stream().filter(c -> c.albumCover).findFirst().orElse(null);
+        CapturedCreature best = cover != null ? cover : captures.stream()
                 .max(Comparator.comparingInt((CapturedCreature c) -> c.rarity.ordinal())
                         .thenComparingInt(c -> c.quality.overallRating()))
                 .orElse(captures.get(0));
@@ -178,18 +188,20 @@ public class AlbumCard extends JPanel {
 
         // Stats displayed are the best capture's individual stats, not an average
         this.avgStats = new int[]{
+            best.quality.attack,
             best.quality.strength,
-            best.quality.speed,
-            best.quality.endurance,
-            best.quality.intelligence,
-            best.quality.stealth,
-            best.quality.vitality,
+            best.quality.defence,
+            best.quality.magic,
+            best.quality.ranged,
+            best.quality.agility,
         };
 
         this.difficulty     = MonsterRoster.getDifficulty(npcName, combatLevel);
         this.combatClass    = MonsterRoster.getCombatClass(npcName, combatLevel);
         this.species        = MonsterRoster.getSpecies(npcName, combatLevel);
-        this.hasShiny       = captures.stream().anyMatch(CapturedCreature::isShiny);
+        // If a cover is chosen, its shiny status drives the card look; otherwise any shiny.
+        this.hasShiny       = cover != null ? cover.isShiny()
+                                            : captures.stream().anyMatch(CapturedCreature::isShiny);
         this.overallQuality = best.quality.overallRating();
         init(imageService, true);
     }
@@ -228,7 +240,7 @@ public class AlbumCard extends JPanel {
             imgService.requestImage(npcName, this::repaint);
         }
 
-        if (!locked && rarest != null && rarest.ordinal() >= CreatureRarity.EPIC.ordinal()) {
+        if (!locked && ((rarest != null && rarest.ordinal() >= CreatureRarity.EPIC.ordinal()) || hasShiny)) {
             shimmerTimer = new javax.swing.Timer(30, e -> {
                 shimmerPhase += 0.022f;
                 if (shimmerPhase > 1.05f) {
@@ -304,6 +316,13 @@ public class AlbumCard extends JPanel {
                     JMenuItem favItem = new JMenuItem(isFav ? "✩ Remove Favourite" : "★ Favourite");
                     favItem.addActionListener(ev -> favToggleCallback.run());
                     menu.add(favItem);
+                    if (albumCoverToggleCallback != null) {
+                        boolean isCover = albumCoverStateSupplier != null
+                                && Boolean.TRUE.equals(albumCoverStateSupplier.get());
+                        JMenuItem coverItem = new JMenuItem(isCover ? "Remove album cover" : "Set as album cover");
+                        coverItem.addActionListener(ev -> albumCoverToggleCallback.run());
+                        menu.add(coverItem);
+                    }
                     menu.addSeparator();
                 } else if (unfavouriteCallback != null) {
                     JMenuItem unfavItem = new JMenuItem("✩ Remove Favourite");
@@ -343,7 +362,10 @@ public class AlbumCard extends JPanel {
                     CapturedCreature nickCap = captures.get(0);
                     String nickLabel = (nickCap.nickname != null && !nickCap.nickname.isEmpty()) ? "Rename…" : "Name capture…";
                     JMenuItem nickItem = new JMenuItem(nickLabel);
-                    nickItem.addActionListener(ev -> openNicknameDialog(nickCap));
+                    nickItem.addActionListener(ev -> openNicknameDialog(AlbumCard.this, nickCap, () -> {
+                        repaint();
+                        if (nicknameCallback != null) nicknameCallback.run();
+                    }));
                     menu.add(nickItem);
                 }
                 menu.show(AlbumCard.this, e.getX(), e.getY());
@@ -351,7 +373,12 @@ public class AlbumCard extends JPanel {
         });
     }
 
-    private void openNicknameDialog(CapturedCreature c) {
+    /**
+     * Opens the shared MODELESS "Name capture" editor for a capture, anchored to
+     * {@code anchor}. Runs {@code onSaved} after the nickname is committed so callers
+     * can repaint / persist. Static so both AlbumCard and CardExportDialog use one editor.
+     */
+    static void openNicknameDialog(Component anchor, CapturedCreature c, Runnable onSaved) {
         JTextField field = new JTextField(c.nickname != null ? c.nickname : "", 20);
         JLabel counter = new JLabel(field.getText().length() + " / 20");
         counter.setFont(FontManager.getRunescapeSmallFont());
@@ -378,18 +405,17 @@ public class AlbumCard extends JPanel {
         content.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
         content.add(inputPanel, BorderLayout.CENTER);
         content.add(btnRow, BorderLayout.SOUTH);
-        Window owner = SwingUtilities.getWindowAncestor(this);
+        Window owner = SwingUtilities.getWindowAncestor(anchor);
         JDialog dlg = new JDialog(owner, "Name Capture", java.awt.Dialog.ModalityType.MODELESS);
         dlg.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         dlg.setResizable(false);
         dlg.setContentPane(content);
         dlg.pack();
-        dlg.setLocationRelativeTo(this);
+        dlg.setLocationRelativeTo(anchor);
         okBtn.addActionListener(ae -> {
             String val = field.getText().trim();
             c.nickname = val.isBlank() ? null : val;
-            repaint();
-            if (nicknameCallback != null) nicknameCallback.run();
+            if (onSaved != null) onSaved.run();
             dlg.dispose();
         });
         cancelBtn.addActionListener(ae -> dlg.dispose());
@@ -425,6 +451,13 @@ public class AlbumCard extends JPanel {
             boolean shimmerLit = shimmerTimer != null && shimmerTimer.isRunning();
             g2.setColor((hovered || shimmerLit) ? HOVER_BG : NORMAL_BG);
             g2.fillRoundRect(0, 0, w, CARD_H, 8, 8);
+            if (hasShiny) {
+                // Golden wash so shiny cards read differently from normal ones
+                g2.setPaint(new java.awt.GradientPaint(
+                        0, 0, new Color(255, 224, 120, 60),
+                        0, CARD_H, new Color(255, 196, 60, 16)));
+                g2.fillRoundRect(0, 0, w, CARD_H, 8, 8);
+            }
             g2.setColor(rarest.displayColor);
         }
         g2.fillRoundRect(0, 0, 4, CARD_H, 4, 4);
@@ -640,7 +673,8 @@ public class AlbumCard extends JPanel {
 
         // Shimmer overlay for Epic+. Strip = 2×actual width so both transparent ends
         // are always off-screen — peak is fully bright when it crosses the right edge.
-        if (shimmerTimer != null && shimmerTimer.isRunning()) {
+        if (shimmerTimer != null && shimmerTimer.isRunning()
+                && rarest != null && rarest.ordinal() >= CreatureRarity.EPIC.ordinal()) {
             int sw    = getWidth(); // use actual layout width, not the constant
             float cx  = shimmerPhase * (3 * sw) - sw;
             Color mid = rarest == CreatureRarity.MYTHIC
@@ -656,12 +690,49 @@ public class AlbumCard extends JPanel {
             g2.fillRoundRect(0, 0, sw, CARD_H, 8, 8);
         }
 
+        // Shiny: twinkling sparkles + a gold border. Sparkles animate while the
+        // timer runs (on hover, and during the periodic global pulse).
+        if (hasShiny && !locked) {
+            drawShinySparkles(g2, w);
+            g2.setStroke(new java.awt.BasicStroke(1.4f));
+            g2.setColor(new Color(255, 216, 130, 205));
+            g2.drawRoundRect(1, 1, w - 3, CARD_H - 3, 8, 8);
+        }
+
         g2.dispose();
     }
 
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    /**
+     * Draws a handful of small twinkling sparkle stars over a shiny card. Each
+     * sparkle's brightness/size is modulated by shimmerPhase (which advances while
+     * the animation timer is running), giving a shimmering feel on hover / pulse.
+     */
+    private void drawShinySparkles(Graphics2D g2, int w) {
+        // Confine sparkles to the image box only (x in [PAD, w-PAD], y in [IMAGE_Y, IMAGE_Y+IMAGE_H]).
+        int x0 = PAD, y0 = IMAGE_Y, iw = w - PAD * 2, ih = IMAGE_H;
+        float[][] frac = {
+            { 0.15f, 0.13f }, { 0.76f, 0.22f }, { 0.42f, 0.54f },
+            { 0.85f, 0.70f }, { 0.23f, 0.83f },
+        };
+        java.awt.Stroke old = g2.getStroke();
+        g2.setStroke(new java.awt.BasicStroke(1f));
+        for (int i = 0; i < frac.length; i++) {
+            int x = x0 + Math.round(frac[i][0] * iw);
+            int y = y0 + Math.round(frac[i][1] * ih);
+            double phase = ((shimmerPhase * 2.0) + i * 0.41) % 1.0;
+            double b     = Math.abs(Math.sin(phase * Math.PI)); // 0..1 twinkle
+            int alpha    = (int) (70 + 150 * b);
+            int size     = 2 + (int) Math.round(3 * b);
+            g2.setColor(new Color(255, 244, 180, Math.min(255, alpha)));
+            g2.drawLine(x - size, y, x + size, y);
+            g2.drawLine(x, y - size, x, y + size);
+        }
+        g2.setStroke(old);
+    }
 
     private static Graphics2D makeG2(Graphics g) {
         Graphics2D g2 = (Graphics2D) g.create();

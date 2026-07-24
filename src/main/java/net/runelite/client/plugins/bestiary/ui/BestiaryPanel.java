@@ -44,6 +44,7 @@ public class BestiaryPanel extends PluginPanel {
         CreatureDetailDialog.setConfig(config);
         CreatureDetailDialog.setSaveCallback(dataService::saveNow);
         CardExportDialog.setShared(imageService, dataService::getCollection);
+        CardExportDialog.setOnMutate(() -> { dataService.saveNow(); refresh(); });
         AlbumCard.setConfig(config);
 
         setLayout(new BorderLayout(0, 6));
@@ -99,7 +100,31 @@ public class BestiaryPanel extends PluginPanel {
 
         add(header,          BorderLayout.NORTH);
         add(tabs,            BorderLayout.CENTER);
-        add(buildWipeBtn(),  BorderLayout.SOUTH);
+        add(buildSouthPanel(), BorderLayout.SOUTH);
+    }
+
+    private JPanel buildSouthPanel() {
+        JPanel panel = new JPanel();
+        panel.setOpaque(false);
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+        JButton seedBtn = new JButton("[DEV] Seed Test Data");
+        seedBtn.setFont(FontManager.getRunescapeSmallFont());
+        seedBtn.setBackground(new Color(20, 50, 80));
+        seedBtn.setForeground(new Color(100, 180, 255));
+        seedBtn.setBorderPainted(false);
+        seedBtn.setFocusPainted(false);
+        seedBtn.setToolTipText("Wipe collection and insert 1 capture per rarity for every roster monster");
+        seedBtn.setAlignmentX(CENTER_ALIGNMENT);
+        seedBtn.addActionListener(e -> {
+            dataService.seedTestCollection();
+            refresh();
+        });
+        panel.add(seedBtn);
+        panel.add(Box.createVerticalStrut(3));
+
+        panel.add(buildWipeBtn());
+        return panel;
     }
 
     private JButton buildWipeBtn() {

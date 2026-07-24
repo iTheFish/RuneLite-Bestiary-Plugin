@@ -337,11 +337,17 @@ public class InfoTab extends JPanel {
                 "Each level shifts weight toward rarer outcomes.\n\n" +
                 "Example: Mythic goes from 0.1% at level 1 to 1.5% at level 99 — " +
                 "about 15 times more likely. Common drops from 75% to 46% over the same range."));
+        tiles.add(tile("Shiny",
+                "After rarity, a third independent roll decides whether the capture is shiny. " +
+                "It is orthogonal to rarity — any rarity can be shiny, from a Common all the way to a Mythic.\n\n" +
+                "The chance scales with your level: 0.2% at level 1 up to 2% at level 99.\n\n" +
+                "A shiny always rolls near-max stats (the very top of its band), gets a golden card " +
+                "with twinkling sparkles, and is announced in chat with a ✦ SHINY ✦ marker."));
         tiles.add(tile("Quality",
-                "Every capture has six individual stats, each scored 0–100:\n" +
-                "Strength, Speed, Endurance, Intelligence, Stealth, Vitality.\n\n" +
+                "Every capture has six individual stats, each scored 1–99:\n" +
+                "Attack, Strength, Defence, Magic, Ranged, Agility.\n\n" +
                 "Which stats roll high depends on the monster's class " +
-                "(e.g. a Brute rolls high Strength; a Nimble rolls high Speed and Stealth). " +
+                "(e.g. a Brute rolls high Attack and Strength; a Ranger rolls high Ranged and Agility). " +
                 "Higher rarities shift all stats toward the top — a Mythic capture will generally " +
                 "score much higher than a Common of the same species.\n\n" +
                 "Gold-outlined bars in the detail dialog mark your personal bests."));

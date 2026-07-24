@@ -166,7 +166,7 @@ public class DashboardDialog extends JDialog {
         int    level              = progressionService.getLevel();
         long   totalXp            = progressionService.getTotalXp();
         long   levelStart         = XpTable.xpForLevel(level);
-        long   levelEnd           = XpTable.xpForLevel(Math.min(level + 1, 100));
+        long   levelEnd           = XpTable.xpForLevel(Math.min(level + 1, XpTable.MAX_VIRTUAL_LEVEL));
         long   xpInLevel          = totalXp - levelStart;
         long   xpSpan             = Math.max(1, levelEnd - levelStart);
         long   xpLeft             = progressionService.getXpToNextLevel();
@@ -474,7 +474,7 @@ public class DashboardDialog extends JDialog {
         }
         root.add(typePanel);
         root.add(gap(10));
-        root.add(sectionHeader("TOP 5 CREATURES"));
+        root.add(sectionHeader("TOP 5 CREATURES  (captures · kills as tiebreaker)"));
         root.add(buildTopSpeciesSection(col));
         root.add(gap(10));
 
@@ -693,7 +693,8 @@ public class DashboardDialog extends JDialog {
         Map<String, List<CapturedCreature>> bySpecies = col.creatures.stream()
                 .collect(Collectors.groupingBy(c -> c.npcName));
         List<Map.Entry<String, List<CapturedCreature>>> top5 = bySpecies.entrySet().stream()
-                .sorted(Comparator.comparingInt((Map.Entry<String, List<CapturedCreature>> e) -> e.getValue().size()).reversed())
+                .sorted(Comparator.comparingInt((Map.Entry<String, List<CapturedCreature>> e) -> e.getValue().size()).reversed()
+                    .thenComparingInt(e -> -col.getKillCount(e.getKey())))
                 .limit(5).collect(Collectors.toList());
 
         if (top5.isEmpty()) {
@@ -1298,7 +1299,7 @@ public class DashboardDialog extends JDialog {
         int    level              = ps.getLevel();
         long   totalXp            = ps.getTotalXp();
         long   levelStart         = XpTable.xpForLevel(level);
-        long   levelEnd           = XpTable.xpForLevel(Math.min(level + 1, 100));
+        long   levelEnd           = XpTable.xpForLevel(Math.min(level + 1, XpTable.MAX_VIRTUAL_LEVEL));
         long   xpInLevel          = totalXp - levelStart;
         long   xpSpan             = Math.max(1, levelEnd - levelStart);
         long   xpLeft             = ps.getXpToNextLevel();
