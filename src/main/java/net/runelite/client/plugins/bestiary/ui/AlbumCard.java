@@ -101,6 +101,7 @@ public class AlbumCard extends JPanel {
     private final int combatLevel;
     private final int[] avgStats;
     private final int overallQuality; // 0 for locked
+    private final int prayerValue;    // rolled prayer of the shown capture; base prayer when locked
 
     // Locked-only
     private final int killCount;
@@ -224,6 +225,7 @@ public class AlbumCard extends JPanel {
         // shiny would make a higher-rarity non-shiny cover render as shiny (#66).
         this.hasShiny       = best.isShiny();
         this.overallQuality = best.powerLevel();
+        this.prayerValue    = best.prayer;
         init(imageService, true);
     }
 
@@ -247,6 +249,7 @@ public class AlbumCard extends JPanel {
         this.species        = MonsterRoster.getSpecies(npcName, 0);
         this.hasShiny       = false;
         this.overallQuality = 0;
+        this.prayerValue    = MonsterRoster.getPrayer(npcName);
         init(imageService, imageService != null);
     }
 
@@ -720,7 +723,7 @@ public class AlbumCard extends JPanel {
             int aY = ATTR_Y;
             int x0 = imgX;
             int hp = net.runelite.client.plugins.bestiary.model.MonsterRoster.getHitpoints(npcName);
-            int prayer = net.runelite.client.plugins.bestiary.model.MonsterRoster.getPrayer(npcName);
+            int prayer = prayerValue;
             drawAttrPill(g2, x0, aY, hpW, ATTR_H, IconType.HP, String.valueOf(hp), locked);
             x0 += hpW + gap;
             drawAttrPill(g2, x0, aY, prW, ATTR_H, IconType.PRAYER, String.valueOf(prayer), locked);

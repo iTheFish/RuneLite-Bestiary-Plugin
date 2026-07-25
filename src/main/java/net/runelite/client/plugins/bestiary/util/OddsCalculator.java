@@ -74,11 +74,16 @@ public final class OddsCalculator {
             int[] band = RarityRoller.statBand(bases[i], r.rarity);
             r.stats.add(new StatOdds(STAT_NAMES[i], bases[i], vals[i], centre, band[0], band[1]));
         }
+        // Prayer is a rolled stat too (half scale) — shown in the same table.
+        int prayerBase = MonsterRoster.getPrayer(c.npcName);
+        int[] pBand = RarityRoller.prayerBand(prayerBase, r.rarity);
+        r.stats.add(new StatOdds("Prayer", prayerBase, c.prayer,
+                RarityRoller.prayerCentre(prayerBase, r.rarity), pBand[0], pBand[1]));
 
         // Power Level inputs
         r.statSum    = c.quality.statSum();
         r.hp         = c.hitpoints();
-        r.prayer     = MonsterRoster.getPrayer(c.npcName);
+        r.prayer     = c.prayer;
         r.powerLevel = c.powerLevel();
 
         // Stat wiggle is flavour, not part of "how rare is this card" — only rarity (and shiny) count.

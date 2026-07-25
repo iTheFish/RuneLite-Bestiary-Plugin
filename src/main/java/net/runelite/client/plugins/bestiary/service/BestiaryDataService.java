@@ -177,6 +177,9 @@ public class BestiaryDataService {
                 boolean shiny = rng.nextDouble() < CaptureService.shinyChance(captureLevels[r]) * 3.0;
                 CreatureQuality quality = net.runelite.client.plugins.bestiary.util.RarityRoller
                     .generateQuality(combatClass, rarity, statBases, rng, shiny);
+                int prayer = net.runelite.client.plugins.bestiary.util.RarityRoller
+                    .rollPrayer(net.runelite.client.plugins.bestiary.model.MonsterRoster.getPrayer(name),
+                            rarity, rng, shiny);
 
                 CapturedCreature c = CapturedCreature.builder()
                     .npcId(0)
@@ -190,6 +193,7 @@ public class BestiaryDataService {
                     .killsBeforeCapture(killsBefore[r])
                     .playerName("Dev")
                     .shiny(shiny)
+                    .prayer(prayer)
                     .build();
 
                 collection.addCapture(c);

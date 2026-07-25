@@ -132,4 +132,36 @@ public final class RarityRoller {
     /** A shiny stat rolls its expected value plus a uniform bonus in [MIN, MAX]. */
     public static final int SHINY_MIN_BONUS = 6;
     public static final int SHINY_MAX_BONUS = 20;
+
+    // Prayer uses the same banded model at HALF scale, so it stays ~1 for low-prayer
+    // monsters at low rarity and only climbs at high rarity / shiny (base 1 → ~40 at Mythic).
+    public static final double PRAYER_SCALE = 0.5;
+
+    /** The inclusive [lo, hi] range a non-shiny prayer rolls in (half the stat lift). */
+    public static int[] prayerBand(int base, CreatureRarity rarity) {
+        int i = rarity.ordinal();
+        int hr = STAT_CAP - base;
+        int lo = clampStat(base + PRAYER_SCALE * LIFT_LO[i] * hr);
+        int hi = clampStat(base + PRAYER_SCALE * LIFT_HI[i] * hr);
+        if (hi < lo) hi = lo;
+        return new int[]{lo, hi};
+    }
+
+    /** Prayer's expected value at a rarity (band midpoint). */
+    public static int prayerCentre(int base, CreatureRarity rarity) {
+        int i = rarity.ordinal();
+        double midLift = (LIFT_LO[i] + LIFT_HI[i]) / 2.0;
+        return clampStat(base + PRAYER_SCALE * midLift * (STAT_CAP - base));
+    }
+
+    /** Rolls a capture's prayer: banded like a stat but half-scale; shiny gets a smaller boost. */
+    public static int rollPrayer(int base, CreatureRarity rarity, Random rng, boolean shiny) {
+        if (shiny) {
+            int centre = prayerCentre(base, rarity);
+            int bonus = (SHINY_MIN_BONUS + rng.nextInt(SHINY_MAX_BONUS - SHINY_MIN_BONUS + 1)) / 2;
+            return clampStat(centre + bonus);
+        }
+        int[] b = prayerBand(base, rarity);
+        return b[0] + (b[1] > b[0] ? rng.nextInt(b[1] - b[0] + 1) : 0);
+    }
 }

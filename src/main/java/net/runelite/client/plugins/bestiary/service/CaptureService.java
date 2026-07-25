@@ -87,9 +87,11 @@ public class CaptureService {
         CombatClass combatClass = MonsterRoster.getCombatClass(npcName, npc.getCombatLevel());
         int[] statBases = MonsterRoster.getStatBases(npcName, npc.getCombatLevel());
         CreatureQuality quality = RarityRoller.generateQuality(combatClass, rarity, statBases, rng, shiny);
+        int prayer = RarityRoller.rollPrayer(MonsterRoster.getPrayer(npcName), rarity, rng, shiny);
 
         CapturedCreature creature = CapturedCreature.builder()
                 .shiny(shiny)
+                .prayer(prayer)
                 .npcId(npc.getId())
                 .npcName(npcName)
                 .npcCombatLevel(npc.getCombatLevel())
