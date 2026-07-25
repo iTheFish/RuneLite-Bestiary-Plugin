@@ -187,9 +187,13 @@ public class OddsDialog extends JDialog {
         styleValue(hpRow, nearWhite, false);
         root.add(hpRow);
         Box plRow = kvRow("= Power Level  (" + sevenStats + " + " + r.hp + ") ÷ 8",
-                fSmallBold, Color.WHITE, String.valueOf(r.powerLevel));
-        styleValue(plRow, new Color(120, 200, 120), true);
+                fSmall, Color.WHITE, String.valueOf(r.powerLevel));
+        styleValue(plRow, new Color(120, 200, 120), false);
         root.add(plRow);
+
+        root.add(Box.createVerticalStrut(4));
+        root.add(separator());
+        root.add(Box.createVerticalStrut(4));
 
         Box avgRow = kvRow("Average " + r.rarity.label + " roll", fSmall, ColorScheme.LIGHT_GRAY_COLOR,
                 String.valueOf(r.avgPowerLevel));
@@ -199,8 +203,8 @@ public class OddsDialog extends JDialog {
         int delta = r.powerLevel - r.avgPowerLevel;
         String deltaStr = delta > 0 ? "+" + delta + " above avg" : delta < 0 ? delta + " below avg" : "bang on avg";
         Color deltaCol = delta > 0 ? new Color(120, 200, 120) : delta < 0 ? new Color(224, 112, 112) : new Color(176, 176, 176);
-        Box deltaRow = kvRow("This card vs average", fSmallBold, Color.WHITE, deltaStr);
-        styleValue(deltaRow, deltaCol, true);
+        Box deltaRow = kvRow("This card vs average", fSmall, Color.WHITE, deltaStr);
+        styleValue(deltaRow, deltaCol, false);
         root.add(deltaRow);
         JLabel plNote = new JLabel("<html><div style='width:" + htmlW + "px'>"
                 + "Power Level averages the 7 stats (Prayer counts as the 7th) with the monster's HP, ÷8. "
@@ -294,6 +298,16 @@ public class OddsDialog extends JDialog {
             else                { label = "mid roll";  colour = new Color(176, 176, 176); }
         }
         return cell(label, fSmall, colour);
+    }
+
+    /** A thin full-width divider line for the BoxLayout column. */
+    private JPanel separator() {
+        JPanel s = new JPanel();
+        s.setBackground(new Color(70, 70, 70));
+        s.setAlignmentX(Component.LEFT_ALIGNMENT);
+        s.setPreferredSize(new Dimension(10, 1));
+        s.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+        return s;
     }
 
     /** Recolour a kvRow's value label (last component); optionally bump it to the bold font. */
