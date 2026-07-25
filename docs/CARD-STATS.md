@@ -134,13 +134,15 @@ all six stats, times the rarity/shiny chances — and shows the catch chance sep
 
 ## [5] Power Level — *the headline number*
 
-`CapturedCreature.powerLevel()` = `round( (ATK+STR+DEF+MAG+RNG+AGI + monsterHP) / 7 )`
+`CapturedCreature.powerLevel()` = `round( (ATK+STR+DEF+MAG+RNG+AGI + Prayer + monsterHP) / 8 )`
 
+- Eight terms: the 6 rolled combat stats + the rolled **Prayer** (all on the 1–99 scale) + the
+  monster's **HP**, averaged over 8.
 - HP is a **factual, looked-up** attribute (`MonsterRoster.getHitpoints`), **not** a rolled stat.
 - Because HP is a raw number (single digits for a chicken, hundreds–thousands for a boss), it
   **dominates the average** for tanky monsters. That's intentional: a maxed chicken can never
   approach a boss's Power Level. **Power Level can exceed 99** for big bosses.
-- The 6 stats are basically **flavour** now — they nudge Power Level a little; HP decides the tier.
+- Stats + prayer are basically **flavour** — they nudge Power Level a little; HP decides the tier.
 
 ---
 

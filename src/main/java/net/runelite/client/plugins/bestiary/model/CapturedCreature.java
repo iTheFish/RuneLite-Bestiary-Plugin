@@ -125,13 +125,13 @@ public class CapturedCreature {
     }
 
     /**
-     * "Power Level" — the headline card metric (replaces the old quality average).
-     * Equals round((sum of the 6 rolled stats + monster HP) / 7). Because HP is a raw
-     * number that dwarfs the 1-99 stats for tanky monsters, Power Level can exceed 99
-     * for bosses. Rolled stats are pure flavour; HP is the real value driver.
+     * "Power Level" — the headline card metric. Averages the eight value terms: the 6 rolled
+     * combat stats + the rolled Prayer (all on the 1-99 scale) + the monster's HP, over 8.
+     * Because HP is a raw number that dwarfs the 1-99 terms for tanky monsters, Power Level can
+     * exceed 99 for bosses. Stats/prayer are flavour; HP is the real value driver.
      */
     public int powerLevel() {
-        return Math.round((quality.statSum() + hitpoints()) / 7f);
+        return Math.round((quality.statSum() + prayer + hitpoints()) / 8f);
     }
 
     @Override
