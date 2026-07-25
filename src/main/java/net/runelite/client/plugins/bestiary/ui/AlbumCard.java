@@ -646,14 +646,18 @@ public class AlbumCard extends JPanel {
             g2.setColor(Color.WHITE);
             g2.drawString(lvlLabel, lvlX + pillPad, pillBase);
 
-            // Class pill — amber, same style as species
-            String clsLabel = combatClass.label;
-            int clsW = sfm.stringWidth(clsLabel) + pillPad * 2;
+            // Class pill — amber, same style as species. Truncate so it can never overlap
+            // the right-aligned species pill (long classes e.g. JUGGERNAUT).
             int clsX = lvlX + lvlW + 4;
-            g2.setColor(new Color(160, 110, 30, 180));
-            g2.fillRoundRect(clsX, pillY, clsW, pillH, 4, 4);
-            g2.setColor(Color.WHITE);
-            g2.drawString(clsLabel, clsX + pillPad, pillBase);
+            int maxClsW = spX - 4 - clsX;                 // room before the species pill
+            String clsLabel = truncate(combatClass.label, sfm, maxClsW - pillPad * 2);
+            int clsW = Math.min(sfm.stringWidth(clsLabel) + pillPad * 2, maxClsW);
+            if (clsW > pillPad * 2) {
+                g2.setColor(new Color(160, 110, 30, 180));
+                g2.fillRoundRect(clsX, pillY, clsW, pillH, 4, 4);
+                g2.setColor(Color.WHITE);
+                g2.drawString(clsLabel, clsX + pillPad, pillBase);
+            }
         } else {
             // Locked: plain kill count text
             g2.setColor(new Color(65, 65, 65));
@@ -693,7 +697,8 @@ public class AlbumCard extends JPanel {
             g2.fillRoundRect(barX, barY, barW, BAR_H, 3, 3);
 
             if (!locked) {
-                int fill = Math.round(barW * avgStats[i] / 100f);
+                // Stats cap at 99, so treat 99 as a full (100%) bar.
+                int fill = Math.min(barW, Math.round(barW * avgStats[i] / 99f));
                 if (fill > 0) {
                     g2.setColor(new Color(rarest.displayColor.getRed(),
                             rarest.displayColor.getGreen(), rarest.displayColor.getBlue(), 210));
