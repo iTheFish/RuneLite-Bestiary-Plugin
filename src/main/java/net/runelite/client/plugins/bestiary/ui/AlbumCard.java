@@ -202,9 +202,10 @@ public class AlbumCard extends JPanel {
         this.difficulty     = MonsterRoster.getDifficulty(npcName, combatLevel);
         this.combatClass    = MonsterRoster.getCombatClass(npcName, combatLevel);
         this.species        = MonsterRoster.getSpecies(npcName, combatLevel);
-        // If a cover is chosen, its shiny status drives the card look; otherwise any shiny.
-        this.hasShiny       = cover != null ? cover.isShiny()
-                                            : captures.stream().anyMatch(CapturedCreature::isShiny);
+        // Shiny styling must come from the SAME capture that drives the card's rarity/look
+        // (the cover, or the "best" capture) — not any shiny capture. Otherwise a lower-rarity
+        // shiny would make a higher-rarity non-shiny cover render as shiny (#66).
+        this.hasShiny       = best.isShiny();
         this.overallQuality = best.powerLevel();
         init(imageService, true);
     }
