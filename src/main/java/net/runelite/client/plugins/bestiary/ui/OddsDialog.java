@@ -178,13 +178,17 @@ public class OddsDialog extends JDialog {
 
         // Power Level — Prayer is the 7th stat
         int sevenStats = r.statSum + r.prayer;
+        Color nearWhite = new Color(235, 235, 235);
         root.add(sectionHeader("Power Level"));
-        root.add(kvRow("7 stats total (incl. Prayer)", fSmall, ColorScheme.LIGHT_GRAY_COLOR,
-                String.valueOf(sevenStats)));
-        root.add(kvRow("Hitpoints (factual)", fSmall, new Color(120, 200, 120), String.valueOf(r.hp)));
+        Box sevenRow = kvRow("7 stats total", fSmall, ColorScheme.LIGHT_GRAY_COLOR, String.valueOf(sevenStats));
+        styleValue(sevenRow, nearWhite, false);
+        root.add(sevenRow);
+        Box hpRow = kvRow("Hitpoints (factual)", fSmall, new Color(120, 200, 120), String.valueOf(r.hp));
+        styleValue(hpRow, nearWhite, false);
+        root.add(hpRow);
         Box plRow = kvRow("= Power Level  (" + sevenStats + " + " + r.hp + ") ÷ 8",
                 fSmallBold, Color.WHITE, String.valueOf(r.powerLevel));
-        plColour(plRow);
+        styleValue(plRow, new Color(120, 200, 120), true);
         root.add(plRow);
         JLabel plNote = new JLabel("<html><div style='width:" + htmlW + "px'>"
                 + "Power Level averages the 7 stats (Prayer counts as the 7th) with the monster's HP, ÷8. "
@@ -200,15 +204,17 @@ public class OddsDialog extends JDialog {
         root.add(Box.createVerticalStrut(10));
 
         // Combined odds
-        Box perCap = kvRow("Of your captures" + (r.shiny ? " (rarity × shiny)" : " (this rarity)"),
+        Box perCap = kvRow("Per capture (" + (r.shiny ? "Rarity × Shiny" : "Rarity chance") + ")",
                 fSmallBold, Color.WHITE, OddsCalculator.oneIn(r.perCapture));
         perCap.setBorder(BorderFactory.createCompoundBorder(
                 new MatteBorder(1, 0, 0, 0, new Color(70, 70, 70)), new EmptyBorder(7, 0, 2, 0)));
-        plColour(perCap);
+        styleValue(perCap, new Color(120, 200, 120), true);
         root.add(perCap);
 
-        root.add(kvRow("Per kill (× catch — the whole event)", fSmall, ColorScheme.LIGHT_GRAY_COLOR,
-                OddsCalculator.oneIn(r.perKill)));
+        Box perKill = kvRow("Per kill (Catch chance × Rarity chance" + (r.shiny ? " × Shiny" : "") + ")",
+                fSmallBold, Color.WHITE, OddsCalculator.oneIn(r.perKill));
+        styleValue(perKill, Color.WHITE, true);
+        root.add(perKill);
 
         JLabel note = new JLabel("<html><div style='width:" + htmlW + "px'><i>\"Of your captures\" is how "
                 + "often a capture is this rarity at level " + r.level + " — high levels make rarities much "
@@ -278,10 +284,11 @@ public class OddsDialog extends JDialog {
         return cell(label, fSmall, colour);
     }
 
-    private void plColour(Box row) {
+    /** Recolour a kvRow's value label (last component); optionally bump it to the bold font. */
+    private void styleValue(Box row, Color colour, boolean bold) {
         JLabel v = (JLabel) row.getComponent(row.getComponentCount() - 1);
-        v.setFont(fBold);
-        v.setForeground(new Color(120, 200, 120));
+        if (bold) v.setFont(fBold);
+        v.setForeground(colour);
     }
 
     private JLabel sectionHeader(String text) {
