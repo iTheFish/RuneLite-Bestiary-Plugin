@@ -48,90 +48,45 @@ public final class RarityRoller {
         return CreatureRarity.COMMON;
     }
 
-    /**
-     * Generates quality stats using a tripartite model:
-     *
-     *   Primary   — climbs steeply toward 99 as rarity increases
-     *   Secondary — climbs moderately (implicit: any stat not primary or tertiary)
-     *   Tertiary  — barely moves; stays near the difficulty floor
-     *
-     * The floor (from MonsterRoster.getStatFloor) lifts ALL stats for harder
-     * monsters, so even a Common Nex card feels more impressive than a Mythic Chicken.
-     */
+    /** Legacy uniform-floor variant — treats {@code floor} as every stat's base. */
     public static CreatureQuality generateQuality(CombatClass cls, CreatureRarity rarity,
                                                   int floor, Random rng) {
-        // boost: 0.0 at COMMON → 1.0 at MYTHIC
-        double boost = rarity.ordinal() / (double)(CreatureRarity.values().length - 1);
-
-        // Ceilings: secondary and tertiary are capped so they never outrun primary
-        double primaryCeil  = 99;
-        double secondCeil   = Math.max(floor + 15, Math.min(80, floor + (99 - floor) * 0.65));
-        double tertiCeil    = Math.max(floor + 5,  Math.min(50, floor + (99 - floor) * 0.20));
-
-        int[] stats = new int[6];
-        for (int i = 0; i < 6; i++) {
-            double target;
-            if (cls.isPrimary(i)) {
-                target = floor + boost * (primaryCeil - floor);
-            } else if (cls.isTertiary(i)) {
-                target = floor + boost * (tertiCeil - floor);
-            } else {
-                target = floor + boost * (secondCeil - floor);
-            }
-            stats[i] = rollStat(rng, target, 7);
-        }
-        return new CreatureQuality(stats[0], stats[1], stats[2], stats[3], stats[4], stats[5]);
+        int[] bases = {floor, floor, floor, floor, floor, floor};
+        return generateQuality(cls, rarity, bases, rng, false);
     }
 
-    /**
-     * Per-stat floor variant: each stat has its own base derived from actual OSRS data.
-     * Primary stats still spike toward 99; secondary and tertiary are capped relative
-     * to their individual base so rarity remains the dominant power driver.
-     */
     public static CreatureQuality generateQuality(CombatClass cls, CreatureRarity rarity,
                                                   int[] bases, Random rng) {
         return generateQuality(cls, rarity, bases, rng, false);
     }
 
     /**
-     * Shiny-aware variant. When {@code shiny} is true, every stat lands at the top of
-     * its normal band plus a flat bonus (target + {@link #SHINY_BONUS}, capped at 99)
-     * with no randomness — a shiny is always its best possible roll for the rarity.
+     * Rarity-multiplier stat model.
+     *
+     * The reviewed per-stat bases (MonsterRoster.STAT_BASES) represent an "average"
+     * (Epic) card, so each rarity simply scales them:
+     *   centre[i] = base[i] × rarity.statMultiplier   (Common ×0.70 … Epic ×1.0 … Mythic ×1.20)
+     * then a small uniform wiggle in [-WIGGLE, +WIGGLE] is added and the result is clamped 1..99.
+     *
+     * Shiny adds {@link #SHINY_MULT_BONUS} to the multiplier and takes the top of the wiggle
+     * band (deterministic best roll). The combat class is no longer used to spike stats — the
+     * per-stat bases already encode each monster's offensive profile (it remains a display label).
      */
     public static CreatureQuality generateQuality(CombatClass cls, CreatureRarity rarity,
                                                   int[] bases, Random rng, boolean shiny) {
-        double boost = rarity.ordinal() / (double)(CreatureRarity.values().length - 1);
+        double mult = rarity.statMultiplier + (shiny ? SHINY_MULT_BONUS : 0.0);
         int[] stats = new int[6];
         for (int i = 0; i < 6; i++) {
-            int base = bases[i];
-            double target;
-            if (cls.isPrimary(i)) {
-                target = base + boost * (99 - base);
-            } else if (cls.isTertiary(i)) {
-                double tertiCeil = Math.max(base + 5, Math.min(base + 15, (int)(base + (99 - base) * 0.20)));
-                target = base + boost * (tertiCeil - base);
-            } else {
-                double secondCeil = Math.max(base + 10, Math.min(base + 30, (int)(base + (99 - base) * 0.55)));
-                target = base + boost * (secondCeil - base);
-            }
-            stats[i] = shiny
-                ? Math.max(1, Math.min(99, (int) Math.round(target)
-                    + SHINY_MIN_BONUS + rng.nextInt(SHINY_MAX_BONUS - SHINY_MIN_BONUS + 1)))
-                : rollStat(rng, target, 7);
+            int centre = (int) Math.round(bases[i] * mult);
+            int wiggle = shiny ? WIGGLE : (rng.nextInt(2 * WIGGLE + 1) - WIGGLE);
+            stats[i] = Math.max(1, Math.min(99, centre + wiggle));
         }
         return new CreatureQuality(stats[0], stats[1], stats[2], stats[3], stats[4], stats[5]);
     }
 
-    /**
-     * Bonus added to each stat's target when a capture is shiny — rolled per stat in
-     * [SHINY_MIN_BONUS, SHINY_MAX_BONUS]. The spread lets a lucky low-rarity shiny
-     * occasionally outrank an unlucky higher-rarity one.
-     */
-    private static final int SHINY_MIN_BONUS = 15;
-    private static final int SHINY_MAX_BONUS = 22;
+    /** Half-width of the uniform RNG wiggle added to each stat centre. */
+    public static final int WIGGLE = 3;
 
-    private static int rollStat(Random rng, double mean, double sd) {
-        double value = mean + rng.nextGaussian() * sd;
-        return Math.max(1, Math.min(99, (int) Math.round(value)));
-    }
+    /** Extra multiplier a shiny adds on top of its rarity multiplier. */
+    public static final double SHINY_MULT_BONUS = 0.20;
 }
