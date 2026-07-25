@@ -27,7 +27,7 @@ public class OddsDialog extends JDialog {
     private OddsDialog(Window owner, CapturedCreature capture) {
         super(owner, "What were the odds?", ModalityType.MODELESS);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        setResizable(false);
+        setResizable(true);
 
         OddsCalculator.Result r = OddsCalculator.compute(capture);
 
@@ -100,10 +100,15 @@ public class OddsDialog extends JDialog {
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scroll.setBorder(null);
         scroll.getVerticalScrollBar().setUnitIncrement(16);
-        scroll.setPreferredSize(new Dimension(320, Math.min(560, root.getPreferredSize().height + 4)));
+        // Size to the content's natural width (+ padding for the scrollbar) so nothing clips.
+        Dimension pref = root.getPreferredSize();
+        int w = Math.min(560, pref.width + 28);
+        int h = Math.min(640, pref.height + 8);
+        scroll.setPreferredSize(new Dimension(w, h));
 
         setContentPane(scroll);
         pack();
+        setMinimumSize(new Dimension(300, 220));
         setLocationRelativeTo(owner);
     }
 

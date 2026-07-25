@@ -238,11 +238,15 @@ public class CardExportDialog extends JDialog {
         oddsBtn.setFocusPainted(false);
         oddsBtn.addActionListener(e -> OddsDialog.open(this, capture));
 
-        JPanel btnRow = new JPanel(new GridLayout(1, 3, 6, 0));
+        JPanel btnRow = new JPanel(new GridLayout(1, 2, 6, 0));
         btnRow.setOpaque(false);
         btnRow.add(copyBtn);
         btnRow.add(saveBtn);
-        btnRow.add(oddsBtn);
+
+        // Odds gets its own full-width row below the card
+        JPanel oddsRow = new JPanel(new GridLayout(1, 1));
+        oddsRow.setOpaque(false);
+        oddsRow.add(oddsBtn);
 
         // Layout
         JPanel content = new JPanel();
@@ -252,9 +256,12 @@ public class CardExportDialog extends JDialog {
 
         previewPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         btnRow.setAlignmentX(Component.CENTER_ALIGNMENT);
+        oddsRow.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         content.add(previewPanel);
-        content.add(Box.createVerticalStrut(10));
+        content.add(Box.createVerticalStrut(8));
+        content.add(oddsRow);
+        content.add(Box.createVerticalStrut(6));
         content.add(btnRow);
 
         // Track open instance; clean up shimmer registration on close

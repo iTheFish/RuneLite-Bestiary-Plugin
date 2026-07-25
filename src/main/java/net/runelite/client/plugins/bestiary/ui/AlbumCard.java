@@ -363,8 +363,14 @@ public class AlbumCard extends JPanel {
                     item.addActionListener(ev ->
                             CardExportDialog.open(SwingUtilities.getWindowAncestor(AlbumCard.this), only));
                     menu.add(item);
+
+                    JMenuItem oddsItem = new JMenuItem("What were the odds?");
+                    oddsItem.addActionListener(ev ->
+                            OddsDialog.open(SwingUtilities.getWindowAncestor(AlbumCard.this), only));
+                    menu.add(oddsItem);
                 } else {
                     JMenu sub = new JMenu("Export Card");
+                    JMenu oddsSub = new JMenu("What were the odds?");
                     int shown = Math.min(sorted.size(), 8);
                     for (int i = 0; i < shown; i++) {
                         CapturedCreature c = sorted.get(i);
@@ -376,8 +382,15 @@ public class AlbumCard extends JPanel {
                         item.addActionListener(ev ->
                                 CardExportDialog.open(SwingUtilities.getWindowAncestor(AlbumCard.this), c));
                         sub.add(item);
+
+                        JMenuItem oItem = new JMenuItem(label);
+                        oItem.setForeground(c.rarity.displayColor);
+                        oItem.addActionListener(ev ->
+                                OddsDialog.open(SwingUtilities.getWindowAncestor(AlbumCard.this), c));
+                        oddsSub.add(oItem);
                     }
                     menu.add(sub);
+                    menu.add(oddsSub);
                 }
                 if (!locked && captures != null && captures.size() == 1) {
                     CapturedCreature nickCap = captures.get(0);
