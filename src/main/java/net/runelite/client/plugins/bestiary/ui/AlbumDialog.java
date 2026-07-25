@@ -85,7 +85,7 @@ public class AlbumDialog extends JDialog {
 
     private static final String[] SORT_OPTIONS = {
         "Name A–Z", "Name Z–A", "Difficulty ↑", "Difficulty ↓", "Most caught",
-        "Rarity (best)", "Quality (high)", "Newest first"
+        "Rarity (best)", "Power (high)", "Newest first"
     };
 
     private final Map<String, List<CapturedCreature>> capturesByNpc;
@@ -356,7 +356,7 @@ public class AlbumDialog extends JDialog {
         dSortLabel.setFont(FontManager.getRunescapeSmallFont());
         dSortLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 
-        detailSortBox = new JComboBox<>(new String[]{"Rarity (best)", "Quality (high)", "Newest first"});
+        detailSortBox = new JComboBox<>(new String[]{"Rarity (best)", "Power (high)", "Newest first"});
         detailSortBox.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         detailSortBox.setForeground(Color.WHITE);
         detailSortBox.setFont(FontManager.getRunescapeSmallFont());
@@ -490,8 +490,8 @@ public class AlbumDialog extends JDialog {
         detailFilterCapture = null;
         detailFilterShiny   = false;
         detailPage          = 0;
-        detailSort          = "Quality (high)";
-        detailSortBox.setSelectedItem("Quality (high)");
+        detailSort          = "Power (high)";
+        detailSortBox.setSelectedItem("Power (high)");
         ((CardLayout) topBarHolder.getLayout()).show(topBarHolder, "DETAIL");
         rebuildGrid();
     }
@@ -628,15 +628,15 @@ public class AlbumDialog extends JDialog {
 
         // Sort
         switch (detailSort == null ? "Rarity (best)" : detailSort) {
-            case "Quality (high)":
-                filtered.sort(Comparator.comparingInt((CapturedCreature c) -> c.quality.overallRating()).reversed());
+            case "Power (high)":
+                filtered.sort(Comparator.comparingInt((CapturedCreature c) -> c.powerLevel()).reversed());
                 break;
             case "Newest first":
                 filtered.sort(Comparator.comparing((CapturedCreature c) -> c.captureTime, Comparator.reverseOrder()));
                 break;
             default: // "Rarity (best)"
                 filtered.sort(Comparator.comparingInt((CapturedCreature c) -> c.rarity.ordinal()).reversed()
-                        .thenComparingInt(c -> -c.quality.overallRating()));
+                        .thenComparingInt(c -> -c.powerLevel()));
                 break;
         }
 
@@ -881,7 +881,7 @@ public class AlbumDialog extends JDialog {
             case "Rarity (best)":
                 names.sort((a, b) -> maxRarity(capturesByNpc.get(b)).ordinal()
                                    - maxRarity(capturesByNpc.get(a)).ordinal()); break;
-            case "Quality (high)":
+            case "Power (high)":
                 names.sort((a, b) -> avgQuality(capturesByNpc.get(b)) - avgQuality(capturesByNpc.get(a))); break;
             case "Newest first":
                 names.sort((a, b) -> latestCapture(capturesByNpc.get(b))
@@ -910,7 +910,7 @@ public class AlbumDialog extends JDialog {
                     int rb = capturesByNpc.containsKey(b) ? maxRarity(capturesByNpc.get(b)).ordinal() : -1;
                     return rb - ra;
                 }); break;
-            case "Quality (high)":
+            case "Power (high)":
                 names.sort((a, b) -> {
                     int qa = capturesByNpc.containsKey(a) ? avgQuality(capturesByNpc.get(a)) : 0;
                     int qb = capturesByNpc.containsKey(b) ? avgQuality(capturesByNpc.get(b)) : 0;
@@ -979,7 +979,7 @@ public class AlbumDialog extends JDialog {
     }
 
     private static int avgQuality(List<CapturedCreature> captures) {
-        return (int) captures.stream().mapToInt(c -> c.quality.overallRating()).average().orElse(0);
+        return (int) captures.stream().mapToInt(c -> c.powerLevel()).average().orElse(0);
     }
 
     private static Instant latestCapture(List<CapturedCreature> captures) {

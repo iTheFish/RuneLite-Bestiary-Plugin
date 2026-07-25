@@ -79,7 +79,7 @@ public class CreatureCard extends JPanel {
         rarityLabelRef.setForeground(rarity.displayColor);
 
         int avgQuality = (int) captures.stream()
-                .mapToInt(c -> c.quality.overallRating())
+                .mapToInt(c -> c.powerLevel())
                 .average()
                 .orElse(0);
         int kills = collection.getKillCount(npcName);

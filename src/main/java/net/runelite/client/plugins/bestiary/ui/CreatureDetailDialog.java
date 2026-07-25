@@ -44,7 +44,7 @@ public class CreatureDetailDialog extends JDialog {
     };
 
     private static final String[] SORT_OPTIONS = {
-        "By Rarity", "Newest first", "Oldest first", "Quality (high)", "Quality (low)", "By region"
+        "By Rarity", "Newest first", "Oldest first", "Power (high)", "Power (low)", "By region"
     };
 
     /** Ensures only one dialog is open at a time. */
@@ -154,7 +154,9 @@ public class CreatureDetailDialog extends JDialog {
         String combatText = sample.npcCombatLevel > 0 ? "Combat level " + sample.npcCombatLevel : "Non-combat";
         String classLabel = net.runelite.client.plugins.bestiary.model.MonsterRoster
                 .getCombatClass(sample.npcName, sample.npcCombatLevel).label;
-        String subText = (multiRarity ? "All rarities  ·  " : "") + combatText + "  ·  " + classLabel;
+        int hp = net.runelite.client.plugins.bestiary.model.MonsterRoster.getHitpoints(sample.npcName);
+        String subText = (multiRarity ? "All rarities  ·  " : "") + combatText + "  ·  " + classLabel
+                + "  ·  " + hp + " HP";
         JLabel subLabel = new JLabel(subText);
         subLabel.setFont(FontManager.getRunescapeSmallFont());
         subLabel.setForeground(accentRarity.displayColor);
@@ -293,11 +295,11 @@ public class CreatureDetailDialog extends JDialog {
                 case "Oldest first":
                     sorted.sort(Comparator.comparing(c -> c.captureTime));
                     break;
-                case "Quality (high)":
-                    sorted.sort(Comparator.comparingInt((CapturedCreature c) -> c.quality.overallRating()).reversed());
+                case "Power (high)":
+                    sorted.sort(Comparator.comparingInt((CapturedCreature c) -> c.powerLevel()).reversed());
                     break;
-                case "Quality (low)":
-                    sorted.sort(Comparator.comparingInt(c -> c.quality.overallRating()));
+                case "Power (low)":
+                    sorted.sort(Comparator.comparingInt(c -> c.powerLevel()));
                     break;
                 case "By region":
                     sorted.sort(Comparator.comparing(c -> c.regionName));
@@ -363,15 +365,15 @@ public class CreatureDetailDialog extends JDialog {
         JPanel topLine = new JPanel(new BorderLayout());
         topLine.setOpaque(false);
 
-        int quality = c.quality.overallRating();
+        int quality = c.powerLevel();
         Color qualColor = quality >= 80 ? new Color(80, 220, 80)
                         : quality >= 50 ? new Color(220, 220, 80)
                         : new Color(160, 160, 160);
 
         String star = c.favourite ? "★  " : "";
         String qualText = c.nickname != null && !c.nickname.isEmpty()
-                ? star + "#" + index + "  \"" + c.nickname + "\"  Q:" + quality
-                : star + "#" + index + "  Quality: " + quality + " / 100";
+                ? star + "#" + index + "  \"" + c.nickname + "\"  PWR:" + quality
+                : star + "#" + index + "  Power Level: " + quality;
         JLabel qualLabel = new JLabel(qualText);
         qualLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         qualLabel.setForeground(qualColor);

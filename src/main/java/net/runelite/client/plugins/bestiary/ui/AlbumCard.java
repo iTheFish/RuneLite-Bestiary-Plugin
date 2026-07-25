@@ -86,7 +86,7 @@ public class AlbumCard extends JPanel {
     private final int killCount;
     private final boolean hasShiny;
 
-    // When true, header shows Q:XX (quality) instead of no.XXX (dex). Only set in single-capture views.
+    // When true, header shows PWR:XX (quality) instead of no.XXX (dex). Only set in single-capture views.
     private boolean showQuality = false;
     public void setShowQuality(boolean b) { this.showQuality = b; }
 
@@ -169,7 +169,7 @@ public class AlbumCard extends JPanel {
         CapturedCreature cover = captures.stream().filter(c -> c.albumCover).findFirst().orElse(null);
         CapturedCreature best = cover != null ? cover : captures.stream()
                 .max(Comparator.comparingInt((CapturedCreature c) -> c.rarity.ordinal())
-                        .thenComparingInt(c -> c.quality.overallRating()))
+                        .thenComparingInt(c -> c.powerLevel()))
                 .orElse(captures.get(0));
         this.combatLevel = best.npcCombatLevel;
 
@@ -202,7 +202,7 @@ public class AlbumCard extends JPanel {
         // If a cover is chosen, its shiny status drives the card look; otherwise any shiny.
         this.hasShiny       = cover != null ? cover.isShiny()
                                             : captures.stream().anyMatch(CapturedCreature::isShiny);
-        this.overallQuality = best.quality.overallRating();
+        this.overallQuality = best.powerLevel();
         init(imageService, true);
     }
 
@@ -334,7 +334,7 @@ public class AlbumCard extends JPanel {
                 sorted.sort(java.util.Comparator.<CapturedCreature>
                         comparingInt(c -> c.rarity.ordinal())
                         .reversed()
-                        .thenComparingInt(c -> -c.quality.overallRating()));
+                        .thenComparingInt(c -> -c.powerLevel()));
 
                 if (sorted.size() == 1) {
                     JMenuItem item = new JMenuItem("Export Card");
@@ -348,8 +348,8 @@ public class AlbumCard extends JPanel {
                     for (int i = 0; i < shown; i++) {
                         CapturedCreature c = sorted.get(i);
                         String label = (c.nickname != null && !c.nickname.isEmpty())
-                                ? "\"" + c.nickname + "\"  Q:" + c.quality.overallRating()
-                                : c.rarity.label + "  Q:" + c.quality.overallRating();
+                                ? "\"" + c.nickname + "\"  PWR:" + c.powerLevel()
+                                : c.rarity.label + "  PWR:" + c.powerLevel();
                         JMenuItem item = new JMenuItem(label);
                         item.setForeground(c.rarity.displayColor);
                         item.addActionListener(ev ->
@@ -469,19 +469,44 @@ public class AlbumCard extends JPanel {
         g2.setFont(smallFont);
         FontMetrics sfm = g2.getFontMetrics();
 
-        // --- Header: left side (nickname or rarity dots) + right side (dex number) ---
+        // --- Header: left side (nickname or rarity dots) + right side ---
+        // Catalog view: plain dex number. Single-capture (detail/favourites/export) view:
+        // a colour-banded Power pill ("P:123") with the monster's factual HP beside it.
         FontMetrics dfm = sfm;
-        // Catalog view: dex number. Single-capture (detail/favourites) view: quality score.
-        String dexStr = (locked || !showQuality) ? String.format("no. %03d", dexNumber) : "Q:" + overallQuality;
         g2.setFont(smallFont);
-        int dexX = w - PAD - dfm.stringWidth(dexStr);
         int dexY = HEADER_Y + (HEADER_H + dfm.getAscent() - dfm.getDescent()) / 2;
-        g2.setColor(locked ? new Color(75, 75, 75) : rarest.displayColor);
-        g2.drawString(dexStr, dexX, dexY);
+        int dexX; // left edge of the right-side content (nickname/dots truncate against this)
+        if (locked || !showQuality) {
+            String dexStr = String.format("no. %03d", dexNumber);
+            dexX = w - PAD - dfm.stringWidth(dexStr);
+            g2.setColor(locked ? new Color(75, 75, 75) : rarest.displayColor);
+            g2.drawString(dexStr, dexX, dexY);
+        } else {
+            // Power pill, right-aligned, coloured by power band
+            String pText = "P:" + overallQuality;
+            int pillPadX = 5, pillH2 = 15;
+            int pillW = dfm.stringWidth(pText) + pillPadX * 2;
+            int pillX = w - PAD - pillW;
+            int pillY2 = HEADER_Y + (HEADER_H - pillH2) / 2;
+            Color band = powerColor(overallQuality);
+            g2.setColor(band);
+            g2.fillRoundRect(pillX, pillY2, pillW, pillH2, 5, 5);
+            g2.setColor(textOn(band));
+            g2.drawString(pText, pillX + pillPadX,
+                    pillY2 + (pillH2 + dfm.getAscent() - dfm.getDescent()) / 2);
+
+            // HP — factual attribute, muted text just left of the Power pill
+            String hpStr = net.runelite.client.plugins.bestiary.model.MonsterRoster.getHitpoints(npcName) + " HP";
+            int hpX = pillX - 5 - dfm.stringWidth(hpStr);
+            g2.setColor(new Color(150, 150, 150));
+            g2.drawString(hpStr, hpX, dexY);
+            dexX = hpX;
+        }
         if (hasShiny) {
             String star = "✦";
             g2.setColor(new Color(255, 215, 0));
             g2.drawString(star, dexX - dfm.stringWidth(star) - 3, dexY);
+            dexX -= dfm.stringWidth(star) + 3;
         }
 
         // Left of header: nickname (single-capture card only) or rarity dots
@@ -749,5 +774,25 @@ public class AlbumCard extends JPanel {
             text = text.substring(0, text.length() - 1);
         }
         return text + "…";
+    }
+
+    /**
+     * Escalating colour band for a Power Level, so the pill colour maps consistently
+     * to a range: grey → green → blue → purple → orange → red as power climbs.
+     * Power can exceed 99 (bosses), so the top bands cover the boss range.
+     */
+    public static Color powerColor(int power) {
+        if (power < 20)  return new Color(150, 150, 150); // trivial
+        if (power < 40)  return new Color(110, 190, 110); // low
+        if (power < 70)  return new Color(80, 160, 230);  // mid
+        if (power < 100) return new Color(170, 120, 235); // high
+        if (power < 160) return new Color(240, 150, 45);  // boss
+        return new Color(225, 70, 70);                    // apex
+    }
+
+    /** Black or white text depending on the band's perceived brightness. */
+    private static Color textOn(Color bg) {
+        double lum = 0.299 * bg.getRed() + 0.587 * bg.getGreen() + 0.114 * bg.getBlue();
+        return lum > 150 ? new Color(25, 25, 25) : Color.WHITE;
     }
 }

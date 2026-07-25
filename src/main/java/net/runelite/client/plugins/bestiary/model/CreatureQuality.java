@@ -24,9 +24,14 @@ public class CreatureQuality {
         this.agility  = clamp(agility);
     }
 
-    /** Average of all six stats, rounded to the nearest integer. */
+    /** Sum of all six rolled stats. */
+    public int statSum() {
+        return attack + strength + defence + magic + ranged + agility;
+    }
+
+    /** Average of all six stats, rounded to the nearest integer (pure stat flavour). */
     public int overallRating() {
-        return Math.round((attack + strength + defence + magic + ranged + agility) / 6f);
+        return Math.round(statSum() / 6f);
     }
 
     /** True when all primary stats for the given combat class are 95 or above. */

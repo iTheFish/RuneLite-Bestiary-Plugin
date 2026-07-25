@@ -57,7 +57,7 @@ public class SessionRecapDialog extends JDialog {
                 .collect(Collectors.groupingBy(c -> c.rarity, Collectors.counting()));
         CapturedCreature best = captures.stream()
                 .max(Comparator.comparingInt((CapturedCreature c) -> c.rarity.ordinal())
-                        .thenComparingInt(c -> c.quality.overallRating()))
+                        .thenComparingInt(c -> c.powerLevel()))
                 .orElse(null);
 
         // --- Header ---
@@ -228,9 +228,9 @@ public class SessionRecapDialog extends JDialog {
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         right.setOpaque(false);
 
-        int q = c.quality.overallRating();
+        int q = c.powerLevel();
         Color qCol = q >= 80 ? new Color(80, 220, 80) : q >= 50 ? new Color(220, 220, 80) : new Color(160, 160, 160);
-        JLabel qLabel = new JLabel("Q:" + q);
+        JLabel qLabel = new JLabel("PWR:" + q);
         qLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         qLabel.setForeground(qCol);
 
@@ -274,11 +274,11 @@ public class SessionRecapDialog extends JDialog {
         }
         body.append(rarLine).append("\n\n");
 
-        String rowFmt = "#%-3d  %-" + nameCol + "s %-10s Q:%-3d  %s\n";
+        String rowFmt = "#%-3d  %-" + nameCol + "s %-10s PWR:%-3d  %s\n";
         for (int i = 0; i < captures.size(); i++) {
             CapturedCreature c = captures.get(i);
             body.append(String.format(rowFmt,
-                    i + 1, c.npcName, c.rarity.label, c.quality.overallRating(), c.regionName));
+                    i + 1, c.npcName, c.rarity.label, c.powerLevel(), c.regionName));
         }
 
         // Wrap in triple backticks so Discord/Slack render it as a monospaced code block

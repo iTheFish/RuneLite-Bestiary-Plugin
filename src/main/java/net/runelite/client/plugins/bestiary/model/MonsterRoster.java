@@ -680,6 +680,220 @@ public class MonsterRoster {
     }
 
     // -------------------------------------------------------------------------
+    // Per-monster Hitpoints — a REAL, factual OSRS attribute (wiki-sourced).
+    // Shown on cards as info, NOT a rolled stat. Drives the "Power Level" metric:
+    //   powerLevel = round((sum of 6 rolled stats + HP) / 7)
+    // Because HP is a raw number (hundreds-thousands for bosses), it dominates
+    // the average for tanky monsters, so Power Level can exceed 99 for bosses.
+    // Unlisted monsters fall back to DEFAULT_HP.
+    // -------------------------------------------------------------------------
+
+    public static final int DEFAULT_HP = 8;
+    private static final Map<String, Integer> HITPOINTS;
+    static {
+        Map<String, Integer> h = new HashMap<>();
+        // F2P / Early game
+        h.put("Chicken",             3);
+        h.put("Cow",                 8);
+        h.put("Cow calf",            3);
+        h.put("Duck",                3);
+        h.put("Ram",                 5);
+        h.put("Seagull",             3);
+        h.put("Man",                 7);
+        h.put("Woman",               7);
+        h.put("Farmer",              8);
+        h.put("Goblin",              5);
+        h.put("Guard",               22);
+        h.put("Rat",                 2);
+        h.put("Giant rat",           8);
+        h.put("Imp",                 8);
+        h.put("Zombie",              22);
+        h.put("Skeleton",            18);
+        h.put("Ghost",               14);
+        h.put("Barbarian",           30);
+        h.put("Warrior",             30);
+        h.put("Wizard",              15);
+        h.put("Dark wizard",         24);
+        h.put("Minotaur",            24);
+        h.put("Bear",                25);
+        h.put("Grizzly bear",        45);
+        h.put("Unicorn",             30);
+        h.put("Spider",              2);
+        h.put("Giant spider",        20);
+        h.put("Scorpion",            15);
+        h.put("Hill giant",          35);
+        h.put("Moss giant",          60);
+        h.put("Fire giant",          111);
+        h.put("Ice giant",           70);
+        h.put("Earth warrior",       38);
+        h.put("Lesser demon",        79);
+        h.put("Greater demon",       87);
+        h.put("Black demon",         157);
+        h.put("Black knight",        33);
+        h.put("White knight",        34);
+        h.put("Hobgoblin",           29);
+        h.put("Chaos druid",         30);
+        h.put("Rock crab",           50);
+        h.put("Sand crab",           60);
+        h.put("Swamp crab",          60);
+        h.put("Gemstone crab",       20000);
+        h.put("Pirate",              30);
+        h.put("Rogue",               30);
+        // Slayer monsters
+        h.put("Abyssal demon",       150);
+        h.put("Aberrant spectre",    90);
+        h.put("Deviant spectre",     165);
+        h.put("Ankou",               60);
+        h.put("Banshee",             45);
+        h.put("Twisted banshee",     90);
+        h.put("Basilisk",            82);
+        h.put("Basilisk knight",     300);
+        h.put("Bloodveld",           120);
+        h.put("Mutated bloodveld",   150);
+        h.put("Cave bug",            10);
+        h.put("Cave crawler",        22);
+        h.put("Cave slime",          10);
+        h.put("Cave horror",         58);
+        h.put("Dagannoth",           80);
+        h.put("Dark beast",          220);
+        h.put("Drake",               240);
+        h.put("Dust devil",          105);
+        h.put("Fever spider",        30);
+        h.put("Fleshcrawler",        25);
+        h.put("Gargoyle",            105);
+        h.put("Hellhound",           116);
+        h.put("Hydra",               300);
+        h.put("Ice troll",           130);
+        h.put("Mountain troll",      84);
+        h.put("Troll",               89);
+        h.put("Infernal mage",       60);
+        h.put("Jelly",               75);
+        h.put("Warped jelly",        150);
+        h.put("Kalphite soldier",    90);
+        h.put("Kalphite guardian",   200);
+        h.put("Kalphite worker",     60);
+        h.put("Kurask",              130);
+        h.put("Lizardman",           30);
+        h.put("Lizardman brute",     70);
+        h.put("Lizardman shaman",    150);
+        h.put("Mogre",               40);
+        h.put("Nechryael",           105);
+        h.put("Greater nechryael",   200);
+        h.put("Pyrefiend",           60);
+        h.put("Rockslugs",           30);
+        h.put("Smoke devil",         65);
+        h.put("Spiritual warrior",   100);
+        h.put("Spiritual mage",      120);
+        h.put("Spiritual ranger",    90);
+        h.put("Suqah",               100);
+        h.put("Turoth",              100);
+        h.put("Vampyre",             30);
+        h.put("Vyrewatch",           150);
+        h.put("Waterfiend",          128);
+        h.put("Wyrm",                130);
+        h.put("Wyvern",              200);
+        h.put("Ancient wyvern",      200);
+        h.put("Skeletal wyvern",     200);
+        h.put("Fossil island wyvern",200);
+        h.put("Warped tortoise",     145);
+        h.put("Tortoise",            145);
+        h.put("Zombie pirate",       55);
+        // Dragons
+        h.put("Baby blue dragon",    60);
+        h.put("Baby green dragon",   55);
+        h.put("Green dragon",        75);
+        h.put("Blue dragon",         105);
+        h.put("Red dragon",          140);
+        h.put("Black dragon",        189);
+        h.put("Lava dragon",         240);
+        h.put("Bronze dragon",       120);
+        h.put("Iron dragon",         165);
+        h.put("Steel dragon",        210);
+        h.put("Mithril dragon",      250);
+        h.put("Adamant dragon",      300);
+        h.put("Rune dragon",         330);
+        h.put("Brutal black dragon", 315);
+        h.put("Brutal red dragon",   240);
+        h.put("Brutal blue dragon",  200);
+        h.put("Brutal green dragon", 170);
+        // Wilderness / other
+        h.put("Dark warrior",        30);
+        h.put("Ice warrior",         45);
+        h.put("Ice spider",          30);
+        // Bosses
+        h.put("Scurrius",            250);
+        h.put("Giant Mole",          500);
+        h.put("King Black Dragon",   240);
+        h.put("Chaos Elemental",     300);
+        h.put("Chaos Fanatic",       200);
+        h.put("Crazy Archaeologist", 200);
+        h.put("Scorpia",             200);
+        h.put("Deranged Archaeologist", 220);
+        h.put("Sarachnis",           400);
+        h.put("Hespori",             250);
+        h.put("Obor",                150);
+        h.put("Bryophyta",           180);
+        h.put("Cerberus",            600);
+        h.put("Kraken",              255);
+        h.put("Thermonuclear smoke devil", 245);
+        h.put("Alchemical Hydra",    1100);
+        h.put("Zulrah",              500);
+        h.put("Vorkath",             750);
+        h.put("Phantom Muspah",      350);
+        h.put("Duke Sucellus",       440);
+        h.put("The Leviathan",       900);
+        h.put("Vardorvis",           700);
+        h.put("The Whisperer",       550);
+        h.put("Nex",                 3400);
+        h.put("TzTok-Jad",           250);
+        h.put("TzKal-Zuk",           1200);
+        h.put("Araxxor",             1000);
+        h.put("Hueycoatl",           1500);
+        h.put("Sol Heredit",         1400);
+        h.put("Amoxliatl",           250);
+        h.put("Callisto",            500);
+        h.put("Artio",               350);
+        h.put("Venenatis",           500);
+        h.put("Spindel",             350);
+        h.put("Vet'ion",             350);
+        h.put("Calvar'ion",          220);
+        h.put("Corporeal Beast",     2000);
+        h.put("Commander Zilyana",   255);
+        h.put("General Graardor",    255);
+        h.put("K'ril Tsutsaroth",    255);
+        h.put("Kree'arra",           255);
+        h.put("Dagannoth Rex",       255);
+        h.put("Dagannoth Prime",     255);
+        h.put("Dagannoth Supreme",   255);
+        h.put("Dusk",                315);
+        h.put("Dawn",                315);
+        h.put("The Nightmare",       2400);
+        h.put("Phosani's Nightmare", 2400);
+        h.put("Ahrim the Blighted",  100);
+        h.put("Dharok the Wretched", 100);
+        h.put("Guthan the Infested", 100);
+        h.put("Karil the Tainted",   100);
+        h.put("Torag the Corrupted", 100);
+        h.put("Verac the Defiled",   100);
+        h.put("Tekton",              300);
+        h.put("Great Olm",           800);
+        h.put("Vespula",             200);
+        h.put("Maiden of Sugadinti", 2500);
+        h.put("Pestilent Bloat",     2000);
+        h.put("Sotetseg",            450);
+        h.put("Xarpus",              450);
+        h.put("Verzik Vitur",        500);
+        h.put("Akkha",               400);
+        h.put("Ba-Ba",              380);
+        h.put("Kephri",              400);
+        h.put("Zebak",               580);
+        h.put("Tumeken's Warden",    880);
+        h.put("Elidinis' Warden",    880);
+        h.put("Abyssal Sire",        400);
+        HITPOINTS = Collections.unmodifiableMap(h);
+    }
+
+    // -------------------------------------------------------------------------
     // Species map — biological/lore type of each monster.
     // Monsters not listed fall back to OTHER.
     // -------------------------------------------------------------------------
@@ -918,6 +1132,15 @@ public class MonsterRoster {
         if (bases != null) return bases.clone();
         int floor = getStatFloor(npcName, combatLevel);
         return new int[]{floor, floor, floor, floor, floor, floor};
+    }
+
+    /**
+     * Returns the monster's factual Hitpoints (wiki-sourced), used as card info and
+     * as the dominant term in the Power Level metric. Unlisted monsters (e.g.
+     * dynamically added kill-count entries) fall back to {@link #DEFAULT_HP}.
+     */
+    public static int getHitpoints(String npcName) {
+        return HITPOINTS.getOrDefault(npcName, DEFAULT_HP);
     }
 
     /** Assigns stable alphabetical dex numbers to the full roster. */

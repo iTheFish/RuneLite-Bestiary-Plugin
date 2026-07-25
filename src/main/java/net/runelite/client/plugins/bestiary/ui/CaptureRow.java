@@ -70,12 +70,12 @@ public class CaptureRow extends JPanel {
         levelLabel.setFont(FontManager.getRunescapeSmallFont());
         levelLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 
-        int q      = capture.quality.overallRating();
+        int q      = capture.powerLevel();
         String reg = shorten(capture.regionName, 16);
         String dt  = DATE_FMT.format(capture.captureTime);
 
         // Quality in gold, location + date in same muted tone as level label
-        JLabel qualLabel = new JLabel("Q:" + q);
+        JLabel qualLabel = new JLabel("PWR:" + q);
         qualLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         qualLabel.setForeground(capture.rarity.displayColor);
 

@@ -393,12 +393,12 @@ public class BestiaryOverlay extends Overlay {
         g.setColor(Color.WHITE);
         g.setFont(getFont(Font.BOLD, 13));
         drawCentered(g, c.npcName, tx, 44 + dy);
-        // Quality
-        int q = c.quality.overallRating();
+        // Power Level
+        int q = c.powerLevel();
         Color qcol = q >= 80 ? new Color(90, 220, 90) : q >= 50 ? new Color(220, 220, 90) : new Color(180, 180, 180);
         g.setColor(qcol);
         g.setFont(getFont(Font.BOLD, 13));
-        drawCentered(g, "Quality  " + q, tx, 64 + dy);
+        drawCentered(g, "Power  " + q + "   ·   " + c.hitpoints() + " HP", tx, 64 + dy);
         // Hint
         g.setColor(new Color(150, 150, 150));
         g.setFont(getFont(Font.PLAIN, 10));

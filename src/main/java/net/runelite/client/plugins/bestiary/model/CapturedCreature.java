@@ -113,6 +113,21 @@ public class CapturedCreature {
         return shiny;
     }
 
+    /** The monster's factual Hitpoints (wiki-sourced), shown as card info. */
+    public int hitpoints() {
+        return MonsterRoster.getHitpoints(npcName);
+    }
+
+    /**
+     * "Power Level" — the headline card metric (replaces the old quality average).
+     * Equals round((sum of the 6 rolled stats + monster HP) / 7). Because HP is a raw
+     * number that dwarfs the 1-99 stats for tanky monsters, Power Level can exceed 99
+     * for bosses. Rolled stats are pure flavour; HP is the real value driver.
+     */
+    public int powerLevel() {
+        return Math.round((quality.statSum() + hitpoints()) / 7f);
+    }
+
     @Override
     public String toString() {
         return String.format("[%s] %s (ID %d) - %s @ %s",

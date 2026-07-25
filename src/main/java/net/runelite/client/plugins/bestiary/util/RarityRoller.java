@@ -127,8 +127,8 @@ public final class RarityRoller {
      * [SHINY_MIN_BONUS, SHINY_MAX_BONUS]. The spread lets a lucky low-rarity shiny
      * occasionally outrank an unlucky higher-rarity one.
      */
-    private static final int SHINY_MIN_BONUS = 11;
-    private static final int SHINY_MAX_BONUS = 16;
+    private static final int SHINY_MIN_BONUS = 15;
+    private static final int SHINY_MAX_BONUS = 22;
 
     private static int rollStat(Random rng, double mean, double sd) {
         double value = mean + rng.nextGaussian() * sd;
