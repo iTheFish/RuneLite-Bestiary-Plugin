@@ -138,7 +138,7 @@ public class BestiaryPlugin extends Plugin {
     @Subscribe
     public void onActorDeath(ActorDeath event) {
         Optional<NPC> kill = killTracker.onActorDeath(event);
-        kill.ifPresent(this::handleKill);
+        kill.ifPresent(npc -> handleKill(npc, killTracker.getLastKillDamage()));
     }
 
     @Subscribe
@@ -175,7 +175,7 @@ public class BestiaryPlugin extends Plugin {
 
     // --- Kill handling ---
 
-    private void handleKill(NPC npc) {
+    private void handleKill(NPC npc, int observedDamage) {
         WorldPoint location = client.getLocalPlayer() != null
                 ? client.getLocalPlayer().getWorldLocation()
                 : null;
@@ -211,7 +211,7 @@ public class BestiaryPlugin extends Plugin {
 
         String playerName = client.getLocalPlayer() != null ? client.getLocalPlayer().getName() : "";
         Optional<CapturedCreature> result = captureService.attemptCapture(
-                npc, location, captureLevel, killCount, region, playerName);
+                npc, location, captureLevel, killCount, region, playerName, observedDamage);
 
         // Overlay / animation
         if (config.showCaptureAnimation()) {

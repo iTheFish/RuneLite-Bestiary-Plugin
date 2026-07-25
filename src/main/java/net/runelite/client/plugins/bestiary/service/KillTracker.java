@@ -37,6 +37,13 @@ public class KillTracker {
      */
     private final Map<Integer, NPC> attackedNpcs = new HashMap<>();
 
+    /** Total damage the local player has dealt to each NPC (by index) — the "observed HP". */
+    private final Map<Integer, Integer> damageDealt = new HashMap<>();
+
+    /** Damage the player dealt to the most recently confirmed kill. */
+    private int lastKillDamage = 0;
+    public int getLastKillDamage() { return lastKillDamage; }
+
     @Inject
     public KillTracker(Client client) {
         this.client = client;
@@ -56,6 +63,7 @@ public class KillTracker {
         }
         NPC npc = (NPC) actor;
         attackedNpcs.put(npc.getIndex(), npc);
+        damageDealt.merge(npc.getIndex(), event.getHitsplat().getAmount(), Integer::sum);
         log.debug("Hitsplat on {} (index {})", npc.getName(), npc.getIndex());
     }
 
@@ -72,13 +80,17 @@ public class KillTracker {
         if (tracked == null) {
             return Optional.empty();
         }
-        log.debug("Kill confirmed via ActorDeath: {} (ID {})", npc.getName(), npc.getId());
+        Integer dmg = damageDealt.remove(npc.getIndex());
+        lastKillDamage = dmg != null ? dmg : 0;
+        log.debug("Kill confirmed via ActorDeath: {} (ID {}), player damage {}",
+                npc.getName(), npc.getId(), lastKillDamage);
         return Optional.of(npc);
     }
 
     /** Removes a despawned NPC from tracking (cleanup only). */
     public void onNpcDespawned(NpcDespawned event) {
         attackedNpcs.remove(event.getNpc().getIndex());
+        damageDealt.remove(event.getNpc().getIndex());
     }
 
     /** Clears all state on logout or world hop. */
@@ -86,6 +98,7 @@ public class KillTracker {
         GameState state = event.getGameState();
         if (state == GameState.LOGIN_SCREEN || state == GameState.HOPPING) {
             attackedNpcs.clear();
+            damageDealt.clear();
         }
     }
 }

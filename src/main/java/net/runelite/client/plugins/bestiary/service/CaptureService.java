@@ -56,7 +56,8 @@ public class CaptureService {
      */
     public Optional<CapturedCreature> attemptCapture(NPC npc, WorldPoint location,
                                                      int captureLevel, int killCount,
-                                                     String regionName, String playerName) {
+                                                     String regionName, String playerName,
+                                                     int observedDamage) {
         if (!config.captureEnabled()) {
             return Optional.empty();
         }
@@ -92,6 +93,7 @@ public class CaptureService {
         CapturedCreature creature = CapturedCreature.builder()
                 .shiny(shiny)
                 .prayer(prayer)
+                .observedHp(observedDamage)
                 .npcId(npc.getId())
                 .npcName(npcName)
                 .npcCombatLevel(npc.getCombatLevel())
