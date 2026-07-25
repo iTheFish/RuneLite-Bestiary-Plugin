@@ -293,177 +293,77 @@ public class MonsterRoster {
     static {
         Map<String, CombatClass> a = new HashMap<>();
 
-        // NIMBLE — P: RNG+AGI  |  small, fast, evasive
-        for (String n : Arrays.asList(
-            "Chicken", "Duck", "Seagull",
-            "Rat", "Giant rat", "Imp",
-            "Goblin", "Spider", "Cave bug", "Desert lizard",
-            "Unicorn", "Cow calf",
-            "Baby blue dragon", "Baby green dragon"
-        )) { a.put(n, NIMBLE); }
+        // Attack-style x weight taxonomy (#70). AGI/Prayer are per-monster (STAT_BASES / PRAYER).
 
-        // BRUTE — P: ATK+STR  |  pure melee muscle
+        // WARRIOR - pure melee
         for (String n : Arrays.asList(
-            "Man", "Woman", "Farmer",
-            "Guard", "Barbarian", "Warrior", "Pirate", "Rogue",
-            "Black knight", "White knight",
-            "Zombie", "Skeleton",
-            "Hobgoblin",
-            "Troll", "Mountain troll",
-            "Hill giant",
-            "Earth warrior",
-            "Chaos druid", "Chaos druid warrior",
-            "Bear", "Grizzly bear",
-            "Lesser demon", "Greater demon",
-            "Zombie pirate",
-            "Ankou",
-            "Spiritual warrior",
-            "Lizardman brute",
-            "Turoth",
-            "Mogre",
-            "Kalphite", "Kalphite soldier", "Kalphite worker",
-            "Ice warrior",
-            "Guthan the Infested", "Verac the Defiled",
-            "Dark warrior"
-        )) { a.put(n, BRUTE); }
+            "Chicken","Cow","Cow calf","Duck","Ram","Seagull","Man","Woman","Farmer",
+            "Goblin","Guard","Rat","Giant rat","Imp","Zombie","Skeleton","Ghost",
+            "Barbarian","Warrior","Minotaur","Bear","Grizzly bear","Unicorn","Spider",
+            "Giant spider","Scorpion","Hill giant","Moss giant","Earth warrior",
+            "Black knight","White knight","Hobgoblin","Chaos druid","Chaos druid warrior",
+            "Pirate","Rogue","Ankou","Spiritual warrior","Lizardman","Lizardman brute",
+            "Turoth","Mogre","Kalphite","Kalphite soldier","Kalphite worker","Ice warrior",
+            "Dark warrior","Ice spider","Cave bug","Cave crawler","Fever spider","Fleshcrawler",
+            "Rockslugs","Kurask","Dust devil","Nechryael","Greater nechryael","Abyssal demon",
+            "Vampyre","Feral vampyre","Dagannoth","Cave horror","Vyrewatch","Hellhound",
+            "Troll","Mountain troll","Ice troll","Zombie pirate","Dharok the Wretched",
+            "Guthan the Infested","Verac the Defiled","Baby blue dragon","Baby green dragon",
+            "Scorpia","Ba-Ba","Desert lizard","King scorpion"
+        )) { a.put(n, WARRIOR); }
 
-        // TANK — P: STR+DEF  |  armoured, slow, durable
+        // JUGGERNAUT - melee + high defence (tanky)
         for (String n : Arrays.asList(
-            "Cow", "Minotaur",
-            "Rock crab", "Sand crab", "Swamp crab", "Gemstone crab",
-            "Cave slime",
-            "Scorpion", "King scorpion",
-            "Moss giant", "Fire giant", "Ice giant", "Ice troll",
-            "Basilisk", "Basilisk knight",
-            "Gargoyle",
-            "Rockslugs",
-            "Jelly", "Warped jelly",
-            "Tortoise", "Warped tortoise",
-            "Kalphite guardian",
-            "Kurask",
-            "Bloodveld",
-            "Torag the Corrupted"
-        )) { a.put(n, TANK); }
-
-        // PREDATOR — P: ATK+AGI  |  quick striker, mobile hunter
-        for (String n : Arrays.asList(
-            "Giant spider", "Fever spider", "Cave crawler", "Fleshcrawler",
-            "Ice spider",
-            "Scorpia",
-            "Hellhound",
-            "Nechryael", "Greater nechryael",
-            "Abyssal demon",
-            "Lizardman",
-            "Suqah",
-            "Dust devil",
-            "Vampyre", "Feral vampyre",
-            "Green dragon"
-        )) { a.put(n, PREDATOR); }
-
-        // MYSTIC — P: DEF+MAG  |  magic users, spell-casters
-        for (String n : Arrays.asList(
-            "Wizard", "Dark wizard",
-            "Banshee", "Twisted banshee",
-            "Infernal mage", "Spiritual mage",
-            "Pyrefiend",
-            "Jelly", "Warped jelly",       // magical melee
-            "Waterfiend",
-            "Aberrant spectre", "Deviant spectre",
-            "Chaos Fanatic",
-            "Kraken",
-            "Ahrim the Blighted",
-            "Kephri",
-            "Amoxliatl"
-        )) { a.put(n, MYSTIC); }
-
-        // STALKER — P: MAG+RNG  |  ranged/magic ambushers
-        for (String n : Arrays.asList(
-            "Ghost",
-            "Dagannoth",
-            "Bloodveld", "Mutated bloodveld",
-            "Cave horror",
-            "Smoke devil",
-            "Hydra",
-            "Wyrm",
-            "Vyrewatch",
-            "Vespula",
-            "Xarpus"
-        )) { a.put(n, STALKER); }
-
-        // RANGER — P: RNG+AGI  |  pure ranged attackers, mobile archers
-        for (String n : Arrays.asList(
-            "Spiritual ranger",
-            "Crazy Archaeologist", "Deranged Archaeologist",
-            "Thermonuclear smoke devil",
-            "Karil the Tainted"
-        )) { a.put(n, RANGER); }
-
-        // TITAN — P: STR+MAG  |  powerful melee+magic hybrids
-        for (String n : Arrays.asList(
-            "Black demon",
-            "Dark beast",
-            "Drake",
-            "Wyvern", "Ancient wyvern", "Skeletal wyvern", "Fossil island wyvern",
-            "Blue dragon", "Red dragon", "Black dragon", "Lava dragon",
-            "Bronze dragon", "Iron dragon", "Steel dragon",
-            "Brutal green dragon",
-            "Lizardman shaman",
-            "Obor", "Bryophyta",
-            "Hespori",
-            "Ba-Ba",
-            "Dharok the Wretched"
-        )) { a.put(n, TITAN); }
-
-        // APEX — P: ATK+STR+MAG  |  true melee-mage hybrid bosses
-        for (String n : Arrays.asList(
-            "Rune dragon",
-            "Scurrius",
-            "Chaos Elemental",
-            "Sarachnis",
-            "Phantom Muspah",
-            "TzTok-Jad",
-            "Hueycoatl",
-            "Venenatis", "Spindel",
-            "K'ril Tsutsaroth",
-            "Dusk", "Dawn",
-            "The Nightmare", "Phosani's Nightmare",
-            "Maiden of Sugadinti", "Pestilent Bloat",
-            "Akkha", "Zebak",
-            "Tumeken's Warden", "Elidinis' Warden",
-            "Abyssal Sire"
-        )) { a.put(n, APEX); }
-
-        // JUGGERNAUT — P: ATK+STR+DEF  |  physical powerhouse bosses, no magic
-        for (String n : Arrays.asList(
-            "Mithril dragon", "Adamant dragon",
-            "Brutal black dragon", "Brutal red dragon", "Brutal blue dragon",
-            "King Black Dragon",
-            "Giant Mole",
-            "Cerberus",
-            "Duke Sucellus", "Vardorvis",
-            "Araxxor",
-            "Sol Heredit",
-            "Callisto", "Artio",
-            "Vet'ion", "Calvar'ion",
-            "Corporeal Beast",
-            "General Graardor",
-            "Dagannoth Rex",
-            "Tekton"
+            "Lesser demon","Greater demon","Fire giant","Ice giant","Gargoyle","Basilisk",
+            "Basilisk knight","Kalphite guardian","Rock crab","Sand crab","Swamp crab",
+            "Gemstone crab","Tortoise","Warped tortoise","Bloodveld","Mutated bloodveld",
+            "Torag the Corrupted","Giant Mole","Callisto","Artio","Corporeal Beast",
+            "General Graardor","K'ril Tsutsaroth","Dagannoth Rex","Tekton","Duke Sucellus",
+            "Vardorvis"
         )) { a.put(n, JUGGERNAUT); }
 
-        // ARCHON — P: DEF+MAG+RNG  |  arcane/ranged bosses, weak melee
+        // MAGE - pure magic
         for (String n : Arrays.asList(
-            "Alchemical Hydra",
-            "Zulrah", "Vorkath",
-            "The Leviathan", "The Whisperer",
-            "Nex",
-            "TzKal-Zuk",
-            "Commander Zilyana", "Kree'arra",
-            "Dagannoth Prime", "Dagannoth Supreme",
-            "Great Olm",
-            "Sotetseg",
-            "Verzik Vitur"
-        )) { a.put(n, ARCHON); }
+            "Wizard","Dark wizard","Banshee","Twisted banshee","Infernal mage","Spiritual mage",
+            "Pyrefiend","Cave slime","Aberrant spectre","Deviant spectre","Chaos Fanatic",
+            "Kraken","Amoxliatl","Dagannoth Prime","Ahrim the Blighted"
+        )) { a.put(n, MAGE); }
+
+        // MARKSMAN - pure ranged
+        for (String n : Arrays.asList(
+            "Spiritual ranger","Crazy Archaeologist","Deranged Archaeologist","Smoke devil",
+            "Dagannoth Supreme","Xarpus","Vespula","Karil the Tainted","TzKal-Zuk"
+        )) { a.put(n, MARKSMAN); }
+
+        // BATTLEMAGE - melee + magic
+        for (String n : Arrays.asList(
+            "Black demon","King Black Dragon","Bryophyta","Vet'ion","Calvar'ion",
+            "Commander Zilyana","Venenatis","Spindel","Drake","Wyrm","Dark beast","Suqah",
+            "Jelly","Warped jelly","Green dragon","Blue dragon","Red dragon","Black dragon",
+            "Lava dragon","Bronze dragon","Iron dragon","Steel dragon","Brutal black dragon",
+            "Brutal red dragon","Brutal blue dragon","Brutal green dragon"
+        )) { a.put(n, BATTLEMAGE); }
+
+        // WARDEN - melee + ranged
+        for (String n : Arrays.asList(
+            "Sarachnis","Obor","Araxxor","Abyssal Sire"
+        )) { a.put(n, WARDEN); }
+
+        // OCCULTIST - magic + ranged
+        for (String n : Arrays.asList(
+            "Hespori","Thermonuclear smoke devil","Alchemical Hydra","Zulrah","The Whisperer",
+            "Kree'arra","Maiden of Sugadinti","Kephri","Hydra","Waterfiend"
+        )) { a.put(n, OCCULTIST); }
+
+        // APEX - tribrid (all styles)
+        for (String n : Arrays.asList(
+            "Scurrius","Chaos Elemental","Cerberus","Vorkath","Phantom Muspah","The Leviathan",
+            "Nex","TzTok-Jad","Hueycoatl","Sol Heredit","Dusk","Dawn","The Nightmare",
+            "Phosani's Nightmare","Pestilent Bloat","Sotetseg","Verzik Vitur","Akkha","Zebak",
+            "Tumeken's Warden","Elidinis' Warden","Great Olm","Lizardman shaman","Wyvern",
+            "Ancient wyvern","Skeletal wyvern","Fossil island wyvern","Mithril dragon",
+            "Adamant dragon","Rune dragon"
+        )) { a.put(n, APEX); }
 
         COMBAT_CLASSES = Collections.unmodifiableMap(a);
     }
@@ -567,7 +467,7 @@ public class MonsterRoster {
         b.put("Greater nechryael",   new int[]{59, 59, 26,  1,  1, 45});
         b.put("Pyrefiend",           new int[]{16,  9,  7,  1,  1, 45});
         b.put("Rockslugs",           new int[]{ 7,  8,  8,  1,  1, 15});
-        b.put("Smoke devil",         new int[]{42, 39, 83,  1, 59, 60});
+        b.put("Smoke devil",         new int[]{1, 1, 40, 20, 66, 60});
         b.put("Spiritual warrior",   new int[]{30, 30, 30,  1,  1, 45});
         b.put("Spiritual mage",      new int[]{ 1,  1, 18, 54,  1, 45});
         b.put("Spiritual ranger",    new int[]{ 1,  1, 24,  1, 42, 60});
@@ -607,7 +507,7 @@ public class MonsterRoster {
         b.put("Ice warrior",         new int[]{14, 14, 14,  1,  1, 30});
         b.put("Ice spider",          new int[]{15, 17, 13,  1,  1, 45});
         // Bosses
-        b.put("Scurrius",            new int[]{90, 30, 18, 15, 15, 60});
+        b.put("Scurrius",            new int[]{90, 30, 18, 45, 45, 60});
         b.put("Giant Mole",          new int[]{60, 60, 60, 60,  1, 45});
         b.put("King Black Dragon",   new int[]{72, 72, 72, 72, 65, 30});
         b.put("Chaos Elemental",     new int[]{81, 81, 81, 81, 81, 75});
@@ -617,40 +517,40 @@ public class MonsterRoster {
         b.put("Deranged Archaeologist", new int[]{ 1,  1, 75,  1, 72, 45});
         b.put("Sarachnis",           new int[]{60, 72, 45, 45, 90, 45});
         b.put("Hespori",             new int[]{ 1,  1, 36, 38, 45, 30});
-        b.put("Obor",                new int[]{27, 30, 18,  1, 36, 30});
-        b.put("Bryophyta",           new int[]{39, 30, 30, 27,  1, 15});
-        b.put("Cerberus",            new int[]{66, 66, 30, 66, 66, 45});
-        b.put("Kraken",              new int[]{ 1,  1, 50, 50,  1,  1});
-        b.put("Thermonuclear smoke devil", new int[]{69, 66, 90,  1, 90, 60});
+        b.put("Obor",                new int[]{30, 30, 18, 5, 36, 30});
+        b.put("Bryophyta",           new int[]{24, 24, 30, 45, 1, 15});
+        b.put("Cerberus",            new int[]{66, 66, 45, 45, 66, 45});
+        b.put("Kraken",              new int[]{1, 1, 50, 66, 1, 15});
+        b.put("Thermonuclear smoke devil", new int[]{1, 1, 50, 66, 90, 60});
         b.put("Alchemical Hydra",    new int[]{30, 30, 30, 78, 78, 45});
-        b.put("Zulrah",              new int[]{ 1,  1, 90, 90, 90, 45});
-        b.put("Vorkath",             new int[]{90, 90, 64, 45, 90, 30});
+        b.put("Zulrah",              new int[]{1, 1, 90, 90, 90, 75});
+        b.put("Vorkath",             new int[]{90, 90, 64, 45, 90, 15});
         b.put("Phantom Muspah",      new int[]{84, 84, 60, 45, 84, 45});
         b.put("Duke Sucellus",       new int[]{90, 90, 83, 90,  1, 30});
-        b.put("The Leviathan",       new int[]{90, 90, 75, 48, 48, 45});
-        b.put("Vardorvis",           new int[]{84, 90, 65, 65,  1, 45});
+        b.put("The Leviathan",       new int[]{90, 90, 75, 48, 48, 10});
+        b.put("Vardorvis",           new int[]{90, 90, 75, 65, 1, 60});
         b.put("The Whisperer",       new int[]{84, 84, 75, 54, 54, 60});
         b.put("Nex",                 new int[]{90, 60, 78, 69, 90, 75});
         b.put("TzTok-Jad",           new int[]{90, 90, 90, 90, 90, 15});
-        b.put("TzKal-Zuk",           new int[]{90, 90, 78, 45, 90, 30});
+        b.put("TzKal-Zuk",           new int[]{90, 90, 78, 60, 90, 20});
         b.put("Araxxor",             new int[]{90, 90, 41, 57, 63, 60});
         b.put("Hueycoatl",           new int[]{84, 84, 60, 66, 66, 45});
-        b.put("Sol Heredit",         new int[]{90, 90, 60, 90, 90, 60});
+        b.put("Sol Heredit",         new int[]{90, 90, 60, 90, 90, 50});
         b.put("Amoxliatl",           new int[]{ 1,  1, 24, 51,  1, 30});
-        b.put("Callisto",            new int[]{90, 90, 68, 42, 60, 30});
-        b.put("Artio",               new int[]{75, 81, 45, 27, 36, 30});
+        b.put("Callisto",            new int[]{90, 90, 68, 60, 60, 15});
+        b.put("Artio",               new int[]{75, 81, 45, 45, 36, 15});
         b.put("Venenatis",           new int[]{90, 60, 90, 90, 90, 45});
         b.put("Spindel",             new int[]{60, 39, 68, 71, 86, 45});
         b.put("Vet'ion",             new int[]{90, 90, 90, 90,  1, 30});
         b.put("Calvar'ion",          new int[]{75, 75, 68, 53,  1, 30});
         b.put("Corporeal Beast",     new int[]{90, 90, 90, 90, 45, 15});
-        b.put("Commander Zilyana",   new int[]{84, 59, 90, 90, 75, 75});
+        b.put("Commander Zilyana",   new int[]{84, 59, 90, 90, 20, 75});
         b.put("General Graardor",    new int[]{84, 90, 75, 24, 90, 30});
         b.put("K'ril Tsutsaroth",    new int[]{90, 90, 81, 60,  1, 45});
         b.put("Kree'arra",           new int[]{90, 60, 78, 60, 90, 75});
         b.put("Dagannoth Rex",       new int[]{77, 77, 77,  1, 77, 30});
-        b.put("Dagannoth Prime",     new int[]{77, 77, 77, 77,  1, 30});
-        b.put("Dagannoth Supreme",   new int[]{77, 77, 38, 77, 77, 30});
+        b.put("Dagannoth Prime",     new int[]{1, 1, 60, 77, 1, 30});
+        b.put("Dagannoth Supreme",   new int[]{1, 1, 38, 20, 77, 30});
         b.put("Dusk",                new int[]{60, 42, 30, 42, 42, 30});
         b.put("Dawn",                new int[]{42, 42, 30, 30, 42, 45});
         b.put("The Nightmare",       new int[]{45, 45, 45, 45, 45, 45});
@@ -661,20 +561,20 @@ public class MonsterRoster {
         b.put("Karil the Tainted",   new int[]{ 1,  1, 30,  1, 30, 60});
         b.put("Torag the Corrupted", new int[]{30, 30, 30,  1,  1, 15});
         b.put("Verac the Defiled",   new int[]{30, 30, 30,  1,  1, 30});
-        b.put("Tekton",              new int[]{90, 90, 62, 62,  1, 15});
-        b.put("Great Olm",           new int[]{75, 75, 45, 75, 75, 30});
-        b.put("Vespula",             new int[]{45, 45, 26, 26, 45, 60});
-        b.put("Maiden of Sugadinti", new int[]{90, 90, 60, 90, 90, 45});
-        b.put("Pestilent Bloat",     new int[]{75, 90, 30, 45, 54, 30});
+        b.put("Tekton",              new int[]{90, 90, 62, 1, 1, 15});
+        b.put("Great Olm",           new int[]{75, 75, 45, 75, 75, 15});
+        b.put("Vespula",             new int[]{1, 1, 26, 26, 60, 75});
+        b.put("Maiden of Sugadinti", new int[]{90, 90, 75, 90, 90, 15});
+        b.put("Pestilent Bloat",     new int[]{75, 90, 30, 45, 66, 45});
         b.put("Sotetseg",            new int[]{75, 75, 60, 75, 75, 30});
-        b.put("Xarpus",              new int[]{ 1,  1, 75, 66, 30, 30});
-        b.put("Verzik Vitur",        new int[]{90, 90, 45, 90, 90, 45});
+        b.put("Xarpus",              new int[]{1, 1, 75, 30, 66, 30});
+        b.put("Verzik Vitur",        new int[]{90, 90, 60, 90, 90, 60});
         b.put("Akkha",               new int[]{30, 42, 24, 30, 30, 60});
-        b.put("Ba-Ba",               new int[]{45, 48, 24, 30,  1, 45});
+        b.put("Ba-Ba",               new int[]{45, 48, 24, 30, 36, 45});
         b.put("Kephri",              new int[]{ 1,  1, 24, 38,  1, 30});
         b.put("Zebak",               new int[]{75, 42, 21, 30, 36, 30});
-        b.put("Tumeken's Warden",    new int[]{90, 45, 45, 57, 57, 45});
-        b.put("Elidinis' Warden",    new int[]{90, 45, 45, 57, 57, 45});
+        b.put("Tumeken's Warden",    new int[]{90, 45, 45, 57, 57, 15});
+        b.put("Elidinis' Warden",    new int[]{90, 45, 45, 57, 57, 15});
         b.put("Abyssal Sire",        new int[]{54, 41, 75, 60,  1, 30});
         STAT_BASES = Collections.unmodifiableMap(b);
     }
@@ -1186,6 +1086,13 @@ public class MonsterRoster {
         p.put("Sol Heredit",         80);
         p.put("TzKal-Zuk",           70);
         p.put("Lizardman shaman",    40);
+        p.put("Tekton",              80);
+        p.put("TzTok-Jad",           80);
+        p.put("Cerberus",            50);
+        p.put("Vardorvis",           90);
+        p.put("Sol Heredit",         90);
+        p.put("Nex",                 99);
+        p.put("The Leviathan",       90);
         PRAYER = Collections.unmodifiableMap(p);
     }
 

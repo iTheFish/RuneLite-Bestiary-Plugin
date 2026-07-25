@@ -15,9 +15,18 @@ public enum CombatClass {
     STALKER  ("Stalker",  new int[]{3, 4},    new int[]{0, 2}),   // P: MAG RNG  | T: ATK DEF
     RANGER   ("Ranger",   new int[]{4, 5},    new int[]{1, 3}),   // P: RNG AGI  | T: STR MAG
     TITAN    ("Titan",    new int[]{1, 3},    new int[]{4, 5}),   // P: STR MAG  | T: RNG AGI
-    APEX     ("Apex",     new int[]{0, 1, 3},  new int[]{5}),     // P: ATK STR MAG | T: AGI
-    JUGGERNAUT("Juggernaut", new int[]{0, 1, 2}, new int[]{3}),   // P: ATK STR DEF | T: MAG
-    ARCHON   ("Archon",   new int[]{2, 3, 4},  new int[]{1});     // P: DEF MAG RNG | T: STR
+    APEX     ("Apex",     new int[]{0, 1, 3, 4}, new int[]{}),    // tribrid: ATK STR MAG RNG (DEF/AGI secondary)
+    JUGGERNAUT("Juggernaut", new int[]{0, 1, 2}, new int[]{3, 4}),// P: ATK STR DEF | T: MAG RNG
+    ARCHON   ("Archon",   new int[]{2, 3, 4},  new int[]{1}),     // P: DEF MAG RNG | T: STR (legacy)
+
+    // ---- Attack-style x weight taxonomy (#70). AGI is never primary/tertiary here:
+    // it is the flavour stat shown in the attribute band, driven by its own base. ----
+    WARRIOR  ("Warrior",   new int[]{0, 1},    new int[]{3, 4}),  // melee            | dump MAG RNG
+    MAGE     ("Mage",      new int[]{3},       new int[]{0, 1, 4}),// magic           | dump ATK STR RNG
+    MARKSMAN ("Marksman",  new int[]{4},       new int[]{0, 1, 3}),// ranged          | dump ATK STR MAG
+    BATTLEMAGE("Battlemage", new int[]{0, 1, 3}, new int[]{4}),   // melee+magic      | dump RNG
+    WARDEN   ("Warden",    new int[]{0, 1, 4}, new int[]{3}),     // melee+ranged     | dump MAG
+    OCCULTIST("Occultist", new int[]{3, 4},    new int[]{0, 1});  // magic+ranged     | dump ATK STR
 
     public final String label;
     public final int[]  primaryIndices;
