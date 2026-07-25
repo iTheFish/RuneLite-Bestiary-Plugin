@@ -66,26 +66,25 @@ public class BestiaryPanel extends PluginPanel {
             AlbumDialog.refreshOpenAlbum();
         }));
         AlbumCard.setRerollHandler((owner, cap) -> {
+            Window win = SwingUtilities.getWindowAncestor(owner);
             long cost = net.runelite.client.plugins.bestiary.service.BestiaryDataService.REROLL_COST;
             if (dataService.getCredits() < cost) {
-                JOptionPane.showMessageDialog(owner,
-                        "You need " + cost + " credits to reroll (you have " + dataService.getCredits() + ").",
-                        "Card Reroller", JOptionPane.INFORMATION_MESSAGE);
+                RerollResultDialog.info(win, "Card Reroller",
+                        "You need " + cost + " credits to reroll (you have " + dataService.getCredits() + ").");
                 return;
             }
             String label = (cap.isShiny() ? "✦ " : "") + cap.rarity.label + " " + cap.npcName;
             int choice = JOptionPane.showConfirmDialog(owner,
                     "Reroll " + label + " for " + cost + " credits?\n"
-                    + "Stats, prayer and shiny are re-rolled at the same rarity.",
+                    + "Stats, prayer and shiny re-roll (a shiny stays shiny; a small chance to rank up).",
                     "Card Reroller", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
             if (choice != JOptionPane.YES_OPTION) return;
             net.runelite.client.plugins.bestiary.model.CapturedCreature nc =
                     dataService.rerollCard(cap, progressionService.getLevel());
             refresh();
             AlbumDialog.refreshOpenAlbum();
-            if (nc != null && nc.isShiny()) {
-                JOptionPane.showMessageDialog(owner, "✦ Shiny reroll! " + nc.npcName + " is now shiny.",
-                        "Card Reroller", JOptionPane.INFORMATION_MESSAGE);
+            if (nc != null) {
+                RerollResultDialog.open(win, cap, nc);   // MODELESS before/after
             }
         });
 

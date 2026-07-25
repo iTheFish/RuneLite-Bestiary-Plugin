@@ -181,6 +181,9 @@ public class BestiaryDataService {
     /** Cost of one "Card Reroller" use. */
     public static final long REROLL_COST = 5000L;
 
+    /** Base chance a non-Mythic reroll bumps up one rarity (raised later by shop unlocks). */
+    public static final double RARITY_UP_CHANCE = 0.05;
+
     private final Random rerollRng = new Random();
 
     /** Deducts credits if affordable; persists. Returns false if too poor. */
@@ -199,17 +202,23 @@ public class BestiaryDataService {
      */
     public CapturedCreature rerollCard(CapturedCreature c, int currentLevel) {
         if (!spendCredits(REROLL_COST)) return null;
+        // Non-Mythic cards get a small chance to move up a rarity.
+        CreatureRarity rarity = c.rarity;
+        if (rarity != CreatureRarity.MYTHIC && rerollRng.nextDouble() < RARITY_UP_CHANCE) {
+            rarity = CreatureRarity.values()[rarity.ordinal() + 1];
+        }
         net.runelite.client.plugins.bestiary.model.CombatClass cls =
                 net.runelite.client.plugins.bestiary.model.MonsterRoster.getCombatClass(c.npcName, c.npcCombatLevel);
         int[] bases = net.runelite.client.plugins.bestiary.model.MonsterRoster.getStatBases(c.npcName, c.npcCombatLevel);
-        boolean shiny = rerollRng.nextDouble() < CaptureService.shinyChance(currentLevel);
+        // A shiny stays shiny; a non-shiny gets a fresh shiny roll.
+        boolean shiny = c.isShiny() || rerollRng.nextDouble() < CaptureService.shinyChance(currentLevel);
         net.runelite.client.plugins.bestiary.model.CreatureQuality q =
-                net.runelite.client.plugins.bestiary.util.RarityRoller.generateQuality(cls, c.rarity, bases, rerollRng, shiny);
+                net.runelite.client.plugins.bestiary.util.RarityRoller.generateQuality(cls, rarity, bases, rerollRng, shiny);
         int prayer = net.runelite.client.plugins.bestiary.util.RarityRoller.rollPrayer(
-                net.runelite.client.plugins.bestiary.model.MonsterRoster.getPrayer(c.npcName), c.rarity, rerollRng, shiny);
+                net.runelite.client.plugins.bestiary.model.MonsterRoster.getPrayer(c.npcName), rarity, rerollRng, shiny);
         CapturedCreature nc = CapturedCreature.builder()
                 .id(c.id).npcId(c.npcId).npcName(c.npcName).npcCombatLevel(c.npcCombatLevel)
-                .rarity(c.rarity).quality(q).captureTime(c.captureTime).regionName(c.regionName)
+                .rarity(rarity).quality(q).captureTime(c.captureTime).regionName(c.regionName)
                 .captureLevel(c.captureLevel).killsBeforeCapture(c.killsBeforeCapture)
                 .playerName(c.playerName).shiny(shiny).prayer(prayer).observedHp(c.observedHp)
                 .build();
