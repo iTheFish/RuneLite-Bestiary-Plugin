@@ -75,10 +75,13 @@ public class OddsDialog extends JDialog {
                 : "Stats — " + r.rarity.label + " roll band (overlaps neighbours)";
         root.add(sectionHeader(statHdr));
         for (OddsCalculator.StatOdds s : r.stats) {
-            String right = r.shiny
-                    ? "expected " + s.centre
-                    : "rolled in " + s.lo + "–" + s.hi;
-            root.add(kvRow(s.name + ":  " + s.value, smallBold, Color.WHITE, right));
+            String right;
+            if (r.shiny) {
+                right = "expected " + s.centre;
+            } else {
+                right = s.lo + "–" + s.hi + "&nbsp;&nbsp;" + rollTag(s.value, s.lo, s.hi);
+            }
+            root.add(kvRow(s.name + ":  " + s.value, smallBold, Color.WHITE, "<html>" + right + "</html>"));
         }
 
         root.add(Box.createVerticalStrut(10));
@@ -127,6 +130,18 @@ public class OddsDialog extends JDialog {
         @Override public int getScrollableBlockIncrement(Rectangle r, int o, int d) { return 48; }
         @Override public boolean getScrollableTracksViewportWidth() { return true; }
         @Override public boolean getScrollableTracksViewportHeight() { return false; }
+    }
+
+    /** A coloured HTML tag for where a value landed within its [lo, hi] band. */
+    private static String rollTag(int value, int lo, int hi) {
+        if (hi <= lo) return "<font color='#909090'>fixed</font>";
+        double f = (value - lo) / (double) (hi - lo);
+        String label, colour;
+        if (value >= hi)        { label = "MAX roll";  colour = "#7ad67a"; }
+        else if (f >= 0.67)     { label = "high roll"; colour = "#8fd08f"; }
+        else if (f <= 0.33)     { label = (value <= lo ? "MIN roll" : "low roll"); colour = "#e07070"; }
+        else                    { label = "mid roll";  colour = "#b0b0b0"; }
+        return "<font color='" + colour + "'>" + label + "</font>";
     }
 
     private static JLabel sectionHeader(String text) {
