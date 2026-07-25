@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 /**
  * Modal dialog showing a single capture as an album card, with options to
  * copy the card image to clipboard or save it as a PNG.
- * Exported image includes a bottom owner banner and the 28-char card ID.
+ * Exported image includes a bottom owner banner and the card ID.
  */
 public class CardExportDialog extends JDialog {
 
@@ -336,7 +336,13 @@ public class CardExportDialog extends JDialog {
 
     /** Draws 3-line banner: UniqueID + Captured by centred, OSRS|BESTIARY pinned to bottom. */
     static void drawBanner(Graphics2D g2, int bX, int bY, int bannerW, int bannerH, String cardId, String ownerStr) {
-        Font idFont     = FontManager.getRunescapeSmallFont().deriveFont(7f);
+        // Shrink the ID font if the (now longer) ID would overflow the banner width.
+        float idSize = 7f;
+        while (idSize > 4f && FontManager.getRunescapeSmallFont().deriveFont(idSize)
+                .getStringBounds(cardId, g2.getFontRenderContext()).getWidth() > bannerW - 6) {
+            idSize -= 0.25f;
+        }
+        Font idFont     = FontManager.getRunescapeSmallFont().deriveFont(idSize);
         Font playerFont = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 10f);
         Font brandFont  = FontManager.getRunescapeSmallFont().deriveFont(8f);
         g2.setFont(idFont);     FontMetrics ifm = g2.getFontMetrics();

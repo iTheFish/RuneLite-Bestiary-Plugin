@@ -89,33 +89,32 @@ If shiny, the stat generator uses a different, near-max path (stage 4).
 
 `RarityRoller.generateQuality(combatClass, rarity, statBases, rng, shiny)`
 
-Three inputs decide each of the 6 stats (ATK, STR, DEF, MAG, RNG, AGI):
-
-1. **`statBases[i]`** — the monster's floor for that stat (`MonsterRoster.STAT_BASES`, the values
-   you reviewed in `base-stats-review.csv`). This is where every stat *starts*.
-2. **`combatClass`** — labels each stat index as **primary**, **secondary**, or **tertiary**
-   (`CombatClass`). Primary = climbs hard toward 99; secondary = climbs moderately; tertiary =
-   barely moves. (Agility is never primary/tertiary now — it just uses its base.)
-3. **`rarity`** — a single `boost` from 0.0 (Common) to 1.0 (Mythic): `boost = rarity.ordinal() / 5`.
-
-For each stat, a **target** is computed, then the stat is rolled around it:
+The reviewed per-stat bases (`MonsterRoster.STAT_BASES`, from `base-stats-review.csv`) represent an
+**average / Epic** card. Each rarity simply **scales** them by a multiplier, then adds a small wiggle:
 
 ```
-primary   target = base + boost × (99 − base)                 // aims at 99 at Mythic
-secondary target = base + boost × (secondCeil − base)         // secondCeil ≈ base+10..+30
-tertiary  target = base + boost × (tertiCeil − base)          // tertiCeil  ≈ base+5..+15
+centre[i] = round( base[i] × rarity.statMultiplier )
+stat[i]   = clamp( centre[i] + uniform(−3, +3), 1, 99 )        // "wiggle room" RNG
 
-normal capture:  stat = round( target + gaussian(0,1)×7 ), clamped 1..99   // a little randomness
-shiny capture:   stat = round( target ) + random(15..22),   clamped 1..99  // near-max, no dice
+shiny:    centre uses (statMultiplier + 0.20) and takes the top of the band (deterministic best)
 ```
 
-So:
-- **Common** (boost 0) → every stat ≈ its base. **Mythic** (boost 1) → primaries ≈ 99,
-  secondaries near their ceiling, tertiaries barely above base.
-- **Shiny** ignores the gaussian and adds a flat **+15..22** on top of the target, so shinies are
-  always near the top of their band (and announced with the ✦ marker).
+Rarity multipliers (`CreatureRarity.statMultiplier`):
+
+| Common | Uncommon | Rare | **Epic** | Legendary | Mythic |
+|---|---|---|---|---|---|
+| ×0.70 | ×0.80 | ×0.91 | **×1.00** | ×1.09 | ×1.20 |
+
+So a base value ≈ the **Epic** stat; Legendary is +9%, Mythic +20%, and lower rarities scale down
+(floored at 1). Only very high bases (≥ ~83) reach 99 at Mythic, so **Legendary/Mythic no longer
+always max out**. **Combat class is a display label only now** — the per-stat bases already encode
+each monster's offensive profile, so class no longer decides which stat spikes.
 
 The result is a `CreatureQuality` — six ints in 1..99. **These never change after capture.**
+
+**"What were the odds?"** (`OddsCalculator` + `OddsDialog`, button on the export screen) reconstructs
+this exactly: `P(stat = v)` = (number of the 7 wiggle offsets that land on `v`) ÷ 7, multiplied across
+all six stats, times the rarity/shiny chances — and shows the catch chance separately.
 
 ---
 
