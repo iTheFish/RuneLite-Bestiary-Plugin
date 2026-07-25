@@ -40,11 +40,18 @@ public final class OddsCalculator {
         public DifficultyTier difficulty;
         public CreatureRarity rarity;
         public boolean shiny;
-        public double catchChance;    // 0..1 — chance the capture happened at all
-        public double rarityChance;   // 0..1 — chance of this rarity
+        public double catchChance;    // 0..1 — chance a kill yields a capture
+        public double rarityChance;   // 0..1 — chance a capture is this rarity
         public double shinyChance;    // 0..1 — chance of the shiny outcome (shiny or not)
         public List<StatOdds> stats = new ArrayList<>();
-        public double overall;        // rarity × shiny (the stat wiggle is NOT a factor — info only)
+        // Power Level inputs
+        public int statSum;
+        public int hp;
+        public int prayer;
+        public int powerLevel;
+        // Combined odds (stat wiggle is NOT a factor)
+        public double perCapture;     // rarity × shiny  — "of your captures, how often this card"
+        public double perKill;        // catch × rarity × shiny — "how rare was the whole event"
     }
 
     public static Result compute(CapturedCreature c) {
@@ -68,8 +75,15 @@ public final class OddsCalculator {
             r.stats.add(new StatOdds(STAT_NAMES[i], bases[i], vals[i], centre, band[0], band[1]));
         }
 
+        // Power Level inputs
+        r.statSum    = c.quality.statSum();
+        r.hp         = c.hitpoints();
+        r.prayer     = MonsterRoster.getPrayer(c.npcName);
+        r.powerLevel = c.powerLevel();
+
         // Stat wiggle is flavour, not part of "how rare is this card" — only rarity (and shiny) count.
-        r.overall = r.rarityChance * (r.shiny ? r.shinyChance : 1.0);
+        r.perCapture = r.rarityChance * (r.shiny ? r.shinyChance : 1.0);
+        r.perKill    = r.catchChance * r.perCapture;
         return r;
     }
 

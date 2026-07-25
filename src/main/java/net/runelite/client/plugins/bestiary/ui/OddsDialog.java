@@ -77,11 +77,11 @@ public class OddsDialog extends JDialog {
         root.add(statsTable(r, small, smallBold));
 
         JLabel explain = new JLabel("<html><div style='width:" + CONTENT_W + "px'>"
-                + "Each rarity rolls a band around the base: higher rarities lift it toward 99 "
-                + "(the lift is bigger for low stats), lower rarities can dip below it — never under 1. "
-                + "Bands overlap, so a lucky Rare can beat an unlucky Epic. "
-                + "<font color='#a0a0a0'>e.g. base&nbsp;55 &rarr; Rare&nbsp;49–59, Epic&nbsp;51–59, "
-                + "Legendary&nbsp;59–75, Mythic&nbsp;73–90.</font></div></html>");
+                + "Higher rarities lift the roll toward 99 (bigger lift for low stats); lower rarities "
+                + "can dip below the base — never under 1. Bands overlap, so a lucky Rare can beat an "
+                + "unlucky Epic. <font color='#a0a0a0'>Example, base&nbsp;50: Common&nbsp;37–50, "
+                + "Uncommon&nbsp;41–52, Rare&nbsp;45–53, Epic&nbsp;50–61, Legendary&nbsp;56–74, "
+                + "Mythic&nbsp;70–90.</font></div></html>");
         explain.setFont(small);
         explain.setForeground(new Color(140, 140, 140));
         explain.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -90,21 +90,36 @@ public class OddsDialog extends JDialog {
 
         root.add(Box.createVerticalStrut(10));
 
-        // Combined — rarity (× shiny). Stat wiggle is not a factor.
-        Box combined = kvRow("This exact card  (rarity" + (r.shiny ? " × shiny" : "") + ")",
-                smallBold, Color.WHITE, OddsCalculator.oneIn(r.overall));
-        combined.setBorder(BorderFactory.createCompoundBorder(
-                new MatteBorder(1, 0, 0, 0, new Color(70, 70, 70)), new EmptyBorder(7, 0, 0, 0)));
-        combined.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
-        // Recolour the value label (last component) green + bold
-        JLabel val = (JLabel) combined.getComponent(combined.getComponentCount() - 1);
-        val.setFont(FontManager.getRunescapeBoldFont());
-        val.setForeground(new Color(120, 200, 120));
-        root.add(combined);
+        // Power Level derivation
+        root.add(sectionHeader("Power Level"));
+        root.add(kvRow("6 stats total", small, ColorScheme.LIGHT_GRAY_COLOR, String.valueOf(r.statSum)));
+        root.add(kvRow("Hitpoints (factual)", small, new Color(120, 200, 120), String.valueOf(r.hp)));
+        Box plRow = kvRow("= Power Level  (" + r.statSum + " + " + r.hp + ") ÷ 7", smallBold, Color.WHITE,
+                String.valueOf(r.powerLevel));
+        plColour(plRow);
+        root.add(plRow);
+        root.add(kvRow("Prayer (card info)", small, new Color(90, 190, 235), String.valueOf(r.prayer)));
 
-        JLabel note = new JLabel("<html><div style='width:" + CONTENT_W + "px'><i>Stat rolls are flavour "
-                + "and don't affect these odds. The catch gate above is the separate chance the capture "
-                + "happened at all.</i></div></html>");
+        root.add(Box.createVerticalStrut(10));
+
+        // Combined odds — two perspectives. Stat wiggle is not a factor.
+        Box perCap = kvRow("Of your captures" + (r.shiny ? " (rarity × shiny)" : " (this rarity)"),
+                smallBold, Color.WHITE, OddsCalculator.oneIn(r.perCapture));
+        perCap.setBorder(BorderFactory.createCompoundBorder(
+                new MatteBorder(1, 0, 0, 0, new Color(70, 70, 70)), new EmptyBorder(7, 0, 2, 0)));
+        perCap.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
+        plColour(perCap);
+        root.add(perCap);
+
+        Box perKill = kvRow("Per kill (× catch — the whole event)", small, ColorScheme.LIGHT_GRAY_COLOR,
+                OddsCalculator.oneIn(r.perKill));
+        perKill.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
+        root.add(perKill);
+
+        JLabel note = new JLabel("<html><div style='width:" + CONTENT_W + "px'><i>\"Of your captures\" is "
+                + "how often a capture is this rarity at level " + r.level + " — high levels make rarities "
+                + "much more common. \"Per kill\" folds in the catch chance for the true odds of the whole "
+                + "event. Stat rolls are flavour and don't affect either.</i></div></html>");
         note.setFont(small);
         note.setForeground(new Color(130, 130, 130));
         note.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -194,6 +209,13 @@ public class OddsDialog extends JDialog {
             else                { label = "mid roll";  colour = new Color(176, 176, 176); }
         }
         return cell(label, font, colour);
+    }
+
+    /** Recolour a kvRow's value label (last component) bold green. */
+    private static void plColour(Box row) {
+        JLabel v = (JLabel) row.getComponent(row.getComponentCount() - 1);
+        v.setFont(FontManager.getRunescapeBoldFont());
+        v.setForeground(new Color(120, 200, 120));
     }
 
     private static JLabel sectionHeader(String text) {
