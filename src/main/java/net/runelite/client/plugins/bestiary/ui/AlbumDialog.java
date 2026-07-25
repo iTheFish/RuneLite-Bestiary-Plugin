@@ -129,9 +129,13 @@ public class AlbumDialog extends JDialog {
     private JComboBox<String> detailSortBox;
     private JButton           prevPageBtn;
     private JButton           nextPageBtn;
+    private JButton           prevMonsterBtn;
+    private JButton           nextMonsterBtn;
     private JButton                  detailExportBtn;
     private CapturedCreature         detailExportCap  = null;
     private List<CapturedCreature>   detailCurrentPage = Collections.emptyList();
+    /** Captured monster names in the current catalog sort order — drives Prev/Next Monster. */
+    private final List<String> catalogOrder = new ArrayList<>();
 
     public AlbumDialog(Window owner, Map<String, List<CapturedCreature>> capturesByNpc,
                        Map<String, Integer> killCounts, BestiaryCollection collection,
@@ -296,6 +300,26 @@ public class AlbumDialog extends JDialog {
         backBtn.setFocusPainted(false);
         backBtn.addActionListener(e -> showCatalog());
 
+        // Prev/Next Monster — walk the catalog in its current sort order
+        prevMonsterBtn = new JButton("◀");
+        nextMonsterBtn = new JButton("▶");
+        for (JButton nav : new JButton[]{prevMonsterBtn, nextMonsterBtn}) {
+            nav.setFont(FontManager.getRunescapeSmallFont());
+            nav.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+            nav.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+            nav.setFocusPainted(false);
+            nav.setMargin(new Insets(1, 6, 1, 6));
+            nav.setToolTipText("Previous / next monster in album order");
+        }
+        prevMonsterBtn.addActionListener(e -> navigateMonster(-1));
+        nextMonsterBtn.addActionListener(e -> navigateMonster(+1));
+
+        JPanel dRow1West = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        dRow1West.setOpaque(false);
+        dRow1West.add(backBtn);
+        dRow1West.add(prevMonsterBtn);
+        dRow1West.add(nextMonsterBtn);
+
         detailTitleLabel = new JLabel();
         detailTitleLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         detailTitleLabel.setForeground(Color.WHITE);
@@ -342,7 +366,7 @@ public class AlbumDialog extends JDialog {
             dRow1East.add(pb);
         }
 
-        dRow1.add(backBtn,          BorderLayout.WEST);
+        dRow1.add(dRow1West,        BorderLayout.WEST);
         dRow1.add(detailTitleLabel, BorderLayout.CENTER);
         dRow1.add(dRow1East,        BorderLayout.EAST);
 
@@ -478,6 +502,7 @@ public class AlbumDialog extends JDialog {
         detailSortBox.setSelectedItem("Rarity (best)");
         ((CardLayout) topBarHolder.getLayout()).show(topBarHolder, "DETAIL");
         rebuildGrid();
+        updateMonsterNav();
     }
 
     /** Opens the detail pane showing all starred captures (cross-monster). */
@@ -494,6 +519,7 @@ public class AlbumDialog extends JDialog {
         detailSortBox.setSelectedItem("Power (high)");
         ((CardLayout) topBarHolder.getLayout()).show(topBarHolder, "DETAIL");
         rebuildGrid();
+        updateMonsterNav();
     }
 
     /** If the Album is open, switch it to the Favourites detail view and return true. */
@@ -504,6 +530,24 @@ public class AlbumDialog extends JDialog {
             return true;
         }
         return false;
+    }
+
+    /** Steps to the previous/next captured monster in the current catalog order. */
+    private void navigateMonster(int dir) {
+        if (detailMonsterName == null || detailMonsterName.startsWith("★")) return;
+        if (catalogOrder.isEmpty()) return;
+        int idx = catalogOrder.indexOf(detailMonsterName);
+        if (idx < 0) return;
+        int next = (idx + dir + catalogOrder.size()) % catalogOrder.size();
+        showDetail(catalogOrder.get(next));
+    }
+
+    /** Enables Prev/Next Monster only for a real monster with siblings to move to. */
+    private void updateMonsterNav() {
+        boolean on = detailMonsterName != null && !detailMonsterName.startsWith("★")
+                && catalogOrder.size() > 1 && catalogOrder.contains(detailMonsterName);
+        if (prevMonsterBtn != null) prevMonsterBtn.setEnabled(on);
+        if (nextMonsterBtn != null) nextMonsterBtn.setEnabled(on);
     }
 
     private void showCatalog() {
@@ -575,6 +619,10 @@ public class AlbumDialog extends JDialog {
             ordered = new ArrayList<>(visible);
             sortAllMixed(ordered);
         }
+
+        // Remember the captured monsters in display order for Prev/Next Monster navigation
+        catalogOrder.clear();
+        ordered.stream().filter(capturesByNpc::containsKey).forEach(catalogOrder::add);
 
         // Favourites shortcut card — always shown when no search/filter active
         long favCount = capturesByNpc.values().stream().flatMap(List::stream).filter(c -> c.favourite).count();
