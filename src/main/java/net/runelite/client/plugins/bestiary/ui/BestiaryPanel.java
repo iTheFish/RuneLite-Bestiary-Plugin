@@ -64,6 +64,29 @@ public class BestiaryPanel extends PluginPanel {
             refresh();
             AlbumDialog.refreshOpenAlbum();
         }));
+        AlbumCard.setRerollHandler((owner, cap) -> {
+            long cost = net.runelite.client.plugins.bestiary.service.BestiaryDataService.REROLL_COST;
+            if (dataService.getCredits() < cost) {
+                JOptionPane.showMessageDialog(owner,
+                        "You need " + cost + " credits to reroll (you have " + dataService.getCredits() + ").",
+                        "Card Reroller", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+            String label = (cap.isShiny() ? "✦ " : "") + cap.rarity.label + " " + cap.npcName;
+            int choice = JOptionPane.showConfirmDialog(owner,
+                    "Reroll " + label + " for " + cost + " credits?\n"
+                    + "Stats, prayer and shiny are re-rolled at the same rarity.",
+                    "Card Reroller", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+            if (choice != JOptionPane.YES_OPTION) return;
+            net.runelite.client.plugins.bestiary.model.CapturedCreature nc =
+                    dataService.rerollCard(cap, progressionService.getLevel());
+            refresh();
+            AlbumDialog.refreshOpenAlbum();
+            if (nc != null && nc.isShiny()) {
+                JOptionPane.showMessageDialog(owner, "✦ Shiny reroll! " + nc.npcName + " is now shiny.",
+                        "Card Reroller", JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
 
         setLayout(new BorderLayout(0, 6));
         setBackground(ColorScheme.DARK_GRAY_COLOR);

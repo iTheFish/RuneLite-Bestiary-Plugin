@@ -35,6 +35,10 @@ public class AlbumCard extends JPanel {
     private static java.util.function.BiConsumer<java.awt.Component, CapturedCreature> discardHandler;
     public static void setDiscardHandler(java.util.function.BiConsumer<java.awt.Component, CapturedCreature> h) { discardHandler = h; }
 
+    /** Reroll hook (shop POC): (menu owner, capture) → confirm + reroll. Wired by BestiaryPanel. */
+    private static java.util.function.BiConsumer<java.awt.Component, CapturedCreature> rerollHandler;
+    public static void setRerollHandler(java.util.function.BiConsumer<java.awt.Component, CapturedCreature> h) { rerollHandler = h; }
+
     // Real in-game skill sprites (HP/Prayer/combat stats), supplied by RuneLite at startup.
     private static net.runelite.client.game.SkillIconManager skillIcons;
     private static final java.util.Map<net.runelite.api.Skill, BufferedImage> ICON_CACHE = new java.util.HashMap<>();
@@ -409,12 +413,21 @@ public class AlbumCard extends JPanel {
                     }));
                     menu.add(nickItem);
                 }
-                if (discardHandler != null && !locked && captures != null && captures.size() == 1) {
+                if (!locked && captures != null && captures.size() == 1
+                        && (discardHandler != null || rerollHandler != null)) {
                     menu.addSeparator();
-                    JMenuItem discardItem = new JMenuItem("Discard…");
-                    discardItem.setForeground(new Color(224, 112, 112));
-                    discardItem.addActionListener(ev -> discardHandler.accept(AlbumCard.this, captures.get(0)));
-                    menu.add(discardItem);
+                    if (rerollHandler != null) {
+                        JMenuItem rerollItem = new JMenuItem("Reroll (shop)…");
+                        rerollItem.setForeground(new Color(120, 200, 120));
+                        rerollItem.addActionListener(ev -> rerollHandler.accept(AlbumCard.this, captures.get(0)));
+                        menu.add(rerollItem);
+                    }
+                    if (discardHandler != null) {
+                        JMenuItem discardItem = new JMenuItem("Discard…");
+                        discardItem.setForeground(new Color(224, 112, 112));
+                        discardItem.addActionListener(ev -> discardHandler.accept(AlbumCard.this, captures.get(0)));
+                        menu.add(discardItem);
+                    }
                 }
                 menu.show(AlbumCard.this, e.getX(), e.getY());
             }

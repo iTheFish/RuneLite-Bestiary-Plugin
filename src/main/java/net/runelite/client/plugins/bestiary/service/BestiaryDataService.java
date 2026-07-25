@@ -175,6 +175,54 @@ public class BestiaryDataService {
     }
 
     // -------------------------------------------------------------------------
+    // Shop (POC)
+    // -------------------------------------------------------------------------
+
+    /** Cost of one "Card Reroller" use. */
+    public static final long REROLL_COST = 5000L;
+
+    private final Random rerollRng = new Random();
+
+    /** Deducts credits if affordable; persists. Returns false if too poor. */
+    public boolean spendCredits(long amount) {
+        if (collection.credits < amount) return false;
+        collection.credits -= amount;
+        db.setMetadata(META_CREDITS, String.valueOf(collection.credits));
+        return true;
+    }
+
+    /**
+     * Card Reroller (shop POC): for {@link #REROLL_COST} credits, re-rolls a card's stats,
+     * prayer and shiny at the SAME rarity/monster (a chance to improve stats or hit shiny).
+     * Keeps id + metadata (favourite/nickname/album-cover/observed HP). Returns the new
+     * card, or null if the player can't afford it.
+     */
+    public CapturedCreature rerollCard(CapturedCreature c, int currentLevel) {
+        if (!spendCredits(REROLL_COST)) return null;
+        net.runelite.client.plugins.bestiary.model.CombatClass cls =
+                net.runelite.client.plugins.bestiary.model.MonsterRoster.getCombatClass(c.npcName, c.npcCombatLevel);
+        int[] bases = net.runelite.client.plugins.bestiary.model.MonsterRoster.getStatBases(c.npcName, c.npcCombatLevel);
+        boolean shiny = rerollRng.nextDouble() < CaptureService.shinyChance(currentLevel);
+        net.runelite.client.plugins.bestiary.model.CreatureQuality q =
+                net.runelite.client.plugins.bestiary.util.RarityRoller.generateQuality(cls, c.rarity, bases, rerollRng, shiny);
+        int prayer = net.runelite.client.plugins.bestiary.util.RarityRoller.rollPrayer(
+                net.runelite.client.plugins.bestiary.model.MonsterRoster.getPrayer(c.npcName), c.rarity, rerollRng, shiny);
+        CapturedCreature nc = CapturedCreature.builder()
+                .id(c.id).npcId(c.npcId).npcName(c.npcName).npcCombatLevel(c.npcCombatLevel)
+                .rarity(c.rarity).quality(q).captureTime(c.captureTime).regionName(c.regionName)
+                .captureLevel(c.captureLevel).killsBeforeCapture(c.killsBeforeCapture)
+                .playerName(c.playerName).shiny(shiny).prayer(prayer).observedHp(c.observedHp)
+                .build();
+        nc.favourite  = c.favourite;
+        nc.nickname   = c.nickname;
+        nc.albumCover = c.albumCover;
+        collection.removeCapture(c);
+        collection.addCapture(nc);
+        db.insertCapture(nc);   // INSERT OR REPLACE keyed on id
+        return nc;
+    }
+
+    // -------------------------------------------------------------------------
     // Dev tools
     // -------------------------------------------------------------------------
 
