@@ -108,18 +108,14 @@ public class OddsDialog extends JDialog {
         JPanel root = buildBody(htmlW);
         scroll.setViewportView(root);
 
-        if (firstBuild) {
-            Dimension pref = root.getPreferredSize();
-            Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
-            int w = Math.max(360, Math.min(660, pref.width + 30));
-            int h = Math.min((int) (screen.height * 0.9), pref.height + 46);
-            scroll.setPreferredSize(new Dimension(w, h));
-            pack();
-        } else {
-            root.revalidate();
-            scroll.revalidate();
-            scroll.repaint();
-        }
+        // Always resize the window to fit the content at the current zoom, so nothing clips —
+        // the window grows/shrinks with zoom (paragraphs wrap; rows/table stay fully visible).
+        Dimension pref = root.getPreferredSize();
+        Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+        int w = Math.max(360, Math.min(screen.width - 80, pref.width + 30));
+        int h = Math.min(screen.height - 120, pref.height + 8);
+        scroll.setPreferredSize(new Dimension(w, h));
+        pack();
     }
 
     private JPanel buildBody(int htmlW) {
