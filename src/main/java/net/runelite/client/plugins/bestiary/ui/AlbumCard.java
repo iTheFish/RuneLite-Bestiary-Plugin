@@ -31,6 +31,17 @@ public class AlbumCard extends JPanel {
     private static BestiaryConfig sharedConfig;
     public static void setConfig(BestiaryConfig cfg) { sharedConfig = cfg; }
 
+    // Real in-game skill sprites (HP/Prayer/combat stats), supplied by RuneLite at startup.
+    private static net.runelite.client.game.SkillIconManager skillIcons;
+    private static final java.util.Map<net.runelite.api.Skill, BufferedImage> ICON_CACHE = new java.util.HashMap<>();
+    public static void setSkillIconManager(net.runelite.client.game.SkillIconManager m) { skillIcons = m; }
+
+    @Nullable
+    private static BufferedImage skillImg(net.runelite.api.Skill skill) {
+        if (skillIcons == null) return null;
+        return ICON_CACHE.computeIfAbsent(skill, s -> skillIcons.getSkillImage(s, true));
+    }
+
     public static final int CARD_W = 165;
     public static final int CARD_H = 300;
 
@@ -823,13 +834,24 @@ public class AlbumCard extends JPanel {
         g.setStroke(new BasicStroke(1f));
         g.drawRoundRect(x, y, w - 1, h - 1, 5, 5);
 
-        int iconSize = h - 8;
+        int iconSize = h - 4;
         int iconX = x + 5;
         int iconY = y + (h - iconSize) / 2;
-        Color iconCol = locked ? new Color(70, 70, 70)
-                : type == IconType.HP ? new Color(220, 60, 60) : new Color(90, 190, 235);
-        if (type == IconType.HP) drawHeartIcon(g, iconX, iconY, iconSize, iconCol);
-        else                     drawPrayerIcon(g, iconX, iconY, iconSize, iconCol);
+        BufferedImage sprite = skillImg(type == IconType.HP
+                ? net.runelite.api.Skill.HITPOINTS : net.runelite.api.Skill.PRAYER);
+        if (sprite != null) {
+            Graphics2D gi = (Graphics2D) g.create();
+            gi.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            if (locked) gi.setComposite(java.awt.AlphaComposite.getInstance(java.awt.AlphaComposite.SRC_OVER, 0.4f));
+            gi.drawImage(sprite, iconX, iconY, iconSize, iconSize, null);
+            gi.dispose();
+        } else {
+            // Fallback if the sprite manager isn't wired yet
+            Color iconCol = locked ? new Color(70, 70, 70)
+                    : type == IconType.HP ? new Color(220, 60, 60) : new Color(90, 190, 235);
+            if (type == IconType.HP) drawHeartIcon(g, iconX, iconY, iconSize, iconCol);
+            else                     drawPrayerIcon(g, iconX, iconY, iconSize, iconCol);
+        }
 
         g.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         FontMetrics fm = g.getFontMetrics();

@@ -36,7 +36,8 @@ public class BestiaryPanel extends PluginPanel {
     @Inject
     public BestiaryPanel(BestiaryDataService dataService, ProgressionService progressionService,
                          WikiImageService imageService, BestiaryConfig config,
-                         SessionTracker sessionTracker) {
+                         SessionTracker sessionTracker,
+                         net.runelite.client.game.SkillIconManager skillIconManager) {
         super(false); // false = don't auto-wrap in scroll pane
         this.dataService        = dataService;
         this.progressionService = progressionService;
@@ -46,6 +47,7 @@ public class BestiaryPanel extends PluginPanel {
         CardExportDialog.setShared(imageService, dataService::getCollection);
         CardExportDialog.setOnMutate(() -> { dataService.saveNow(); refresh(); });
         AlbumCard.setConfig(config);
+        AlbumCard.setSkillIconManager(skillIconManager);
 
         setLayout(new BorderLayout(0, 6));
         setBackground(ColorScheme.DARK_GRAY_COLOR);
