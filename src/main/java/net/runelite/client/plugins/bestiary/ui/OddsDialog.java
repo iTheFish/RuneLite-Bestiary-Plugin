@@ -76,6 +76,18 @@ public class OddsDialog extends JDialog {
         root.add(sectionHeader(statHdr));
         root.add(statsTable(r, small, smallBold));
 
+        JLabel explain = new JLabel("<html><div style='width:" + CONTENT_W + "px'>"
+                + "Each rarity rolls a band around the base: higher rarities lift it toward 99 "
+                + "(the lift is bigger for low stats), lower rarities can dip below it — never under 1. "
+                + "Bands overlap, so a lucky Rare can beat an unlucky Epic. "
+                + "<font color='#a0a0a0'>e.g. base&nbsp;55 &rarr; Rare&nbsp;49–59, Epic&nbsp;51–59, "
+                + "Legendary&nbsp;59–75, Mythic&nbsp;73–90.</font></div></html>");
+        explain.setFont(small);
+        explain.setForeground(new Color(140, 140, 140));
+        explain.setAlignmentX(Component.LEFT_ALIGNMENT);
+        explain.setBorder(new EmptyBorder(6, 0, 0, 0));
+        root.add(explain);
+
         root.add(Box.createVerticalStrut(10));
 
         // Combined — rarity (× shiny). Stat wiggle is not a factor.
@@ -132,10 +144,10 @@ public class OddsDialog extends JDialog {
         GridBagConstraints g = new GridBagConstraints();
         g.insets = new Insets(1, 0, 1, 14);
 
-        String[] heads = {"Stat", "Roll", r.shiny ? "Expected" : "Band", r.shiny ? "" : "Quality"};
+        String[] heads = {"Stat", "Base", "Roll", r.shiny ? "Expected" : "Band", r.shiny ? "" : "Quality"};
         for (int c = 0; c < heads.length; c++) {
             g.gridx = c; g.gridy = 0;
-            g.anchor = (c == 1) ? GridBagConstraints.EAST : GridBagConstraints.WEST;
+            g.anchor = (c == 1 || c == 2) ? GridBagConstraints.EAST : GridBagConstraints.WEST;
             t.add(cell(heads[c], small.deriveFont(Font.BOLD), new Color(140, 140, 140)), g);
         }
 
@@ -145,11 +157,13 @@ public class OddsDialog extends JDialog {
             g.gridx = 0; g.anchor = GridBagConstraints.WEST;
             t.add(cell(s.name, small, new Color(210, 210, 210)), g);
             g.gridx = 1; g.anchor = GridBagConstraints.EAST;
+            t.add(cell(String.valueOf(s.base), small, new Color(150, 150, 150)), g);
+            g.gridx = 2; g.anchor = GridBagConstraints.EAST;
             t.add(cell(String.valueOf(s.value), smallBold, Color.WHITE), g);
-            g.gridx = 2; g.anchor = GridBagConstraints.WEST;
+            g.gridx = 3; g.anchor = GridBagConstraints.WEST;
             t.add(cell(r.shiny ? String.valueOf(s.centre) : s.lo + "–" + s.hi, small,
                     ColorScheme.LIGHT_GRAY_COLOR), g);
-            g.gridx = 3; g.anchor = GridBagConstraints.WEST;
+            g.gridx = 4; g.anchor = GridBagConstraints.WEST;
             if (r.shiny) {
                 t.add(cell("shiny", small, new Color(255, 215, 0)), g);
             } else {
