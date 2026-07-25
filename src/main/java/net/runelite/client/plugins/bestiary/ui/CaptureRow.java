@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 /**
  * Compact two-row row representing a single capture in Individual view mode.
  * Top: NPC name (left) | rarity (right)
- * Bot: combat level (left) | Q + region + date (right)
+ * Bot: Power (left) | region + date (right). Combat level is in the tooltip.
  */
 public class CaptureRow extends JPanel {
 
@@ -61,41 +61,33 @@ public class CaptureRow extends JPanel {
         topRow.add(nameLabel,   BorderLayout.CENTER);
         topRow.add(rarityLabel, BorderLayout.EAST);
 
-        // Bottom row: combat level left | Q + region + date right
+        // Bottom row: Power (left, roomy) | region + date right. Combat level moves to the tooltip.
         JPanel botRow = new JPanel(new BorderLayout(4, 0));
         botRow.setOpaque(false);
-
-        String levelText = capture.npcCombatLevel > 0 ? "Lvl " + capture.npcCombatLevel : "Non-cb";
-        JLabel levelLabel = new JLabel(levelText);
-        levelLabel.setFont(FontManager.getRunescapeSmallFont());
-        levelLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 
         int q      = capture.powerLevel();
         String reg = shorten(capture.regionName, 16);
         String dt  = DATE_FMT.format(capture.captureTime);
 
-        // Quality in gold, location + date in same muted tone as level label
-        JLabel qualLabel = new JLabel("PWR:" + q);
-        qualLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
-        qualLabel.setForeground(capture.rarity.displayColor);
+        // Power in rarity colour, location + date in a muted tone
+        JLabel powerLabel = new JLabel("P:" + q);
+        powerLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        powerLabel.setForeground(capture.rarity.displayColor);
 
-        JLabel locDateLabel = new JLabel("  " + reg + "  " + dt);
+        JLabel locDateLabel = new JLabel(reg + "  " + dt);
         locDateLabel.setFont(FontManager.getRunescapeSmallFont());
         locDateLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 
-        JPanel statsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-        statsPanel.setOpaque(false);
-        statsPanel.add(qualLabel);
-        statsPanel.add(locDateLabel);
-
-        botRow.add(levelLabel,  BorderLayout.WEST);
-        botRow.add(statsPanel,  BorderLayout.EAST);
+        botRow.add(powerLabel,   BorderLayout.WEST);
+        botRow.add(locDateLabel, BorderLayout.EAST);
 
         add(topRow);
         add(botRow);
 
+        String lvlText = capture.npcCombatLevel > 0 ? "Combat level " + capture.npcCombatLevel : "Non-combat";
         setToolTipText(String.format(
-                "<html>ATK:%d&nbsp;&nbsp;STR:%d&nbsp;&nbsp;DEF:%d<br>MAG:%d&nbsp;&nbsp;RNG:%d&nbsp;&nbsp;AGI:%d</html>",
+                "<html>%s<br>ATK:%d&nbsp;&nbsp;STR:%d&nbsp;&nbsp;DEF:%d<br>MAG:%d&nbsp;&nbsp;RNG:%d&nbsp;&nbsp;AGI:%d</html>",
+                lvlText,
                 capture.quality.attack, capture.quality.strength, capture.quality.defence,
                 capture.quality.magic, capture.quality.ranged, capture.quality.agility));
 

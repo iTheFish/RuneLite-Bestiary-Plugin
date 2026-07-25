@@ -1143,6 +1143,60 @@ public class MonsterRoster {
         return HITPOINTS.getOrDefault(npcName, DEFAULT_HP);
     }
 
+    // -------------------------------------------------------------------------
+    // Per-monster Prayer level — factual card info. Almost every monster has 1;
+    // only monsters that actually use/have a notable Prayer level are listed.
+    // -------------------------------------------------------------------------
+
+    private static final Map<String, Integer> PRAYER;
+    static {
+        Map<String, Integer> p = new HashMap<>();
+        // Barrows brothers — all pray
+        p.put("Ahrim the Blighted",  70);
+        p.put("Dharok the Wretched", 70);
+        p.put("Guthan the Infested", 70);
+        p.put("Karil the Tainted",   70);
+        p.put("Torag the Corrupted", 70);
+        p.put("Verac the Defiled",   70);
+        // Prayer-flicking / overhead-using monsters & bosses
+        p.put("Vet'ion",             99);
+        p.put("Calvar'ion",          70);
+        p.put("Callisto",            60);
+        p.put("Venenatis",           60);
+        p.put("Spiritual warrior",   50);
+        p.put("Spiritual mage",      50);
+        p.put("Spiritual ranger",    50);
+        p.put("Commander Zilyana",   99);
+        p.put("General Graardor",    50);
+        p.put("K'ril Tsutsaroth",    70);
+        p.put("Kree'arra",           60);
+        p.put("Nex",                 99);
+        p.put("Zulrah",              60);
+        p.put("Vorkath",             60);
+        p.put("Great Olm",           99);
+        p.put("Sotetseg",            80);
+        p.put("Verzik Vitur",        99);
+        p.put("The Nightmare",       80);
+        p.put("Phosani's Nightmare", 80);
+        p.put("Phantom Muspah",      70);
+        p.put("Duke Sucellus",       70);
+        p.put("The Leviathan",       80);
+        p.put("Vardorvis",           80);
+        p.put("The Whisperer",       90);
+        p.put("Sol Heredit",         80);
+        p.put("TzKal-Zuk",           70);
+        p.put("Lizardman shaman",    40);
+        PRAYER = Collections.unmodifiableMap(p);
+    }
+
+    /**
+     * Returns the monster's Prayer level — a factual card attribute. Almost all
+     * monsters default to 1; only listed prayer-using monsters differ.
+     */
+    public static int getPrayer(String npcName) {
+        return PRAYER.getOrDefault(npcName, 1);
+    }
+
     /** Assigns stable alphabetical dex numbers to the full roster. */
     public static Map<String, Integer> assignDexNumbers(List<String> fullRoster) {
         Map<String, Integer> nums = new LinkedHashMap<>();

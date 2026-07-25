@@ -43,12 +43,15 @@ public class AlbumCard extends JPanel {
     private static final int HEADER_Y = 6;
     private static final int HEADER_H = 14;
     private static final int IMAGE_Y  = HEADER_Y + HEADER_H + 4;
-    private static final int IMAGE_H  = 130;
+    private static final int IMAGE_H  = 110;
     private static final int NAME_Y   = IMAGE_Y + IMAGE_H + 4;
     private static final int NAME_H   = 20;
     private static final int COMBAT_Y = NAME_Y + NAME_H;
     private static final int COMBAT_H = 14;
-    private static final int STATS_Y  = COMBAT_Y + COMBAT_H + 3;
+    // Attribute pill band (HP + Prayer) sits between the sub-name row and the stat block.
+    private static final int ATTR_Y   = COMBAT_Y + COMBAT_H + 3;
+    private static final int ATTR_H   = 18;
+    private static final int STATS_Y  = ATTR_Y + ATTR_H + 2;
 
     private static final Color NORMAL_BG      = new Color(38, 38, 38);
     private static final Color HOVER_BG       = new Color(52, 52, 52);
@@ -494,13 +497,7 @@ public class AlbumCard extends JPanel {
             g2.setColor(textOn(band));
             g2.drawString(pText, pillX + pillPadX,
                     pillY2 + (pillH2 + dfm.getAscent() - dfm.getDescent()) / 2);
-
-            // HP — factual attribute, muted text just left of the Power pill
-            String hpStr = net.runelite.client.plugins.bestiary.model.MonsterRoster.getHitpoints(npcName) + " HP";
-            int hpX = pillX - 5 - dfm.stringWidth(hpStr);
-            g2.setColor(new Color(150, 150, 150));
-            g2.drawString(hpStr, hpX, dexY);
-            dexX = hpX;
+            dexX = pillX;
         }
         if (hasShiny) {
             String star = "✦";
@@ -663,6 +660,19 @@ public class AlbumCard extends JPanel {
             g2.drawString(killStr, imgX + 2, subBaseline);
         }
 
+        // --- Attribute pills: HP (left half) + Prayer (right half) ---
+        // Factual monster info, drawn with small in-game-style icons instead of text labels.
+        {
+            int gap = 4;
+            int totalW = imgW;
+            int halfW = (totalW - gap) / 2;
+            int aY = ATTR_Y;
+            int hp = net.runelite.client.plugins.bestiary.model.MonsterRoster.getHitpoints(npcName);
+            int prayer = net.runelite.client.plugins.bestiary.model.MonsterRoster.getPrayer(npcName);
+            drawAttrPill(g2, imgX, aY, halfW, ATTR_H, IconType.HP, String.valueOf(hp), locked);
+            drawAttrPill(g2, imgX + halfW + gap, aY, halfW, ATTR_H, IconType.PRAYER, String.valueOf(prayer), locked);
+        }
+
         // --- Stat bars (captured) / empty outlines (locked) ---
         g2.setFont(smallFont);
         sfm = g2.getFontMetrics();
@@ -794,5 +804,64 @@ public class AlbumCard extends JPanel {
     private static Color textOn(Color bg) {
         double lum = 0.299 * bg.getRed() + 0.587 * bg.getGreen() + 0.114 * bg.getBlue();
         return lum > 150 ? new Color(25, 25, 25) : Color.WHITE;
+    }
+
+    private enum IconType { HP, PRAYER }
+
+    /** Draws a dark rounded pill with an in-game-style icon and a value. */
+    private static void drawAttrPill(Graphics2D g, int x, int y, int w, int h,
+                                     IconType type, String value, boolean locked) {
+        g.setColor(locked ? new Color(24, 24, 24) : new Color(30, 30, 30));
+        g.fillRoundRect(x, y, w, h, 5, 5);
+        g.setColor(locked ? new Color(40, 40, 40) : new Color(55, 55, 55));
+        g.setStroke(new BasicStroke(1f));
+        g.drawRoundRect(x, y, w - 1, h - 1, 5, 5);
+
+        int iconSize = h - 8;
+        int iconX = x + 5;
+        int iconY = y + (h - iconSize) / 2;
+        Color iconCol = locked ? new Color(70, 70, 70)
+                : type == IconType.HP ? new Color(220, 60, 60) : new Color(90, 190, 235);
+        if (type == IconType.HP) drawHeartIcon(g, iconX, iconY, iconSize, iconCol);
+        else                     drawPrayerIcon(g, iconX, iconY, iconSize, iconCol);
+
+        g.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        FontMetrics fm = g.getFontMetrics();
+        g.setColor(locked ? new Color(90, 90, 90) : Color.WHITE);
+        g.drawString(value, iconX + iconSize + 4,
+                y + (h + fm.getAscent() - fm.getDescent()) / 2);
+    }
+
+    /** Red heart, OSRS hitpoints-style. */
+    private static void drawHeartIcon(Graphics2D g, int x, int y, int s, Color c) {
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setColor(c);
+        float w = s, h = s;
+        java.awt.geom.Path2D.Float p = new java.awt.geom.Path2D.Float();
+        p.moveTo(x + w / 2, y + h * 0.82f);
+        p.curveTo(x - w * 0.05f, y + h * 0.34f, x + w * 0.18f, y + h * 0.02f, x + w / 2, y + h * 0.30f);
+        p.curveTo(x + w * 0.82f, y + h * 0.02f, x + w * 1.05f, y + h * 0.34f, x + w / 2, y + h * 0.82f);
+        p.closePath();
+        g2.fill(p);
+        g2.dispose();
+    }
+
+    /** Light-blue teardrop, evoking the OSRS prayer orb. */
+    private static void drawPrayerIcon(Graphics2D g, int x, int y, int s, Color c) {
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setColor(c);
+        float w = s, h = s;
+        java.awt.geom.Path2D.Float p = new java.awt.geom.Path2D.Float();
+        p.moveTo(x + w / 2, y);
+        p.curveTo(x + w * 0.98f, y + h * 0.55f, x + w * 0.80f, y + h, x + w / 2, y + h);
+        p.curveTo(x + w * 0.20f, y + h, x + w * 0.02f, y + h * 0.55f, x + w / 2, y);
+        p.closePath();
+        g2.fill(p);
+        // soft inner highlight
+        g2.setColor(new Color(255, 255, 255, 90));
+        g2.fill(new java.awt.geom.Ellipse2D.Float(x + w * 0.42f, y + h * 0.45f, w * 0.22f, h * 0.30f));
+        g2.dispose();
     }
 }
