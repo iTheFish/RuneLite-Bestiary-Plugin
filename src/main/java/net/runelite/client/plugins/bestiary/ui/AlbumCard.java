@@ -900,11 +900,21 @@ public class AlbumCard extends JPanel {
             }
         }
 
-        g.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
-        FontMetrics fm = g.getFontMetrics();
+        // Value text — shrink the font to fit the remaining pill width so large HP
+        // (4-5 digits) never overflows into the neighbouring pill.
+        int textX = iconX + iconSize + 3;
+        int avail = (x + w) - 4 - textX;
+        Font vf = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD);
+        FontMetrics fm = g.getFontMetrics(vf);
+        float vs = vf.getSize2D();
+        while (fm.stringWidth(value) > avail && vs > 7f) {
+            vs -= 0.5f;
+            vf = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, vs);
+            fm = g.getFontMetrics(vf);
+        }
+        g.setFont(vf);
         g.setColor(locked ? new Color(90, 90, 90) : Color.WHITE);
-        g.drawString(value, iconX + iconSize + 4,
-                y + (h + fm.getAscent() - fm.getDescent()) / 2);
+        g.drawString(value, textX, y + (h + fm.getAscent() - fm.getDescent()) / 2);
     }
 
     /** Red heart, OSRS hitpoints-style. */

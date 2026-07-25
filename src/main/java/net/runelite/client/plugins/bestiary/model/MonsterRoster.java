@@ -88,7 +88,7 @@ public class MonsterRoster {
         "Green dragon", "Blue dragon", "Red dragon", "Black dragon", "Lava dragon",
         "Bronze dragon", "Iron dragon", "Steel dragon",
         "Mithril dragon", "Adamant dragon", "Rune dragon",
-        "Brutal black dragon", "Brutal red dragon", "Brutal blue dragon", "Brutal green dragon",
+        "Brutal black dragon", "Brutal red dragon", "Brutal blue dragon", "Brutal green dragon","Abyssal Sire",
 
         // === Wilderness / other ===
         "Dark warrior",
@@ -309,12 +309,12 @@ public class MonsterRoster {
             "Vampyre","Feral vampyre","Dagannoth","Cave horror","Vyrewatch","Hellhound",
             "Troll","Mountain troll","Ice troll","Zombie pirate","Dharok the Wretched",
             "Guthan the Infested","Verac the Defiled","Baby blue dragon","Baby green dragon",
-            "Scorpia","Ba-Ba","Desert lizard","King scorpion"
+            "Scorpia","Ba-Ba","Suqah","Desert lizard","King scorpion"
         )) { a.put(n, WARRIOR); }
 
         // JUGGERNAUT - melee + high defence (tanky)
         for (String n : Arrays.asList(
-            "Lesser demon","Greater demon","Fire giant","Ice giant","Gargoyle","Basilisk",
+            "Lesser demon","Greater demon","Black demon","Fire giant","Ice giant","Gargoyle","Basilisk",
             "Basilisk knight","Kalphite guardian","Rock crab","Sand crab","Swamp crab",
             "Gemstone crab","Tortoise","Warped tortoise","Bloodveld","Mutated bloodveld",
             "Torag the Corrupted","Giant Mole","Callisto","Artio","Corporeal Beast",
@@ -337,8 +337,8 @@ public class MonsterRoster {
 
         // BATTLEMAGE - melee + magic
         for (String n : Arrays.asList(
-            "Black demon","King Black Dragon","Bryophyta","Vet'ion","Calvar'ion",
-            "Commander Zilyana","Venenatis","Spindel","Drake","Wyrm","Dark beast","Suqah",
+            "King Black Dragon","Bryophyta","Vet'ion","Calvar'ion",
+            "Commander Zilyana","Venenatis","Spindel","Drake","Wyrm","Dark beast",
             "Jelly","Warped jelly","Green dragon","Blue dragon","Red dragon","Black dragon",
             "Lava dragon","Bronze dragon","Iron dragon","Steel dragon","Brutal black dragon",
             "Brutal red dragon","Brutal blue dragon","Brutal green dragon"
@@ -346,7 +346,7 @@ public class MonsterRoster {
 
         // WARDEN - melee + ranged
         for (String n : Arrays.asList(
-            "Sarachnis","Obor","Araxxor","Abyssal Sire"
+            "Sarachnis","Obor","Araxxor"
         )) { a.put(n, WARDEN); }
 
         // OCCULTIST - magic + ranged
@@ -378,204 +378,203 @@ public class MonsterRoster {
     private static final Map<String, int[]> STAT_BASES;
     static {
         Map<String, int[]> b = new HashMap<>();
-        // F2P / Early game
-        b.put("Chicken",             new int[]{ 1,  1,  1,  1,  1, 45});
-        b.put("Cow",                 new int[]{ 1,  1,  1,  1,  1, 30});
-        b.put("Cow calf",            new int[]{ 1,  1,  1,  1,  1, 45});
-        b.put("Duck",                new int[]{ 1,  1,  1,  1,  1, 60});
-        b.put("Ram",                 new int[]{ 1,  1,  1,  1,  1, 45});
-        b.put("Seagull",             new int[]{ 1,  1,  1,  1,  1, 75});
-        b.put("Man",                 new int[]{ 1,  1,  1,  1,  1, 45});
-        b.put("Woman",               new int[]{ 1,  1,  1,  1,  1, 45});
-        b.put("Farmer",              new int[]{ 1,  1,  2,  1,  1, 30});
-        b.put("Goblin",              new int[]{ 1,  1,  1,  1,  1, 60});
-        b.put("Guard",               new int[]{ 5,  5,  4,  1,  1, 45});
-        b.put("Rat",                 new int[]{ 1,  1,  1,  1,  1, 75});
-        b.put("Giant rat",           new int[]{ 1,  1,  1,  1,  1, 60});
-        b.put("Imp",                 new int[]{ 1,  1,  1,  1,  1, 90});
-        b.put("Zombie",              new int[]{ 2,  3,  3,  1,  1, 15});
-        b.put("Skeleton",            new int[]{ 5,  5,  5,  1,  1, 30});
-        b.put("Ghost",               new int[]{ 4,  4,  5,  1,  1, 60});
-        b.put("Barbarian",           new int[]{ 2,  2,  1,  1,  1, 60});
-        b.put("Warrior",             new int[]{ 2,  2,  1,  1,  1, 60});
-        b.put("Wizard",              new int[]{ 2,  2,  2,  3,  1, 45});
-        b.put("Dark wizard",         new int[]{ 5,  5,  4,  7,  1, 45});
-        b.put("Minotaur",            new int[]{ 7,  8,  8,  1,  1, 30});
-        b.put("Bear",                new int[]{ 5,  5,  5,  1,  1, 30});
-        b.put("Grizzly bear",        new int[]{12, 11, 11,  1,  1, 30});
-        b.put("Unicorn",             new int[]{ 3,  4,  4,  1,  1, 75});
-        b.put("Spider",              new int[]{ 1,  1,  1,  1,  1, 75});
-        b.put("Giant spider",        new int[]{ 6,  7,  6,  1,  1, 45});
-        b.put("Scorpion",            new int[]{ 3,  4,  3,  1,  1, 60});
-        b.put("Hill giant",          new int[]{ 5,  7,  8,  1,  1, 15});
-        b.put("Moss giant",          new int[]{ 9,  9,  9,  1,  1, 15});
-        b.put("Fire giant",          new int[]{20, 20, 20,  1,  1, 15});
-        b.put("Ice giant",           new int[]{12, 12, 12,  1,  1, 15});
-        b.put("Earth warrior",       new int[]{13, 13, 13,  1,  1, 30});
-        b.put("Lesser demon",        new int[]{20, 21, 21,  1,  1, 30});
-        b.put("Greater demon",       new int[]{23, 23, 24,  1,  1, 30});
-        b.put("Black demon",         new int[]{44, 44, 46,  1,  1, 30});
-        b.put("Black knight",        new int[]{ 8,  8,  8,  1,  1, 30});
-        b.put("White knight",        new int[]{ 8,  9,  6,  1,  1, 30});
-        b.put("Hobgoblin",           new int[]{ 7,  7,  7,  1,  1, 45});
-        b.put("Chaos druid",         new int[]{ 2,  2,  4,  3,  1, 45});
-        b.put("Rock crab",           new int[]{ 1,  1,  1,  1,  1, 15});
-        b.put("Sand crab",           new int[]{ 1,  1,  1,  1,  1, 15});
-        b.put("Swamp crab",          new int[]{ 1,  1, 15, 15,  1, 15});
-        b.put("Gemstone crab",       new int[]{ 1,  1,  1,  1,  1, 33});
-        b.put("Pirate",              new int[]{ 6,  6,  6,  1,  1, 45});
-        b.put("Rogue",               new int[]{ 4,  4,  4,  1,  1, 75});
-        // Slayer monsters
-        b.put("Abyssal demon",       new int[]{29, 20, 41,  1,  1, 60});
-        b.put("Aberrant spectre",    new int[]{ 1,  1, 27, 32,  1, 45});
-        b.put("Deviant spectre",     new int[]{ 1,  1, 27, 62,  1, 45});
-        b.put("Ankou",               new int[]{21, 21, 18,  1,  1, 30});
-        b.put("Banshee",             new int[]{ 7,  5,  7,  1,  1, 30});
-        b.put("Twisted banshee",     new int[]{23, 26, 15,  1,  1, 30});
-        b.put("Basilisk",            new int[]{ 9, 14, 23,  1,  1, 30});
-        b.put("Basilisk knight",     new int[]{51, 39, 60,  1,  1, 30});
-        b.put("Bloodveld",           new int[]{23, 14,  9,  1,  1, 45});
-        b.put("Mutated bloodveld",   new int[]{33, 35,  9,  1,  1, 45});
-        b.put("Cave bug",            new int[]{ 2,  2,  2,  1,  1, 60});
-        b.put("Cave crawler",        new int[]{ 7,  5,  5,  1,  1, 45});
-        b.put("Cave slime",          new int[]{ 4,  4, 11,  4,  1, 30});
-        b.put("Cave horror",         new int[]{24, 23, 19, 24,  1, 45});
-        b.put("Dagannoth",           new int[]{20, 21, 15,  1,  1, 60});
-        b.put("Dark beast",          new int[]{42, 48, 36, 48,  1, 30});
-        b.put("Drake",               new int[]{42, 35, 36, 34, 42, 45});
-        b.put("Dust devil",          new int[]{32, 21, 12,  1,  1, 60});
-        b.put("Fever spider",        new int[]{18,  9, 12,  1,  1, 60});
-        b.put("Fleshcrawler",        new int[]{18,  1,  3,  1,  1, 60});
-        b.put("Gargoyle",            new int[]{23, 32, 32,  1,  1, 30});
-        b.put("Hellhound",           new int[]{32, 31, 31,  1,  1, 45});
-        b.put("Hydra",               new int[]{ 1,  1, 30, 63, 63, 30});
-        b.put("Ice troll",           new int[]{30, 30, 36,  1,  1, 15});
-        b.put("Mountain troll",      new int[]{12, 23, 12,  1,  1, 15});
-        b.put("Troll",               new int[]{11, 17,  9,  1,  1, 15});
-        b.put("Infernal mage",       new int[]{ 1,  1, 18, 23,  1, 45});
-        b.put("Jelly",               new int[]{14, 14, 36, 14,  1, 30});
-        b.put("Warped jelly",        new int[]{29, 27, 21, 29,  1, 30});
-        b.put("Kalphite soldier",    new int[]{21, 21, 21,  1,  1, 30});
-        b.put("Kalphite guardian",   new int[]{33, 33, 33,  1,  1, 30});
-        b.put("Kalphite worker",     new int[]{ 6,  6,  6,  1,  1, 45});
-        b.put("Kurask",              new int[]{20, 32, 32,  1,  1, 30});
-        b.put("Lizardman",           new int[]{13, 13, 13,  1, 13, 45});
-        b.put("Lizardman brute",     new int[]{20, 20, 20,  1,  1, 30});
-        b.put("Lizardman shaman",    new int[]{36, 36, 42, 39, 36, 45});
-        b.put("Mogre",               new int[]{17, 17, 14,  1,  1, 30});
-        b.put("Nechryael",           new int[]{29, 29, 32,  1,  1, 45});
-        b.put("Greater nechryael",   new int[]{59, 59, 26,  1,  1, 45});
-        b.put("Pyrefiend",           new int[]{16,  9,  7,  1,  1, 45});
-        b.put("Rockslugs",           new int[]{ 7,  8,  8,  1,  1, 15});
-        b.put("Smoke devil",         new int[]{1, 1, 40, 20, 66, 60});
-        b.put("Spiritual warrior",   new int[]{30, 30, 30,  1,  1, 45});
-        b.put("Spiritual mage",      new int[]{ 1,  1, 18, 54,  1, 45});
-        b.put("Spiritual ranger",    new int[]{ 1,  1, 24,  1, 42, 60});
-        b.put("Suqah",               new int[]{29, 29, 29,  1,  1, 45});
-        b.put("Turoth",              new int[]{16, 25, 25,  1,  1, 45});
-        b.put("Vampyre",             new int[]{17, 18, 17, 12,  1, 45});
-        b.put("Vyrewatch",           new int[]{32, 26, 26, 32, 32, 60});
-        b.put("Waterfiend",          new int[]{ 1,  1, 38, 32, 32, 30});
-        b.put("Wyrm",                new int[]{26, 18, 24, 24, 24, 45});
-        b.put("Wyvern",              new int[]{38, 35, 36, 38, 36, 45});
-        b.put("Ancient wyvern",      new int[]{45, 45, 45, 27, 27, 45});
-        b.put("Skeletal wyvern",     new int[]{38, 35, 36, 38, 36, 45});
-        b.put("Fossil island wyvern",new int[]{38, 36, 27, 27, 27, 45});
-        b.put("Warped tortoise",     new int[]{23, 32, 23, 15,  1, 15});
-        b.put("Tortoise",            new int[]{ 5, 27, 24,  1,  1, 15});
-        b.put("Zombie pirate",       new int[]{ 6,  3,  6,  1,  1, 15});
-        // Dragons
-        b.put("Baby blue dragon",    new int[]{12, 12, 12,  1,  1, 45});
-        b.put("Baby green dragon",   new int[]{12, 12, 12,  1,  1, 45});
-        b.put("Green dragon",        new int[]{20, 20, 20, 20,  1, 30});
-        b.put("Blue dragon",         new int[]{29, 29, 29,  1,  1, 30});
-        b.put("Red dragon",          new int[]{39, 39, 39,  1,  1, 30});
-        b.put("Black dragon",        new int[]{60, 60, 60, 30,  1, 30});
-        b.put("Lava dragon",         new int[]{72, 66, 66,  1,  1, 30});
-        b.put("Bronze dragon",       new int[]{34, 34, 34, 30,  1, 30});
-        b.put("Iron dragon",         new int[]{50, 50, 50, 30,  1, 30});
-        b.put("Steel dragon",        new int[]{65, 65, 65, 30,  1, 30});
-        b.put("Mithril dragon",      new int[]{80, 80, 80, 50, 50, 45});
-        b.put("Adamant dragon",      new int[]{84, 84, 82, 56, 56, 45});
-        b.put("Rune dragon",         new int[]{85, 85, 83, 59, 74, 45});
-        b.put("Brutal black dragon", new int[]{90, 63, 78, 75,  1, 30});
-        b.put("Brutal red dragon",   new int[]{90, 63, 60, 75,  1, 30});
-        b.put("Brutal blue dragon",  new int[]{90, 60, 60, 60,  1, 30});
-        b.put("Brutal green dragon", new int[]{80, 50, 50, 50,  1, 30});
-        // Wilderness / other
-        b.put("Dark warrior",        new int[]{23, 23, 17,  1,  1, 45});
-        b.put("Ice warrior",         new int[]{14, 14, 14,  1,  1, 30});
-        b.put("Ice spider",          new int[]{15, 17, 13,  1,  1, 45});
-        // Bosses
-        b.put("Scurrius",            new int[]{90, 30, 18, 45, 45, 60});
-        b.put("Giant Mole",          new int[]{60, 60, 60, 60,  1, 45});
-        b.put("King Black Dragon",   new int[]{72, 72, 72, 72, 65, 30});
-        b.put("Chaos Elemental",     new int[]{81, 81, 81, 81, 81, 75});
-        b.put("Chaos Fanatic",       new int[]{ 1,  1, 66, 60,  1, 45});
-        b.put("Crazy Archaeologist", new int[]{ 1,  1, 54,  1, 59, 60});
-        b.put("Scorpia",             new int[]{75, 45, 54,  1,  1, 45});
-        b.put("Deranged Archaeologist", new int[]{ 1,  1, 75,  1, 72, 45});
-        b.put("Sarachnis",           new int[]{60, 72, 45, 45, 90, 45});
-        b.put("Hespori",             new int[]{ 1,  1, 36, 38, 45, 30});
-        b.put("Obor",                new int[]{30, 30, 18, 5, 36, 30});
-        b.put("Bryophyta",           new int[]{24, 24, 30, 45, 1, 15});
-        b.put("Cerberus",            new int[]{66, 66, 45, 45, 66, 45});
-        b.put("Kraken",              new int[]{1, 1, 50, 66, 1, 15});
-        b.put("Thermonuclear smoke devil", new int[]{1, 1, 50, 66, 90, 60});
-        b.put("Alchemical Hydra",    new int[]{30, 30, 30, 78, 78, 45});
-        b.put("Zulrah",              new int[]{1, 1, 90, 90, 90, 75});
-        b.put("Vorkath",             new int[]{90, 90, 64, 45, 90, 15});
-        b.put("Phantom Muspah",      new int[]{84, 84, 60, 45, 84, 45});
-        b.put("Duke Sucellus",       new int[]{90, 90, 83, 90,  1, 30});
-        b.put("The Leviathan",       new int[]{90, 90, 75, 48, 48, 10});
-        b.put("Vardorvis",           new int[]{90, 90, 75, 65, 1, 60});
-        b.put("The Whisperer",       new int[]{84, 84, 75, 54, 54, 60});
-        b.put("Nex",                 new int[]{90, 60, 78, 69, 90, 75});
-        b.put("TzTok-Jad",           new int[]{90, 90, 90, 90, 90, 15});
-        b.put("TzKal-Zuk",           new int[]{90, 90, 78, 60, 90, 20});
-        b.put("Araxxor",             new int[]{90, 90, 41, 57, 63, 60});
-        b.put("Hueycoatl",           new int[]{84, 84, 60, 66, 66, 45});
-        b.put("Sol Heredit",         new int[]{90, 90, 60, 90, 90, 50});
-        b.put("Amoxliatl",           new int[]{ 1,  1, 24, 51,  1, 30});
-        b.put("Callisto",            new int[]{90, 90, 68, 60, 60, 15});
-        b.put("Artio",               new int[]{75, 81, 45, 45, 36, 15});
-        b.put("Venenatis",           new int[]{90, 60, 90, 90, 90, 45});
-        b.put("Spindel",             new int[]{60, 39, 68, 71, 86, 45});
-        b.put("Vet'ion",             new int[]{90, 90, 90, 90,  1, 30});
-        b.put("Calvar'ion",          new int[]{75, 75, 68, 53,  1, 30});
-        b.put("Corporeal Beast",     new int[]{90, 90, 90, 90, 45, 15});
-        b.put("Commander Zilyana",   new int[]{84, 59, 90, 90, 20, 75});
-        b.put("General Graardor",    new int[]{84, 90, 75, 24, 90, 30});
-        b.put("K'ril Tsutsaroth",    new int[]{90, 90, 81, 60,  1, 45});
-        b.put("Kree'arra",           new int[]{90, 60, 78, 60, 90, 75});
-        b.put("Dagannoth Rex",       new int[]{77, 77, 77,  1, 77, 30});
-        b.put("Dagannoth Prime",     new int[]{1, 1, 60, 77, 1, 30});
-        b.put("Dagannoth Supreme",   new int[]{1, 1, 38, 20, 77, 30});
-        b.put("Dusk",                new int[]{60, 42, 30, 42, 42, 30});
-        b.put("Dawn",                new int[]{42, 42, 30, 30, 42, 45});
-        b.put("The Nightmare",       new int[]{45, 45, 45, 45, 45, 45});
-        b.put("Phosani's Nightmare", new int[]{45, 45, 45, 45, 45, 45});
-        b.put("Ahrim the Blighted",  new int[]{ 1,  1, 30, 30,  1, 30});
-        b.put("Dharok the Wretched", new int[]{30, 30, 30,  1,  1, 30});
-        b.put("Guthan the Infested", new int[]{30, 30, 30,  1,  1, 30});
-        b.put("Karil the Tainted",   new int[]{ 1,  1, 30,  1, 30, 60});
-        b.put("Torag the Corrupted", new int[]{30, 30, 30,  1,  1, 15});
-        b.put("Verac the Defiled",   new int[]{30, 30, 30,  1,  1, 30});
-        b.put("Tekton",              new int[]{90, 90, 62, 1, 1, 15});
-        b.put("Great Olm",           new int[]{75, 75, 45, 75, 75, 15});
-        b.put("Vespula",             new int[]{1, 1, 26, 26, 60, 75});
-        b.put("Maiden of Sugadinti", new int[]{90, 90, 75, 90, 90, 15});
-        b.put("Pestilent Bloat",     new int[]{75, 90, 30, 45, 66, 45});
-        b.put("Sotetseg",            new int[]{75, 75, 60, 75, 75, 30});
-        b.put("Xarpus",              new int[]{1, 1, 75, 30, 66, 30});
-        b.put("Verzik Vitur",        new int[]{90, 90, 60, 90, 90, 60});
-        b.put("Akkha",               new int[]{30, 42, 24, 30, 30, 60});
-        b.put("Ba-Ba",               new int[]{45, 48, 24, 30, 36, 45});
-        b.put("Kephri",              new int[]{ 1,  1, 24, 38,  1, 30});
-        b.put("Zebak",               new int[]{75, 42, 21, 30, 36, 30});
-        b.put("Tumeken's Warden",    new int[]{90, 45, 45, 57, 57, 15});
-        b.put("Elidinis' Warden",    new int[]{90, 45, 45, 57, 57, 15});
-        b.put("Abyssal Sire",        new int[]{54, 41, 75, 60,  1, 30});
+
+        // Per-monster stat floors — reviewed/tuned by user (2026-07-25).
+
+        b.put("Chicken", new int[]{1, 1, 1, 1, 1, 45});
+        b.put("Cow", new int[]{1, 1, 1, 1, 1, 30});
+        b.put("Cow calf", new int[]{1, 1, 1, 1, 1, 45});
+        b.put("Duck", new int[]{1, 1, 1, 1, 1, 60});
+        b.put("Ram", new int[]{1, 1, 1, 1, 1, 45});
+        b.put("Seagull", new int[]{1, 1, 1, 1, 1, 75});
+        b.put("Man", new int[]{1, 1, 1, 1, 1, 45});
+        b.put("Woman", new int[]{1, 1, 1, 1, 1, 45});
+        b.put("Farmer", new int[]{1, 1, 2, 1, 1, 30});
+        b.put("Goblin", new int[]{1, 1, 1, 1, 1, 60});
+        b.put("Guard", new int[]{5, 5, 4, 1, 1, 45});
+        b.put("Rat", new int[]{1, 1, 1, 1, 1, 75});
+        b.put("Giant rat", new int[]{1, 1, 1, 1, 1, 60});
+        b.put("Imp", new int[]{1, 1, 1, 1, 1, 90});
+        b.put("Zombie", new int[]{2, 3, 3, 1, 1, 15});
+        b.put("Skeleton", new int[]{5, 5, 5, 1, 1, 30});
+        b.put("Ghost", new int[]{4, 4, 5, 1, 1, 60});
+        b.put("Barbarian", new int[]{2, 2, 1, 1, 1, 60});
+        b.put("Warrior", new int[]{2, 2, 1, 1, 1, 60});
+        b.put("Wizard", new int[]{2, 2, 2, 3, 1, 45});
+        b.put("Dark wizard", new int[]{5, 5, 4, 7, 1, 45});
+        b.put("Minotaur", new int[]{7, 8, 8, 1, 1, 30});
+        b.put("Bear", new int[]{5, 5, 5, 1, 1, 30});
+        b.put("Grizzly bear", new int[]{12, 11, 11, 1, 1, 30});
+        b.put("Unicorn", new int[]{3, 4, 4, 1, 1, 75});
+        b.put("Spider", new int[]{1, 1, 1, 1, 1, 75});
+        b.put("Giant spider", new int[]{6, 7, 6, 1, 1, 45});
+        b.put("Scorpion", new int[]{3, 4, 3, 1, 1, 60});
+        b.put("Hill giant", new int[]{5, 7, 8, 1, 1, 15});
+        b.put("Moss giant", new int[]{9, 9, 9, 1, 1, 15});
+        b.put("Fire giant", new int[]{20, 20, 20, 1, 1, 15});
+        b.put("Ice giant", new int[]{12, 12, 12, 1, 1, 15});
+        b.put("Earth warrior", new int[]{13, 13, 13, 1, 1, 30});
+        b.put("Lesser demon", new int[]{20, 21, 21, 1, 1, 30});
+        b.put("Greater demon", new int[]{23, 23, 24, 1, 1, 30});
+        b.put("Black demon", new int[]{44, 44, 46, 1, 1, 30});
+        b.put("Black knight", new int[]{8, 8, 8, 1, 1, 30});
+        b.put("White knight", new int[]{8, 9, 6, 1, 1, 30});
+        b.put("Hobgoblin", new int[]{7, 7, 7, 1, 1, 45});
+        b.put("Chaos druid", new int[]{2, 2, 4, 3, 1, 45});
+        b.put("Rock crab", new int[]{1, 1, 1, 1, 1, 15});
+        b.put("Sand crab", new int[]{1, 1, 1, 1, 1, 15});
+        b.put("Swamp crab", new int[]{1, 1, 15, 15, 1, 15});
+        b.put("Gemstone crab", new int[]{1, 1, 1, 1, 1, 33});
+        b.put("Pirate", new int[]{6, 6, 6, 1, 1, 45});
+        b.put("Rogue", new int[]{4, 4, 4, 1, 1, 75});
+        b.put("Abyssal demon", new int[]{40, 40, 40, 1, 5, 65});
+        b.put("Aberrant spectre", new int[]{1, 1, 27, 32, 1, 45});
+        b.put("Deviant spectre", new int[]{1, 1, 27, 62, 1, 45});
+        b.put("Ankou", new int[]{21, 21, 18, 1, 1, 15});
+        b.put("Banshee", new int[]{7, 5, 7, 1, 1, 30});
+        b.put("Twisted banshee", new int[]{23, 26, 15, 1, 1, 30});
+        b.put("Basilisk", new int[]{9, 14, 23, 1, 1, 10});
+        b.put("Basilisk knight", new int[]{51, 39, 60, 1, 1, 10});
+        b.put("Bloodveld", new int[]{23, 14, 9, 1, 1, 20});
+        b.put("Mutated bloodveld", new int[]{33, 35, 9, 1, 1, 20});
+        b.put("Cave bug", new int[]{2, 2, 2, 1, 1, 60});
+        b.put("Cave crawler", new int[]{7, 5, 5, 1, 1, 45});
+        b.put("Cave slime", new int[]{4, 4, 11, 4, 1, 30});
+        b.put("Cave horror", new int[]{24, 23, 19, 24, 1, 45});
+        b.put("Dagannoth", new int[]{20, 21, 15, 1, 1, 60});
+        b.put("Dark beast", new int[]{42, 48, 36, 48, 1, 30});
+        b.put("Drake", new int[]{42, 35, 36, 34, 42, 45});
+        b.put("Dust devil", new int[]{32, 21, 12, 1, 1, 40});
+        b.put("Fever spider", new int[]{18, 9, 12, 1, 1, 60});
+        b.put("Fleshcrawler", new int[]{18, 1, 3, 1, 1, 60});
+        b.put("Gargoyle", new int[]{35, 35, 32, 1, 1, 42});
+        b.put("Hellhound", new int[]{32, 31, 31, 1, 1, 45});
+        b.put("Hydra", new int[]{1, 1, 30, 63, 63, 30});
+        b.put("Ice troll", new int[]{30, 30, 36, 1, 1, 15});
+        b.put("Mountain troll", new int[]{12, 23, 12, 1, 1, 15});
+        b.put("Troll", new int[]{11, 17, 9, 1, 1, 15});
+        b.put("Infernal mage", new int[]{1, 1, 18, 23, 1, 45});
+        b.put("Jelly", new int[]{14, 14, 36, 14, 1, 30});
+        b.put("Warped jelly", new int[]{29, 27, 21, 29, 1, 30});
+        b.put("Kalphite soldier", new int[]{21, 21, 21, 1, 1, 20});
+        b.put("Kalphite guardian", new int[]{33, 33, 33, 1, 1, 25});
+        b.put("Kalphite worker", new int[]{6, 6, 6, 1, 1, 45});
+        b.put("Kurask", new int[]{20, 32, 32, 1, 1, 30});
+        b.put("Lizardman", new int[]{13, 13, 13, 1, 13, 45});
+        b.put("Lizardman brute", new int[]{20, 20, 20, 1, 1, 30});
+        b.put("Lizardman shaman", new int[]{36, 36, 42, 39, 36, 45});
+        b.put("Mogre", new int[]{17, 17, 14, 10, 1, 22});
+        b.put("Nechryael", new int[]{29, 29, 32, 1, 1, 15});
+        b.put("Greater nechryael", new int[]{59, 59, 26, 1, 1, 15});
+        b.put("Pyrefiend", new int[]{16, 9, 7, 1, 1, 25});
+        b.put("Rockslugs", new int[]{7, 8, 8, 1, 1, 15});
+        b.put("Smoke devil", new int[]{1, 1, 40, 20, 66, 45});
+        b.put("Spiritual warrior", new int[]{30, 30, 30, 1, 1, 30});
+        b.put("Spiritual mage", new int[]{1, 1, 18, 54, 1, 30});
+        b.put("Spiritual ranger", new int[]{1, 1, 24, 1, 42, 30});
+        b.put("Suqah", new int[]{29, 29, 29, 1, 1, 25});
+        b.put("Turoth", new int[]{16, 25, 25, 1, 1, 45});
+        b.put("Vampyre", new int[]{17, 18, 17, 12, 1, 33});
+        b.put("Vyrewatch", new int[]{32, 26, 26, 32, 32, 60});
+        b.put("Waterfiend", new int[]{1, 1, 38, 32, 32, 30});
+        b.put("Wyrm", new int[]{26, 18, 24, 24, 24, 20});
+        b.put("Wyvern", new int[]{38, 35, 36, 38, 36, 22});
+        b.put("Ancient wyvern", new int[]{45, 45, 45, 27, 27, 22});
+        b.put("Skeletal wyvern", new int[]{38, 35, 36, 38, 36, 22});
+        b.put("Fossil island wyvern", new int[]{38, 36, 27, 27, 27, 22});
+        b.put("Warped tortoise", new int[]{23, 32, 23, 15, 1, 15});
+        b.put("Tortoise", new int[]{5, 27, 24, 1, 1, 15});
+        b.put("Zombie pirate", new int[]{6, 3, 6, 1, 1, 15});
+        b.put("Baby blue dragon", new int[]{12, 12, 12, 5, 1, 22});
+        b.put("Baby green dragon", new int[]{12, 12, 12, 5, 1, 22});
+        b.put("Green dragon", new int[]{20, 20, 20, 55, 1, 35});
+        b.put("Blue dragon", new int[]{29, 29, 29, 55, 1, 45});
+        b.put("Red dragon", new int[]{39, 39, 39, 55, 1, 35});
+        b.put("Black dragon", new int[]{58, 58, 58, 55, 1, 35});
+        b.put("Lava dragon", new int[]{60, 60, 60, 55, 1, 40});
+        b.put("Bronze dragon", new int[]{45, 46, 46, 55, 1, 20});
+        b.put("Iron dragon", new int[]{47, 47, 47, 55, 1, 22});
+        b.put("Steel dragon", new int[]{50, 50, 50, 55, 1, 25});
+        b.put("Mithril dragon", new int[]{55, 55, 55, 55, 55, 30});
+        b.put("Adamant dragon", new int[]{60, 60, 60, 56, 56, 35});
+        b.put("Rune dragon", new int[]{67, 67, 67, 67, 67, 40});
+        b.put("Brutal black dragon", new int[]{64, 64, 64, 55, 1, 32});
+        b.put("Brutal red dragon", new int[]{62, 62, 62, 55, 1, 30});
+        b.put("Brutal blue dragon", new int[]{60, 60, 60, 55, 1, 30});
+        b.put("Brutal green dragon", new int[]{58, 57, 56, 50, 1, 30});
+        b.put("Dark warrior", new int[]{23, 23, 17, 1, 1, 25});
+        b.put("Ice warrior", new int[]{14, 14, 14, 1, 1, 25});
+        b.put("Ice spider", new int[]{15, 17, 13, 1, 1, 45});
+        b.put("Scurrius", new int[]{64, 30, 18, 45, 41, 33});
+        b.put("Giant Mole", new int[]{40, 40, 68, 20, 1, 65});
+        b.put("King Black Dragon", new int[]{72, 72, 72, 72, 65, 30});
+        b.put("Chaos Elemental", new int[]{60, 60, 60, 65, 65, 55});
+        b.put("Chaos Fanatic", new int[]{1, 1, 66, 60, 1, 33});
+        b.put("Crazy Archaeologist", new int[]{1, 1, 54, 1, 59, 33});
+        b.put("Scorpia", new int[]{65, 70, 50, 1, 1, 37});
+        b.put("Deranged Archaeologist", new int[]{1, 1, 70, 1, 70, 33});
+        b.put("Sarachnis", new int[]{60, 69, 45, 45, 65, 45});
+        b.put("Hespori", new int[]{1, 1, 42, 45, 45, 1});
+        b.put("Obor", new int[]{32, 32, 18, 5, 32, 5});
+        b.put("Bryophyta", new int[]{24, 24, 30, 45, 1, 5});
+        b.put("Cerberus", new int[]{57, 57, 60, 52, 60, 20});
+        b.put("Kraken", new int[]{1, 1, 50, 66, 1, 15});
+        b.put("Thermonuclear smoke devil", new int[]{1, 1, 50, 66, 72, 40});
+        b.put("Alchemical Hydra", new int[]{30, 30, 30, 72, 72, 40});
+        b.put("Zulrah", new int[]{1, 1, 75, 75, 75, 60});
+        b.put("Vorkath", new int[]{75, 75, 70, 60, 75, 5});
+        b.put("Phantom Muspah", new int[]{75, 75, 61, 55, 84, 44});
+        b.put("Duke Sucellus", new int[]{85, 85, 80, 78, 1, 1});
+        b.put("The Leviathan", new int[]{85, 85, 82, 83, 84, 10});
+        b.put("Vardorvis", new int[]{90, 90, 72, 30, 1, 50});
+        b.put("The Whisperer", new int[]{75, 75, 75, 54, 54, 42});
+        b.put("Nex", new int[]{90, 81, 78, 69, 90, 75});
+        b.put("TzTok-Jad", new int[]{75, 75, 70, 85, 85, 15});
+        b.put("TzKal-Zuk", new int[]{90, 90, 85, 65, 65, 1});
+        b.put("Araxxor", new int[]{77, 77, 41, 44, 63, 60});
+        b.put("Hueycoatl", new int[]{62, 62, 60, 62, 62, 25});
+        b.put("Sol Heredit", new int[]{90, 90, 75, 60, 60, 30});
+        b.put("Amoxliatl", new int[]{1, 1, 24, 55, 1, 35});
+        b.put("Callisto", new int[]{85, 85, 65, 60, 60, 15});
+        b.put("Artio", new int[]{75, 81, 48, 45, 39, 17});
+        b.put("Venenatis", new int[]{80, 70, 65, 65, 65, 45});
+        b.put("Spindel", new int[]{60, 49, 48, 71, 62, 48});
+        b.put("Vet'ion", new int[]{80, 80, 70, 70, 1, 31});
+        b.put("Calvar'ion", new int[]{65, 65, 52, 55, 1, 35});
+        b.put("Corporeal Beast", new int[]{82, 82, 90, 80, 35, 10});
+        b.put("Commander Zilyana", new int[]{80, 70, 70, 60, 10, 75});
+        b.put("General Graardor", new int[]{60, 80, 72, 10, 70, 10});
+        b.put("K'ril Tsutsaroth", new int[]{65, 70, 72, 27, 1, 15});
+        b.put("Kree'arra", new int[]{60, 60, 72, 65, 82, 40});
+        b.put("Dagannoth Rex", new int[]{70, 70, 60, 1, 1, 30});
+        b.put("Dagannoth Prime", new int[]{1, 1, 60, 77, 1, 30});
+        b.put("Dagannoth Supreme", new int[]{1, 1, 55, 1, 77, 30});
+        b.put("Dusk", new int[]{50, 42, 30, 42, 42, 30});
+        b.put("Dawn", new int[]{42, 42, 30, 30, 42, 40});
+        b.put("The Nightmare", new int[]{70, 70, 45, 70, 70, 40});
+        b.put("Phosani's Nightmare", new int[]{75, 75, 45, 75, 75, 40});
+        b.put("Ahrim the Blighted", new int[]{1, 1, 30, 40, 1, 30});
+        b.put("Dharok the Wretched", new int[]{10, 65, 50, 1, 1, 10});
+        b.put("Guthan the Infested", new int[]{30, 50, 30, 1, 1, 10});
+        b.put("Karil the Tainted", new int[]{1, 1, 40, 1, 55, 25});
+        b.put("Torag the Corrupted", new int[]{30, 50, 60, 1, 1, 10});
+        b.put("Verac the Defiled", new int[]{40, 30, 50, 1, 10, 30});
+        b.put("Tekton", new int[]{90, 90, 70, 5, 50, 5});
+        b.put("Great Olm", new int[]{75, 75, 65, 85, 85, 15});
+        b.put("Vespula", new int[]{1, 1, 26, 26, 60, 75});
+        b.put("Maiden of Sugadinti", new int[]{40, 40, 70, 80, 80, 1});
+        b.put("Pestilent Bloat", new int[]{55, 60, 75, 45, 70, 48});
+        b.put("Sotetseg", new int[]{75, 75, 66, 75, 75, 15});
+        b.put("Xarpus", new int[]{1, 1, 75, 30, 66, 12});
+        b.put("Verzik Vitur", new int[]{80, 80, 77, 82, 72, 40});
+        b.put("Akkha", new int[]{70, 70, 45, 70, 70, 30});
+        b.put("Ba-Ba", new int[]{65, 68, 46, 30, 66, 45});
+        b.put("Kephri", new int[]{15, 44, 42, 65, 55, 30});
+        b.put("Zebak", new int[]{55, 75, 55, 55, 55, 10});
+        b.put("Tumeken's Warden", new int[]{80, 85, 48, 77, 75, 15});
+        b.put("Elidinis' Warden", new int[]{80, 85, 48, 77, 75, 15});
+        b.put("Abyssal Sire", new int[]{54, 41, 75, 60, 1, 15});
+        
         STAT_BASES = Collections.unmodifiableMap(b);
     }
 
