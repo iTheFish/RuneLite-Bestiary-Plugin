@@ -31,11 +31,13 @@ public class BestiaryCollection {
         captureCountByNpc.merge(c.npcName, 1, Integer::sum);
     }
 
-    /** Removes a capture from the collection (used by the discard system). */
-    public void removeCapture(CapturedCreature c) {
+    /** Removes a capture from the collection. Returns true only if it was present. */
+    public boolean removeCapture(CapturedCreature c) {
         if (creatures.remove(c)) {
             captureCountByNpc.computeIfPresent(c.npcName, (k, v) -> v > 1 ? v - 1 : null);
+            return true;
         }
+        return false;
     }
 
     public void incrementKillCount(String npcName) {

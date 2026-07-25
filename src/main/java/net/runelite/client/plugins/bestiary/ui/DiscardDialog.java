@@ -16,8 +16,8 @@ import java.util.Map;
 
 /**
  * MODELESS bulk-discard screen. Finds duplicate captures (same creature + rarity,
- * count > 1) and lets the player convert the extras to credits, keeping the best of
- * each. Rarity filters + a favourites/album-cover guard, then a final confirm.
+ * count > 1), lists each group with an "Investigate" link (filters the album behind
+ * it), and converts the extras to credits — keeping the best of each.
  */
 public class DiscardDialog extends JDialog {
 
@@ -27,7 +27,8 @@ public class DiscardDialog extends JDialog {
     private final Runnable onDone;
     private final Map<CreatureRarity, JCheckBox> rarityBoxes = new LinkedHashMap<>();
     private JCheckBox protectBox;
-    private JLabel previewLabel;
+    private JPanel groupsPanel;
+    private JLabel totalLabel;
     private JButton discardBtn;
 
     public static void open(Window owner, BestiaryDataService dataService, Runnable onDone) {
@@ -52,22 +53,21 @@ public class DiscardDialog extends JDialog {
         title.setForeground(Color.WHITE);
         title.setAlignmentX(Component.LEFT_ALIGNMENT);
         root.add(title);
-        JLabel help = new JLabel("<html><div style='width:300px'>Keeps the best (highest Power Level) "
-                + "of each creature + rarity and discards the rest.</div></html>");
+        JLabel help = new JLabel("<html><div style='width:320px'>Keeps the best (highest Power Level) "
+                + "of each creature + rarity and discards the rest. Use <i>Investigate</i> to review a "
+                + "group in the album first.</div></html>");
         help.setFont(FontManager.getRunescapeSmallFont());
         help.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
         help.setAlignmentX(Component.LEFT_ALIGNMENT);
         root.add(help);
 
         root.add(Box.createVerticalStrut(8));
-        JLabel rHdr = new JLabel("RARITIES TO INCLUDE");
-        rHdr.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
-        rHdr.setForeground(new Color(255, 152, 31));
-        rHdr.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel rHdr = header("RARITIES TO INCLUDE");
         root.add(rHdr);
-        JPanel rarRow = new JPanel(new GridLayout(0, 2, 4, 0));
+        JPanel rarRow = new JPanel(new GridLayout(0, 3, 4, 0));
         rarRow.setOpaque(false);
         rarRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rarRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
         for (CreatureRarity rar : CreatureRarity.values()) {
             JCheckBox cb = new JCheckBox(rar.label, rar.ordinal() <= CreatureRarity.RARE.ordinal());
             cb.setOpaque(false);
@@ -89,13 +89,27 @@ public class DiscardDialog extends JDialog {
         root.add(protectBox);
 
         root.add(Box.createVerticalStrut(8));
-        previewLabel = new JLabel();
-        previewLabel.setFont(FontManager.getRunescapeSmallFont());
-        previewLabel.setForeground(Color.WHITE);
-        previewLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        root.add(previewLabel);
+        root.add(header("DUPLICATE GROUPS FOUND"));
+        groupsPanel = new JPanel();
+        groupsPanel.setLayout(new BoxLayout(groupsPanel, BoxLayout.Y_AXIS));
+        groupsPanel.setOpaque(false);
+        JScrollPane groupScroll = new JScrollPane(groupsPanel,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        groupScroll.setBorder(BorderFactory.createLineBorder(new Color(60, 60, 60)));
+        groupScroll.getVerticalScrollBar().setUnitIncrement(16);
+        groupScroll.setPreferredSize(new Dimension(360, 200));
+        groupScroll.setAlignmentX(Component.LEFT_ALIGNMENT);
+        groupScroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, 200));
+        root.add(groupScroll);
 
         root.add(Box.createVerticalStrut(8));
+        totalLabel = new JLabel();
+        totalLabel.setFont(FontManager.getRunescapeSmallFont());
+        totalLabel.setForeground(Color.WHITE);
+        totalLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        root.add(totalLabel);
+
+        root.add(Box.createVerticalStrut(6));
         discardBtn = new JButton("Discard");
         discardBtn.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         discardBtn.setBackground(new Color(150, 60, 60));
@@ -105,45 +119,100 @@ public class DiscardDialog extends JDialog {
         discardBtn.addActionListener(e -> doDiscard());
         root.add(discardBtn);
 
-        setContentPane(new JScrollPane(root,
-                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER));
+        setContentPane(root);
         recompute();
         pack();
         setLocationRelativeTo(owner);
     }
 
-    /** Cards that would be discarded under the current filters. */
-    private List<CapturedCreature> selection() {
-        Map<String, List<CapturedCreature>> groups = new LinkedHashMap<>();
+    private JLabel header(String text) {
+        JLabel l = new JLabel(text);
+        l.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        l.setForeground(new Color(255, 152, 31));
+        l.setAlignmentX(Component.LEFT_ALIGNMENT);
+        l.setBorder(new EmptyBorder(0, 0, 3, 0));
+        return l;
+    }
+
+    /** One duplicate group: same creature + rarity, keep the best, discard the rest. */
+    private static final class Group {
+        final String npc;
+        final CreatureRarity rarity;
+        final List<CapturedCreature> discard = new ArrayList<>();
+        Group(String npc, CreatureRarity rarity) { this.npc = npc; this.rarity = rarity; }
+    }
+
+    private List<Group> groups() {
+        Map<String, List<CapturedCreature>> byKey = new LinkedHashMap<>();
         for (CapturedCreature c : dataService.getCollection().creatures) {
-            groups.computeIfAbsent(c.npcName + "|" + c.rarity.name(), k -> new ArrayList<>()).add(c);
+            byKey.computeIfAbsent(c.npcName + "|" + c.rarity.name(), k -> new ArrayList<>()).add(c);
         }
-        List<CapturedCreature> out = new ArrayList<>();
         boolean protect = protectBox.isSelected();
-        for (List<CapturedCreature> group : groups.values()) {
-            if (group.size() <= 1) continue;
-            group.sort((a, b) -> Integer.compare(b.powerLevel(), a.powerLevel())); // best first
-            for (int i = 1; i < group.size(); i++) {                                // keep index 0
-                CapturedCreature c = group.get(i);
-                if (!rarityBoxes.get(c.rarity).isSelected()) continue;
+        List<Group> out = new ArrayList<>();
+        for (List<CapturedCreature> list : byKey.values()) {
+            if (list.size() <= 1) continue;
+            CreatureRarity rar = list.get(0).rarity;
+            if (!rarityBoxes.get(rar).isSelected()) continue;
+            list.sort((a, b) -> Integer.compare(b.powerLevel(), a.powerLevel())); // best first
+            Group g = new Group(list.get(0).npcName, rar);
+            for (int i = 1; i < list.size(); i++) {
+                CapturedCreature c = list.get(i);
                 if (protect && (c.favourite || c.albumCover)) continue;
-                out.add(c);
+                g.discard.add(c);
             }
+            if (!g.discard.isEmpty()) out.add(g);
         }
         return out;
     }
 
     private void recompute() {
-        List<CapturedCreature> sel = selection();
-        long credits = sel.stream().mapToLong(dataService::discardValue).sum();
-        previewLabel.setText(sel.size() + " duplicate card" + (sel.size() == 1 ? "" : "s")
-                + "  →  " + credits + " credits");
-        discardBtn.setEnabled(!sel.isEmpty());
-        discardBtn.setText(sel.isEmpty() ? "Nothing to discard" : "Discard " + sel.size() + " for " + credits + " credits");
+        List<Group> groups = groups();
+        groupsPanel.removeAll();
+        long total = 0;
+        int cards = 0;
+        for (Group g : groups) {
+            long credits = g.discard.stream().mapToLong(dataService::discardValue).sum();
+            total += credits;
+            cards += g.discard.size();
+
+            JPanel rowP = new JPanel(new BorderLayout(6, 0));
+            rowP.setOpaque(false);
+            rowP.setAlignmentX(Component.LEFT_ALIGNMENT);
+            rowP.setMaximumSize(new Dimension(Integer.MAX_VALUE, 22));
+            rowP.setBorder(new EmptyBorder(1, 2, 1, 2));
+            JLabel l = new JLabel(g.npc + "  ·  " + g.rarity.label + "  — discard " + g.discard.size()
+                    + "  (+" + credits + "cr)");
+            l.setFont(FontManager.getRunescapeSmallFont());
+            l.setForeground(g.rarity.displayColor);
+            JButton inv = new JButton("Investigate");
+            inv.setFont(FontManager.getRunescapeSmallFont());
+            inv.setMargin(new Insets(0, 5, 0, 5));
+            inv.setFocusPainted(false);
+            inv.addActionListener(e -> AlbumDialog.requestOpenDetail(g.npc, g.rarity));
+            rowP.add(l, BorderLayout.CENTER);
+            rowP.add(inv, BorderLayout.EAST);
+            groupsPanel.add(rowP);
+        }
+        if (groups.isEmpty()) {
+            JLabel none = new JLabel("No duplicates match the current filters.");
+            none.setFont(FontManager.getRunescapeSmallFont());
+            none.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+            none.setBorder(new EmptyBorder(6, 4, 0, 0));
+            groupsPanel.add(none);
+        }
+        groupsPanel.revalidate();
+        groupsPanel.repaint();
+
+        totalLabel.setText(cards + " duplicate card" + (cards == 1 ? "" : "s")
+                + " across " + groups.size() + " group" + (groups.size() == 1 ? "" : "s")
+                + "  →  " + total + " credits");
+        discardBtn.setEnabled(cards > 0);
+        discardBtn.setText(cards == 0 ? "Nothing to discard" : "Discard " + cards + " for " + total + " credits");
     }
 
     private void doDiscard() {
-        List<CapturedCreature> sel = selection();
+        List<CapturedCreature> sel = new ArrayList<>();
+        for (Group g : groups()) sel.addAll(g.discard);
         if (sel.isEmpty()) return;
         long credits = sel.stream().mapToLong(dataService::discardValue).sum();
         int choice = JOptionPane.showConfirmDialog(this,

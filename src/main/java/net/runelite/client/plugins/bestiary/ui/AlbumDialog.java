@@ -586,6 +586,25 @@ public class AlbumDialog extends JDialog {
     // Grid construction
     // -------------------------------------------------------------------------
 
+    /** Rebuilds the album from the live collection (e.g. after discards) and refreshes the view. */
+    public void refreshFromCollection() {
+        Map<String, List<CapturedCreature>> grouped = collection.creatures.stream()
+                .collect(Collectors.groupingBy(c -> c.npcName));
+        capturesByNpc.clear();
+        capturesByNpc.putAll(grouped);
+        if (detailMonsterName != null && !detailMonsterName.startsWith("★")
+                && !capturesByNpc.containsKey(detailMonsterName)) {
+            showCatalog();            // the monster we were viewing has no captures left
+        } else {
+            rebuildGrid();
+        }
+    }
+
+    /** Refreshes the open album (if any) from the live collection. */
+    public static void refreshOpenAlbum() {
+        if (current != null && current.isShowing()) current.refreshFromCollection();
+    }
+
     private void rebuildGrid() {
         gridPanel.removeAll();
 

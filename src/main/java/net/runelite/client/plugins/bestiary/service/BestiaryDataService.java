@@ -146,22 +146,25 @@ public class BestiaryDataService {
                 c.rarity, c.isShiny());
     }
 
-    /** Discards a card: removes it, credits its discard value, persists. Returns credits awarded. */
+    /**
+     * Discards a card: removes it, credits its discard value, persists. Returns credits
+     * awarded, or 0 if the card was already gone (guards against double-discard exploits).
+     */
     public long discardCapture(CapturedCreature c) {
-        long credits = discardValue(c);
-        collection.removeCapture(c);
+        if (!collection.removeCapture(c)) return 0;   // already discarded — award nothing
         db.deleteCapture(c.id);
+        long credits = discardValue(c);
         awardCredits(credits);
         return credits;
     }
 
-    /** Discards several cards at once. Returns total credits awarded. */
+    /** Discards several cards at once. Returns total credits awarded (only for cards present). */
     public long discardCaptures(java.util.Collection<CapturedCreature> cards) {
         long total = 0;
         for (CapturedCreature c : cards) {
-            total += discardValue(c);
-            collection.removeCapture(c);
+            if (!collection.removeCapture(c)) continue;
             db.deleteCapture(c.id);
+            total += discardValue(c);
         }
         awardCredits(total);
         return total;

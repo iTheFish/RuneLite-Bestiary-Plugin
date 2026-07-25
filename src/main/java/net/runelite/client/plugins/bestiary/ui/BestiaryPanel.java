@@ -57,9 +57,13 @@ public class BestiaryPanel extends PluginPanel {
             if (choice == JOptionPane.YES_OPTION) {
                 dataService.discardCapture(cap);
                 refresh();
+                AlbumDialog.refreshOpenAlbum();
             }
         });
-        AlbumDialog.setDiscardOpener(win -> DiscardDialog.open(win, dataService, this::refresh));
+        AlbumDialog.setDiscardOpener(win -> DiscardDialog.open(win, dataService, () -> {
+            refresh();
+            AlbumDialog.refreshOpenAlbum();
+        }));
 
         setLayout(new BorderLayout(0, 6));
         setBackground(ColorScheme.DARK_GRAY_COLOR);
