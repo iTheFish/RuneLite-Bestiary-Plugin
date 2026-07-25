@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 /**
  * Modal dialog showing a single capture as an album card, with options to
  * copy the card image to clipboard or save it as a PNG.
- * Exported image includes a bottom owner banner and the 28-char card ID.
+ * Exported image includes a bottom owner banner and the card ID.
  */
 public class CardExportDialog extends JDialog {
 
@@ -231,10 +231,22 @@ public class CardExportDialog extends JDialog {
         saveBtn.setFocusPainted(false);
         saveBtn.addActionListener(e -> { if (savePng(capture.npcName)) flash(saveBtn, "✓ Saved!"); });
 
+        JButton oddsBtn = new JButton("What were the odds?");
+        oddsBtn.setFont(FontManager.getRunescapeSmallFont());
+        oddsBtn.setBackground(new Color(60, 90, 150));
+        oddsBtn.setForeground(Color.WHITE);
+        oddsBtn.setFocusPainted(false);
+        oddsBtn.addActionListener(e -> OddsDialog.open(this, capture));
+
         JPanel btnRow = new JPanel(new GridLayout(1, 2, 6, 0));
         btnRow.setOpaque(false);
         btnRow.add(copyBtn);
         btnRow.add(saveBtn);
+
+        // Odds gets its own full-width row below the card
+        JPanel oddsRow = new JPanel(new GridLayout(1, 1));
+        oddsRow.setOpaque(false);
+        oddsRow.add(oddsBtn);
 
         // Layout
         JPanel content = new JPanel();
@@ -244,10 +256,13 @@ public class CardExportDialog extends JDialog {
 
         previewPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         btnRow.setAlignmentX(Component.CENTER_ALIGNMENT);
+        oddsRow.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         content.add(previewPanel);
         content.add(Box.createVerticalStrut(10));
         content.add(btnRow);
+        content.add(Box.createVerticalStrut(6));
+        content.add(oddsRow);
 
         // Track open instance; clean up shimmer registration on close
         if (openInstance != null && openInstance.isDisplayable()) openInstance.dispose();
@@ -328,7 +343,13 @@ public class CardExportDialog extends JDialog {
 
     /** Draws 3-line banner: UniqueID + Captured by centred, OSRS|BESTIARY pinned to bottom. */
     static void drawBanner(Graphics2D g2, int bX, int bY, int bannerW, int bannerH, String cardId, String ownerStr) {
-        Font idFont     = FontManager.getRunescapeSmallFont().deriveFont(7f);
+        // Shrink the ID font if the (now longer) ID would overflow the banner width.
+        float idSize = 7f;
+        while (idSize > 4f && FontManager.getRunescapeSmallFont().deriveFont(idSize)
+                .getStringBounds(cardId, g2.getFontRenderContext()).getWidth() > bannerW - 6) {
+            idSize -= 0.25f;
+        }
+        Font idFont     = FontManager.getRunescapeSmallFont().deriveFont(idSize);
         Font playerFont = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 10f);
         Font brandFont  = FontManager.getRunescapeSmallFont().deriveFont(8f);
         g2.setFont(idFont);     FontMetrics ifm = g2.getFontMetrics();

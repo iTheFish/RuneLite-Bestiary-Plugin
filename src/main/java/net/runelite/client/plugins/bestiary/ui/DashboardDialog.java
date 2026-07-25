@@ -527,13 +527,13 @@ public class DashboardDialog extends JDialog {
 
         root.add(heroStat(FMT.format(total), "TOTAL CAPTURES", ORANGE));
         root.add(gap(10));
-        root.add(sectionHeader("AVERAGE QUALITY BY RARITY"));
+        root.add(sectionHeader("AVERAGE POWER BY RARITY"));
 
         JPanel avgPanel = col();
         avgPanel.setBorder(new EmptyBorder(0, 12, 0, 12));
         Map<CreatureRarity, Double> avg = col.creatures.stream().collect(
                 Collectors.groupingBy(c -> c.rarity,
-                        Collectors.averagingInt(c -> c.quality.overallRating())));
+                        Collectors.averagingInt(c -> c.powerLevel())));
 
         boolean any = false;
         for (CreatureRarity r : new CreatureRarity[]{
@@ -548,13 +548,13 @@ public class DashboardDialog extends JDialog {
         if (!any) avgPanel.add(emptyNote("No captures yet."));
         root.add(avgPanel);
         root.add(gap(10));
-        root.add(sectionHeader("TOP 10 BY QUALITY"));
+        root.add(sectionHeader("TOP 10 BY POWER"));
 
         JPanel topList = col();
         topList.setBorder(new EmptyBorder(0, 12, 0, 12));
 
         List<CapturedCreature> best = col.creatures.stream()
-                .sorted(Comparator.comparingInt((CapturedCreature c) -> c.quality.overallRating()).reversed())
+                .sorted(Comparator.comparingInt((CapturedCreature c) -> c.powerLevel()).reversed())
                 .limit(10)
                 .collect(Collectors.toList());
 
@@ -583,9 +583,9 @@ public class DashboardDialog extends JDialog {
                 cl.setForeground(new Color(210, 210, 210));
                 left.add(nl); left.add(rl); left.add(cl);
 
-                JLabel ql = new JLabel("Q:" + c.quality.overallRating());
+                JLabel ql = new JLabel("PWR:" + c.powerLevel());
                 ql.setFont(FontManager.getRunescapeFont().deriveFont(Font.BOLD));
-                ql.setForeground(qualColor(c.quality.overallRating()));
+                ql.setForeground(qualColor(c.powerLevel()));
 
                 row.add(left, BorderLayout.CENTER);
                 row.add(ql,   BorderLayout.EAST);
@@ -1778,9 +1778,9 @@ public class DashboardDialog extends JDialog {
 
         Map<CreatureRarity, Double> avgQuality = col.creatures.stream().collect(
                 Collectors.groupingBy(c -> c.rarity,
-                        Collectors.averagingInt(c -> c.quality.overallRating())));
+                        Collectors.averagingInt(c -> c.powerLevel())));
         List<CapturedCreature> top10 = col.creatures.stream()
-                .sorted(Comparator.comparingInt((CapturedCreature c) -> c.quality.overallRating()).reversed())
+                .sorted(Comparator.comparingInt((CapturedCreature c) -> c.powerLevel()).reversed())
                 .limit(10).collect(Collectors.toList());
 
         final int W = 480, PAD = 24;
@@ -1798,7 +1798,7 @@ public class DashboardDialog extends JDialog {
         CreatureRarity[] rarOrder = {CreatureRarity.MYTHIC, CreatureRarity.LEGENDARY,
                 CreatureRarity.EPIC, CreatureRarity.RARE, CreatureRarity.UNCOMMON, CreatureRarity.COMMON};
 
-        y = drawCardSectionHeader(g, "AVERAGE QUALITY BY RARITY", y, W, PAD);
+        y = drawCardSectionHeader(g, "AVERAGE POWER BY RARITY", y, W, PAD);
         y += 6;
         for (CreatureRarity r : rarOrder) {
             if (!avgQuality.containsKey(r)) {
@@ -1810,7 +1810,7 @@ public class DashboardDialog extends JDialog {
         }
         y += 8;
 
-        y = drawCardSectionHeader(g, "TOP 10 BY QUALITY", y, W, PAD);
+        y = drawCardSectionHeader(g, "TOP 10 BY POWER", y, W, PAD);
         y += 6;
         if (top10.isEmpty()) {
             g.setFont(FontManager.getRunescapeSmallFont()); g.setColor(DIM);
@@ -1818,13 +1818,13 @@ public class DashboardDialog extends JDialog {
         } else {
             for (int i = 0; i < top10.size(); i++) {
                 CapturedCreature c = top10.get(i);
-                int q = c.quality.overallRating();
+                int q = c.powerLevel();
                 // Name line
                 g.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
                 FontMetrics fm = g.getFontMetrics();
                 g.setColor(c.rarity.displayColor);
                 g.drawString((i + 1) + ".  " + c.npcName, PAD + 4, y + fm.getAscent());
-                String qs = "Q:" + q;
+                String qs = "PWR:" + q;
                 g.setFont(FontManager.getRunescapeSmallFont());
                 fm = g.getFontMetrics();
                 g.setColor(qualColor(q));

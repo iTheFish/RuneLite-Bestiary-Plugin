@@ -31,24 +31,42 @@ public class AlbumCard extends JPanel {
     private static BestiaryConfig sharedConfig;
     public static void setConfig(BestiaryConfig cfg) { sharedConfig = cfg; }
 
+    /** Discard hook: (menu owner, capture) → confirm + discard. Wired by BestiaryPanel. */
+    private static java.util.function.BiConsumer<java.awt.Component, CapturedCreature> discardHandler;
+    public static void setDiscardHandler(java.util.function.BiConsumer<java.awt.Component, CapturedCreature> h) { discardHandler = h; }
+
+    // Real in-game skill sprites (HP/Prayer/combat stats), supplied by RuneLite at startup.
+    private static net.runelite.client.game.SkillIconManager skillIcons;
+    private static final java.util.Map<net.runelite.api.Skill, BufferedImage> ICON_CACHE = new java.util.HashMap<>();
+    public static void setSkillIconManager(net.runelite.client.game.SkillIconManager m) { skillIcons = m; }
+
+    @Nullable
+    private static BufferedImage skillImg(net.runelite.api.Skill skill) {
+        if (skillIcons == null) return null;
+        return ICON_CACHE.computeIfAbsent(skill, s -> skillIcons.getSkillImage(s, true));
+    }
+
     public static final int CARD_W = 165;
     public static final int CARD_H = 300;
 
     private static final int PAD      = 8;
     private static final int LABEL_W  = 26;
     private static final int VAL_W    = 20;
-    private static final int BAR_H    = 6;
-    private static final int STAT_ROW = 16;
+    private static final int BAR_H    = 7;
+    private static final int STAT_ROW = 18;
 
     private static final int HEADER_Y = 6;
     private static final int HEADER_H = 14;
     private static final int IMAGE_Y  = HEADER_Y + HEADER_H + 4;
-    private static final int IMAGE_H  = 130;
+    private static final int IMAGE_H  = 110;
     private static final int NAME_Y   = IMAGE_Y + IMAGE_H + 4;
     private static final int NAME_H   = 20;
     private static final int COMBAT_Y = NAME_Y + NAME_H;
     private static final int COMBAT_H = 14;
-    private static final int STATS_Y  = COMBAT_Y + COMBAT_H + 3;
+    // Attribute pill band (HP + Prayer) sits between the sub-name row and the stat block.
+    private static final int ATTR_Y   = COMBAT_Y + COMBAT_H + 3;
+    private static final int ATTR_H   = 18;
+    private static final int STATS_Y  = ATTR_Y + ATTR_H + 2;
 
     private static final Color NORMAL_BG      = new Color(38, 38, 38);
     private static final Color HOVER_BG       = new Color(52, 52, 52);
@@ -57,7 +75,13 @@ public class AlbumCard extends JPanel {
     private static final Color LOCKED_ACCENT  = new Color(48, 48, 48);
     private static final Color IMAGE_BG       = new Color(22, 22, 22);
 
-    private static final String[] STAT_LABELS = {"ATK", "STR", "DEF", "MAG", "RNG", "AGI"};
+    // Agility moved up to the attribute band; the stat block is the 5 combat stats.
+    private static final String[] STAT_LABELS = {"ATK", "STR", "DEF", "MAG", "RNG"};
+    private static final net.runelite.api.Skill[] STAT_SKILLS = {
+        net.runelite.api.Skill.ATTACK, net.runelite.api.Skill.STRENGTH,
+        net.runelite.api.Skill.DEFENCE, net.runelite.api.Skill.MAGIC, net.runelite.api.Skill.RANGED
+    };
+    private static final int AGI_STAT_INDEX = 5;
 
     private final String npcName;
     private final int dexNumber;
@@ -81,12 +105,13 @@ public class AlbumCard extends JPanel {
     private final int combatLevel;
     private final int[] avgStats;
     private final int overallQuality; // 0 for locked
+    private final int prayerValue;    // rolled prayer of the shown capture; base prayer when locked
 
     // Locked-only
     private final int killCount;
     private final boolean hasShiny;
 
-    // When true, header shows Q:XX (quality) instead of no.XXX (dex). Only set in single-capture views.
+    // When true, header shows PWR:XX (quality) instead of no.XXX (dex). Only set in single-capture views.
     private boolean showQuality = false;
     public void setShowQuality(boolean b) { this.showQuality = b; }
 
@@ -169,7 +194,7 @@ public class AlbumCard extends JPanel {
         CapturedCreature cover = captures.stream().filter(c -> c.albumCover).findFirst().orElse(null);
         CapturedCreature best = cover != null ? cover : captures.stream()
                 .max(Comparator.comparingInt((CapturedCreature c) -> c.rarity.ordinal())
-                        .thenComparingInt(c -> c.quality.overallRating()))
+                        .thenComparingInt(c -> c.powerLevel()))
                 .orElse(captures.get(0));
         this.combatLevel = best.npcCombatLevel;
 
@@ -199,10 +224,12 @@ public class AlbumCard extends JPanel {
         this.difficulty     = MonsterRoster.getDifficulty(npcName, combatLevel);
         this.combatClass    = MonsterRoster.getCombatClass(npcName, combatLevel);
         this.species        = MonsterRoster.getSpecies(npcName, combatLevel);
-        // If a cover is chosen, its shiny status drives the card look; otherwise any shiny.
-        this.hasShiny       = cover != null ? cover.isShiny()
-                                            : captures.stream().anyMatch(CapturedCreature::isShiny);
-        this.overallQuality = best.quality.overallRating();
+        // Shiny styling must come from the SAME capture that drives the card's rarity/look
+        // (the cover, or the "best" capture) — not any shiny capture. Otherwise a lower-rarity
+        // shiny would make a higher-rarity non-shiny cover render as shiny (#66).
+        this.hasShiny       = best.isShiny();
+        this.overallQuality = best.powerLevel();
+        this.prayerValue    = best.prayer;
         init(imageService, true);
     }
 
@@ -226,6 +253,7 @@ public class AlbumCard extends JPanel {
         this.species        = MonsterRoster.getSpecies(npcName, 0);
         this.hasShiny       = false;
         this.overallQuality = 0;
+        this.prayerValue    = MonsterRoster.getPrayer(npcName);
         init(imageService, imageService != null);
     }
 
@@ -334,7 +362,7 @@ public class AlbumCard extends JPanel {
                 sorted.sort(java.util.Comparator.<CapturedCreature>
                         comparingInt(c -> c.rarity.ordinal())
                         .reversed()
-                        .thenComparingInt(c -> -c.quality.overallRating()));
+                        .thenComparingInt(c -> -c.powerLevel()));
 
                 if (sorted.size() == 1) {
                     JMenuItem item = new JMenuItem("Export Card");
@@ -342,21 +370,34 @@ public class AlbumCard extends JPanel {
                     item.addActionListener(ev ->
                             CardExportDialog.open(SwingUtilities.getWindowAncestor(AlbumCard.this), only));
                     menu.add(item);
+
+                    JMenuItem oddsItem = new JMenuItem("What were the odds?");
+                    oddsItem.addActionListener(ev ->
+                            OddsDialog.open(SwingUtilities.getWindowAncestor(AlbumCard.this), only));
+                    menu.add(oddsItem);
                 } else {
                     JMenu sub = new JMenu("Export Card");
+                    JMenu oddsSub = new JMenu("What were the odds?");
                     int shown = Math.min(sorted.size(), 8);
                     for (int i = 0; i < shown; i++) {
                         CapturedCreature c = sorted.get(i);
                         String label = (c.nickname != null && !c.nickname.isEmpty())
-                                ? "\"" + c.nickname + "\"  Q:" + c.quality.overallRating()
-                                : c.rarity.label + "  Q:" + c.quality.overallRating();
+                                ? "\"" + c.nickname + "\"  PWR:" + c.powerLevel()
+                                : c.rarity.label + "  PWR:" + c.powerLevel();
                         JMenuItem item = new JMenuItem(label);
                         item.setForeground(c.rarity.displayColor);
                         item.addActionListener(ev ->
                                 CardExportDialog.open(SwingUtilities.getWindowAncestor(AlbumCard.this), c));
                         sub.add(item);
+
+                        JMenuItem oItem = new JMenuItem(label);
+                        oItem.setForeground(c.rarity.displayColor);
+                        oItem.addActionListener(ev ->
+                                OddsDialog.open(SwingUtilities.getWindowAncestor(AlbumCard.this), c));
+                        oddsSub.add(oItem);
                     }
                     menu.add(sub);
+                    menu.add(oddsSub);
                 }
                 if (!locked && captures != null && captures.size() == 1) {
                     CapturedCreature nickCap = captures.get(0);
@@ -367,6 +408,13 @@ public class AlbumCard extends JPanel {
                         if (nicknameCallback != null) nicknameCallback.run();
                     }));
                     menu.add(nickItem);
+                }
+                if (discardHandler != null && !locked && captures != null && captures.size() == 1) {
+                    menu.addSeparator();
+                    JMenuItem discardItem = new JMenuItem("Discard…");
+                    discardItem.setForeground(new Color(224, 112, 112));
+                    discardItem.addActionListener(ev -> discardHandler.accept(AlbumCard.this, captures.get(0)));
+                    menu.add(discardItem);
                 }
                 menu.show(AlbumCard.this, e.getX(), e.getY());
             }
@@ -469,19 +517,38 @@ public class AlbumCard extends JPanel {
         g2.setFont(smallFont);
         FontMetrics sfm = g2.getFontMetrics();
 
-        // --- Header: left side (nickname or rarity dots) + right side (dex number) ---
+        // --- Header: left side (nickname or rarity dots) + right side ---
+        // Catalog view: plain dex number. Single-capture (detail/favourites/export) view:
+        // a colour-banded Power pill ("P:123") with the monster's factual HP beside it.
         FontMetrics dfm = sfm;
-        // Catalog view: dex number. Single-capture (detail/favourites) view: quality score.
-        String dexStr = (locked || !showQuality) ? String.format("no. %03d", dexNumber) : "Q:" + overallQuality;
         g2.setFont(smallFont);
-        int dexX = w - PAD - dfm.stringWidth(dexStr);
         int dexY = HEADER_Y + (HEADER_H + dfm.getAscent() - dfm.getDescent()) / 2;
-        g2.setColor(locked ? new Color(75, 75, 75) : rarest.displayColor);
-        g2.drawString(dexStr, dexX, dexY);
+        int dexX; // left edge of the right-side content (nickname/dots truncate against this)
+        if (locked || !showQuality) {
+            String dexStr = String.format("no. %03d", dexNumber);
+            dexX = w - PAD - dfm.stringWidth(dexStr);
+            g2.setColor(locked ? new Color(75, 75, 75) : rarest.displayColor);
+            g2.drawString(dexStr, dexX, dexY);
+        } else {
+            // Power pill, right-aligned, coloured by power band
+            String pText = "P:" + overallQuality;
+            int pillPadX = 5, pillH2 = 15;
+            int pillW = dfm.stringWidth(pText) + pillPadX * 2;
+            int pillX = w - PAD - pillW;
+            int pillY2 = HEADER_Y + (HEADER_H - pillH2) / 2;
+            Color band = powerColor(overallQuality);
+            g2.setColor(band);
+            g2.fillRoundRect(pillX, pillY2, pillW, pillH2, 5, 5);
+            g2.setColor(textOn(band));
+            g2.drawString(pText, pillX + pillPadX,
+                    pillY2 + (pillH2 + dfm.getAscent() - dfm.getDescent()) / 2);
+            dexX = pillX;
+        }
         if (hasShiny) {
             String star = "✦";
             g2.setColor(new Color(255, 215, 0));
             g2.drawString(star, dexX - dfm.stringWidth(star) - 3, dexY);
+            dexX -= dfm.stringWidth(star) + 3;
         }
 
         // Left of header: nickname (single-capture card only) or rarity dots
@@ -623,19 +690,57 @@ public class AlbumCard extends JPanel {
             g2.setColor(Color.WHITE);
             g2.drawString(lvlLabel, lvlX + pillPad, pillBase);
 
-            // Class pill — amber, same style as species
-            String clsLabel = combatClass.label;
-            int clsW = sfm.stringWidth(clsLabel) + pillPad * 2;
+            // Class pill — amber. Shrink the font (not truncate) so long classes like
+            // JUGGERNAUT still show in full without overlapping the species pill.
             int clsX = lvlX + lvlW + 4;
-            g2.setColor(new Color(160, 110, 30, 180));
-            g2.fillRoundRect(clsX, pillY, clsW, pillH, 4, 4);
-            g2.setColor(Color.WHITE);
-            g2.drawString(clsLabel, clsX + pillPad, pillBase);
+            int maxClsW = spX - 4 - clsX;                 // room before the species pill
+            int maxTextW = maxClsW - pillPad * 2;
+            String clsLabel = combatClass.label;
+            Font clsFont = smallFont;
+            FontMetrics cfm = sfm;
+            float fs = smallFont.getSize2D();
+            while (cfm.stringWidth(clsLabel) > maxTextW && fs > 7f) {
+                fs -= 0.5f;
+                clsFont = smallFont.deriveFont(fs);
+                cfm = g2.getFontMetrics(clsFont);
+            }
+            int clsW = Math.min(cfm.stringWidth(clsLabel) + pillPad * 2, maxClsW);
+            if (maxTextW > 6) {
+                g2.setColor(new Color(160, 110, 30, 180));
+                g2.fillRoundRect(clsX, pillY, clsW, pillH, 4, 4);
+                g2.setFont(clsFont);
+                g2.setColor(Color.WHITE);
+                g2.drawString(clsLabel, clsX + pillPad,
+                        pillY + (pillH + cfm.getAscent() - cfm.getDescent()) / 2);
+                g2.setFont(smallFont);
+            }
         } else {
             // Locked: plain kill count text
             g2.setColor(new Color(65, 65, 65));
             String killStr = killCount > 0 ? killCount + " kills" : "Not encountered";
             g2.drawString(killStr, imgX + 2, subBaseline);
+        }
+
+        // --- Attribute pills: HP (left half) + Prayer + Agility (right half, split) ---
+        // HP/Prayer are factual monster info; Agility is the capture's rolled AGI stat,
+        // relocated here so the stat block below is the 5 combat stats. Real skill icons.
+        {
+            int gap = 4;
+            int usable = imgW - gap * 2;
+            // HP gets a narrower slice so Prayer + Agility have room (agility was clipping on export).
+            int hpW = Math.round(usable * 0.50f) - 24;
+            int prW = (usable - hpW - gap) / 2;
+            int agW = usable - hpW - prW;
+            int aY = ATTR_Y;
+            int x0 = imgX;
+            int hp = net.runelite.client.plugins.bestiary.model.MonsterRoster.getHitpoints(npcName);
+            int prayer = prayerValue;
+            drawAttrPill(g2, x0, aY, hpW, ATTR_H, IconType.HP, String.valueOf(hp), locked);
+            x0 += hpW + gap;
+            drawAttrPill(g2, x0, aY, prW, ATTR_H, IconType.PRAYER, String.valueOf(prayer), locked);
+            x0 += prW + gap;
+            String agiVal = locked ? "?" : String.valueOf(avgStats[AGI_STAT_INDEX]);
+            drawAttrPill(g2, x0, aY, agW, ATTR_H, IconType.AGILITY, agiVal, locked);
         }
 
         // --- Stat bars (captured) / empty outlines (locked) ---
@@ -647,8 +752,21 @@ public class AlbumCard extends JPanel {
 
             g2.setFont(smallFont);
             boolean primary = !locked && combatClass.isPrimary(i);
-            g2.setColor(primary ? new Color(200, 160, 60) : locked ? new Color(48, 48, 48) : new Color(160, 160, 160));
-            g2.drawString(STAT_LABELS[i], imgX, baseline);
+            // Skill icon as the row label (falls back to the abbreviation if unavailable)
+            BufferedImage statIcon = skillImg(STAT_SKILLS[i]);
+            if (statIcon != null) {
+                int isz = STAT_ROW - 6;
+                int ix = imgX + (LABEL_W - isz) / 2;
+                int iy = rowY + (STAT_ROW - isz) / 2;
+                Graphics2D gi = (Graphics2D) g2.create();
+                gi.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                if (locked) gi.setComposite(java.awt.AlphaComposite.getInstance(java.awt.AlphaComposite.SRC_OVER, 0.35f));
+                gi.drawImage(statIcon, ix, iy, isz, isz, null);
+                gi.dispose();
+            } else {
+                g2.setColor(primary ? new Color(200, 160, 60) : locked ? new Color(48, 48, 48) : new Color(160, 160, 160));
+                g2.drawString(STAT_LABELS[i], imgX, baseline);
+            }
 
             int barX = imgX + LABEL_W + 3;
             int barW = imgW - LABEL_W - VAL_W - 6;
@@ -657,7 +775,8 @@ public class AlbumCard extends JPanel {
             g2.fillRoundRect(barX, barY, barW, BAR_H, 3, 3);
 
             if (!locked) {
-                int fill = Math.round(barW * avgStats[i] / 100f);
+                // Stats cap at 99, so treat 99 as a full (100%) bar.
+                int fill = Math.min(barW, Math.round(barW * avgStats[i] / 99f));
                 if (fill > 0) {
                     g2.setColor(new Color(rarest.displayColor.getRed(),
                             rarest.displayColor.getGreen(), rarest.displayColor.getBlue(), 210));
@@ -666,7 +785,8 @@ public class AlbumCard extends JPanel {
                 g2.setFont(boldFont);
                 FontMetrics vfm = g2.getFontMetrics();
                 String valStr = String.valueOf(avgStats[i]);
-                g2.setColor(Color.WHITE);
+                // Amber value marks a primary stat for this combat class (the icon replaced the label cue)
+                g2.setColor(primary ? new Color(230, 190, 80) : Color.WHITE);
                 g2.drawString(valStr, imgX + imgW - vfm.stringWidth(valStr), baseline);
             }
         }
@@ -749,5 +869,111 @@ public class AlbumCard extends JPanel {
             text = text.substring(0, text.length() - 1);
         }
         return text + "…";
+    }
+
+    /**
+     * Escalating colour band for a Power Level, so the pill colour maps consistently
+     * to a range: grey → green → blue → purple → orange → red as power climbs.
+     * Power can exceed 99 (bosses), so the top bands cover the boss range.
+     */
+    public static Color powerColor(int power) {
+        if (power < 20)  return new Color(150, 150, 150); // trivial
+        if (power < 40)  return new Color(110, 190, 110); // low
+        if (power < 70)  return new Color(80, 160, 230);  // mid
+        if (power < 100) return new Color(170, 120, 235); // high
+        if (power < 160) return new Color(240, 150, 45);  // boss
+        return new Color(225, 70, 70);                    // apex
+    }
+
+    /** Black or white text depending on the band's perceived brightness. */
+    private static Color textOn(Color bg) {
+        double lum = 0.299 * bg.getRed() + 0.587 * bg.getGreen() + 0.114 * bg.getBlue();
+        return lum > 150 ? new Color(25, 25, 25) : Color.WHITE;
+    }
+
+    private enum IconType { HP, PRAYER, AGILITY }
+
+    /** Draws a dark rounded pill with an in-game-style icon and a value. */
+    private static void drawAttrPill(Graphics2D g, int x, int y, int w, int h,
+                                     IconType type, String value, boolean locked) {
+        g.setColor(locked ? new Color(24, 24, 24) : new Color(30, 30, 30));
+        g.fillRoundRect(x, y, w, h, 5, 5);
+        g.setColor(locked ? new Color(40, 40, 40) : new Color(55, 55, 55));
+        g.setStroke(new BasicStroke(1f));
+        g.drawRoundRect(x, y, w - 1, h - 1, 5, 5);
+
+        int iconSize = h - 4;
+        int iconX = x + 5;
+        int iconY = y + (h - iconSize) / 2;
+        net.runelite.api.Skill sk = type == IconType.HP ? net.runelite.api.Skill.HITPOINTS
+                : type == IconType.PRAYER ? net.runelite.api.Skill.PRAYER
+                : net.runelite.api.Skill.AGILITY;
+        BufferedImage sprite = skillImg(sk);
+        if (sprite != null) {
+            Graphics2D gi = (Graphics2D) g.create();
+            gi.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            if (locked) gi.setComposite(java.awt.AlphaComposite.getInstance(java.awt.AlphaComposite.SRC_OVER, 0.4f));
+            gi.drawImage(sprite, iconX, iconY, iconSize, iconSize, null);
+            gi.dispose();
+        } else {
+            // Fallback if the sprite manager isn't wired yet
+            if (type == IconType.HP) {
+                drawHeartIcon(g, iconX, iconY, iconSize, locked ? new Color(70, 70, 70) : new Color(220, 60, 60));
+            } else if (type == IconType.PRAYER) {
+                drawPrayerIcon(g, iconX, iconY, iconSize, locked ? new Color(70, 70, 70) : new Color(90, 190, 235));
+            } else {
+                g.setColor(locked ? new Color(70, 70, 70) : new Color(120, 200, 120));
+                g.fillOval(iconX, iconY + 1, iconSize - 2, iconSize - 2);
+            }
+        }
+
+        // Value text — shrink the font to fit the remaining pill width so large HP
+        // (4-5 digits) never overflows into the neighbouring pill.
+        int textX = iconX + iconSize + 3;
+        int avail = (x + w) - 4 - textX;
+        Font vf = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD);
+        FontMetrics fm = g.getFontMetrics(vf);
+        float vs = vf.getSize2D();
+        while (fm.stringWidth(value) > avail && vs > 7f) {
+            vs -= 0.5f;
+            vf = FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, vs);
+            fm = g.getFontMetrics(vf);
+        }
+        g.setFont(vf);
+        g.setColor(locked ? new Color(90, 90, 90) : Color.WHITE);
+        g.drawString(value, textX, y + (h + fm.getAscent() - fm.getDescent()) / 2);
+    }
+
+    /** Red heart, OSRS hitpoints-style. */
+    private static void drawHeartIcon(Graphics2D g, int x, int y, int s, Color c) {
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setColor(c);
+        float w = s, h = s;
+        java.awt.geom.Path2D.Float p = new java.awt.geom.Path2D.Float();
+        p.moveTo(x + w / 2, y + h * 0.82f);
+        p.curveTo(x - w * 0.05f, y + h * 0.34f, x + w * 0.18f, y + h * 0.02f, x + w / 2, y + h * 0.30f);
+        p.curveTo(x + w * 0.82f, y + h * 0.02f, x + w * 1.05f, y + h * 0.34f, x + w / 2, y + h * 0.82f);
+        p.closePath();
+        g2.fill(p);
+        g2.dispose();
+    }
+
+    /** Light-blue teardrop, evoking the OSRS prayer orb. */
+    private static void drawPrayerIcon(Graphics2D g, int x, int y, int s, Color c) {
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setColor(c);
+        float w = s, h = s;
+        java.awt.geom.Path2D.Float p = new java.awt.geom.Path2D.Float();
+        p.moveTo(x + w / 2, y);
+        p.curveTo(x + w * 0.98f, y + h * 0.55f, x + w * 0.80f, y + h, x + w / 2, y + h);
+        p.curveTo(x + w * 0.20f, y + h, x + w * 0.02f, y + h * 0.55f, x + w / 2, y);
+        p.closePath();
+        g2.fill(p);
+        // soft inner highlight
+        g2.setColor(new Color(255, 255, 255, 90));
+        g2.fill(new java.awt.geom.Ellipse2D.Float(x + w * 0.42f, y + h * 0.45f, w * 0.22f, h * 0.30f));
+        g2.dispose();
     }
 }

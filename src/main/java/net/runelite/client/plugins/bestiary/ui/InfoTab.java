@@ -343,13 +343,17 @@ public class InfoTab extends JPanel {
                 "The chance scales with your level: 0.2% at level 1 up to 2% at level 99.\n\n" +
                 "A shiny always rolls near-max stats (the very top of its band), gets a golden card " +
                 "with twinkling sparkles, and is announced in chat with a ✦ SHINY ✦ marker."));
-        tiles.add(tile("Quality",
-                "Every capture has six individual stats, each scored 1–99:\n" +
-                "Attack, Strength, Defence, Magic, Ranged, Agility.\n\n" +
-                "Which stats roll high depends on the monster's class " +
-                "(e.g. a Brute rolls high Attack and Strength; a Ranger rolls high Ranged and Agility). " +
-                "Higher rarities shift all stats toward the top — a Mythic capture will generally " +
-                "score much higher than a Common of the same species.\n\n" +
+        tiles.add(tile("Power Level",
+                "Power Level is a card's headline number. It combines the monster's real " +
+                "Hitpoints (a factual OSRS attribute, shown as card info) with the six rolled " +
+                "stats:\n\n" +
+                "Power Level = (Attack + Strength + Defence + Magic + Ranged + Agility + HP) / 7.\n\n" +
+                "Because HP dwarfs the 1–99 stats for tanky monsters, big bosses can push Power " +
+                "Level well past 99, while a chicken stays low no matter how good its stats roll. " +
+                "The rolled stats are mostly flavour — HP is what drives a card's power.\n\n" +
+                "Which stats roll high still depends on the monster's class " +
+                "(e.g. a Brute rolls high Attack and Strength; a Ranger rolls high Ranged and Agility), " +
+                "and higher rarities shift all stats toward the top. " +
                 "Gold-outlined bars in the detail dialog mark your personal bests."));
         tiles.add(tile("XP",
                 "You earn experience from kills and captures.\n\n" +
@@ -367,11 +371,11 @@ public class InfoTab extends JPanel {
         tiles.add(tile("Chat notifications",
                 "Two modes, selected in Config under 'Chat Notification Mode':\n\n" +
                 "Verbose — one chat message per capture showing the rarity, NPC name, kill number, " +
-                "and quality score. The kill number ensures no two messages are identical " +
+                "and Power Level. The kill number ensures no two messages are identical " +
                 "(RuneLite silently drops duplicate messages).\n\n" +
                 "Batched — if you kill the same NPC+rarity multiple times in quick succession, " +
                 "messages are held for 5 seconds of inactivity then sent as one summary " +
-                "(e.g. '3× Common Goblin captured!  Kill #42  Q:28, 35, 41')."));
+                "(e.g. '3× Common Goblin captured!  Kill #42  PWR:28, 35, 41')."));
         tiles.add(tile("Album",
                 "A full dex grid showing every capturable species in the game. " +
                 "Open it via the 'Open Album' button visible in all Collection views and on this tab.\n\n" +
@@ -397,7 +401,7 @@ public class InfoTab extends JPanel {
                 "You can also right-click capture rows directly to copy a card to clipboard without opening the export preview."));
         tiles.add(tile("Session Recap",
                 "A button on the Progress tab shows all captures made since you last logged in.\n\n" +
-                "The recap lists every capture with its rarity (colour-coded), quality score, " +
+                "The recap lists every capture with its rarity (colour-coded), Power Level, " +
                 "region, and time. A rarity pill summary at the top shows your totals at a glance.\n\n" +
                 "'Copy Summary' places the list on your clipboard, formatted as a code block " +
                 "so it displays cleanly when pasted into Discord or a text editor."));

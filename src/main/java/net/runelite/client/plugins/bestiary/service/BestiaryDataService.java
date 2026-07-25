@@ -139,6 +139,37 @@ public class BestiaryDataService {
         db.setMetadata(META_CREDITS, String.valueOf(collection.credits));
     }
 
+    /** Credits a card is worth if discarded. */
+    public long discardValue(CapturedCreature c) {
+        return net.runelite.client.plugins.bestiary.util.CreditCalculator.forDiscard(
+                net.runelite.client.plugins.bestiary.model.MonsterRoster.getDifficulty(c.npcName, c.npcCombatLevel),
+                c.rarity, c.isShiny());
+    }
+
+    /**
+     * Discards a card: removes it, credits its discard value, persists. Returns credits
+     * awarded, or 0 if the card was already gone (guards against double-discard exploits).
+     */
+    public long discardCapture(CapturedCreature c) {
+        if (!collection.removeCapture(c)) return 0;   // already discarded — award nothing
+        db.deleteCapture(c.id);
+        long credits = discardValue(c);
+        awardCredits(credits);
+        return credits;
+    }
+
+    /** Discards several cards at once. Returns total credits awarded (only for cards present). */
+    public long discardCaptures(java.util.Collection<CapturedCreature> cards) {
+        long total = 0;
+        for (CapturedCreature c : cards) {
+            if (!collection.removeCapture(c)) continue;
+            db.deleteCapture(c.id);
+            total += discardValue(c);
+        }
+        awardCredits(total);
+        return total;
+    }
+
     public void saveProgressionState() {
         saveMetadata();
     }
@@ -177,6 +208,9 @@ public class BestiaryDataService {
                 boolean shiny = rng.nextDouble() < CaptureService.shinyChance(captureLevels[r]) * 3.0;
                 CreatureQuality quality = net.runelite.client.plugins.bestiary.util.RarityRoller
                     .generateQuality(combatClass, rarity, statBases, rng, shiny);
+                int prayer = net.runelite.client.plugins.bestiary.util.RarityRoller
+                    .rollPrayer(net.runelite.client.plugins.bestiary.model.MonsterRoster.getPrayer(name),
+                            rarity, rng, shiny);
 
                 CapturedCreature c = CapturedCreature.builder()
                     .npcId(0)
@@ -190,6 +224,7 @@ public class BestiaryDataService {
                     .killsBeforeCapture(killsBefore[r])
                     .playerName("Dev")
                     .shiny(shiny)
+                    .prayer(prayer)
                     .build();
 
                 collection.addCapture(c);

@@ -3,30 +3,33 @@ package net.runelite.client.plugins.bestiary.util;
 import net.runelite.client.plugins.bestiary.model.CapturedCreature;
 import net.runelite.client.plugins.bestiary.model.CreatureRarity;
 import net.runelite.client.plugins.bestiary.model.CreatureQuality;
+import net.runelite.client.plugins.bestiary.model.MonsterRoster;
 
 /**
- * Encodes a capture into a fixed-width 28-character card ID:
+ * Encodes a capture into a fixed-width 36-character card ID:
  *
- *   [dex 3][str 2][spd 2][end 2][int 2][stl 2][vit 2][rarity 1][player 12]
+ *   [dex 3][ATK 2][STR 2][DEF 2][MAG 2][RNG 2][AGI 2][rarity 1][shiny 1][HP 5][prayer 2][player 12]
  *
- * Stats 1–99 are zero-padded; 100 encodes as "00".
- * Player name is left-padded with '0' to exactly 12 characters.
+ * Stats 1–99 are zero-padded; 100 encodes as "00". HP is zero-padded to 5 digits,
+ * Prayer to 2. Shiny is 1/0. Player name is left-padded with '0' to exactly 12 chars.
  * Rarity: 1=Common … 6=Mythic.
  *
- * Two captures of the same monster/stats/rarity by different players are
- * identical except for the trailing 12 player characters — enabling future
- * trading provenance tracking.
+ * HP, Prayer and Agility are all included so the ID self-describes everything that
+ * feeds a card's Power Level. Two captures that differ only by owner share every
+ * character except the trailing 12 — enabling future trading provenance tracking.
  */
 public final class CardId {
 
-    public static final int LENGTH = 28;
+    public static final int LENGTH = 36;
     private static final int PLAYER_LEN = 12;
 
     private CardId() {}
 
     public static String encode(int dexNumber, CapturedCreature capture) {
         CreatureQuality q = capture.quality;
-        return String.format("%03d%s%s%s%s%s%s%d%s",
+        int hp     = Math.min(99999, MonsterRoster.getHitpoints(capture.npcName));
+        int prayer = Math.min(99, capture.prayer);
+        return String.format("%03d%s%s%s%s%s%s%d%d%05d%02d%s",
                 dexNumber,
                 encodeStat(q.attack),
                 encodeStat(q.strength),
@@ -35,6 +38,9 @@ public final class CardId {
                 encodeStat(q.ranged),
                 encodeStat(q.agility),
                 rarityDigit(capture.rarity),
+                capture.isShiny() ? 1 : 0,
+                hp,
+                prayer,
                 encodePlayer(capture.playerName));
     }
 

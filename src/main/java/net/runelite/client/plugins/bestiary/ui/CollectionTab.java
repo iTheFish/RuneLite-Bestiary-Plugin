@@ -49,7 +49,7 @@ public class CollectionTab extends JPanel {
         "Name A-Z", "Name Z-A",
         "Newest first", "Oldest first",
         "Rarity (best)", "Rarity (worst)",
-        "Quality (high)", "Quality (low)"
+        "Power (high)", "Power (low)"
     };
 
     public CollectionTab(BestiaryDataService dataService, WikiImageService imageService) {
@@ -397,10 +397,10 @@ public class CollectionTab extends JPanel {
             case "Rarity (worst)":
                 entries.sort(Comparator.comparingInt(e -> e.getValue().get(0).rarity.ordinal()));
                 break;
-            case "Quality (high)":
+            case "Power (high)":
                 entries.sort((a, b) -> avgQuality(b.getValue()) - avgQuality(a.getValue()));
                 break;
-            case "Quality (low)":
+            case "Power (low)":
                 entries.sort(Comparator.comparingInt(e -> avgQuality(e.getValue())));
                 break;
         }
@@ -431,11 +431,11 @@ public class CollectionTab extends JPanel {
             case "Rarity (worst)":
                 sorted.sort(Comparator.comparingInt(c -> c.rarity.ordinal()));
                 break;
-            case "Quality (high)":
-                sorted.sort(Comparator.comparingInt((CapturedCreature c) -> c.quality.overallRating()).reversed());
+            case "Power (high)":
+                sorted.sort(Comparator.comparingInt((CapturedCreature c) -> c.powerLevel()).reversed());
                 break;
-            case "Quality (low)":
-                sorted.sort(Comparator.comparingInt(c -> c.quality.overallRating()));
+            case "Power (low)":
+                sorted.sort(Comparator.comparingInt(c -> c.powerLevel()));
                 break;
             default:
                 sorted.sort(Comparator.comparing((CapturedCreature c) -> c.captureTime).reversed());
@@ -455,7 +455,7 @@ public class CollectionTab extends JPanel {
     private void buildFavouritesView(List<CapturedCreature> all, String selectedSort) {
         List<CapturedCreature> allFavs = all.stream()
                 .filter(c -> c.favourite)
-                .sorted(Comparator.comparingInt((CapturedCreature c) -> c.quality.overallRating()).reversed())
+                .sorted(Comparator.comparingInt((CapturedCreature c) -> c.powerLevel()).reversed())
                 .collect(Collectors.toList());
         List<CapturedCreature> favs = allFavs.stream().limit(3).collect(Collectors.toList());
 
@@ -546,10 +546,10 @@ public class CollectionTab extends JPanel {
             case "Rarity (worst)":
                 entries.sort(Comparator.comparingInt(e -> maxRarity(e.getValue()).ordinal()));
                 break;
-            case "Quality (high)":
+            case "Power (high)":
                 entries.sort((a, b) -> avgQuality(b.getValue()) - avgQuality(a.getValue()));
                 break;
-            case "Quality (low)":
+            case "Power (low)":
                 entries.sort(Comparator.comparingInt(e -> avgQuality(e.getValue())));
                 break;
             default:
@@ -608,7 +608,7 @@ public class CollectionTab extends JPanel {
     }
 
     private static int avgQuality(List<CapturedCreature> captures) {
-        return (int) captures.stream().mapToInt(c -> c.quality.overallRating()).average().orElse(0);
+        return (int) captures.stream().mapToInt(c -> c.powerLevel()).average().orElse(0);
     }
 
     /** JPanel that tells its JScrollPane to constrain width to the viewport. */

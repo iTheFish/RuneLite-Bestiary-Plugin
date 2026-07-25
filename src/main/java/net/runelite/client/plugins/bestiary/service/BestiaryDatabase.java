@@ -30,7 +30,7 @@ import java.util.Map;
 public class BestiaryDatabase {
 
     private static final String DB_NAME = "bestiary.db";
-    private static final int    SCHEMA_VERSION = 4;
+    private static final int    SCHEMA_VERSION = 6;
 
     private final File dbFile;
     private Connection conn;
@@ -115,7 +115,9 @@ public class BestiaryDatabase {
                 "  nickname             TEXT," +
                 "  favourite            INTEGER NOT NULL DEFAULT 0," +
                 "  shiny                INTEGER NOT NULL DEFAULT 0," +
-                "  album_cover          INTEGER NOT NULL DEFAULT 0" +
+                "  album_cover          INTEGER NOT NULL DEFAULT 0," +
+                "  prayer               INTEGER NOT NULL DEFAULT 1," +
+                "  observed_hp          INTEGER NOT NULL DEFAULT 0" +
                 ")"
             );
             st.executeUpdate(
@@ -138,8 +140,8 @@ public class BestiaryDatabase {
             "(id, npc_id, npc_name, npc_combat_level, rarity," +
             " stat_atk, stat_str, stat_def, stat_mag, stat_rng, stat_agi," +
             " capture_time, region_name, capture_level, kills_before_capture," +
-            " player_name, nickname, favourite, shiny, album_cover)" +
-            " VALUES (?,?,?,?,?, ?,?,?,?,?,?, ?,?,?,?, ?,?,?,?,?)";
+            " player_name, nickname, favourite, shiny, album_cover, prayer, observed_hp)" +
+            " VALUES (?,?,?,?,?, ?,?,?,?,?,?, ?,?,?,?, ?,?,?,?,?, ?,?)";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, c.id);
             ps.setInt(2, c.npcId);
@@ -161,6 +163,8 @@ public class BestiaryDatabase {
             ps.setInt(18, c.favourite ? 1 : 0);
             ps.setInt(19, c.shiny ? 1 : 0);
             ps.setInt(20, c.albumCover ? 1 : 0);
+            ps.setInt(21, c.prayer);
+            ps.setInt(22, c.observedHp);
             ps.executeUpdate();
         } catch (SQLException e) {
             log.error("Failed to insert capture {}", c.id, e);
@@ -222,7 +226,7 @@ public class BestiaryDatabase {
             "SELECT id, npc_id, npc_name, npc_combat_level, rarity," +
             " stat_atk, stat_str, stat_def, stat_mag, stat_rng, stat_agi," +
             " capture_time, region_name, capture_level, kills_before_capture," +
-            " player_name, nickname, favourite, shiny, album_cover" +
+            " player_name, nickname, favourite, shiny, album_cover, prayer, observed_hp" +
             " FROM captures ORDER BY capture_time ASC";
         try (Statement st = conn.createStatement(); ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
@@ -243,6 +247,8 @@ public class BestiaryDatabase {
                     .killsBeforeCapture(rs.getInt("kills_before_capture"))
                     .playerName(rs.getString("player_name"))
                     .shiny(rs.getInt("shiny") == 1)
+                    .prayer(rs.getInt("prayer"))
+                    .observedHp(rs.getInt("observed_hp"))
                     .build();
                 c.nickname   = rs.getString("nickname");
                 c.favourite  = rs.getInt("favourite") == 1;
@@ -260,6 +266,15 @@ public class BestiaryDatabase {
             st.executeUpdate("DELETE FROM captures");
         } catch (SQLException e) {
             log.error("Failed to delete captures", e);
+        }
+    }
+
+    public void deleteCapture(String id) {
+        try (PreparedStatement ps = conn.prepareStatement("DELETE FROM captures WHERE id=?")) {
+            ps.setString(1, id);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            log.error("Failed to delete capture {}", id, e);
         }
     }
 

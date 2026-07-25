@@ -83,7 +83,7 @@ public class CaptureServiceTest {
     public void returnEmptyWhenCaptureDisabled() {
         when(config.captureEnabled()).thenReturn(false);
         CaptureService service = new CaptureService(config, new Random(SEED));
-        Optional<CapturedCreature> result = service.attemptCapture(npc, null, 1, 0, "Test", "Player");
+        Optional<CapturedCreature> result = service.attemptCapture(npc, null, 1, 0, "Test", "Player", 0);
         assertFalse(result.isPresent());
     }
 
@@ -97,7 +97,7 @@ public class CaptureServiceTest {
                 net.runelite.client.plugins.bestiary.model.DevRarityOverride.NONE);
         CaptureService service = new CaptureService(config, new Random(SEED));
 
-        Optional<CapturedCreature> result = service.attemptCapture(npc, null, 1, 5, "Lumbridge", "Player");
+        Optional<CapturedCreature> result = service.attemptCapture(npc, null, 1, 5, "Lumbridge", "Player", 0);
         assertTrue(result.isPresent());
 
         CapturedCreature c = result.get();

@@ -45,6 +45,12 @@ public class CapturedCreature {
     /** True when this capture won the independent shiny roll at capture time. Persisted. */
     public final boolean shiny;
 
+    /** Rolled Prayer level for this capture (rarity-banded, half stat scale). Persisted. */
+    public final int prayer;
+
+    /** Damage the player dealt to this kill ("observed HP"). 0 = unknown → use placeholder. Persisted. */
+    public final int observedHp;
+
     /** Player has chosen this capture as the album catalog cover for its monster. Persisted; one per npcName. */
     public boolean albumCover;
 
@@ -67,6 +73,8 @@ public class CapturedCreature {
         this.killsBeforeCapture = b.killsBeforeCapture;
         this.playerName        = b.playerName != null ? b.playerName : "";
         this.shiny             = b.shiny;
+        this.prayer            = b.prayer >= 0 ? b.prayer : MonsterRoster.getPrayer(b.npcName);
+        this.observedHp        = b.observedHp;
     }
 
     public static Builder builder() {
@@ -86,6 +94,8 @@ public class CapturedCreature {
         private int killsBeforeCapture = 0;
         private String playerName = "";
         private boolean shiny = false;
+        private int prayer = -1;   // -1 = unset → defaults to the monster's base prayer
+        private int observedHp = 0;
 
         public Builder id(String v)              { this.id = v; return this; }
         public Builder npcId(int v)             { this.npcId = v; return this; }
@@ -99,6 +109,8 @@ public class CapturedCreature {
         public Builder killsBeforeCapture(int v) { this.killsBeforeCapture = v; return this; }
         public Builder playerName(String v)       { this.playerName = v; return this; }
         public Builder shiny(boolean v)           { this.shiny = v; return this; }
+        public Builder prayer(int v)              { this.prayer = v; return this; }
+        public Builder observedHp(int v)          { this.observedHp = v; return this; }
 
         public CapturedCreature build() {
             if (quality == null) {
@@ -111,6 +123,26 @@ public class CapturedCreature {
     /** True when this capture won the independent shiny roll at capture time. */
     public boolean isShiny() {
         return shiny;
+    }
+
+    /**
+     * The HP used for this card: the damage the player actually dealt to the kill
+     * ("observed HP") when known, else the monster's placeholder wiki HP. For solo
+     * kills of normal monsters these are ~equal; for scaled/group content observed
+     * reflects the player's own contribution.
+     */
+    public int hitpoints() {
+        return observedHp > 0 ? observedHp : MonsterRoster.getHitpoints(npcName);
+    }
+
+    /**
+     * "Power Level" — the headline card metric. Averages the eight value terms: the 6 rolled
+     * combat stats + the rolled Prayer (all on the 1-99 scale) + the monster's HP, over 8.
+     * Because HP is a raw number that dwarfs the 1-99 terms for tanky monsters, Power Level can
+     * exceed 99 for bosses. Stats/prayer are flavour; HP is the real value driver.
+     */
+    public int powerLevel() {
+        return Math.round((quality.statSum() + prayer + hitpoints()) / 8f);
     }
 
     @Override

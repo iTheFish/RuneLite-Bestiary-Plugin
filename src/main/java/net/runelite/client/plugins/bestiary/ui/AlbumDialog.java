@@ -45,6 +45,10 @@ public class AlbumDialog extends JDialog {
     private static java.util.function.Consumer<String> openDetailCallback;
     public static void setOpenDetailCallback(java.util.function.Consumer<String> cb) { openDetailCallback = cb; }
 
+    /** Opens the bulk-discard screen (owner window supplied). Wired by BestiaryPanel. */
+    private static java.util.function.Consumer<Window> discardOpener;
+    public static void setDiscardOpener(java.util.function.Consumer<Window> c) { discardOpener = c; }
+
     // Pending filter state — set before calling the callback, consumed in focusDetail
     private static CreatureRarity          pendingFilterRarity  = null;
     private static java.time.Instant       pendingFilterCapture = null;
@@ -85,7 +89,7 @@ public class AlbumDialog extends JDialog {
 
     private static final String[] SORT_OPTIONS = {
         "Name A–Z", "Name Z–A", "Difficulty ↑", "Difficulty ↓", "Most caught",
-        "Rarity (best)", "Quality (high)", "Newest first"
+        "Rarity (best)", "Power (high)", "Newest first"
     };
 
     private final Map<String, List<CapturedCreature>> capturesByNpc;
@@ -129,9 +133,13 @@ public class AlbumDialog extends JDialog {
     private JComboBox<String> detailSortBox;
     private JButton           prevPageBtn;
     private JButton           nextPageBtn;
+    private JButton           prevMonsterBtn;
+    private JButton           nextMonsterBtn;
     private JButton                  detailExportBtn;
     private CapturedCreature         detailExportCap  = null;
     private List<CapturedCreature>   detailCurrentPage = Collections.emptyList();
+    /** Captured monster names in the current catalog sort order — drives Prev/Next Monster. */
+    private final List<String> catalogOrder = new ArrayList<>();
 
     public AlbumDialog(Window owner, Map<String, List<CapturedCreature>> capturesByNpc,
                        Map<String, Integer> killCounts, BestiaryCollection collection,
@@ -244,6 +252,20 @@ public class AlbumDialog extends JDialog {
 
         topBar.add(row1);
         topBar.add(row2);
+        if (discardOpener != null) {
+            JButton discardBtn = new JButton("Discard duplicates…");
+            discardBtn.setFont(FontManager.getRunescapeSmallFont());
+            discardBtn.setBackground(new Color(120, 55, 55));
+            discardBtn.setForeground(Color.WHITE);
+            discardBtn.setFocusPainted(false);
+            discardBtn.addActionListener(e -> discardOpener.accept(AlbumDialog.this));
+            JPanel dRow = new JPanel(new BorderLayout());
+            dRow.setOpaque(false);
+            dRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
+            dRow.setBorder(new EmptyBorder(4, 0, 0, 0));
+            dRow.add(discardBtn, BorderLayout.WEST);
+            topBar.add(dRow);
+        }
 
         // -------------------------------------------------------------------------
         // Catalog action listeners (declared after all fields are initialised)
@@ -296,6 +318,26 @@ public class AlbumDialog extends JDialog {
         backBtn.setFocusPainted(false);
         backBtn.addActionListener(e -> showCatalog());
 
+        // Prev/Next Monster — walk the catalog in its current sort order
+        prevMonsterBtn = new JButton("◀");
+        nextMonsterBtn = new JButton("▶");
+        for (JButton nav : new JButton[]{prevMonsterBtn, nextMonsterBtn}) {
+            nav.setFont(FontManager.getRunescapeSmallFont());
+            nav.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+            nav.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+            nav.setFocusPainted(false);
+            nav.setMargin(new Insets(1, 6, 1, 6));
+            nav.setToolTipText("Previous / next monster in album order");
+        }
+        prevMonsterBtn.addActionListener(e -> navigateMonster(-1));
+        nextMonsterBtn.addActionListener(e -> navigateMonster(+1));
+
+        JPanel dRow1West = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        dRow1West.setOpaque(false);
+        dRow1West.add(backBtn);
+        dRow1West.add(prevMonsterBtn);
+        dRow1West.add(nextMonsterBtn);
+
         detailTitleLabel = new JLabel();
         detailTitleLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         detailTitleLabel.setForeground(Color.WHITE);
@@ -342,7 +384,7 @@ public class AlbumDialog extends JDialog {
             dRow1East.add(pb);
         }
 
-        dRow1.add(backBtn,          BorderLayout.WEST);
+        dRow1.add(dRow1West,        BorderLayout.WEST);
         dRow1.add(detailTitleLabel, BorderLayout.CENTER);
         dRow1.add(dRow1East,        BorderLayout.EAST);
 
@@ -356,7 +398,7 @@ public class AlbumDialog extends JDialog {
         dSortLabel.setFont(FontManager.getRunescapeSmallFont());
         dSortLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 
-        detailSortBox = new JComboBox<>(new String[]{"Rarity (best)", "Quality (high)", "Newest first"});
+        detailSortBox = new JComboBox<>(new String[]{"Rarity (best)", "Power (high)", "Newest first"});
         detailSortBox.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         detailSortBox.setForeground(Color.WHITE);
         detailSortBox.setFont(FontManager.getRunescapeSmallFont());
@@ -478,6 +520,7 @@ public class AlbumDialog extends JDialog {
         detailSortBox.setSelectedItem("Rarity (best)");
         ((CardLayout) topBarHolder.getLayout()).show(topBarHolder, "DETAIL");
         rebuildGrid();
+        updateMonsterNav();
     }
 
     /** Opens the detail pane showing all starred captures (cross-monster). */
@@ -490,10 +533,11 @@ public class AlbumDialog extends JDialog {
         detailFilterCapture = null;
         detailFilterShiny   = false;
         detailPage          = 0;
-        detailSort          = "Quality (high)";
-        detailSortBox.setSelectedItem("Quality (high)");
+        detailSort          = "Power (high)";
+        detailSortBox.setSelectedItem("Power (high)");
         ((CardLayout) topBarHolder.getLayout()).show(topBarHolder, "DETAIL");
         rebuildGrid();
+        updateMonsterNav();
     }
 
     /** If the Album is open, switch it to the Favourites detail view and return true. */
@@ -504,6 +548,24 @@ public class AlbumDialog extends JDialog {
             return true;
         }
         return false;
+    }
+
+    /** Steps to the previous/next captured monster in the current catalog order. */
+    private void navigateMonster(int dir) {
+        if (detailMonsterName == null || detailMonsterName.startsWith("★")) return;
+        if (catalogOrder.isEmpty()) return;
+        int idx = catalogOrder.indexOf(detailMonsterName);
+        if (idx < 0) return;
+        int next = (idx + dir + catalogOrder.size()) % catalogOrder.size();
+        showDetail(catalogOrder.get(next));
+    }
+
+    /** Enables Prev/Next Monster only for a real monster with siblings to move to. */
+    private void updateMonsterNav() {
+        boolean on = detailMonsterName != null && !detailMonsterName.startsWith("★")
+                && catalogOrder.size() > 1 && catalogOrder.contains(detailMonsterName);
+        if (prevMonsterBtn != null) prevMonsterBtn.setEnabled(on);
+        if (nextMonsterBtn != null) nextMonsterBtn.setEnabled(on);
     }
 
     private void showCatalog() {
@@ -523,6 +585,25 @@ public class AlbumDialog extends JDialog {
     // -------------------------------------------------------------------------
     // Grid construction
     // -------------------------------------------------------------------------
+
+    /** Rebuilds the album from the live collection (e.g. after discards) and refreshes the view. */
+    public void refreshFromCollection() {
+        Map<String, List<CapturedCreature>> grouped = collection.creatures.stream()
+                .collect(Collectors.groupingBy(c -> c.npcName));
+        capturesByNpc.clear();
+        capturesByNpc.putAll(grouped);
+        if (detailMonsterName != null && !detailMonsterName.startsWith("★")
+                && !capturesByNpc.containsKey(detailMonsterName)) {
+            showCatalog();            // the monster we were viewing has no captures left
+        } else {
+            rebuildGrid();
+        }
+    }
+
+    /** Refreshes the open album (if any) from the live collection. */
+    public static void refreshOpenAlbum() {
+        if (current != null && current.isShowing()) current.refreshFromCollection();
+    }
 
     private void rebuildGrid() {
         gridPanel.removeAll();
@@ -576,6 +657,10 @@ public class AlbumDialog extends JDialog {
             sortAllMixed(ordered);
         }
 
+        // Remember the captured monsters in display order for Prev/Next Monster navigation
+        catalogOrder.clear();
+        ordered.stream().filter(capturesByNpc::containsKey).forEach(catalogOrder::add);
+
         // Favourites shortcut card — always shown when no search/filter active
         long favCount = capturesByNpc.values().stream().flatMap(List::stream).filter(c -> c.favourite).count();
         if (searchTerm.isEmpty() && filterDifficulty == null) {
@@ -628,15 +713,15 @@ public class AlbumDialog extends JDialog {
 
         // Sort
         switch (detailSort == null ? "Rarity (best)" : detailSort) {
-            case "Quality (high)":
-                filtered.sort(Comparator.comparingInt((CapturedCreature c) -> c.quality.overallRating()).reversed());
+            case "Power (high)":
+                filtered.sort(Comparator.comparingInt((CapturedCreature c) -> c.powerLevel()).reversed());
                 break;
             case "Newest first":
                 filtered.sort(Comparator.comparing((CapturedCreature c) -> c.captureTime, Comparator.reverseOrder()));
                 break;
             default: // "Rarity (best)"
                 filtered.sort(Comparator.comparingInt((CapturedCreature c) -> c.rarity.ordinal()).reversed()
-                        .thenComparingInt(c -> -c.quality.overallRating()));
+                        .thenComparingInt(c -> -c.powerLevel()));
                 break;
         }
 
@@ -881,7 +966,7 @@ public class AlbumDialog extends JDialog {
             case "Rarity (best)":
                 names.sort((a, b) -> maxRarity(capturesByNpc.get(b)).ordinal()
                                    - maxRarity(capturesByNpc.get(a)).ordinal()); break;
-            case "Quality (high)":
+            case "Power (high)":
                 names.sort((a, b) -> avgQuality(capturesByNpc.get(b)) - avgQuality(capturesByNpc.get(a))); break;
             case "Newest first":
                 names.sort((a, b) -> latestCapture(capturesByNpc.get(b))
@@ -910,7 +995,7 @@ public class AlbumDialog extends JDialog {
                     int rb = capturesByNpc.containsKey(b) ? maxRarity(capturesByNpc.get(b)).ordinal() : -1;
                     return rb - ra;
                 }); break;
-            case "Quality (high)":
+            case "Power (high)":
                 names.sort((a, b) -> {
                     int qa = capturesByNpc.containsKey(a) ? avgQuality(capturesByNpc.get(a)) : 0;
                     int qb = capturesByNpc.containsKey(b) ? avgQuality(capturesByNpc.get(b)) : 0;
@@ -979,7 +1064,7 @@ public class AlbumDialog extends JDialog {
     }
 
     private static int avgQuality(List<CapturedCreature> captures) {
-        return (int) captures.stream().mapToInt(c -> c.quality.overallRating()).average().orElse(0);
+        return (int) captures.stream().mapToInt(c -> c.powerLevel()).average().orElse(0);
     }
 
     private static Instant latestCapture(List<CapturedCreature> captures) {
