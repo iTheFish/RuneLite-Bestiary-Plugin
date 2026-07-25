@@ -90,29 +90,33 @@ If shiny, the stat generator uses a different, near-max path (stage 4).
 `RarityRoller.generateQuality(combatClass, rarity, statBases, rng, shiny)`
 
 The reviewed per-stat bases (`MonsterRoster.STAT_BASES`, from `base-stats-review.csv`) represent an
-**average / Epic** card. Each rarity simply **scales** them by a multiplier, then adds a small wiggle:
+**average / Epic** card. Rarity moves each stat from that centre — but **how much depends on the
+base** (`RarityRoller.statCentre`), then a wiggle is added:
 
 ```
-centre[i] = round( base[i] × rarity.statMultiplier )          // the "expected" value
-stat[i]   = clamp( centre[i] + uniform(−6, +6), 1, 99 )        // "wiggle room" RNG
+below Epic:  centre = base × mult            // Common ×0.72, Uncommon ×0.82, Rare ×0.92
+Epic:        centre = base
+above Epic:  centre = base + lift × (99 − base)   // Legendary lift 0.30, Mythic lift 0.60
 
-shiny:    stat[i] = clamp( centre[i] + uniform(+6, +20), 1, 99 )   // always above expected
+stat[i] = clamp( centre + uniform(−6, +6), 1, 99 )              // wiggle
+shiny:   stat[i] = clamp( centre + uniform(+6, +20), 1, 99 )    // always above expected
 ```
 
-The stat wiggle is **flavour only** — it is deliberately **not** part of a card's rarity odds
-(otherwise cards with more stats would read as "rarer"). The odds screen shows each stat's
-offset-from-expected as info, but the "this exact card" figure is **rarity × shiny** alone.
+The **above-Epic lift is a fraction of the headroom (99 − base)**, so a **weak stat gets a big
+absolute boost at high rarity** while an already-high stat only edges up:
 
-Rarity multipliers (`CreatureRarity.statMultiplier`):
+| base | Common | Epic | Legendary | Mythic |
+|---|---|---|---|---|
+| 1  | 1  | 1  | 30 | **60** |
+| 20 | 14 | 20 | 44 | 67 |
+| 55 | 40 | 55 | 68 | 81 |
+| 90 | 65 | 90 | 93 | 95 |
 
-| Common | Uncommon | Rare | **Epic** | Legendary | Mythic |
-|---|---|---|---|---|---|
-| ×0.70 | ×0.80 | ×0.91 | **×1.00** | ×1.09 | ×1.20 |
-
-So a base value ≈ the **Epic** stat; Legendary is +9%, Mythic +20%, and lower rarities scale down
-(floored at 1). Only very high bases (≥ ~83) reach 99 at Mythic, so **Legendary/Mythic no longer
-always max out**. **Combat class is a display label only now** — the per-stat bases already encode
-each monster's offensive profile, so class no longer decides which stat spikes.
+So weak monsters stay fun at high rarity, Epic ≈ base, and **nothing auto-maxes** to 99 unless the
+base is already ~97+. The stat wiggle is **flavour only** — deliberately **not** part of a card's
+rarity odds; the odds screen shows each stat's offset-from-expected as info, but the "this exact
+card" figure is **rarity × shiny** alone. **Combat class is a display label only now** — the
+per-stat bases already encode each monster's profile, so class no longer decides which stat spikes.
 
 The result is a `CreatureQuality` — six ints in 1..99. **These never change after capture.**
 

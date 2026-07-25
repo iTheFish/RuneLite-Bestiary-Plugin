@@ -35,7 +35,7 @@ public class OddsDialog extends JDialog {
         Font small = FontManager.getRunescapeSmallFont();
         Font smallBold = small.deriveFont(Font.BOLD);
 
-        JPanel root = new JPanel();
+        ScrollablePanel root = new ScrollablePanel();
         root.setLayout(new BoxLayout(root, BoxLayout.Y_AXIS));
         root.setBackground(ColorScheme.DARK_GRAY_COLOR);
         root.setBorder(new EmptyBorder(12, 14, 12, 14));
@@ -116,6 +116,16 @@ public class OddsDialog extends JDialog {
         pack();
         setMinimumSize(new Dimension(320, 240));
         setLocationRelativeTo(owner);
+    }
+
+    /** Content panel that tracks the scroll viewport's width, so rows reflow (and the
+     *  right-hand values move left) when the window is narrowed instead of being clipped. */
+    private static final class ScrollablePanel extends JPanel implements Scrollable {
+        @Override public Dimension getPreferredScrollableViewportSize() { return getPreferredSize(); }
+        @Override public int getScrollableUnitIncrement(Rectangle r, int o, int d) { return 16; }
+        @Override public int getScrollableBlockIncrement(Rectangle r, int o, int d) { return 48; }
+        @Override public boolean getScrollableTracksViewportWidth() { return true; }
+        @Override public boolean getScrollableTracksViewportHeight() { return false; }
     }
 
     private static JLabel sectionHeader(String text) {

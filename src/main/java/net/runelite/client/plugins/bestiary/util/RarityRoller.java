@@ -92,9 +92,28 @@ public final class RarityRoller {
         return new CreatureQuality(stats[0], stats[1], stats[2], stats[3], stats[4], stats[5]);
     }
 
-    /** The "expected" value for a stat: base × rarity multiplier (the wiggle/shiny bonus is added on top). */
+    // Stat centre model. Epic = base (the reviewed values represent an "average" card).
+    // Below Epic: multiplicative down (a low stat only dips a little, floored at 1).
+    // Above Epic: additive lift TOWARD the cap — the absolute lift is a fraction of the
+    // headroom (cap − base), so a weak stat (base 1) still climbs a lot at high rarity
+    // (fun), while an already-high stat only edges up (nothing auto-maxes to 99).
+    private static final double MULT_COMMON = 0.72, MULT_UNCOMMON = 0.82, MULT_RARE = 0.92;
+    private static final double LIFT_LEGENDARY = 0.30, LIFT_MYTHIC = 0.60;
+    private static final int STAT_CAP = 99;
+
+    /** The "expected" value for a stat at a rarity (before wiggle / shiny bonus). */
     public static int statCentre(int base, CreatureRarity rarity) {
-        return (int) Math.round(base * rarity.statMultiplier);
+        double c;
+        switch (rarity) {
+            case COMMON:    c = base * MULT_COMMON;                       break;
+            case UNCOMMON:  c = base * MULT_UNCOMMON;                     break;
+            case RARE:      c = base * MULT_RARE;                         break;
+            case LEGENDARY: c = base + LIFT_LEGENDARY * (STAT_CAP - base); break;
+            case MYTHIC:    c = base + LIFT_MYTHIC * (STAT_CAP - base);    break;
+            case EPIC:
+            default:        c = base;
+        }
+        return Math.max(1, Math.min(99, (int) Math.round(c)));
     }
 
     /** Half-width of the uniform RNG wiggle added to each non-shiny stat centre. */
