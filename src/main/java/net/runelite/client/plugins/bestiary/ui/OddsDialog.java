@@ -69,15 +69,16 @@ public class OddsDialog extends JDialog {
 
         root.add(Box.createVerticalStrut(8));
 
-        // Per-stat section — info only (the wiggle does NOT affect the odds)
+        // Per-stat section — info only (the roll does NOT affect the odds)
         String statHdr = r.shiny
                 ? "Stats — shiny bonus +" + RarityRoller.SHINY_MIN_BONUS + ".." + RarityRoller.SHINY_MAX_BONUS
-                : "Stats — wiggle ±" + RarityRoller.WIGGLE;
+                : "Stats — " + r.rarity.label + " roll band (overlaps neighbours)";
         root.add(sectionHeader(statHdr));
         for (OddsCalculator.StatOdds s : r.stats) {
-            String off = (s.offset >= 0 ? "+" + s.offset : String.valueOf(s.offset));
-            root.add(kvRow(s.name + ":  " + s.value, smallBold, Color.WHITE,
-                    "expected " + s.centre + "   (" + off + ")"));
+            String right = r.shiny
+                    ? "expected " + s.centre
+                    : "rolled in " + s.lo + "–" + s.hi;
+            root.add(kvRow(s.name + ":  " + s.value, smallBold, Color.WHITE, right));
         }
 
         root.add(Box.createVerticalStrut(10));

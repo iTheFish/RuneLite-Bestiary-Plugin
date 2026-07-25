@@ -83,11 +83,14 @@ public final class RarityRoller {
                                                   int[] bases, Random rng, boolean shiny) {
         int[] stats = new int[6];
         for (int i = 0; i < 6; i++) {
-            int centre = statCentre(bases[i], rarity);
-            int roll = shiny
-                ? SHINY_MIN_BONUS + rng.nextInt(SHINY_MAX_BONUS - SHINY_MIN_BONUS + 1)  // +6..+20 over expected
-                : rng.nextInt(2 * WIGGLE + 1) - WIGGLE;                                 // -6..+6
-            stats[i] = Math.max(1, Math.min(99, centre + roll));
+            if (shiny) {
+                int centre = statCentre(bases[i], rarity);
+                int bonus = SHINY_MIN_BONUS + rng.nextInt(SHINY_MAX_BONUS - SHINY_MIN_BONUS + 1); // +6..+20
+                stats[i] = Math.max(1, Math.min(99, centre + bonus));
+            } else {
+                int[] band = statBand(bases[i], rarity);
+                stats[i] = band[0] + (band[1] > band[0] ? rng.nextInt(band[1] - band[0] + 1) : 0);
+            }
         }
         return new CreatureQuality(stats[0], stats[1], stats[2], stats[3], stats[4], stats[5]);
     }
@@ -116,8 +119,31 @@ public final class RarityRoller {
         return Math.max(1, Math.min(99, (int) Math.round(c)));
     }
 
-    /** Half-width of the uniform RNG wiggle added to each non-shiny stat centre. */
-    public static final int WIGGLE = 6;
+    /**
+     * The inclusive [lo, hi] range a non-shiny stat rolls in at this rarity.
+     * Each band reaches {@link #BAND_OVERLAP} of the way toward each neighbouring rarity's
+     * centre — since that fraction is > 0.5, adjacent bands OVERLAP, so a lucky Legendary
+     * roll can beat an unlucky Mythic one. Band width scales with the local gap, so it
+     * differs per rarity and per monster automatically.
+     */
+    public static int[] statBand(int base, CreatureRarity rarity) {
+        CreatureRarity[] rs = CreatureRarity.values();
+        int i = rarity.ordinal();
+        int cur  = statCentre(base, rarity);
+        int prev = i > 0              ? statCentre(base, rs[i - 1]) : cur;
+        int next = i < rs.length - 1  ? statCentre(base, rs[i + 1]) : cur;
+        int downGap = (i > 0)             ? (cur - prev) : (next - cur);   // ends mirror their one neighbour
+        int upGap   = (i < rs.length - 1) ? (next - cur) : (cur - prev);
+        int lo = (int) Math.round(cur - BAND_OVERLAP * downGap);
+        int hi = (int) Math.round(cur + BAND_OVERLAP * upGap);
+        lo = Math.max(1, Math.min(99, lo));
+        hi = Math.max(1, Math.min(99, hi));
+        if (hi < lo) hi = lo;
+        return new int[]{lo, hi};
+    }
+
+    /** How far each band reaches toward a neighbour's centre. >0.5 ⇒ adjacent bands overlap. */
+    private static final double BAND_OVERLAP = 0.65;
 
     /** A shiny stat rolls its expected value plus a uniform bonus in [MIN, MAX]. */
     public static final int SHINY_MIN_BONUS = 6;

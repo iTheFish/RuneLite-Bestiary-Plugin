@@ -26,10 +26,10 @@ public final class OddsCalculator {
     public static final class StatOdds {
         public final String name;
         public final int value;      // the rolled value on the card
-        public final int centre;     // base × rarity multiplier (rounded) — the "expected" value
-        public final int offset;     // value - centre (the wiggle/shiny roll), shown as info only
-        StatOdds(String name, int value, int centre) {
-            this.name = name; this.value = value; this.centre = centre; this.offset = value - centre;
+        public final int centre;     // the rarity's expected value for this stat
+        public final int lo, hi;     // the rarity's roll band for this stat (overlaps neighbours)
+        StatOdds(String name, int value, int centre, int lo, int hi) {
+            this.name = name; this.value = value; this.centre = centre; this.lo = lo; this.hi = hi;
         }
     }
 
@@ -62,7 +62,8 @@ public final class OddsCalculator {
                        c.quality.magic, c.quality.ranged, c.quality.agility};
         for (int i = 0; i < 6; i++) {
             int centre = RarityRoller.statCentre(bases[i], r.rarity);
-            r.stats.add(new StatOdds(STAT_NAMES[i], vals[i], centre));
+            int[] band = RarityRoller.statBand(bases[i], r.rarity);
+            r.stats.add(new StatOdds(STAT_NAMES[i], vals[i], centre, band[0], band[1]));
         }
 
         // Stat wiggle is flavour, not part of "how rare is this card" — only rarity (and shiny) count.
