@@ -37,6 +37,11 @@ public class DiscardDialog extends JDialog {
         current.setVisible(true);
     }
 
+    /** Re-scan for duplicates (e.g. after a card was discarded elsewhere). */
+    public static void refreshOpen() {
+        if (current != null && current.isShowing()) current.recompute();
+    }
+
     private DiscardDialog(Window owner, BestiaryDataService dataService, Runnable onDone) {
         super(owner, "Discard duplicates", ModalityType.MODELESS);
         this.dataService = dataService;

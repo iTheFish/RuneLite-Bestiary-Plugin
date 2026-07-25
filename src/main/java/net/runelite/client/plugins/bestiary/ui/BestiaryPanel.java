@@ -58,6 +58,7 @@ public class BestiaryPanel extends PluginPanel {
                 dataService.discardCapture(cap);
                 refresh();
                 AlbumDialog.refreshOpenAlbum();
+                DiscardDialog.refreshOpen();
             }
         });
         AlbumDialog.setDiscardOpener(win -> DiscardDialog.open(win, dataService, () -> {
