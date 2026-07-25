@@ -1,0 +1,73 @@
+Name,CurrentHP,Confidence,Notes
+Gemstone crab,20000,Special,"Shared infinite-ish pool; will be fixed by observed-damage tracking (#62). Deliberately silly."
+Scurrius,250,High,
+Giant Mole,500,Low,"Possibly 250 — please confirm."
+King Black Dragon,240,High,
+Chaos Elemental,300,Med,
+Chaos Fanatic,200,Med,
+Crazy Archaeologist,200,High,
+Scorpia,200,Med,
+Deranged Archaeologist,220,Med,
+Sarachnis,400,High,
+Hespori,250,Med,
+Obor,150,High,
+Bryophyta,180,High,
+Cerberus,600,High,
+Kraken,255,High,
+Thermonuclear smoke devil,245,Med,
+Alchemical Hydra,1100,High,
+Zulrah,500,Low,"Per-phase vs total? Confirm intended single number."
+Vorkath,750,High,
+Phantom Muspah,350,Low,"Multi-phase; confirm."
+Duke Sucellus,440,Med,DT2
+The Leviathan,900,Low,"DT2; confirm (used 900)."
+Vardorvis,700,Med,DT2
+The Whisperer,550,Low,"DT2; shadow/real phases — confirm."
+Nex,3400,Low,"Huge; 4 phases. Confirm single number."
+TzTok-Jad,250,High,
+TzKal-Zuk,1200,Med,"Inferno final boss."
+Araxxor,1000,Low,"Confirm — unsure of exact value."
+Hueycoatl,1500,Low,"New boss; unsure — please confirm."
+Sol Heredit,1400,Low,"Colosseum; unsure — confirm."
+Amoxliatl,250,Low,"Confirm."
+Callisto,500,High,
+Artio,350,Med,
+Venenatis,500,High,
+Spindel,350,Med,
+Vet'ion,350,Low,"Two phases (255 each?) — confirm single number."
+Calvar'ion,220,Med,
+Corporeal Beast,2000,High,
+Commander Zilyana,255,High,GWD
+General Graardor,255,High,GWD
+K'ril Tsutsaroth,255,High,GWD
+Kree'arra,255,High,GWD
+Dagannoth Rex,255,High,
+Dagannoth Prime,255,High,
+Dagannoth Supreme,255,High,
+Dusk,315,Low,"Grotesque Guardians; combined ~? per-boss? confirm."
+Dawn,315,Low,"Grotesque Guardians; confirm."
+The Nightmare,2400,Low,"Scales with team size; confirm base number."
+Phosani's Nightmare,2400,Low,"Solo; confirm."
+Tekton,300,Low,"CoX; scales with party. Confirm base."
+Great Olm,800,Low,"CoX; per-hand/head vs total? scales. Confirm."
+Vespula,200,Med,CoX
+Maiden of Sugadinti,2500,Low,"ToB; scales with team. Confirm base."
+Pestilent Bloat,2000,Low,"ToB; scales. Confirm."
+Sotetseg,450,Low,"ToB; scales. Confirm."
+Xarpus,450,Low,"ToB; scales. Confirm."
+Verzik Vitur,500,Low,"ToB; multi-phase + scales. Confirm."
+Akkha,400,Low,"ToA; scales with invocation/party. Confirm base."
+Ba-Ba,380,Low,"ToA; scales. Confirm."
+Kephri,400,Low,"ToA; scales. Confirm."
+Zebak,580,Low,"ToA; scales. Confirm."
+Tumeken's Warden,880,Low,"ToA; scales. Confirm."
+Elidinis' Warden,880,Low,"ToA; scales. Confirm."
+Abyssal Sire,400,Med,
+Basilisk knight,300,Med,Slayer
+Dark beast,220,High,Slayer
+Drake,240,Med,Slayer
+Hydra,300,High,Slayer
+Wyrm,130,Med,Slayer
+Ancient wyvern,200,Med,Slayer
+Skeletal wyvern,200,Med,Slayer
+Fossil island wyvern,200,Low,"Which variant? (Spitting/Taloned/etc.) confirm."
