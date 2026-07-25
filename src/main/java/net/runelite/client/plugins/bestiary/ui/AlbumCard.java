@@ -48,8 +48,8 @@ public class AlbumCard extends JPanel {
     private static final int PAD      = 8;
     private static final int LABEL_W  = 26;
     private static final int VAL_W    = 20;
-    private static final int BAR_H    = 6;
-    private static final int STAT_ROW = 16;
+    private static final int BAR_H    = 7;
+    private static final int STAT_ROW = 18;
 
     private static final int HEADER_Y = 6;
     private static final int HEADER_H = 14;
@@ -71,7 +71,13 @@ public class AlbumCard extends JPanel {
     private static final Color LOCKED_ACCENT  = new Color(48, 48, 48);
     private static final Color IMAGE_BG       = new Color(22, 22, 22);
 
-    private static final String[] STAT_LABELS = {"ATK", "STR", "DEF", "MAG", "RNG", "AGI"};
+    // Agility moved up to the attribute band; the stat block is the 5 combat stats.
+    private static final String[] STAT_LABELS = {"ATK", "STR", "DEF", "MAG", "RNG"};
+    private static final net.runelite.api.Skill[] STAT_SKILLS = {
+        net.runelite.api.Skill.ATTACK, net.runelite.api.Skill.STRENGTH,
+        net.runelite.api.Skill.DEFENCE, net.runelite.api.Skill.MAGIC, net.runelite.api.Skill.RANGED
+    };
+    private static final int AGI_STAT_INDEX = 5;
 
     private final String npcName;
     private final int dexNumber;
@@ -676,17 +682,25 @@ public class AlbumCard extends JPanel {
             g2.drawString(killStr, imgX + 2, subBaseline);
         }
 
-        // --- Attribute pills: HP (left half) + Prayer (right half) ---
-        // Factual monster info, drawn with small in-game-style icons instead of text labels.
+        // --- Attribute pills: HP (left half) + Prayer + Agility (right half, split) ---
+        // HP/Prayer are factual monster info; Agility is the capture's rolled AGI stat,
+        // relocated here so the stat block below is the 5 combat stats. Real skill icons.
         {
             int gap = 4;
-            int totalW = imgW;
-            int halfW = (totalW - gap) / 2;
+            int usable = imgW - gap * 2;
+            int hpW = Math.round(usable * 0.50f);
+            int prW = Math.round(usable * 0.25f);
+            int agW = usable - hpW - prW;
             int aY = ATTR_Y;
+            int x0 = imgX;
             int hp = net.runelite.client.plugins.bestiary.model.MonsterRoster.getHitpoints(npcName);
             int prayer = net.runelite.client.plugins.bestiary.model.MonsterRoster.getPrayer(npcName);
-            drawAttrPill(g2, imgX, aY, halfW, ATTR_H, IconType.HP, String.valueOf(hp), locked);
-            drawAttrPill(g2, imgX + halfW + gap, aY, halfW, ATTR_H, IconType.PRAYER, String.valueOf(prayer), locked);
+            drawAttrPill(g2, x0, aY, hpW, ATTR_H, IconType.HP, String.valueOf(hp), locked);
+            x0 += hpW + gap;
+            drawAttrPill(g2, x0, aY, prW, ATTR_H, IconType.PRAYER, String.valueOf(prayer), locked);
+            x0 += prW + gap;
+            String agiVal = locked ? "?" : String.valueOf(avgStats[AGI_STAT_INDEX]);
+            drawAttrPill(g2, x0, aY, agW, ATTR_H, IconType.AGILITY, agiVal, locked);
         }
 
         // --- Stat bars (captured) / empty outlines (locked) ---
@@ -698,8 +712,21 @@ public class AlbumCard extends JPanel {
 
             g2.setFont(smallFont);
             boolean primary = !locked && combatClass.isPrimary(i);
-            g2.setColor(primary ? new Color(200, 160, 60) : locked ? new Color(48, 48, 48) : new Color(160, 160, 160));
-            g2.drawString(STAT_LABELS[i], imgX, baseline);
+            // Skill icon as the row label (falls back to the abbreviation if unavailable)
+            BufferedImage statIcon = skillImg(STAT_SKILLS[i]);
+            if (statIcon != null) {
+                int isz = STAT_ROW - 6;
+                int ix = imgX + (LABEL_W - isz) / 2;
+                int iy = rowY + (STAT_ROW - isz) / 2;
+                Graphics2D gi = (Graphics2D) g2.create();
+                gi.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                if (locked) gi.setComposite(java.awt.AlphaComposite.getInstance(java.awt.AlphaComposite.SRC_OVER, 0.35f));
+                gi.drawImage(statIcon, ix, iy, isz, isz, null);
+                gi.dispose();
+            } else {
+                g2.setColor(primary ? new Color(200, 160, 60) : locked ? new Color(48, 48, 48) : new Color(160, 160, 160));
+                g2.drawString(STAT_LABELS[i], imgX, baseline);
+            }
 
             int barX = imgX + LABEL_W + 3;
             int barW = imgW - LABEL_W - VAL_W - 6;
@@ -718,7 +745,8 @@ public class AlbumCard extends JPanel {
                 g2.setFont(boldFont);
                 FontMetrics vfm = g2.getFontMetrics();
                 String valStr = String.valueOf(avgStats[i]);
-                g2.setColor(Color.WHITE);
+                // Amber value marks a primary stat for this combat class (the icon replaced the label cue)
+                g2.setColor(primary ? new Color(230, 190, 80) : Color.WHITE);
                 g2.drawString(valStr, imgX + imgW - vfm.stringWidth(valStr), baseline);
             }
         }
@@ -823,7 +851,7 @@ public class AlbumCard extends JPanel {
         return lum > 150 ? new Color(25, 25, 25) : Color.WHITE;
     }
 
-    private enum IconType { HP, PRAYER }
+    private enum IconType { HP, PRAYER, AGILITY }
 
     /** Draws a dark rounded pill with an in-game-style icon and a value. */
     private static void drawAttrPill(Graphics2D g, int x, int y, int w, int h,
@@ -837,8 +865,10 @@ public class AlbumCard extends JPanel {
         int iconSize = h - 4;
         int iconX = x + 5;
         int iconY = y + (h - iconSize) / 2;
-        BufferedImage sprite = skillImg(type == IconType.HP
-                ? net.runelite.api.Skill.HITPOINTS : net.runelite.api.Skill.PRAYER);
+        net.runelite.api.Skill sk = type == IconType.HP ? net.runelite.api.Skill.HITPOINTS
+                : type == IconType.PRAYER ? net.runelite.api.Skill.PRAYER
+                : net.runelite.api.Skill.AGILITY;
+        BufferedImage sprite = skillImg(sk);
         if (sprite != null) {
             Graphics2D gi = (Graphics2D) g.create();
             gi.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
@@ -847,10 +877,14 @@ public class AlbumCard extends JPanel {
             gi.dispose();
         } else {
             // Fallback if the sprite manager isn't wired yet
-            Color iconCol = locked ? new Color(70, 70, 70)
-                    : type == IconType.HP ? new Color(220, 60, 60) : new Color(90, 190, 235);
-            if (type == IconType.HP) drawHeartIcon(g, iconX, iconY, iconSize, iconCol);
-            else                     drawPrayerIcon(g, iconX, iconY, iconSize, iconCol);
+            if (type == IconType.HP) {
+                drawHeartIcon(g, iconX, iconY, iconSize, locked ? new Color(70, 70, 70) : new Color(220, 60, 60));
+            } else if (type == IconType.PRAYER) {
+                drawPrayerIcon(g, iconX, iconY, iconSize, locked ? new Color(70, 70, 70) : new Color(90, 190, 235));
+            } else {
+                g.setColor(locked ? new Color(70, 70, 70) : new Color(120, 200, 120));
+                g.fillOval(iconX, iconY + 1, iconSize - 2, iconSize - 2);
+            }
         }
 
         g.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
