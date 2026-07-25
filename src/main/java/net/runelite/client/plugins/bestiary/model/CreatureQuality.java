@@ -34,15 +34,6 @@ public class CreatureQuality {
         return Math.round(statSum() / 6f);
     }
 
-    /** True when all primary stats for the given combat class are 95 or above. */
-    public boolean isShiny(CombatClass combatClass) {
-        int[] stats = {attack, strength, defence, magic, ranged, agility};
-        for (int i : combatClass.primaryIndices) {
-            if (stats[i] < 95) return false;
-        }
-        return true;
-    }
-
     private static int clamp(int v) {
         return Math.max(1, Math.min(99, v));
     }

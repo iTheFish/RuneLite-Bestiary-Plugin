@@ -83,12 +83,13 @@ public final class RarityRoller {
                                                   int[] bases, Random rng, boolean shiny) {
         int[] stats = new int[6];
         for (int i = 0; i < 6; i++) {
+            int[] band = statBand(bases[i], rarity);
             if (shiny) {
-                int centre = statCentre(bases[i], rarity);
+                // Anchor to the TOP of the band + bonus, so a shiny always beats a
+                // same-rarity non-shiny (which can only reach band top).
                 int bonus = SHINY_MIN_BONUS + rng.nextInt(SHINY_MAX_BONUS - SHINY_MIN_BONUS + 1); // +6..+20
-                stats[i] = Math.max(1, Math.min(99, centre + bonus));
+                stats[i] = clampStat(band[1] + bonus);
             } else {
-                int[] band = statBand(bases[i], rarity);
                 stats[i] = band[0] + (band[1] > band[0] ? rng.nextInt(band[1] - band[0] + 1) : 0);
             }
         }
@@ -156,12 +157,11 @@ public final class RarityRoller {
 
     /** Rolls a capture's prayer: banded like a stat but half-scale; shiny gets a smaller boost. */
     public static int rollPrayer(int base, CreatureRarity rarity, Random rng, boolean shiny) {
-        if (shiny) {
-            int centre = prayerCentre(base, rarity);
-            int bonus = (SHINY_MIN_BONUS + rng.nextInt(SHINY_MAX_BONUS - SHINY_MIN_BONUS + 1)) / 2;
-            return clampStat(centre + bonus);
-        }
         int[] b = prayerBand(base, rarity);
+        if (shiny) {
+            int bonus = (SHINY_MIN_BONUS + rng.nextInt(SHINY_MAX_BONUS - SHINY_MIN_BONUS + 1)) / 2;
+            return clampStat(b[1] + bonus);   // top of the band + bonus
+        }
         return b[0] + (b[1] > b[0] ? rng.nextInt(b[1] - b[0] + 1) : 0);
     }
 }

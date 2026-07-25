@@ -157,7 +157,7 @@ public class OddsDialog extends JDialog {
 
         // Stats (info only)
         String statHdr = r.shiny
-                ? "Stats — shiny bonus +" + RarityRoller.SHINY_MIN_BONUS + ".." + RarityRoller.SHINY_MAX_BONUS
+                ? "Stats — shiny (rolls above the " + r.rarity.label + " band)"
                 : "Stats — " + r.rarity.label + " roll bands";
         root.add(sectionHeader(statHdr));
         root.add(statsTable());
@@ -231,7 +231,7 @@ public class OddsDialog extends JDialog {
         GridBagConstraints g = new GridBagConstraints();
         g.insets = new Insets(1, 0, 1, (int) (14 * zoom));
 
-        String[] heads = {"Stat", "Base", "Roll", r.shiny ? "Expected" : "Band", r.shiny ? "" : "Quality"};
+        String[] heads = {"Stat", "Base", "Roll", "Band", "Quality"};
         for (int c = 0; c < heads.length; c++) {
             g.gridx = c; g.gridy = 0;
             g.anchor = (c == 1 || c == 2) ? GridBagConstraints.EAST : GridBagConstraints.WEST;
@@ -248,10 +248,9 @@ public class OddsDialog extends JDialog {
             g.gridx = 2; g.anchor = GridBagConstraints.EAST;
             t.add(cell(String.valueOf(s.value), fSmallBold, Color.WHITE), g);
             g.gridx = 3; g.anchor = GridBagConstraints.WEST;
-            t.add(cell(r.shiny ? String.valueOf(s.centre) : s.lo + "–" + s.hi, fSmall,
-                    ColorScheme.LIGHT_GRAY_COLOR), g);
+            t.add(cell(s.lo + "–" + s.hi, fSmall, ColorScheme.LIGHT_GRAY_COLOR), g);
             g.gridx = 4; g.anchor = GridBagConstraints.WEST;
-            if (r.shiny) t.add(cell("shiny", fSmall, new Color(255, 215, 0)), g);
+            if (r.shiny) t.add(cell("✦ shiny", fSmall, new Color(255, 215, 0)), g);
             else         t.add(rollTagCell(s.value, s.lo, s.hi), g);
         }
 

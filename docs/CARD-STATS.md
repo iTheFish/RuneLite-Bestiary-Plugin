@@ -97,7 +97,7 @@ Every rarity **rolls a band**, expressed as a **lift fraction of the headroom** 
 
 ```
 stat = base + L × (99 − base),   L uniform in [lo, hi]   (non-shiny; floored at 1, capped at 99)
-shiny = clamp( centre + uniform(+6, +20), 1, 99 )        // always high
+shiny = clamp( band_hi + uniform(+6, +20), 1, 99 )       // above the band top → always high
 ```
 
 Lift ranges per rarity (`RarityRoller.LIFT_LO / LIFT_HI`):
