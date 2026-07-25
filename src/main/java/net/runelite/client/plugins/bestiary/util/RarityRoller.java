@@ -19,33 +19,40 @@ public final class RarityRoller {
      * At level 1, weights match the base probabilities exactly.
      * At level 99, COMMON weight halves while MYTHIC weight is 12x the base.
      */
+    /** Level-scaled rarity weight multipliers (index matches CreatureRarity.ordinal()). */
+    private static final double[] LEVEL_TARGET_MULT = {0.50, 1.30, 2.00, 4.00, 8.00, 12.0};
+
     public static CreatureRarity roll(Random rng, int captureLevel) {
-        double t = Math.max(0, Math.min(98, captureLevel - 1)) / 98.0;
-
-        double[] multipliers = {
-            1.0 + t * (0.50 - 1.0),
-            1.0 + t * (1.30 - 1.0),
-            1.0 + t * (2.00 - 1.0),
-            1.0 + t * (4.00 - 1.0),
-            1.0 + t * (8.00 - 1.0),
-            1.0 + t * (12.0 - 1.0),
-        };
-
-        CreatureRarity[] rarities = CreatureRarity.values();
-        double[] weights = new double[rarities.length];
+        double[] weights = rarityWeights(captureLevel);
         double total = 0.0;
-        for (int i = 0; i < rarities.length; i++) {
-            weights[i] = rarities[i].probability * multipliers[i];
-            total += weights[i];
-        }
+        for (double w : weights) total += w;
 
         double roll = rng.nextDouble() * total;
         double cumulative = 0.0;
+        CreatureRarity[] rarities = CreatureRarity.values();
         for (int i = 0; i < rarities.length; i++) {
             cumulative += weights[i];
             if (roll < cumulative) return rarities[i];
         }
         return CreatureRarity.COMMON;
+    }
+
+    private static double[] rarityWeights(int captureLevel) {
+        double t = Math.max(0, Math.min(98, captureLevel - 1)) / 98.0;
+        CreatureRarity[] rarities = CreatureRarity.values();
+        double[] weights = new double[rarities.length];
+        for (int i = 0; i < rarities.length; i++) {
+            weights[i] = rarities[i].probability * (1.0 + t * (LEVEL_TARGET_MULT[i] - 1.0));
+        }
+        return weights;
+    }
+
+    /** Probability (0..1) that a rarity roll at the given capture level yields {@code r}. */
+    public static double rarityChance(int captureLevel, CreatureRarity r) {
+        double[] weights = rarityWeights(captureLevel);
+        double total = 0.0;
+        for (double w : weights) total += w;
+        return weights[r.ordinal()] / total;
     }
 
     /** Legacy uniform-floor variant — treats {@code floor} as every stat's base. */

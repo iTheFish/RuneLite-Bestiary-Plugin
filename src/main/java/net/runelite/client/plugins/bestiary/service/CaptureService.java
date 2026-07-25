@@ -117,7 +117,7 @@ public class CaptureService {
      *   ELITE:     3% base, +0.13%/level, 15% cap
      *   BOSS:    1.5% base, +0.07%/level,  8% cap
      */
-    double calculateCatchRate(int captureLevel, DifficultyTier difficulty) {
+    public static double calculateCatchRate(int captureLevel, DifficultyTier difficulty) {
         double base, perLevel, cap;
         switch (difficulty) {
             case BEGINNER: base = 0.20; perLevel = 0.0050; cap = 0.60; break;
@@ -136,7 +136,7 @@ public class CaptureService {
      * 0.2% at level 1 → 2% at level 99 (linear). Rarity does not affect this.
      * Static so the dev seed can roll shinies the same way as live captures.
      */
-    static double shinyChance(int captureLevel) {
+    public static double shinyChance(int captureLevel) {
         double t = Math.max(0, Math.min(98, captureLevel - 1)) / 98.0;
         return 0.002 + t * (0.02 - 0.002);
     }

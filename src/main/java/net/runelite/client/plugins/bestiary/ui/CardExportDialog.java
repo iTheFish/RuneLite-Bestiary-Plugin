@@ -231,10 +231,18 @@ public class CardExportDialog extends JDialog {
         saveBtn.setFocusPainted(false);
         saveBtn.addActionListener(e -> { if (savePng(capture.npcName)) flash(saveBtn, "✓ Saved!"); });
 
-        JPanel btnRow = new JPanel(new GridLayout(1, 2, 6, 0));
+        JButton oddsBtn = new JButton("What were the odds?");
+        oddsBtn.setFont(FontManager.getRunescapeSmallFont());
+        oddsBtn.setBackground(new Color(60, 90, 150));
+        oddsBtn.setForeground(Color.WHITE);
+        oddsBtn.setFocusPainted(false);
+        oddsBtn.addActionListener(e -> OddsDialog.open(this, capture));
+
+        JPanel btnRow = new JPanel(new GridLayout(1, 3, 6, 0));
         btnRow.setOpaque(false);
         btnRow.add(copyBtn);
         btnRow.add(saveBtn);
+        btnRow.add(oddsBtn);
 
         // Layout
         JPanel content = new JPanel();
