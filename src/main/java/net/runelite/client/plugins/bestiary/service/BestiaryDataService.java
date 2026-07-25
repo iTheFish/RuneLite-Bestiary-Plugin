@@ -139,6 +139,34 @@ public class BestiaryDataService {
         db.setMetadata(META_CREDITS, String.valueOf(collection.credits));
     }
 
+    /** Credits a card is worth if discarded. */
+    public long discardValue(CapturedCreature c) {
+        return net.runelite.client.plugins.bestiary.util.CreditCalculator.forDiscard(
+                net.runelite.client.plugins.bestiary.model.MonsterRoster.getDifficulty(c.npcName, c.npcCombatLevel),
+                c.rarity, c.isShiny());
+    }
+
+    /** Discards a card: removes it, credits its discard value, persists. Returns credits awarded. */
+    public long discardCapture(CapturedCreature c) {
+        long credits = discardValue(c);
+        collection.removeCapture(c);
+        db.deleteCapture(c.id);
+        awardCredits(credits);
+        return credits;
+    }
+
+    /** Discards several cards at once. Returns total credits awarded. */
+    public long discardCaptures(java.util.Collection<CapturedCreature> cards) {
+        long total = 0;
+        for (CapturedCreature c : cards) {
+            total += discardValue(c);
+            collection.removeCapture(c);
+            db.deleteCapture(c.id);
+        }
+        awardCredits(total);
+        return total;
+    }
+
     public void saveProgressionState() {
         saveMetadata();
     }

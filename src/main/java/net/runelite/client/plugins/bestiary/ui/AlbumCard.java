@@ -31,6 +31,10 @@ public class AlbumCard extends JPanel {
     private static BestiaryConfig sharedConfig;
     public static void setConfig(BestiaryConfig cfg) { sharedConfig = cfg; }
 
+    /** Discard hook: (menu owner, capture) → confirm + discard. Wired by BestiaryPanel. */
+    private static java.util.function.BiConsumer<java.awt.Component, CapturedCreature> discardHandler;
+    public static void setDiscardHandler(java.util.function.BiConsumer<java.awt.Component, CapturedCreature> h) { discardHandler = h; }
+
     // Real in-game skill sprites (HP/Prayer/combat stats), supplied by RuneLite at startup.
     private static net.runelite.client.game.SkillIconManager skillIcons;
     private static final java.util.Map<net.runelite.api.Skill, BufferedImage> ICON_CACHE = new java.util.HashMap<>();
@@ -404,6 +408,13 @@ public class AlbumCard extends JPanel {
                         if (nicknameCallback != null) nicknameCallback.run();
                     }));
                     menu.add(nickItem);
+                }
+                if (discardHandler != null && !locked && captures != null && captures.size() == 1) {
+                    menu.addSeparator();
+                    JMenuItem discardItem = new JMenuItem("Discard…");
+                    discardItem.setForeground(new Color(224, 112, 112));
+                    discardItem.addActionListener(ev -> discardHandler.accept(AlbumCard.this, captures.get(0)));
+                    menu.add(discardItem);
                 }
                 menu.show(AlbumCard.this, e.getX(), e.getY());
             }

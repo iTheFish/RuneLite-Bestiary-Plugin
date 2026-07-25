@@ -269,6 +269,15 @@ public class BestiaryDatabase {
         }
     }
 
+    public void deleteCapture(String id) {
+        try (PreparedStatement ps = conn.prepareStatement("DELETE FROM captures WHERE id=?")) {
+            ps.setString(1, id);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            log.error("Failed to delete capture {}", id, e);
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Kill counts
     // -------------------------------------------------------------------------

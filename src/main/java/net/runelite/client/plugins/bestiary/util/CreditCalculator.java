@@ -50,4 +50,15 @@ public final class CreditCalculator {
         if (shiny) credits *= 2.0;
         return Math.max(1L, Math.round(credits));
     }
+
+    /** Flat credit bonus a shiny adds when discarded. */
+    public static final long SHINY_DISCARD_BONUS = 1000L;
+
+    /**
+     * Credits refunded for discarding a card = its base (non-shiny) capture value,
+     * plus a flat {@link #SHINY_DISCARD_BONUS} for shinies. Minimum 1.
+     */
+    public static long forDiscard(DifficultyTier tier, CreatureRarity rarity, boolean shiny) {
+        return forCapture(tier, rarity, false) + (shiny ? SHINY_DISCARD_BONUS : 0L);
+    }
 }

@@ -48,6 +48,18 @@ public class BestiaryPanel extends PluginPanel {
         CardExportDialog.setOnMutate(() -> { dataService.saveNow(); refresh(); });
         AlbumCard.setConfig(config);
         AlbumCard.setSkillIconManager(skillIconManager);
+        AlbumCard.setDiscardHandler((owner, cap) -> {
+            long value = dataService.discardValue(cap);
+            String label = (cap.isShiny() ? "✦ " : "") + cap.rarity.label + " " + cap.npcName;
+            int choice = JOptionPane.showConfirmDialog(owner,
+                    "Discard " + label + " for " + value + " credits?",
+                    "Discard card", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (choice == JOptionPane.YES_OPTION) {
+                dataService.discardCapture(cap);
+                refresh();
+            }
+        });
+        AlbumDialog.setDiscardOpener(win -> DiscardDialog.open(win, dataService, this::refresh));
 
         setLayout(new BorderLayout(0, 6));
         setBackground(ColorScheme.DARK_GRAY_COLOR);

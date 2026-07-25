@@ -45,6 +45,10 @@ public class AlbumDialog extends JDialog {
     private static java.util.function.Consumer<String> openDetailCallback;
     public static void setOpenDetailCallback(java.util.function.Consumer<String> cb) { openDetailCallback = cb; }
 
+    /** Opens the bulk-discard screen (owner window supplied). Wired by BestiaryPanel. */
+    private static java.util.function.Consumer<Window> discardOpener;
+    public static void setDiscardOpener(java.util.function.Consumer<Window> c) { discardOpener = c; }
+
     // Pending filter state — set before calling the callback, consumed in focusDetail
     private static CreatureRarity          pendingFilterRarity  = null;
     private static java.time.Instant       pendingFilterCapture = null;
@@ -248,6 +252,20 @@ public class AlbumDialog extends JDialog {
 
         topBar.add(row1);
         topBar.add(row2);
+        if (discardOpener != null) {
+            JButton discardBtn = new JButton("Discard duplicates…");
+            discardBtn.setFont(FontManager.getRunescapeSmallFont());
+            discardBtn.setBackground(new Color(120, 55, 55));
+            discardBtn.setForeground(Color.WHITE);
+            discardBtn.setFocusPainted(false);
+            discardBtn.addActionListener(e -> discardOpener.accept(AlbumDialog.this));
+            JPanel dRow = new JPanel(new BorderLayout());
+            dRow.setOpaque(false);
+            dRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
+            dRow.setBorder(new EmptyBorder(4, 0, 0, 0));
+            dRow.add(discardBtn, BorderLayout.WEST);
+            topBar.add(dRow);
+        }
 
         // -------------------------------------------------------------------------
         // Catalog action listeners (declared after all fields are initialised)
