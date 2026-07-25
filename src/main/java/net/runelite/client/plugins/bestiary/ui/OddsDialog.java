@@ -110,8 +110,9 @@ public class OddsDialog extends JDialog {
 
         if (firstBuild) {
             Dimension pref = root.getPreferredSize();
-            int w = Math.max(340, Math.min(600, pref.width + 30));
-            int h = Math.min(680, pref.height + 44);
+            Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+            int w = Math.max(360, Math.min(660, pref.width + 30));
+            int h = Math.min((int) (screen.height * 0.9), pref.height + 46);
             scroll.setPreferredSize(new Dimension(w, h));
             pack();
         } else {
@@ -163,11 +164,9 @@ public class OddsDialog extends JDialog {
         root.add(statsTable());
 
         JLabel explain = new JLabel("<html><div style='width:" + htmlW + "px'>"
-                + "Higher rarities lift the roll toward 99 (bigger lift for low stats); lower rarities "
-                + "can dip below the base — never under 1. Bands overlap, so a lucky Rare can beat an "
-                + "unlucky Epic. Prayer rolls the same way at half scale. "
-                + "<font color='#a0a0a0'>Example, base&nbsp;50: Common&nbsp;37–50, Uncommon&nbsp;41–52, "
-                + "Rare&nbsp;45–53, Epic&nbsp;50–61, Legendary&nbsp;56–74, Mythic&nbsp;70–90.</font></div></html>");
+                + "Each stat rolls inside its band: higher rarities lift toward 99 (more for low stats), "
+                + "lower rarities can dip below the base (never under 1). Bands overlap, so a lucky lower "
+                + "rarity can beat an unlucky higher one. Prayer rolls the same way at half scale.</div></html>");
         explain.setFont(fSmall);
         explain.setForeground(new Color(140, 140, 140));
         explain.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -207,10 +206,8 @@ public class OddsDialog extends JDialog {
         styleValue(deltaRow, deltaCol, false);
         root.add(deltaRow);
         JLabel plNote = new JLabel("<html><div style='width:" + htmlW + "px'>"
-                + "Power Level averages the 7 stats (Prayer counts as the 7th) with the monster's HP, ÷8. "
-                + "HP isn't on the 1–99 scale, so it counts at 1/8 weight — <font color='#a0a0a0'>"
-                + "negligible for a low-HP creature (stats decide), but dominant for a boss "
-                + "(1200&nbsp;HP adds ~150). HP takes over above ~450&nbsp;HP.</font></div></html>");
+                + "The 7 stats + HP, averaged ÷8. HP isn't on the 1–99 scale, so it counts at 1/8 weight: "
+                + "tiny for low-HP creatures, dominant for bosses (it takes over above ~450&nbsp;HP).</div></html>");
         plNote.setFont(fSmall);
         plNote.setForeground(new Color(140, 140, 140));
         plNote.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -232,10 +229,9 @@ public class OddsDialog extends JDialog {
         styleValue(perKill, Color.WHITE, true);
         root.add(perKill);
 
-        JLabel note = new JLabel("<html><div style='width:" + htmlW + "px'><i>\"Of your captures\" is how "
-                + "often a capture is this rarity at level " + r.level + " — high levels make rarities much "
-                + "more common. \"Per kill\" folds in the catch chance. Stat/prayer rolls are flavour and "
-                + "don't affect either.</i></div></html>");
+        JLabel note = new JLabel("<html><div style='width:" + htmlW + "px'><i>Per capture = how often a "
+                + "capture is this rarity at level " + r.level + " (high levels make rarities common). "
+                + "Per kill folds in the catch chance. Stat/prayer rolls don't affect the odds.</i></div></html>");
         note.setFont(fSmall);
         note.setForeground(new Color(130, 130, 130));
         note.setAlignmentX(Component.LEFT_ALIGNMENT);
