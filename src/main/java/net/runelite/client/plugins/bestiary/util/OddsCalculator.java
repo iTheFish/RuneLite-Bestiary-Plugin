@@ -69,16 +69,20 @@ public final class OddsCalculator {
         int[] bases = MonsterRoster.getStatBases(c.npcName, c.npcCombatLevel);
         int[] vals  = {c.quality.attack, c.quality.strength, c.quality.defence,
                        c.quality.magic, c.quality.ranged, c.quality.agility};
-        for (int i = 0; i < 6; i++) {
+        // Combat stats ATK..RNG (0-4), then Prayer, then Agility (5) — prayer sits before agility.
+        for (int i = 0; i < 5; i++) {
             int centre = RarityRoller.statCentre(bases[i], r.rarity);
             int[] band = RarityRoller.statBand(bases[i], r.rarity);
             r.stats.add(new StatOdds(STAT_NAMES[i], bases[i], vals[i], centre, band[0], band[1]));
         }
-        // Prayer is a rolled stat too (half scale) — shown in the same table.
+        // Prayer is a rolled stat too (half scale).
         int prayerBase = MonsterRoster.getPrayer(c.npcName);
         int[] pBand = RarityRoller.prayerBand(prayerBase, r.rarity);
         r.stats.add(new StatOdds("Prayer", prayerBase, c.prayer,
                 RarityRoller.prayerCentre(prayerBase, r.rarity), pBand[0], pBand[1]));
+        int centreAgi = RarityRoller.statCentre(bases[5], r.rarity);
+        int[] bandAgi = RarityRoller.statBand(bases[5], r.rarity);
+        r.stats.add(new StatOdds(STAT_NAMES[5], bases[5], vals[5], centreAgi, bandAgi[0], bandAgi[1]));
 
         // Power Level inputs
         r.statSum    = c.quality.statSum();
