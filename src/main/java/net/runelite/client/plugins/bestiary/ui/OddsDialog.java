@@ -190,6 +190,18 @@ public class OddsDialog extends JDialog {
                 fSmallBold, Color.WHITE, String.valueOf(r.powerLevel));
         styleValue(plRow, new Color(120, 200, 120), true);
         root.add(plRow);
+
+        Box avgRow = kvRow("Average " + r.rarity.label + " roll", fSmall, ColorScheme.LIGHT_GRAY_COLOR,
+                String.valueOf(r.avgPowerLevel));
+        styleValue(avgRow, nearWhite, false);
+        root.add(avgRow);
+
+        int delta = r.powerLevel - r.avgPowerLevel;
+        String deltaStr = delta > 0 ? "+" + delta + " above avg" : delta < 0 ? delta + " below avg" : "bang on avg";
+        Color deltaCol = delta > 0 ? new Color(120, 200, 120) : delta < 0 ? new Color(224, 112, 112) : new Color(176, 176, 176);
+        Box deltaRow = kvRow("This card vs average", fSmallBold, Color.WHITE, deltaStr);
+        styleValue(deltaRow, deltaCol, true);
+        root.add(deltaRow);
         JLabel plNote = new JLabel("<html><div style='width:" + htmlW + "px'>"
                 + "Power Level averages the 7 stats (Prayer counts as the 7th) with the monster's HP, ÷8. "
                 + "HP isn't on the 1–99 scale, so it counts at 1/8 weight — <font color='#a0a0a0'>"
