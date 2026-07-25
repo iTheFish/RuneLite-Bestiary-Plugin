@@ -700,8 +700,9 @@ public class AlbumCard extends JPanel {
         {
             int gap = 4;
             int usable = imgW - gap * 2;
-            int hpW = Math.round(usable * 0.50f);
-            int prW = Math.round(usable * 0.25f);
+            // HP gets a narrower slice so Prayer + Agility have room (agility was clipping on export).
+            int hpW = Math.round(usable * 0.50f) - 24;
+            int prW = (usable - hpW - gap) / 2;
             int agW = usable - hpW - prW;
             int aY = ATTR_Y;
             int x0 = imgX;
