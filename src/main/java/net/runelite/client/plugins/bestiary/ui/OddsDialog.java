@@ -74,15 +74,7 @@ public class OddsDialog extends JDialog {
                 ? "Stats — shiny bonus +" + RarityRoller.SHINY_MIN_BONUS + ".." + RarityRoller.SHINY_MAX_BONUS
                 : "Stats — " + r.rarity.label + " roll band (overlaps neighbours)";
         root.add(sectionHeader(statHdr));
-        for (OddsCalculator.StatOdds s : r.stats) {
-            String right;
-            if (r.shiny) {
-                right = "expected " + s.centre;
-            } else {
-                right = s.lo + "–" + s.hi + "&nbsp;&nbsp;" + rollTag(s.value, s.lo, s.hi);
-            }
-            root.add(kvRow(s.name + ":  " + s.value, smallBold, Color.WHITE, "<html>" + right + "</html>"));
-        }
+        root.add(statsTable(r, small, smallBold));
 
         root.add(Box.createVerticalStrut(10));
 
@@ -132,16 +124,62 @@ public class OddsDialog extends JDialog {
         @Override public boolean getScrollableTracksViewportHeight() { return false; }
     }
 
-    /** A coloured HTML tag for where a value landed within its [lo, hi] band. */
-    private static String rollTag(int value, int lo, int hi) {
-        if (hi <= lo) return "<font color='#909090'>fixed</font>";
-        double f = (value - lo) / (double) (hi - lo);
-        String label, colour;
-        if (value >= hi)        { label = "MAX roll";  colour = "#7ad67a"; }
-        else if (f >= 0.67)     { label = "high roll"; colour = "#8fd08f"; }
-        else if (f <= 0.33)     { label = (value <= lo ? "MIN roll" : "low roll"); colour = "#e07070"; }
-        else                    { label = "mid roll";  colour = "#b0b0b0"; }
-        return "<font color='" + colour + "'>" + label + "</font>";
+    /** Aligned STAT / ROLL / BAND / QUALITY table for the six stats. */
+    private static JPanel statsTable(OddsCalculator.Result r, Font small, Font smallBold) {
+        JPanel t = new JPanel(new GridBagLayout());
+        t.setOpaque(false);
+        t.setAlignmentX(Component.LEFT_ALIGNMENT);
+        GridBagConstraints g = new GridBagConstraints();
+        g.insets = new Insets(1, 0, 1, 14);
+
+        String[] heads = {"Stat", "Roll", r.shiny ? "Expected" : "Band", r.shiny ? "" : "Quality"};
+        for (int c = 0; c < heads.length; c++) {
+            g.gridx = c; g.gridy = 0;
+            g.anchor = (c == 1) ? GridBagConstraints.EAST : GridBagConstraints.WEST;
+            t.add(cell(heads[c], small.deriveFont(Font.BOLD), new Color(140, 140, 140)), g);
+        }
+
+        int row = 1;
+        for (OddsCalculator.StatOdds s : r.stats) {
+            g.gridy = row++;
+            g.gridx = 0; g.anchor = GridBagConstraints.WEST;
+            t.add(cell(s.name, small, new Color(210, 210, 210)), g);
+            g.gridx = 1; g.anchor = GridBagConstraints.EAST;
+            t.add(cell(String.valueOf(s.value), smallBold, Color.WHITE), g);
+            g.gridx = 2; g.anchor = GridBagConstraints.WEST;
+            t.add(cell(r.shiny ? String.valueOf(s.centre) : s.lo + "–" + s.hi, small,
+                    ColorScheme.LIGHT_GRAY_COLOR), g);
+            g.gridx = 3; g.anchor = GridBagConstraints.WEST;
+            if (r.shiny) {
+                t.add(cell("shiny", small, new Color(255, 215, 0)), g);
+            } else {
+                t.add(rollTagCell(s.value, s.lo, s.hi, small), g);
+            }
+        }
+
+        t.setMaximumSize(new Dimension(Integer.MAX_VALUE, t.getPreferredSize().height));
+        return t;
+    }
+
+    private static JLabel cell(String text, Font font, Color colour) {
+        JLabel l = new JLabel(text);
+        l.setFont(font);
+        l.setForeground(colour);
+        return l;
+    }
+
+    /** A coloured "high/mid/low" label for where a value landed within its [lo, hi] band. */
+    private static JLabel rollTagCell(int value, int lo, int hi, Font font) {
+        String label; Color colour;
+        if (hi <= lo)           { label = "fixed";    colour = new Color(144, 144, 144); }
+        else {
+            double f = (value - lo) / (double) (hi - lo);
+            if (value >= hi)    { label = "MAX roll";  colour = new Color(122, 214, 122); }
+            else if (f >= 0.67) { label = "high roll"; colour = new Color(143, 208, 143); }
+            else if (f <= 0.33) { label = value <= lo ? "MIN roll" : "low roll"; colour = new Color(224, 112, 112); }
+            else                { label = "mid roll";  colour = new Color(176, 176, 176); }
+        }
+        return cell(label, font, colour);
     }
 
     private static JLabel sectionHeader(String text) {
