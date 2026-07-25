@@ -2,6 +2,7 @@ package net.runelite.client.plugins.bestiary.ui;
 
 import net.runelite.client.plugins.bestiary.model.CapturedCreature;
 import net.runelite.client.plugins.bestiary.util.OddsCalculator;
+import net.runelite.client.plugins.bestiary.util.RarityRoller;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 
@@ -62,22 +63,25 @@ public class OddsDialog extends JDialog {
 
         root.add(Box.createVerticalStrut(8));
 
-        // Per-stat section
-        root.add(sectionHeader(r.shiny ? "Stats (shiny = best roll, fixed)" : "Stat wiggle (±" + wiggleTag() + ")"));
+        // Per-stat section — info only (the wiggle does NOT affect the odds)
+        String statHdr = r.shiny
+                ? "Stats — shiny bonus +" + RarityRoller.SHINY_MIN_BONUS + ".." + RarityRoller.SHINY_MAX_BONUS
+                : "Stats — wiggle ±" + RarityRoller.WIGGLE;
+        root.add(sectionHeader(statHdr));
         for (OddsCalculator.StatOdds s : r.stats) {
-            root.add(statRow(s, r.shiny));
+            root.add(statRow(s));
         }
 
         root.add(Box.createVerticalStrut(8));
 
-        // Combined
+        // Combined — rarity (× shiny). Stat wiggle is not a factor.
         JPanel combined = new JPanel(new BorderLayout());
         combined.setOpaque(false);
         combined.setBorder(new MatteBorder(1, 0, 0, 0, new Color(70, 70, 70)));
         combined.setAlignmentX(Component.LEFT_ALIGNMENT);
         combined.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
         JLabel cl = new JLabel("<html>This exact card<br>"
-                + "<font color='#c8c8c8'>rarity × " + (r.shiny ? "shiny × " : "") + "all stats</font></html>");
+                + "<font color='#c8c8c8'>rarity" + (r.shiny ? " × shiny" : "") + "</font></html>");
         cl.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         cl.setForeground(Color.WHITE);
         cl.setBorder(new EmptyBorder(6, 0, 0, 0));
@@ -89,8 +93,8 @@ public class OddsDialog extends JDialog {
         combined.add(cr, BorderLayout.EAST);
         root.add(combined);
 
-        JLabel note = new JLabel("<html><i>Excludes the catch gate above; that's the odds the "
-                + "capture happened at all.</i></html>");
+        JLabel note = new JLabel("<html><i>Stat rolls are flavour and don't affect these odds. "
+                + "The catch gate above is the separate chance the capture happened at all.</i></html>");
         note.setFont(FontManager.getRunescapeSmallFont());
         note.setForeground(new Color(130, 130, 130));
         note.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -110,10 +114,6 @@ public class OddsDialog extends JDialog {
         pack();
         setMinimumSize(new Dimension(300, 220));
         setLocationRelativeTo(owner);
-    }
-
-    private static String wiggleTag() {
-        return String.valueOf(net.runelite.client.plugins.bestiary.util.RarityRoller.WIGGLE);
     }
 
     private static JLabel sectionHeader(String text) {
@@ -141,17 +141,16 @@ public class OddsDialog extends JDialog {
         return row;
     }
 
-    private static JPanel statRow(OddsCalculator.StatOdds s, boolean shiny) {
+    private static JPanel statRow(OddsCalculator.StatOdds s) {
         JPanel row = new JPanel(new BorderLayout());
         row.setOpaque(false);
         row.setAlignmentX(Component.LEFT_ALIGNMENT);
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 18));
-        int off = s.value - s.centre;
-        String offStr = shiny ? "" : "  (" + (off >= 0 ? "+" + off : String.valueOf(off)) + ")";
-        JLabel l = new JLabel(s.name + ":  " + s.value + "   " + "expected " + s.centre + offStr);
-        l.setFont(FontManager.getRunescapeSmallFont());
+        JLabel l = new JLabel(s.name + ":  " + s.value);
+        l.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         l.setForeground(Color.WHITE);
-        JLabel v = new JLabel(shiny ? "fixed" : OddsCalculator.pct(s.prob));
+        String offStr = (s.offset >= 0 ? "+" + s.offset : String.valueOf(s.offset));
+        JLabel v = new JLabel("expected " + s.centre + "   (" + offStr + ")");
         v.setFont(FontManager.getRunescapeSmallFont());
         v.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
         row.add(l, BorderLayout.WEST);

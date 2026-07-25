@@ -26,10 +26,10 @@ public final class OddsCalculator {
     public static final class StatOdds {
         public final String name;
         public final int value;      // the rolled value on the card
-        public final int centre;     // base × rarity multiplier (rounded)
-        public final double prob;    // P(this stat lands on `value`)
-        StatOdds(String name, int value, int centre, double prob) {
-            this.name = name; this.value = value; this.centre = centre; this.prob = prob;
+        public final int centre;     // base × rarity multiplier (rounded) — the "expected" value
+        public final int offset;     // value - centre (the wiggle/shiny roll), shown as info only
+        StatOdds(String name, int value, int centre) {
+            this.name = name; this.value = value; this.centre = centre; this.offset = value - centre;
         }
     }
 
@@ -42,8 +42,7 @@ public final class OddsCalculator {
         public double rarityChance;   // 0..1 — chance of this rarity
         public double shinyChance;    // 0..1 — chance of the shiny outcome (shiny or not)
         public List<StatOdds> stats = new ArrayList<>();
-        public double statsCombined;  // product of per-stat probs
-        public double overall;        // rarity × shiny × stats (excludes the catch gate)
+        public double overall;        // rarity × shiny (the stat wiggle is NOT a factor — info only)
     }
 
     public static Result compute(CapturedCreature c) {
@@ -59,39 +58,17 @@ public final class OddsCalculator {
         r.shinyChance  = r.shiny ? sc : (1.0 - sc);
 
         int[] bases = MonsterRoster.getStatBases(c.npcName, c.npcCombatLevel);
-        double mult  = r.rarity.statMultiplier + (r.shiny ? RarityRoller.SHINY_MULT_BONUS : 0.0);
-        int[] vals   = {c.quality.attack, c.quality.strength, c.quality.defence,
-                        c.quality.magic, c.quality.ranged, c.quality.agility};
-
-        r.statsCombined = 1.0;
+        int[] vals  = {c.quality.attack, c.quality.strength, c.quality.defence,
+                       c.quality.magic, c.quality.ranged, c.quality.agility};
         for (int i = 0; i < 6; i++) {
-            int centre = (int) Math.round(bases[i] * mult);
-            double p = statProb(centre, vals[i], r.shiny);
-            r.stats.add(new StatOdds(STAT_NAMES[i], vals[i], centre, p));
-            r.statsCombined *= p;
+            int centre = RarityRoller.statCentre(bases[i], r.rarity);
+            r.stats.add(new StatOdds(STAT_NAMES[i], vals[i], centre));
         }
 
-        r.overall = r.rarityChance * (r.shiny ? r.shinyChance : 1.0) * r.statsCombined;
+        // Stat wiggle is flavour, not part of "how rare is this card" — only rarity (and shiny) count.
+        r.overall = r.rarityChance * (r.shiny ? r.shinyChance : 1.0);
         return r;
     }
-
-    /**
-     * P(a stat centred at {@code centre} lands on {@code value}). Shiny stats are
-     * deterministic (centre + max wiggle), so their prob is 1 when they match.
-     */
-    private static double statProb(int centre, int value, boolean shiny) {
-        int w = RarityRoller.WIGGLE;
-        if (shiny) {
-            return clamp(centre + w) == value ? 1.0 : 0.0;
-        }
-        int hits = 0, total = 2 * w + 1;
-        for (int off = -w; off <= w; off++) {
-            if (clamp(centre + off) == value) hits++;
-        }
-        return (double) hits / total;
-    }
-
-    private static int clamp(int v) { return Math.max(1, Math.min(99, v)); }
 
     /** Formats a 0..1 probability as "1 in N" (N comma-grouped). */
     public static String oneIn(double p) {

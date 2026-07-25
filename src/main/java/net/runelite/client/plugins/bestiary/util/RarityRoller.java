@@ -81,19 +81,26 @@ public final class RarityRoller {
      */
     public static CreatureQuality generateQuality(CombatClass cls, CreatureRarity rarity,
                                                   int[] bases, Random rng, boolean shiny) {
-        double mult = rarity.statMultiplier + (shiny ? SHINY_MULT_BONUS : 0.0);
         int[] stats = new int[6];
         for (int i = 0; i < 6; i++) {
-            int centre = (int) Math.round(bases[i] * mult);
-            int wiggle = shiny ? WIGGLE : (rng.nextInt(2 * WIGGLE + 1) - WIGGLE);
-            stats[i] = Math.max(1, Math.min(99, centre + wiggle));
+            int centre = statCentre(bases[i], rarity);
+            int roll = shiny
+                ? SHINY_MIN_BONUS + rng.nextInt(SHINY_MAX_BONUS - SHINY_MIN_BONUS + 1)  // +6..+20 over expected
+                : rng.nextInt(2 * WIGGLE + 1) - WIGGLE;                                 // -6..+6
+            stats[i] = Math.max(1, Math.min(99, centre + roll));
         }
         return new CreatureQuality(stats[0], stats[1], stats[2], stats[3], stats[4], stats[5]);
     }
 
-    /** Half-width of the uniform RNG wiggle added to each stat centre. */
-    public static final int WIGGLE = 3;
+    /** The "expected" value for a stat: base × rarity multiplier (the wiggle/shiny bonus is added on top). */
+    public static int statCentre(int base, CreatureRarity rarity) {
+        return (int) Math.round(base * rarity.statMultiplier);
+    }
 
-    /** Extra multiplier a shiny adds on top of its rarity multiplier. */
-    public static final double SHINY_MULT_BONUS = 0.20;
+    /** Half-width of the uniform RNG wiggle added to each non-shiny stat centre. */
+    public static final int WIGGLE = 6;
+
+    /** A shiny stat rolls its expected value plus a uniform bonus in [MIN, MAX]. */
+    public static final int SHINY_MIN_BONUS = 6;
+    public static final int SHINY_MAX_BONUS = 20;
 }

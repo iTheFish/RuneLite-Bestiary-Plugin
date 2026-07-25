@@ -259,10 +259,10 @@ public class CardExportDialog extends JDialog {
         oddsRow.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         content.add(previewPanel);
-        content.add(Box.createVerticalStrut(8));
-        content.add(oddsRow);
-        content.add(Box.createVerticalStrut(6));
+        content.add(Box.createVerticalStrut(10));
         content.add(btnRow);
+        content.add(Box.createVerticalStrut(6));
+        content.add(oddsRow);
 
         // Track open instance; clean up shimmer registration on close
         if (openInstance != null && openInstance.isDisplayable()) openInstance.dispose();

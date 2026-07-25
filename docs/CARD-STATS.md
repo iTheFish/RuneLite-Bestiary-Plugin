@@ -93,11 +93,15 @@ The reviewed per-stat bases (`MonsterRoster.STAT_BASES`, from `base-stats-review
 **average / Epic** card. Each rarity simply **scales** them by a multiplier, then adds a small wiggle:
 
 ```
-centre[i] = round( base[i] × rarity.statMultiplier )
-stat[i]   = clamp( centre[i] + uniform(−3, +3), 1, 99 )        // "wiggle room" RNG
+centre[i] = round( base[i] × rarity.statMultiplier )          // the "expected" value
+stat[i]   = clamp( centre[i] + uniform(−6, +6), 1, 99 )        // "wiggle room" RNG
 
-shiny:    centre uses (statMultiplier + 0.20) and takes the top of the band (deterministic best)
+shiny:    stat[i] = clamp( centre[i] + uniform(+6, +20), 1, 99 )   // always above expected
 ```
+
+The stat wiggle is **flavour only** — it is deliberately **not** part of a card's rarity odds
+(otherwise cards with more stats would read as "rarer"). The odds screen shows each stat's
+offset-from-expected as info, but the "this exact card" figure is **rarity × shiny** alone.
 
 Rarity multipliers (`CreatureRarity.statMultiplier`):
 
