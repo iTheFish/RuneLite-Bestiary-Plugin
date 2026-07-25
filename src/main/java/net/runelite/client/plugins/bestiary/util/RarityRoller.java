@@ -103,8 +103,8 @@ public final class RarityRoller {
     // 0). Rare/Uncommon/Common can dip below base (negative lift) but are floored at 1; low
     // rarities still get real upward spread for weak monsters (base 1 Rare ≈ 1–10).
     // Index = CreatureRarity.ordinal(): Common, Uncommon, Rare, Epic, Legendary, Mythic.
-    private static final double[] LIFT_LO = {-0.20, -0.16, -0.13, -0.09, 0.08, 0.40};
-    private static final double[] LIFT_HI = { 0.025, 0.05,  0.09,  0.10, 0.46, 0.80};
+    private static final double[] LIFT_LO = {-0.26, -0.18, -0.11, 0.00, 0.12, 0.40};
+    private static final double[] LIFT_HI = { 0.01,  0.04,  0.07, 0.22, 0.50, 0.82};
     private static final int STAT_CAP = 99;
 
     /** The inclusive [lo, hi] range a non-shiny stat rolls in at this rarity (floored at 1). */

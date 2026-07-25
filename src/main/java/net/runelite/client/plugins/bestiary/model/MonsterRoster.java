@@ -427,8 +427,8 @@ public class MonsterRoster {
         b.put("Gemstone crab", new int[]{1, 1, 1, 1, 1, 33});
         b.put("Pirate", new int[]{6, 6, 6, 1, 1, 45});
         b.put("Rogue", new int[]{4, 4, 4, 1, 1, 75});
-        b.put("Abyssal demon", new int[]{40, 40, 40, 1, 5, 65});
-        b.put("Aberrant spectre", new int[]{1, 1, 27, 32, 1, 45});
+        b.put("Abyssal demon", new int[]{55, 55, 40, 1, 5, 65});
+        b.put("Aberrant spectre", new int[]{1, 1, 27, 50, 1, 45});
         b.put("Deviant spectre", new int[]{1, 1, 27, 62, 1, 45});
         b.put("Ankou", new int[]{21, 21, 18, 1, 1, 15});
         b.put("Banshee", new int[]{7, 5, 7, 1, 1, 30});
