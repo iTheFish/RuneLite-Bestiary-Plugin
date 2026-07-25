@@ -2,7 +2,6 @@ package net.runelite.client.plugins.bestiary.ui;
 
 import net.runelite.client.plugins.bestiary.model.CapturedCreature;
 import net.runelite.client.plugins.bestiary.util.OddsCalculator;
-import net.runelite.client.plugins.bestiary.util.RarityRoller;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 
@@ -12,22 +11,20 @@ import javax.swing.border.MatteBorder;
 import java.awt.*;
 
 /**
- * MODELESS "What were the odds?" breakdown for a single capture — catch chance,
- * rarity, shiny (the odds), the stat/prayer roll bands, and the Power Level maths.
- * Zoomable (A− / A+ buttons or Ctrl + mouse wheel).
+ * MODELESS "What were the odds?" breakdown for a single capture: the roll chain
+ * (catch, rarity, shiny → per-capture / per-kill odds), the stat/prayer roll
+ * bands, and the Power Level maths with an average-roll comparison.
  */
 public class OddsDialog extends JDialog {
 
     private static OddsDialog current;
-    private static final int CONTENT_W = 300;
+    private static final int HTML_W = 330;   // wrap width for paragraph text
 
     private final OddsCalculator.Result r;
     private final CapturedCreature capture;
-    private final JScrollPane scroll = new JScrollPane();
-    private JLabel zoomLabel;
-    private double zoom = 1.0;
 
-    private Font fSmall, fSmallBold, fBold;
+    private final Font body;
+    private final Font bodyBold;
 
     public static void open(Window owner, CapturedCreature capture) {
         if (current != null && current.isShowing()) current.dispose();
@@ -42,132 +39,85 @@ public class OddsDialog extends JDialog {
         this.capture = capture;
         this.r = OddsCalculator.compute(capture);
 
-        // Zoom toolbar
-        JPanel bar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 2));
-        bar.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-        zoomLabel = new JLabel("100%");
-        zoomLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-        zoomLabel.setFont(FontManager.getRunescapeSmallFont());
-        bar.add(zoomButton("A−", -0.1));
-        bar.add(zoomLabel);
-        bar.add(zoomButton("A+", +0.1));
+        float base = FontManager.getRunescapeSmallFont().getSize2D();
+        this.body     = FontManager.getRunescapeSmallFont().deriveFont(base + 1f);
+        this.bodyBold = body.deriveFont(Font.BOLD);
 
+        ScrollablePanel root = buildBody();
+        JScrollPane scroll = new JScrollPane(root,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scroll.setBorder(null);
         scroll.getVerticalScrollBar().setUnitIncrement(16);
-        scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scroll.addMouseWheelListener(e -> {
-            if (e.isControlDown()) {
-                setZoom(zoom + (e.getWheelRotation() < 0 ? 0.1 : -0.1));
-                e.consume();
-            } else if (scroll.getVerticalScrollBar().isVisible()) {
-                JScrollBar sb = scroll.getVerticalScrollBar();
-                sb.setValue(sb.getValue() + e.getUnitsToScroll() * sb.getUnitIncrement());
-            }
-        });
 
-        JPanel outer = new JPanel(new BorderLayout());
-        outer.add(bar, BorderLayout.NORTH);
-        outer.add(scroll, BorderLayout.CENTER);
-        setContentPane(outer);
-
-        rebuild(true);
-        setMinimumSize(new Dimension(320, 260));
-        setLocationRelativeTo(owner);
-    }
-
-    private JButton zoomButton(String text, double delta) {
-        JButton b = new JButton(text);
-        b.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
-        b.setMargin(new Insets(0, 6, 0, 6));
-        b.setFocusPainted(false);
-        b.setBackground(ColorScheme.DARK_GRAY_COLOR);
-        b.setForeground(Color.WHITE);
-        b.setToolTipText("Zoom (or Ctrl + mouse wheel)");
-        b.addActionListener(e -> setZoom(zoom + delta));
-        return b;
-    }
-
-    private void setZoom(double z) {
-        z = Math.max(0.8, Math.min(2.4, Math.round(z * 10) / 10.0));
-        if (Math.abs(z - zoom) < 0.001) return;
-        zoom = z;
-        rebuild(false);
-    }
-
-    private void rebuild(boolean firstBuild) {
-        float bs = FontManager.getRunescapeSmallFont().getSize2D();
-        float bb = FontManager.getRunescapeBoldFont().getSize2D();
-        fSmall     = FontManager.getRunescapeSmallFont().deriveFont((float) (bs * zoom));
-        fSmallBold = fSmall.deriveFont(Font.BOLD);
-        fBold      = FontManager.getRunescapeBoldFont().deriveFont((float) (bb * zoom));
-        zoomLabel.setText(Math.round(zoom * 100) + "%");
-
-        int vpw = scroll.getViewport().getWidth();
-        int htmlW = vpw > 60 ? vpw - 34 : (int) (CONTENT_W * zoom);
-
-        JPanel root = buildBody(htmlW);
-        scroll.setViewportView(root);
-
-        // Always resize the window to fit the content at the current zoom, so nothing clips —
-        // the window grows/shrinks with zoom (paragraphs wrap; rows/table stay fully visible).
         Dimension pref = root.getPreferredSize();
         Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
         int w = Math.max(360, Math.min(screen.width - 80, pref.width + 30));
         int h = Math.min(screen.height - 120, pref.height + 8);
         scroll.setPreferredSize(new Dimension(w, h));
+
+        setContentPane(scroll);
         pack();
+        setMinimumSize(new Dimension(340, 260));
+        setLocationRelativeTo(owner);
     }
 
-    private JPanel buildBody(int htmlW) {
+    private ScrollablePanel buildBody() {
         ScrollablePanel root = new ScrollablePanel();
         root.setLayout(new BoxLayout(root, BoxLayout.Y_AXIS));
         root.setBackground(ColorScheme.DARK_GRAY_COLOR);
         root.setBorder(new EmptyBorder(12, 14, 12, 14));
 
-        String shinyTag = r.shiny ? "  ✦ SHINY" : "";
-        JLabel title = new JLabel(capture.npcName + "  —  " + r.rarity.label + shinyTag);
-        title.setFont(fBold);
+        // Title
+        JLabel title = new JLabel(capture.npcName + "  —  " + r.rarity.label + (r.shiny ? "  ✦ SHINY" : ""));
+        title.setFont(FontManager.getRunescapeBoldFont());
         title.setForeground(r.rarity.displayColor);
         title.setAlignmentX(Component.LEFT_ALIGNMENT);
         root.add(title);
-
         JLabel sub = new JLabel("Captured at Bestiary level " + r.level + "  ·  " + r.difficulty.label + " tier");
-        sub.setFont(fSmall);
+        sub.setFont(body);
         sub.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
         sub.setAlignmentX(Component.LEFT_ALIGNMENT);
         root.add(sub);
 
         root.add(Box.createVerticalStrut(8));
 
-        // Roll chain (the odds)
+        // Roll chain — the odds (stat rolls don't factor in, so this IS the whole story)
         root.add(sectionHeader("The roll chain"));
-        root.add(kvRow("Catch (gate)", fSmall, Color.WHITE,
+        root.add(kvRow("Catch (gate)", body, Color.WHITE,
                 OddsCalculator.pct(r.catchChance) + "  (" + OddsCalculator.oneIn(r.catchChance) + ")"));
-        root.add(kvRow("This rarity", fSmall, r.rarity.displayColor,
+        root.add(kvRow("This rarity", body, r.rarity.displayColor,
                 OddsCalculator.pct(r.rarityChance) + "  (" + OddsCalculator.oneIn(r.rarityChance) + ")"));
         if (r.shiny) {
-            root.add(kvRow("Shiny", fSmall, new Color(255, 215, 0),
+            root.add(kvRow("Shiny", body, new Color(255, 215, 0),
                     OddsCalculator.pct(r.shinyChance) + "  (" + OddsCalculator.oneIn(r.shinyChance) + ")"));
         }
+        root.add(Box.createVerticalStrut(4));
+        root.add(separator());
+        root.add(Box.createVerticalStrut(4));
+        Box perCap = kvRow("Per capture (" + (r.shiny ? "Rarity × Shiny" : "Rarity chance") + ")",
+                bodyBold, Color.WHITE, OddsCalculator.oneIn(r.perCapture));
+        styleValue(perCap, new Color(120, 200, 120));
+        root.add(perCap);
+        Box perKill = kvRow("Per kill (Catch chance × Rarity chance" + (r.shiny ? " × Shiny" : "") + ")",
+                bodyBold, Color.WHITE, OddsCalculator.oneIn(r.perKill));
+        styleValue(perKill, Color.WHITE);
+        root.add(perKill);
+        root.add(paragraph("<i>Per capture = how often a capture is this rarity at level " + r.level
+                + " (high levels make rarities much more common). Per kill folds in the catch chance. "
+                + "Stat and prayer rolls are flavour — they don't affect these odds.</i>"));
 
-        root.add(Box.createVerticalStrut(8));
+        root.add(Box.createVerticalStrut(10));
 
-        // Stats (info only)
-        String statHdr = r.shiny
+        // Stats
+        root.add(sectionHeader(r.shiny
                 ? "Stats — shiny roll bands (above " + r.rarity.label + ")"
-                : "Stats — " + r.rarity.label + " roll bands";
-        root.add(sectionHeader(statHdr));
+                : "Stats — " + r.rarity.label + " roll bands"));
         root.add(statsTable());
-
-        JLabel explain = new JLabel("<html><div style='width:" + htmlW + "px'>"
-                + "Each stat rolls inside its band: higher rarities lift toward 99 (more for low stats), "
-                + "lower rarities can dip below the base (never under 1). Bands overlap, so a lucky lower "
-                + "rarity can beat an unlucky higher one. Prayer rolls the same way at half scale.</div></html>");
-        explain.setFont(fSmall);
-        explain.setForeground(new Color(140, 140, 140));
-        explain.setAlignmentX(Component.LEFT_ALIGNMENT);
-        explain.setBorder(new EmptyBorder(6, 0, 0, 0));
-        root.add(explain);
+        root.add(paragraph("Higher rarities lift the roll toward 99 (bigger lift for low stats); "
+                + "lower rarities can dip below the base — never under 1. Bands overlap, so a lucky Rare "
+                + "can beat an unlucky Epic. Prayer rolls the same way at half scale. "
+                + "<font color='#a0a0a0'>Example, base&nbsp;50: Common&nbsp;37–50, Uncommon&nbsp;41–52, "
+                + "Rare&nbsp;45–53, Epic&nbsp;50–61, Legendary&nbsp;56–74, Mythic&nbsp;70–90.</font>"));
 
         root.add(Box.createVerticalStrut(10));
 
@@ -175,98 +125,70 @@ public class OddsDialog extends JDialog {
         int sevenStats = r.statSum + r.prayer;
         Color nearWhite = new Color(235, 235, 235);
         root.add(sectionHeader("Power Level"));
-        Box sevenRow = kvRow("7 stats total", fSmall, ColorScheme.LIGHT_GRAY_COLOR, String.valueOf(sevenStats));
-        styleValue(sevenRow, nearWhite, false);
-        root.add(sevenRow);
-        Box hpRow = kvRow("Hitpoints (factual)", fSmall, new Color(120, 200, 120), String.valueOf(r.hp));
-        styleValue(hpRow, nearWhite, false);
-        root.add(hpRow);
-        Box plRow = kvRow("= Power Level  (" + sevenStats + " + " + r.hp + ") ÷ 8",
-                fSmall, Color.WHITE, String.valueOf(r.powerLevel));
-        styleValue(plRow, new Color(120, 200, 120), false);
-        root.add(plRow);
+        root.add(styleValue(kvRow("7 stats total", body, ColorScheme.LIGHT_GRAY_COLOR,
+                String.valueOf(sevenStats)), nearWhite));
+        root.add(styleValue(kvRow("Hitpoints (factual)", body, new Color(120, 200, 120),
+                String.valueOf(r.hp)), nearWhite));
+        root.add(styleValue(kvRow("= Power Level  (" + sevenStats + " + " + r.hp + ") ÷ 8",
+                body, Color.WHITE, String.valueOf(r.powerLevel)), new Color(120, 200, 120)));
 
         root.add(Box.createVerticalStrut(4));
         root.add(separator());
         root.add(Box.createVerticalStrut(4));
 
-        Box avgRow = kvRow("Average " + r.rarity.label + " roll", fSmall, ColorScheme.LIGHT_GRAY_COLOR,
-                String.valueOf(r.avgPowerLevel));
-        styleValue(avgRow, nearWhite, false);
-        root.add(avgRow);
-
+        root.add(styleValue(kvRow("Average " + r.rarity.label + " roll", body, ColorScheme.LIGHT_GRAY_COLOR,
+                String.valueOf(r.avgPowerLevel)), nearWhite));
         int delta = r.powerLevel - r.avgPowerLevel;
         String deltaStr = delta > 0 ? "+" + delta + " above avg" : delta < 0 ? delta + " below avg" : "bang on avg";
         Color deltaCol = delta > 0 ? new Color(120, 200, 120) : delta < 0 ? new Color(224, 112, 112) : new Color(176, 176, 176);
-        Box deltaRow = kvRow("This card vs average", fSmall, Color.WHITE, deltaStr);
-        styleValue(deltaRow, deltaCol, false);
-        root.add(deltaRow);
-        JLabel plNote = new JLabel("<html><div style='width:" + htmlW + "px'>"
-                + "The 7 stats + HP, averaged ÷8. HP isn't on the 1–99 scale, so it counts at 1/8 weight: "
-                + "tiny for low-HP creatures, dominant for bosses (it takes over above ~450&nbsp;HP).</div></html>");
-        plNote.setFont(fSmall);
-        plNote.setForeground(new Color(140, 140, 140));
-        plNote.setAlignmentX(Component.LEFT_ALIGNMENT);
-        plNote.setBorder(new EmptyBorder(4, 0, 0, 0));
-        root.add(plNote);
+        root.add(styleValue(kvRow("This card vs average", body, Color.WHITE, deltaStr), deltaCol));
 
-        root.add(Box.createVerticalStrut(10));
-
-        // Combined odds
-        Box perCap = kvRow("Per capture (" + (r.shiny ? "Rarity × Shiny" : "Rarity chance") + ")",
-                fSmallBold, Color.WHITE, OddsCalculator.oneIn(r.perCapture));
-        perCap.setBorder(BorderFactory.createCompoundBorder(
-                new MatteBorder(1, 0, 0, 0, new Color(70, 70, 70)), new EmptyBorder(7, 0, 2, 0)));
-        styleValue(perCap, new Color(120, 200, 120), true);
-        root.add(perCap);
-
-        Box perKill = kvRow("Per kill (Catch chance × Rarity chance" + (r.shiny ? " × Shiny" : "") + ")",
-                fSmallBold, Color.WHITE, OddsCalculator.oneIn(r.perKill));
-        styleValue(perKill, Color.WHITE, true);
-        root.add(perKill);
-
-        JLabel note = new JLabel("<html><div style='width:" + htmlW + "px'><i>Per capture = how often a "
-                + "capture is this rarity at level " + r.level + " (high levels make rarities common). "
-                + "Per kill folds in the catch chance. Stat/prayer rolls don't affect the odds.</i></div></html>");
-        note.setFont(fSmall);
-        note.setForeground(new Color(130, 130, 130));
-        note.setAlignmentX(Component.LEFT_ALIGNMENT);
-        note.setBorder(new EmptyBorder(6, 0, 0, 0));
-        root.add(note);
+        root.add(paragraph("Power Level averages the 7 stats (Prayer counts as the 7th) with the monster's "
+                + "HP, ÷8. HP isn't on the 1–99 scale, so it counts at 1/8 weight — <font color='#a0a0a0'>"
+                + "negligible for a low-HP creature (stats decide), but dominant for a boss "
+                + "(1200&nbsp;HP adds ~150). HP takes over above ~450&nbsp;HP.</font>"));
 
         return root;
     }
 
-    /** Aligned Stat / Base / Roll / Band / Quality table (6 combat stats + Prayer). */
+    // ---- helpers ----
+
+    private JLabel paragraph(String html) {
+        JLabel l = new JLabel("<html><div style='width:" + HTML_W + "px'>" + html + "</div></html>");
+        l.setFont(body);
+        l.setForeground(new Color(140, 140, 140));
+        l.setAlignmentX(Component.LEFT_ALIGNMENT);
+        l.setBorder(new EmptyBorder(5, 0, 0, 0));
+        return l;
+    }
+
     private JPanel statsTable() {
         JPanel t = new JPanel(new GridBagLayout());
         t.setOpaque(false);
         t.setAlignmentX(Component.LEFT_ALIGNMENT);
         GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(1, 0, 1, (int) (14 * zoom));
+        g.insets = new Insets(1, 0, 1, 14);
 
         String[] heads = {"Stat", "Base", "Roll", "Band", "Quality"};
         for (int c = 0; c < heads.length; c++) {
             g.gridx = c; g.gridy = 0;
             g.anchor = (c == 1 || c == 2) ? GridBagConstraints.EAST : GridBagConstraints.WEST;
-            t.add(cell(heads[c], fSmallBold, new Color(140, 140, 140)), g);
+            t.add(cell(heads[c], bodyBold, new Color(140, 140, 140)), g);
         }
-
         int row = 1;
         for (OddsCalculator.StatOdds s : r.stats) {
             g.gridy = row++;
             g.gridx = 0; g.anchor = GridBagConstraints.WEST;
-            t.add(cell(s.name, fSmall, new Color(210, 210, 210)), g);
+            t.add(cell(s.name, body, new Color(210, 210, 210)), g);
             g.gridx = 1; g.anchor = GridBagConstraints.EAST;
-            t.add(cell(String.valueOf(s.base), fSmall, new Color(150, 150, 150)), g);
+            t.add(cell(String.valueOf(s.base), body, new Color(150, 150, 150)), g);
             g.gridx = 2; g.anchor = GridBagConstraints.EAST;
-            t.add(cell(String.valueOf(s.value), fSmallBold, Color.WHITE), g);
+            t.add(cell(String.valueOf(s.value), bodyBold, Color.WHITE), g);
             g.gridx = 3; g.anchor = GridBagConstraints.WEST;
-            t.add(cell(s.lo + "–" + s.hi, fSmall, ColorScheme.LIGHT_GRAY_COLOR), g);
+            t.add(cell(s.lo + "–" + s.hi, body, ColorScheme.LIGHT_GRAY_COLOR), g);
             g.gridx = 4; g.anchor = GridBagConstraints.WEST;
             t.add(rollTagCell(s.value, s.lo, s.hi), g);
         }
-
         t.setMaximumSize(new Dimension(Integer.MAX_VALUE, t.getPreferredSize().height));
         return t;
     }
@@ -280,19 +202,28 @@ public class OddsDialog extends JDialog {
 
     private JLabel rollTagCell(int value, int lo, int hi) {
         String label; Color colour;
-        if (hi <= lo)           { label = value >= 99 ? "MAX roll" : "fixed";
-                                  colour = value >= 99 ? new Color(122, 214, 122) : new Color(144, 144, 144); }
-        else {
+        if (hi <= lo) {
+            label = value >= 99 ? "MAX roll" : "fixed";
+            colour = value >= 99 ? new Color(122, 214, 122) : new Color(144, 144, 144);
+        } else {
             double f = (value - lo) / (double) (hi - lo);
             if (value >= hi)    { label = "MAX roll";  colour = new Color(122, 214, 122); }
             else if (f >= 0.67) { label = "high roll"; colour = new Color(143, 208, 143); }
             else if (f <= 0.33) { label = value <= lo ? "MIN roll" : "low roll"; colour = new Color(224, 112, 112); }
             else                { label = "mid roll";  colour = new Color(176, 176, 176); }
         }
-        return cell(label, fSmall, colour);
+        return cell(label, body, colour);
     }
 
-    /** A thin full-width divider line for the BoxLayout column. */
+    private JLabel sectionHeader(String text) {
+        JLabel l = new JLabel(text.toUpperCase());
+        l.setFont(bodyBold);
+        l.setForeground(new Color(255, 152, 31));
+        l.setAlignmentX(Component.LEFT_ALIGNMENT);
+        l.setBorder(new EmptyBorder(0, 0, 3, 0));
+        return l;
+    }
+
     private JPanel separator() {
         JPanel s = new JPanel();
         s.setBackground(new Color(70, 70, 70));
@@ -302,27 +233,11 @@ public class OddsDialog extends JDialog {
         return s;
     }
 
-    /** Recolour a kvRow's value label (last component); optionally bump it to the bold font. */
-    private void styleValue(Box row, Color colour, boolean bold) {
-        JLabel v = (JLabel) row.getComponent(row.getComponentCount() - 1);
-        if (bold) v.setFont(fBold);
-        v.setForeground(colour);
-    }
-
-    private JLabel sectionHeader(String text) {
-        JLabel l = new JLabel(text.toUpperCase());
-        l.setFont(fSmallBold);
-        l.setForeground(new Color(255, 152, 31));
-        l.setAlignmentX(Component.LEFT_ALIGNMENT);
-        l.setBorder(new EmptyBorder(0, 0, 3, 0));
-        return l;
-    }
-
-    /** A left-label + right-value row; value snaps to the right and never overlaps the left. */
+    /** A left-label + right-value row; the value snaps right and never overlaps the left. */
     private Box kvRow(String left, Font leftFont, Color leftColor, String right) {
         Box row = Box.createHorizontalBox();
         row.setAlignmentX(Component.LEFT_ALIGNMENT);
-        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, (int) (18 * zoom) + 4));
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, leftFont.getSize() + 8));
         JLabel l = new JLabel(left);
         l.setFont(leftFont);
         l.setForeground(leftColor);
@@ -336,7 +251,13 @@ public class OddsDialog extends JDialog {
         return row;
     }
 
-    /** Content panel that tracks the scroll viewport's width so rows reflow instead of clipping. */
+    /** Recolour a kvRow's value label (last component) and return the row. */
+    private Box styleValue(Box row, Color colour) {
+        ((JLabel) row.getComponent(row.getComponentCount() - 1)).setForeground(colour);
+        return row;
+    }
+
+    /** Content panel that tracks the scroll viewport width so rows reflow instead of clipping. */
     private static final class ScrollablePanel extends JPanel implements Scrollable {
         @Override public Dimension getPreferredScrollableViewportSize() { return getPreferredSize(); }
         @Override public int getScrollableUnitIncrement(Rectangle r, int o, int d) { return 16; }
