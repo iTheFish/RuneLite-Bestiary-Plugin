@@ -100,6 +100,17 @@ public class OddsDialog extends JDialog {
         root.add(plRow);
         root.add(kvRow("Prayer (card info)", small, new Color(90, 190, 235), String.valueOf(r.prayer)));
 
+        JLabel plNote = new JLabel("<html><div style='width:" + CONTENT_W + "px'>"
+                + "Power Level averages your 6 stats with the monster's HP as a 7th value (÷7). "
+                + "HP isn't on the 1–99 stat scale, so it counts at 1/7 weight — <font color='#a0a0a0'>"
+                + "negligible for a low-HP creature (its stats decide), but dominant for a boss "
+                + "(1200&nbsp;HP adds ~171). HP starts to take over above ~400&nbsp;HP.</font></div></html>");
+        plNote.setFont(small);
+        plNote.setForeground(new Color(140, 140, 140));
+        plNote.setAlignmentX(Component.LEFT_ALIGNMENT);
+        plNote.setBorder(new EmptyBorder(4, 0, 0, 0));
+        root.add(plNote);
+
         root.add(Box.createVerticalStrut(10));
 
         // Combined odds — two perspectives. Stat wiggle is not a factor.
