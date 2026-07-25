@@ -134,6 +134,18 @@ public final class RarityRoller {
     public static final int SHINY_MIN_BONUS = 6;
     public static final int SHINY_MAX_BONUS = 20;
 
+    /** The [lo, hi] range a SHINY stat rolls in: band top + [MIN, MAX] bonus (clamped). */
+    public static int[] shinyBand(int base, CreatureRarity rarity) {
+        int hi = statBand(base, rarity)[1];
+        return new int[]{clampStat(hi + SHINY_MIN_BONUS), clampStat(hi + SHINY_MAX_BONUS)};
+    }
+
+    /** The [lo, hi] range a SHINY prayer rolls in: prayer band top + half bonus (clamped). */
+    public static int[] shinyPrayerBand(int base, CreatureRarity rarity) {
+        int hi = prayerBand(base, rarity)[1];
+        return new int[]{clampStat(hi + SHINY_MIN_BONUS / 2), clampStat(hi + SHINY_MAX_BONUS / 2)};
+    }
+
     // Prayer uses the same banded model at HALF scale, so it stays ~1 for low-prayer
     // monsters at low rarity and only climbs at high rarity / shiny (base 1 → ~40 at Mythic).
     public static final double PRAYER_SCALE = 0.5;

@@ -157,7 +157,7 @@ public class OddsDialog extends JDialog {
 
         // Stats (info only)
         String statHdr = r.shiny
-                ? "Stats — shiny (rolls above the " + r.rarity.label + " band)"
+                ? "Stats — shiny roll bands (above " + r.rarity.label + ")"
                 : "Stats — " + r.rarity.label + " roll bands";
         root.add(sectionHeader(statHdr));
         root.add(statsTable());
@@ -256,8 +256,7 @@ public class OddsDialog extends JDialog {
             g.gridx = 3; g.anchor = GridBagConstraints.WEST;
             t.add(cell(s.lo + "–" + s.hi, fSmall, ColorScheme.LIGHT_GRAY_COLOR), g);
             g.gridx = 4; g.anchor = GridBagConstraints.WEST;
-            if (r.shiny) t.add(cell("✦ shiny", fSmall, new Color(255, 215, 0)), g);
-            else         t.add(rollTagCell(s.value, s.lo, s.hi), g);
+            t.add(rollTagCell(s.value, s.lo, s.hi), g);
         }
 
         t.setMaximumSize(new Dimension(Integer.MAX_VALUE, t.getPreferredSize().height));
@@ -273,7 +272,8 @@ public class OddsDialog extends JDialog {
 
     private JLabel rollTagCell(int value, int lo, int hi) {
         String label; Color colour;
-        if (hi <= lo)           { label = "fixed";    colour = new Color(144, 144, 144); }
+        if (hi <= lo)           { label = value >= 99 ? "MAX roll" : "fixed";
+                                  colour = value >= 99 ? new Color(122, 214, 122) : new Color(144, 144, 144); }
         else {
             double f = (value - lo) / (double) (hi - lo);
             if (value >= hi)    { label = "MAX roll";  colour = new Color(122, 214, 122); }

@@ -70,18 +70,22 @@ public final class OddsCalculator {
         int[] vals  = {c.quality.attack, c.quality.strength, c.quality.defence,
                        c.quality.magic, c.quality.ranged, c.quality.agility};
         // Combat stats ATK..RNG (0-4), then Prayer, then Agility (5) — prayer sits before agility.
+        // When shiny, the shown band is the shiny roll range so the quality tag reflects it.
         for (int i = 0; i < 5; i++) {
             int centre = RarityRoller.statCentre(bases[i], r.rarity);
-            int[] band = RarityRoller.statBand(bases[i], r.rarity);
+            int[] band = r.shiny ? RarityRoller.shinyBand(bases[i], r.rarity)
+                                 : RarityRoller.statBand(bases[i], r.rarity);
             r.stats.add(new StatOdds(STAT_NAMES[i], bases[i], vals[i], centre, band[0], band[1]));
         }
         // Prayer is a rolled stat too (half scale).
         int prayerBase = MonsterRoster.getPrayer(c.npcName);
-        int[] pBand = RarityRoller.prayerBand(prayerBase, r.rarity);
+        int[] pBand = r.shiny ? RarityRoller.shinyPrayerBand(prayerBase, r.rarity)
+                             : RarityRoller.prayerBand(prayerBase, r.rarity);
         r.stats.add(new StatOdds("Prayer", prayerBase, c.prayer,
                 RarityRoller.prayerCentre(prayerBase, r.rarity), pBand[0], pBand[1]));
         int centreAgi = RarityRoller.statCentre(bases[5], r.rarity);
-        int[] bandAgi = RarityRoller.statBand(bases[5], r.rarity);
+        int[] bandAgi = r.shiny ? RarityRoller.shinyBand(bases[5], r.rarity)
+                               : RarityRoller.statBand(bases[5], r.rarity);
         r.stats.add(new StatOdds(STAT_NAMES[5], bases[5], vals[5], centreAgi, bandAgi[0], bandAgi[1]));
 
         // Power Level inputs
