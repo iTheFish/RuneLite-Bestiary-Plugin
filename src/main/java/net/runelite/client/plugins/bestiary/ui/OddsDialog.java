@@ -13,11 +13,12 @@ import java.awt.*;
 
 /**
  * MODELESS "What were the odds?" breakdown for a single capture — catch chance,
- * rarity, shiny, and each stat's individual wiggle odds, plus a combined figure.
+ * rarity, shiny (the odds), plus each stat's roll-from-expected (info only).
  */
 public class OddsDialog extends JDialog {
 
     private static OddsDialog current;
+    private static final int CONTENT_W = 300;
 
     public static void open(Window owner, CapturedCreature capture) {
         if (current != null && current.isShowing()) current.dispose();
@@ -31,6 +32,8 @@ public class OddsDialog extends JDialog {
         setResizable(true);
 
         OddsCalculator.Result r = OddsCalculator.compute(capture);
+        Font small = FontManager.getRunescapeSmallFont();
+        Font smallBold = small.deriveFont(Font.BOLD);
 
         JPanel root = new JPanel();
         root.setLayout(new BoxLayout(root, BoxLayout.Y_AXIS));
@@ -46,19 +49,22 @@ public class OddsDialog extends JDialog {
         root.add(title);
 
         JLabel sub = new JLabel("Captured at Bestiary level " + r.level + "  ·  " + r.difficulty.label + " tier");
-        sub.setFont(FontManager.getRunescapeSmallFont());
+        sub.setFont(small);
         sub.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
         sub.setAlignmentX(Component.LEFT_ALIGNMENT);
         root.add(sub);
 
         root.add(Box.createVerticalStrut(8));
 
-        // Roll-chain section
+        // Roll-chain section (these ARE the odds)
         root.add(sectionHeader("The roll chain"));
-        root.add(oddsRow("Catch (gate)", r.catchChance, Color.WHITE));
-        root.add(oddsRow("This rarity", r.rarityChance, r.rarity.displayColor));
+        root.add(kvRow("Catch (gate)", small, Color.WHITE,
+                OddsCalculator.pct(r.catchChance) + "  (" + OddsCalculator.oneIn(r.catchChance) + ")"));
+        root.add(kvRow("This rarity", small, r.rarity.displayColor,
+                OddsCalculator.pct(r.rarityChance) + "  (" + OddsCalculator.oneIn(r.rarityChance) + ")"));
         if (r.shiny) {
-            root.add(oddsRow("Shiny", r.shinyChance, new Color(255, 215, 0)));
+            root.add(kvRow("Shiny", small, new Color(255, 215, 0),
+                    OddsCalculator.pct(r.shinyChance) + "  (" + OddsCalculator.oneIn(r.shinyChance) + ")"));
         }
 
         root.add(Box.createVerticalStrut(8));
@@ -69,50 +75,46 @@ public class OddsDialog extends JDialog {
                 : "Stats — wiggle ±" + RarityRoller.WIGGLE;
         root.add(sectionHeader(statHdr));
         for (OddsCalculator.StatOdds s : r.stats) {
-            root.add(statRow(s));
+            String off = (s.offset >= 0 ? "+" + s.offset : String.valueOf(s.offset));
+            root.add(kvRow(s.name + ":  " + s.value, smallBold, Color.WHITE,
+                    "expected " + s.centre + "   (" + off + ")"));
         }
 
-        root.add(Box.createVerticalStrut(8));
+        root.add(Box.createVerticalStrut(10));
 
         // Combined — rarity (× shiny). Stat wiggle is not a factor.
-        JPanel combined = new JPanel(new BorderLayout());
-        combined.setOpaque(false);
-        combined.setBorder(new MatteBorder(1, 0, 0, 0, new Color(70, 70, 70)));
-        combined.setAlignmentX(Component.LEFT_ALIGNMENT);
-        combined.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
-        JLabel cl = new JLabel("<html>This exact card<br>"
-                + "<font color='#c8c8c8'>rarity" + (r.shiny ? " × shiny" : "") + "</font></html>");
-        cl.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
-        cl.setForeground(Color.WHITE);
-        cl.setBorder(new EmptyBorder(6, 0, 0, 0));
-        JLabel cr = new JLabel(OddsCalculator.oneIn(r.overall));
-        cr.setFont(FontManager.getRunescapeBoldFont());
-        cr.setForeground(new Color(120, 200, 120));
-        cr.setBorder(new EmptyBorder(6, 0, 0, 0));
-        combined.add(cl, BorderLayout.WEST);
-        combined.add(cr, BorderLayout.EAST);
+        Box combined = kvRow("This exact card  (rarity" + (r.shiny ? " × shiny" : "") + ")",
+                smallBold, Color.WHITE, OddsCalculator.oneIn(r.overall));
+        combined.setBorder(BorderFactory.createCompoundBorder(
+                new MatteBorder(1, 0, 0, 0, new Color(70, 70, 70)), new EmptyBorder(7, 0, 0, 0)));
+        combined.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        // Recolour the value label (last component) green + bold
+        JLabel val = (JLabel) combined.getComponent(combined.getComponentCount() - 1);
+        val.setFont(FontManager.getRunescapeBoldFont());
+        val.setForeground(new Color(120, 200, 120));
         root.add(combined);
 
-        JLabel note = new JLabel("<html><i>Stat rolls are flavour and don't affect these odds. "
-                + "The catch gate above is the separate chance the capture happened at all.</i></html>");
-        note.setFont(FontManager.getRunescapeSmallFont());
+        JLabel note = new JLabel("<html><div style='width:" + CONTENT_W + "px'><i>Stat rolls are flavour "
+                + "and don't affect these odds. The catch gate above is the separate chance the capture "
+                + "happened at all.</i></div></html>");
+        note.setFont(small);
         note.setForeground(new Color(130, 130, 130));
         note.setAlignmentX(Component.LEFT_ALIGNMENT);
+        note.setBorder(new EmptyBorder(6, 0, 0, 0));
         root.add(note);
 
         JScrollPane scroll = new JScrollPane(root,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scroll.setBorder(null);
         scroll.getVerticalScrollBar().setUnitIncrement(16);
-        // Size to the content's natural width (+ padding for the scrollbar) so nothing clips.
         Dimension pref = root.getPreferredSize();
-        int w = Math.min(560, pref.width + 28);
+        int w = Math.max(330, Math.min(560, pref.width + 28));
         int h = Math.min(640, pref.height + 8);
         scroll.setPreferredSize(new Dimension(w, h));
 
         setContentPane(scroll);
         pack();
-        setMinimumSize(new Dimension(300, 220));
+        setMinimumSize(new Dimension(320, 240));
         setLocationRelativeTo(owner);
     }
 
@@ -125,36 +127,24 @@ public class OddsDialog extends JDialog {
         return l;
     }
 
-    private static JPanel oddsRow(String label, double p, Color accent) {
-        JPanel row = new JPanel(new BorderLayout());
-        row.setOpaque(false);
+    /**
+     * A left-label + right-value row. Uses a horizontal box (left, min gap, glue, right)
+     * so the value snaps to the right edge and can never overlap the left text.
+     */
+    private static Box kvRow(String left, Font leftFont, Color leftColor, String right) {
+        Box row = Box.createHorizontalBox();
         row.setAlignmentX(Component.LEFT_ALIGNMENT);
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 18));
-        JLabel l = new JLabel(label);
-        l.setFont(FontManager.getRunescapeSmallFont());
-        l.setForeground(accent);
-        JLabel v = new JLabel(OddsCalculator.pct(p) + "   (" + OddsCalculator.oneIn(p) + ")");
-        v.setFont(FontManager.getRunescapeSmallFont());
-        v.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-        row.add(l, BorderLayout.WEST);
-        row.add(v, BorderLayout.EAST);
-        return row;
-    }
-
-    private static JPanel statRow(OddsCalculator.StatOdds s) {
-        JPanel row = new JPanel(new BorderLayout());
-        row.setOpaque(false);
-        row.setAlignmentX(Component.LEFT_ALIGNMENT);
-        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 18));
-        JLabel l = new JLabel(s.name + ":  " + s.value);
-        l.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
-        l.setForeground(Color.WHITE);
-        String offStr = (s.offset >= 0 ? "+" + s.offset : String.valueOf(s.offset));
-        JLabel v = new JLabel("expected " + s.centre + "   (" + offStr + ")");
-        v.setFont(FontManager.getRunescapeSmallFont());
-        v.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-        row.add(l, BorderLayout.WEST);
-        row.add(v, BorderLayout.EAST);
+        JLabel l = new JLabel(left);
+        l.setFont(leftFont);
+        l.setForeground(leftColor);
+        JLabel rr = new JLabel(right);
+        rr.setFont(FontManager.getRunescapeSmallFont());
+        rr.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+        row.add(l);
+        row.add(Box.createHorizontalStrut(14));   // guaranteed gap so left/right never touch
+        row.add(Box.createHorizontalGlue());       // pushes the value to the right edge
+        row.add(rr);
         return row;
     }
 }
