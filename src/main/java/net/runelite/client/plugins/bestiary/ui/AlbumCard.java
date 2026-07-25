@@ -663,17 +663,29 @@ public class AlbumCard extends JPanel {
             g2.setColor(Color.WHITE);
             g2.drawString(lvlLabel, lvlX + pillPad, pillBase);
 
-            // Class pill — amber, same style as species. Truncate so it can never overlap
-            // the right-aligned species pill (long classes e.g. JUGGERNAUT).
+            // Class pill — amber. Shrink the font (not truncate) so long classes like
+            // JUGGERNAUT still show in full without overlapping the species pill.
             int clsX = lvlX + lvlW + 4;
             int maxClsW = spX - 4 - clsX;                 // room before the species pill
-            String clsLabel = truncate(combatClass.label, sfm, maxClsW - pillPad * 2);
-            int clsW = Math.min(sfm.stringWidth(clsLabel) + pillPad * 2, maxClsW);
-            if (clsW > pillPad * 2) {
+            int maxTextW = maxClsW - pillPad * 2;
+            String clsLabel = combatClass.label;
+            Font clsFont = smallFont;
+            FontMetrics cfm = sfm;
+            float fs = smallFont.getSize2D();
+            while (cfm.stringWidth(clsLabel) > maxTextW && fs > 7f) {
+                fs -= 0.5f;
+                clsFont = smallFont.deriveFont(fs);
+                cfm = g2.getFontMetrics(clsFont);
+            }
+            int clsW = Math.min(cfm.stringWidth(clsLabel) + pillPad * 2, maxClsW);
+            if (maxTextW > 6) {
                 g2.setColor(new Color(160, 110, 30, 180));
                 g2.fillRoundRect(clsX, pillY, clsW, pillH, 4, 4);
+                g2.setFont(clsFont);
                 g2.setColor(Color.WHITE);
-                g2.drawString(clsLabel, clsX + pillPad, pillBase);
+                g2.drawString(clsLabel, clsX + pillPad,
+                        pillY + (pillH + cfm.getAscent() - cfm.getDescent()) / 2);
+                g2.setFont(smallFont);
             }
         } else {
             // Locked: plain kill count text
