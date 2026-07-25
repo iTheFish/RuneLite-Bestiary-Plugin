@@ -93,31 +93,32 @@ The reviewed per-stat bases (`MonsterRoster.STAT_BASES`, from `base-stats-review
 **average / Epic** card. Rarity moves each stat from that centre — but **how much depends on the
 base** (`RarityRoller.statCentre`), then a wiggle is added:
 
-Each rarity has an **expected centre** (base-dependent), and the stat **rolls a band** around it:
+Every rarity **rolls a band**, expressed as a **lift fraction of the headroom** (`99 − base`):
 
 ```
-centre:  below Epic  = base × mult              // Common ×0.72, Uncommon ×0.82, Rare ×0.92
-         Epic        = base
-         above Epic  = base + lift × (99 − base) // Legendary lift 0.30, Mythic lift 0.60
-
-band:    [ centre − 0.65×gapDown , centre + 0.65×gapUp ]   // gap = distance to neighbour centre
-stat  =  uniform int in that band                          // non-shiny
-shiny =  clamp( centre + uniform(+6, +20), 1, 99 )         // always high
+stat = base + L × (99 − base),   L uniform in [lo, hi]   (non-shiny; floored at 1, capped at 99)
+shiny = clamp( centre + uniform(+6, +20), 1, 99 )        // always high
 ```
 
-Because each band reaches **0.65** of the way toward each neighbour (> 0.5), **adjacent bands
-overlap** — a lucky Legendary can out-roll an unlucky Mythic. The **above-Epic lift is a fraction of
-the headroom (99 − base)**, so a **weak stat gets a big boost at high rarity** while an already-high
-one only edges up. Example (centre, and the roll band):
+Lift ranges per rarity (`RarityRoller.LIFT_LO / LIFT_HI`):
 
-| base | Common | Epic | Legendary | Mythic |
-|---|---|---|---|---|
-| 1  | 1 (1)     | 1 (1–20)   | 30 (11–50) | **60 (40–80)** |
-| 55 | 40 (37–43) | 55 (52–63) | 68 (60–76) | 81 (73–89) |
-| 90 | 65 (59–71) | 90 (85–92) | 93 (91–94) | 95 (94–96) |
+| | Common | Uncommon | Rare | Epic | Legendary | Mythic |
+|---|---|---|---|---|---|---|
+| lo | −0.20 | −0.16 | −0.13 | −0.09 | +0.08 | +0.40 |
+| hi | +0.03 | +0.05 | +0.09 | +0.10 | +0.46 | +0.80 |
 
-So weak monsters stay fun at high rarity, Epic ≈ base, **nothing auto-maxes** unless base ~97+, and
-neighbouring rarities overlap. Band width scales with the local gap (`RarityRoller.BAND_OVERLAP`). The stat wiggle is **flavour only** — deliberately **not** part of a card's
+The ranges **overlap in lift-space** (each row's `lo` is below the next rarity's `hi`), so the stat
+bands **overlap at every base** — a lucky Rare can beat an unlucky Epic, a lucky Legendary an unlucky
+Mythic. Epic is centred on 0 (≈ base). Rare/Uncommon/Common can dip **below** base (negative lift)
+but never below **1**. Because the lift scales with headroom, a **weak stat gets a big boost at high
+rarity** (fun) while an already-high one only edges up (nothing auto-maxes). The band each way:
+
+| base | Common | Rare | Epic | Legendary | Mythic |
+|---|---|---|---|---|---|
+| 1  | 1–3   | 1–10  | 1–11  | 9–46  | **40–79** |
+| 20 | 4–22  | 10–27 | 13–28 | 26–56 | 52–83 |
+| 55 | 46–56 | 49–59 | 51–59 | 59–75 | 73–90 |
+| 90 | 88–90 | 89–91 | 89–91 | 91–94 | 94–97 | The stat wiggle is **flavour only** — deliberately **not** part of a card's
 rarity odds; the odds screen shows each stat's offset-from-expected as info, but the "this exact
 card" figure is **rarity × shiny** alone. **Combat class is a display label only now** — the
 per-stat bases already encode each monster's profile, so class no longer decides which stat spikes.

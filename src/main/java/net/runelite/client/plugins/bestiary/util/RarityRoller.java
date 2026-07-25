@@ -95,55 +95,39 @@ public final class RarityRoller {
         return new CreatureQuality(stats[0], stats[1], stats[2], stats[3], stats[4], stats[5]);
     }
 
-    // Stat centre model. Epic = base (the reviewed values represent an "average" card).
-    // Below Epic: multiplicative down (a low stat only dips a little, floored at 1).
-    // Above Epic: additive lift TOWARD the cap — the absolute lift is a fraction of the
-    // headroom (cap − base), so a weak stat (base 1) still climbs a lot at high rarity
-    // (fun), while an already-high stat only edges up (nothing auto-maxes to 99).
-    private static final double MULT_COMMON = 0.72, MULT_UNCOMMON = 0.82, MULT_RARE = 0.92;
-    private static final double LIFT_LEGENDARY = 0.30, LIFT_MYTHIC = 0.60;
+    // Unified stat model. Every rarity rolls a band expressed as a LIFT FRACTION of the
+    // headroom (cap − base): stat = base + L × (99 − base), with L uniform in [lo, hi].
+    // Because the fraction bands OVERLAP in lift-space (each row's lo < the row above's… i.e.
+    // next.lo < cur.hi), the resulting stat bands overlap at EVERY base — a lucky Rare can
+    // beat an unlucky Epic, a lucky Legendary an unlucky Mythic, etc. Epic ≈ base (centred on
+    // 0). Rare/Uncommon/Common can dip below base (negative lift) but are floored at 1; low
+    // rarities still get real upward spread for weak monsters (base 1 Rare ≈ 1–10).
+    // Index = CreatureRarity.ordinal(): Common, Uncommon, Rare, Epic, Legendary, Mythic.
+    private static final double[] LIFT_LO = {-0.20, -0.16, -0.13, -0.09, 0.08, 0.40};
+    private static final double[] LIFT_HI = { 0.025, 0.05,  0.09,  0.10, 0.46, 0.80};
     private static final int STAT_CAP = 99;
 
-    /** The "expected" value for a stat at a rarity (before wiggle / shiny bonus). */
-    public static int statCentre(int base, CreatureRarity rarity) {
-        double c;
-        switch (rarity) {
-            case COMMON:    c = base * MULT_COMMON;                       break;
-            case UNCOMMON:  c = base * MULT_UNCOMMON;                     break;
-            case RARE:      c = base * MULT_RARE;                         break;
-            case LEGENDARY: c = base + LIFT_LEGENDARY * (STAT_CAP - base); break;
-            case MYTHIC:    c = base + LIFT_MYTHIC * (STAT_CAP - base);    break;
-            case EPIC:
-            default:        c = base;
-        }
-        return Math.max(1, Math.min(99, (int) Math.round(c)));
-    }
-
-    /**
-     * The inclusive [lo, hi] range a non-shiny stat rolls in at this rarity.
-     * Each band reaches {@link #BAND_OVERLAP} of the way toward each neighbouring rarity's
-     * centre — since that fraction is > 0.5, adjacent bands OVERLAP, so a lucky Legendary
-     * roll can beat an unlucky Mythic one. Band width scales with the local gap, so it
-     * differs per rarity and per monster automatically.
-     */
+    /** The inclusive [lo, hi] range a non-shiny stat rolls in at this rarity (floored at 1). */
     public static int[] statBand(int base, CreatureRarity rarity) {
-        CreatureRarity[] rs = CreatureRarity.values();
-        int i = rarity.ordinal();
-        int cur  = statCentre(base, rarity);
-        int prev = i > 0              ? statCentre(base, rs[i - 1]) : cur;
-        int next = i < rs.length - 1  ? statCentre(base, rs[i + 1]) : cur;
-        int downGap = (i > 0)             ? (cur - prev) : (next - cur);   // ends mirror their one neighbour
-        int upGap   = (i < rs.length - 1) ? (next - cur) : (cur - prev);
-        int lo = (int) Math.round(cur - BAND_OVERLAP * downGap);
-        int hi = (int) Math.round(cur + BAND_OVERLAP * upGap);
-        lo = Math.max(1, Math.min(99, lo));
-        hi = Math.max(1, Math.min(99, hi));
+        int i  = rarity.ordinal();
+        int hr = STAT_CAP - base;
+        int lo = clampStat(base + LIFT_LO[i] * hr);
+        int hi = clampStat(base + LIFT_HI[i] * hr);
         if (hi < lo) hi = lo;
         return new int[]{lo, hi};
     }
 
-    /** How far each band reaches toward a neighbour's centre. >0.5 ⇒ adjacent bands overlap. */
-    private static final double BAND_OVERLAP = 0.65;
+    /** The "expected" value for a stat at a rarity (band midpoint). */
+    public static int statCentre(int base, CreatureRarity rarity) {
+        int i = rarity.ordinal();
+        double midLift = (LIFT_LO[i] + LIFT_HI[i]) / 2.0;
+        return clampStat(base + midLift * (STAT_CAP - base));
+    }
+
+    /** Stats never drop below 1 or exceed 99. */
+    private static int clampStat(double v) {
+        return Math.max(1, Math.min(99, (int) Math.round(v)));
+    }
 
     /** A shiny stat rolls its expected value plus a uniform bonus in [MIN, MAX]. */
     public static final int SHINY_MIN_BONUS = 6;
