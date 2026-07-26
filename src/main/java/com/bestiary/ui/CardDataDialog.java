@@ -65,9 +65,10 @@ public class CardDataDialog extends JDialog {
         }
 
         setContentPane(tabs);
-        setPreferredSize(new Dimension(430, 470));
         pack();
-        setMinimumSize(new Dimension(360, 300));
+        // pack() sizes to content preferred width (too narrow for the odds paragraphs), so fix it.
+        setSize(new Dimension(440, 500));
+        setMinimumSize(new Dimension(380, 320));
         setLocationRelativeTo(owner);
     }
 
@@ -170,7 +171,7 @@ public class CardDataDialog extends JDialog {
         t.setOpaque(false);
         t.setAlignmentX(Component.LEFT_ALIGNMENT);
         GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(1, 0, 1, 12);
+        g.insets = new Insets(2, 0, 2, 10);
         g.anchor = GridBagConstraints.WEST;
 
         String[] heads = {"State", "Rarity", "PWR", "Shiny", "By", "When"};

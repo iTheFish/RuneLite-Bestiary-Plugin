@@ -239,7 +239,7 @@ public class CardExportDialog extends JDialog {
         oddsBtn.setBackground(new Color(60, 90, 150));
         oddsBtn.setForeground(Color.WHITE);
         oddsBtn.setFocusPainted(false);
-        oddsBtn.addActionListener(e -> CardDataDialog.open(this, capture, CardDataDialog.TAB_ODDS));
+        oddsBtn.addActionListener(e -> CardDataDialog.open(this, capture));
 
         JPanel btnRow = new JPanel(new GridLayout(1, 2, 6, 0));
         btnRow.setOpaque(false);

@@ -9,6 +9,10 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
 import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The "What were the odds?" breakdown for a single capture, as a reusable, width-tracking
@@ -18,12 +22,15 @@ import java.awt.*;
  */
 public class OddsView extends JPanel implements Scrollable {
 
-    private static final int HTML_W = 330;   // wrap width for paragraph text
-
     private final OddsCalculator.Result r;
     private final CapturedCreature capture;
     private final Font body;
     private final Font bodyBold;
+
+    // Paragraphs are fixed-width HTML (JLabels only wrap with an explicit width), so we reflow
+    // them to the panel's actual width whenever it changes — no clipping at any dialog size.
+    private final List<JLabel> paras = new ArrayList<>();
+    private final List<String> paraHtml = new ArrayList<>();
 
     public OddsView(CapturedCreature capture) {
         this.capture = capture;
@@ -36,6 +43,20 @@ public class OddsView extends JPanel implements Scrollable {
         setBackground(ColorScheme.DARK_GRAY_COLOR);
         setBorder(new EmptyBorder(12, 14, 12, 14));
         build();
+        addComponentListener(new ComponentAdapter() {
+            @Override public void componentResized(ComponentEvent e) { reflow(); }
+        });
+    }
+
+    private void reflow() {
+        int w = getWidth() - 32;   // minus L/R border (28) + a little slack
+        if (w <= 60) return;
+        for (int i = 0; i < paras.size(); i++) paras.get(i).setText(wrapHtml(paraHtml.get(i), w));
+        revalidate();
+    }
+
+    private static String wrapHtml(String html, int w) {
+        return "<html><div style='width:" + Math.max(120, w) + "px'>" + html + "</div></html>";
     }
 
     private void build() {
@@ -149,11 +170,13 @@ public class OddsView extends JPanel implements Scrollable {
     }
 
     private JLabel paragraph(String html) {
-        JLabel l = new JLabel("<html><div style='width:" + HTML_W + "px'>" + html + "</div></html>");
+        JLabel l = new JLabel(wrapHtml(html, 300));
         l.setFont(body);
         l.setForeground(new Color(140, 140, 140));
         l.setAlignmentX(Component.LEFT_ALIGNMENT);
         l.setBorder(new EmptyBorder(5, 0, 0, 0));
+        paras.add(l);
+        paraHtml.add(html);
         return l;
     }
 

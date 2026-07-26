@@ -99,34 +99,43 @@ public class RerollGraph extends JPanel {
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
             int w = getWidth(), h = getHeight();
-            int padL = 30, padR = 10, padT = 10, padB = 20;
+            int padL = 36, padR = 10, padT = 10, padB = 20;
             int plotW = w - padL - padR, plotH = h - padT - padB;
             int n = labels.length;
+            g.setFont(FontManager.getRunescapeSmallFont());
 
             if (n < 2) {
-                g.setColor(new Color(150, 150, 150));
-                g.setFont(FontManager.getRunescapeSmallFont());
-                String msg = "Reroll this card to chart how its stats change.";
-                FontMetrics fm = g.getFontMetrics();
-                g.drawString(msg, (w - fm.stringWidth(msg)) / 2, h / 2);
+                message(g, w, h, "Reroll this card to chart how its stats change.");
                 g.dispose();
                 return;
             }
 
-            // Y scale from visible series (min 99 headroom so a lone Power line still reads).
-            int max = 99;
-            for (int s = 0; s < 8; s++) if (visible[s] && available[s])
-                for (int v : values[s]) max = Math.max(max, v);
-            int yMax = (int) Math.ceil(max * 1.08);
+            // Y range = min/max of the VISIBLE series (padded), so a narrow band (or a PWR-only
+            // view) fills the plot instead of being flattened against a 0-based axis.
+            int lo = Integer.MAX_VALUE, hi = Integer.MIN_VALUE;
+            boolean any = false;
+            for (int s = 0; s < 8; s++) if (visible[s] && available[s]) {
+                any = true;
+                for (int v : values[s]) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+            }
+            if (!any) {
+                message(g, w, h, "Toggle a stat below to plot it.");
+                g.dispose();
+                return;
+            }
+            if (hi == lo) { lo -= 2; hi += 2; }
+            int pad = Math.max(1, (int) Math.ceil((hi - lo) * 0.15));
+            int yLo = Math.max(0, lo - pad), yHi = hi + pad;
+            double span = Math.max(1, yHi - yLo);
 
             // Gridlines + Y labels
-            g.setFont(FontManager.getRunescapeSmallFont());
             for (int gl = 0; gl <= 4; gl++) {
                 int y = padT + plotH - (plotH * gl / 4);
-                g.setColor(new Color(60, 60, 60));
+                int val = (int) Math.round(yLo + span * gl / 4);
+                g.setColor(new Color(58, 58, 58));
                 g.drawLine(padL, y, padL + plotW, y);
                 g.setColor(new Color(120, 120, 120));
-                g.drawString(String.valueOf(yMax * gl / 4), 4, y + 4);
+                g.drawString(String.valueOf(val), 4, y + 4);
             }
             // X labels
             g.setColor(new Color(150, 150, 150));
@@ -144,13 +153,18 @@ public class RerollGraph extends JPanel {
                 int prevX = 0, prevY = 0;
                 for (int i = 0; i < n; i++) {
                     int x = padL + (n == 1 ? plotW / 2 : plotW * i / (n - 1));
-                    int y = padT + plotH - (int) ((double) values[s][i] / yMax * plotH);
+                    int y = padT + plotH - (int) ((values[s][i] - yLo) / span * plotH);
                     if (i > 0) g.drawLine(prevX, prevY, x, y);
                     g.fillOval(x - 3, y - 3, 6, 6);
                     prevX = x; prevY = y;
                 }
             }
             g.dispose();
+        }
+
+        private void message(Graphics2D g, int w, int h, String msg) {
+            g.setColor(new Color(150, 150, 150));
+            g.drawString(msg, (w - g.getFontMetrics().stringWidth(msg)) / 2, h / 2);
         }
     }
 }
