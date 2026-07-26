@@ -33,7 +33,7 @@ public class CardDataDialog extends JDialog {
     private static final DateTimeFormatter DATE =
             DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm").withZone(ZoneId.systemDefault());
     private static final DateTimeFormatter DATE_SHORT =
-            DateTimeFormatter.ofPattern("d MMM yy").withZone(ZoneId.systemDefault());
+            DateTimeFormatter.ofPattern("d/M/yy").withZone(ZoneId.systemDefault());
 
     public static final int TAB_OVERVIEW = 0, TAB_ODDS = 1, TAB_GRAPH = 2, TAB_REROLLS = 3;
 
@@ -169,29 +169,32 @@ public class CardDataDialog extends JDialog {
         return img;
     }
 
-    /** Renders every tab (each with a footer) into a 2×2 grid on a dark backdrop, dashboard-style. */
+    private static final int FOOTER_H = 24;
+
+    /** Renders every tab into a uniform 2×2 grid (all cells same width) on a dark backdrop. */
     private BufferedImage renderGrid() {
         int prev = tabs.getSelectedIndex();
-        List<BufferedImage> cells = new ArrayList<>();
+        List<BufferedImage> content = new ArrayList<>();
         for (int i = 0; i < tabs.getTabCount(); i++) {
             tabs.setSelectedIndex(i);
             tabs.validate();
-            cells.add(decorate(renderTab(i)));
+            content.add(renderTab(i));
         }
         tabs.setSelectedIndex(prev);
 
         int cols = 2;
-        int rows = (cells.size() + cols - 1) / cols;
+        int rows = (content.size() + cols - 1) / cols;
         int colW = 1;
-        for (BufferedImage c : cells) colW = Math.max(colW, c.getWidth());
-        int[] rowH = new int[rows];
-        for (int i = 0; i < cells.size(); i++) rowH[i / cols] = Math.max(rowH[i / cols], cells.get(i).getHeight());
+        for (BufferedImage c : content) colW = Math.max(colW, c.getWidth());   // every cell same width
+        int[] rowContentH = new int[rows];
+        for (int i = 0; i < content.size(); i++)
+            rowContentH[i / cols] = Math.max(rowContentH[i / cols], content.get(i).getHeight());
 
         int pad = 14, gap = 10;
-        int totalRowH = 0;
-        for (int rh : rowH) totalRowH += rh;
+        int totalH = 0;
+        for (int rh : rowContentH) totalH += rh + FOOTER_H;
         int W = pad * 2 + colW * cols + gap * (cols - 1);
-        int H = pad * 2 + totalRowH + gap * (rows - 1);
+        int H = pad * 2 + totalH + gap * (rows - 1);
 
         BufferedImage out = new BufferedImage(W, H, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = out.createGraphics();
@@ -199,37 +202,52 @@ public class CardDataDialog extends JDialog {
         g.fillRect(0, 0, W, H);
         int y = pad;
         for (int rrow = 0; rrow < rows; rrow++) {
+            int cellH = rowContentH[rrow] + FOOTER_H;
             int x = pad;
             for (int cc = 0; cc < cols; cc++) {
                 int idx = rrow * cols + cc;
-                if (idx < cells.size()) g.drawImage(cells.get(idx), x, y, null);
+                if (idx < content.size()) g.drawImage(cell(content.get(idx), colW, cellH), x, y, null);
                 x += colW + gap;
             }
-            y += rowH[rrow] + gap;
+            y += cellH + gap;
         }
         g.dispose();
         return out;
     }
 
-    /** Wraps a rendered tab with a dashboard-style footer (orange rule + brand line). */
-    private BufferedImage decorate(BufferedImage c) {
-        int footerH = 24;
-        int W = c.getWidth(), H = c.getHeight() + footerH;
-        BufferedImage dst = new BufferedImage(W, H, BufferedImage.TYPE_INT_RGB);
+    /** A tab's content padded to a uniform w×h cell, with the footer pinned to the bottom. */
+    private BufferedImage cell(BufferedImage content, int w, int h) {
+        BufferedImage dst = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = dst.createGraphics();
         g.setColor(ColorScheme.DARK_GRAY_COLOR);
-        g.fillRect(0, 0, W, H);
+        g.fillRect(0, 0, w, h);
+        g.drawImage(content, 0, 0, null);
+        drawFooter(g, w, h - FOOTER_H);
+        g.dispose();
+        return dst;
+    }
+
+    /** Wraps a single rendered tab with a footer (used for the "This tab" export). */
+    private BufferedImage decorate(BufferedImage c) {
+        BufferedImage dst = new BufferedImage(c.getWidth(), c.getHeight() + FOOTER_H, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = dst.createGraphics();
+        g.setColor(ColorScheme.DARK_GRAY_COLOR);
+        g.fillRect(0, 0, dst.getWidth(), dst.getHeight());
         g.drawImage(c, 0, 0, null);
-        int fy = c.getHeight() + 3;
+        drawFooter(g, c.getWidth(), c.getHeight());
+        g.dispose();
+        return dst;
+    }
+
+    /** Dashboard-style footer: orange rule + centred brand line, drawn in the FOOTER_H band at {@code top}. */
+    private void drawFooter(Graphics2D g, int w, int top) {
         g.setColor(new Color(255, 165, 0, 60));
-        g.fillRect(12, fy, W - 24, 1);
+        g.fillRect(12, top + 3, w - 24, 1);
         g.setFont(FontManager.getRunescapeSmallFont());
         FontMetrics fm = g.getFontMetrics();
         String footer = "RuneLite · Bestiary Plugin";
         g.setColor(new Color(110, 110, 110));
-        g.drawString(footer, (W - fm.stringWidth(footer)) / 2, fy + 7 + fm.getAscent());
-        g.dispose();
-        return dst;
+        g.drawString(footer, (w - fm.stringWidth(footer)) / 2, top + 10 + fm.getAscent());
     }
 
     private void copy(BufferedImage img) {
@@ -343,13 +361,14 @@ public class CardDataDialog extends JDialog {
         t.setOpaque(false);
         t.setAlignmentX(Component.LEFT_ALIGNMENT);
         GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(2, 0, 2, 10);
+        g.insets = new Insets(2, 0, 2, 6);
         g.anchor = GridBagConstraints.WEST;
         g.weightx = 1.0;   // spread the columns across the panel width
 
         String[] heads = {"State", "Rarity", "PWR", "Shiny", "By", "When"};
         for (int i = 0; i < heads.length; i++) {
             g.gridx = i; g.gridy = 0;
+            g.weightx = (i == heads.length - 1) ? 0 : 1;   // last col keeps natural width (no clip)
             t.add(cell(heads[i], bodyBold, new Color(140, 140, 140)), g);
         }
         // thin rule under the header so the table reads as a table, not floating text
@@ -393,12 +412,13 @@ public class CardDataDialog extends JDialog {
         boolean isCurrent = "Current".equals(state);
         Font f = isCurrent ? bodyBold : body;
         g.gridy = rowY;
+        g.weightx = 1;
         g.gridx = 0; t.add(cell(state, f, isCurrent ? Color.WHITE : new Color(200, 200, 200)), g);
         g.gridx = 1; t.add(cell(rarity, f, rarityColor), g);
         g.gridx = 2; t.add(cell(String.valueOf(pwr), f, Color.WHITE), g);
         g.gridx = 3; t.add(cell(shiny ? "✦" : "–", f, shiny ? new Color(255, 215, 0) : new Color(110, 110, 110)), g);
         g.gridx = 4; t.add(cell(by, f, new Color(180, 150, 230)), g);
-        g.gridx = 5; t.add(cell(when, f, new Color(140, 140, 140)), g);
+        g.gridx = 5; g.weightx = 0; t.add(cell(when, f, new Color(140, 140, 140)), g);
     }
 
     // -------------------------------------------------------------------------
