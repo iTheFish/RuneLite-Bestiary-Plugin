@@ -49,7 +49,7 @@ public final class OddsCalculator {
         public int hp;
         public int prayer;
         public int powerLevel;
-        public int avgPowerLevel;   // Power Level if every stat + prayer rolled its band centre
+        public int avgPowerLevel;   // Power Level if every stat (prayer included) rolled its band centre
         // Combined odds (stat wiggle is NOT a factor)
         public double perCapture;     // rarity × shiny  — "of your captures, how often this card"
         public double perKill;        // catch × rarity × shiny — "how rare was the whole event"
@@ -95,7 +95,7 @@ public final class OddsCalculator {
         r.prayer     = c.prayer;
         r.powerLevel = c.powerLevel();
 
-        // Average-roll Power Level for this rarity: every stat + prayer at its band centre.
+        // Average-roll Power Level for this rarity: every stat (prayer included) at its band centre.
         int avgStatSum = 0;
         for (int i = 0; i < 6; i++) avgStatSum += RarityRoller.statCentre(bases[i], r.rarity);
         r.avgPowerLevel = Math.round(

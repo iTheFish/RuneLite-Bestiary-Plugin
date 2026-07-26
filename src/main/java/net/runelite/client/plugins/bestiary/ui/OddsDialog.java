@@ -12,7 +12,7 @@ import java.awt.*;
 
 /**
  * MODELESS "What were the odds?" breakdown for a single capture: the roll chain
- * (catch, rarity, shiny → per-capture / per-kill odds), the stat/prayer roll
+ * (catch, rarity, shiny → per-capture / per-kill odds), the stat roll
  * bands, and the Power Level maths with an average-roll comparison.
  */
 public class OddsDialog extends JDialog {
@@ -104,7 +104,7 @@ public class OddsDialog extends JDialog {
         root.add(perKill);
         root.add(paragraph("<i>Per capture = how often a capture is this rarity at level " + r.level
                 + " (high levels make rarities much more common). Per kill folds in the catch chance. "
-                + "Stat and prayer rolls are flavour — they don't affect these odds.</i>"));
+                + "Stat rolls are flavour — they don't affect these odds.</i>"));
 
         root.add(Box.createVerticalStrut(10));
 
@@ -143,7 +143,7 @@ public class OddsDialog extends JDialog {
         Color deltaCol = delta > 0 ? new Color(120, 200, 120) : delta < 0 ? new Color(224, 112, 112) : new Color(176, 176, 176);
         root.add(styleValue(kvRow("This card vs average", body, Color.WHITE, deltaStr), deltaCol));
 
-        root.add(paragraph("Power Level averages the 7 stats (Prayer counts as the 7th) with the monster's "
+        root.add(paragraph("Power Level averages the 7 stats with the monster's "
                 + "HP, ÷8. HP isn't on the 1–99 scale, so it counts at 1/8 weight — <font color='#a0a0a0'>"
                 + "negligible for a low-HP creature (stats decide), but dominant for a boss "
                 + "(1200&nbsp;HP adds ~150). HP takes over above ~450&nbsp;HP.</font>"));

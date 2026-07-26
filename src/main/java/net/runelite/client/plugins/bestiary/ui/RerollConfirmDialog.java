@@ -39,7 +39,7 @@ public class RerollConfirmDialog extends JDialog {
         title.setForeground(card.rarity.displayColor);
         title.setAlignmentX(Component.LEFT_ALIGNMENT);
         root.add(title);
-        JLabel sub = new JLabel("Current roll — reroll re-rolls stats, prayer & shiny at the same rarity.");
+        JLabel sub = new JLabel("Current roll — a reroll re-rolls the stats & shiny at the same rarity.");
         sub.setFont(FontManager.getRunescapeSmallFont());
         sub.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
         sub.setAlignmentX(Component.LEFT_ALIGNMENT);

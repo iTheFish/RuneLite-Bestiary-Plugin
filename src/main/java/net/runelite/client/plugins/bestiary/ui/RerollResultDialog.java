@@ -115,12 +115,23 @@ public class RerollResultDialog extends JDialog {
         root.add(t);
 
         root.add(Box.createVerticalStrut(10));
+        JButton odds = new JButton("What were the odds?");
+        odds.setFont(FontManager.getRunescapeSmallFont());
+        odds.setBackground(new Color(60, 90, 150));
+        odds.setForeground(Color.WHITE);
+        odds.setFocusPainted(false);
+        odds.addActionListener(e -> OddsDialog.open(owner, a));
         JButton close = new JButton("Close");
         close.setFont(FontManager.getRunescapeSmallFont());
         close.setFocusPainted(false);
-        close.setAlignmentX(Component.LEFT_ALIGNMENT);
         close.addActionListener(e -> dispose());
-        root.add(close);
+        JPanel btns = new JPanel(new GridLayout(1, 2, 8, 0));
+        btns.setOpaque(false);
+        btns.setAlignmentX(Component.LEFT_ALIGNMENT);
+        btns.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        btns.add(odds);
+        btns.add(close);
+        root.add(btns);
 
         setContentPane(root);
         pack();
