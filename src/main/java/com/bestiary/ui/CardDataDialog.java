@@ -327,12 +327,22 @@ public class CardDataDialog extends JDialog {
         p.add(t);
 
         p.add(Box.createVerticalStrut(6));
-        JLabel note = new JLabel("<html><div style='width:340px'><i>Each reroll re-rolls the stats & "
-                + "shiny at the same monster; a non-Mythic card has a small chance to rank up.</i></div></html>");
+        JTextArea note = new JTextArea("Each reroll re-rolls the stats & shiny at the same monster; "
+                + "a non-Mythic card has a small chance to rank up.");
         note.setFont(body);
         note.setForeground(new Color(120, 120, 120));
-        note.setAlignmentX(Component.LEFT_ALIGNMENT);
-        p.add(note);
+        note.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        note.setOpaque(false);
+        note.setEditable(false);
+        note.setFocusable(false);
+        note.setLineWrap(true);
+        note.setWrapStyleWord(true);
+        JPanel noteWrap = new JPanel(new BorderLayout());
+        noteWrap.setOpaque(false);
+        noteWrap.setAlignmentX(Component.LEFT_ALIGNMENT);
+        noteWrap.setBorder(new EmptyBorder(6, 0, 0, 0));
+        noteWrap.add(note, BorderLayout.CENTER);
+        p.add(noteWrap);
         return p;
     }
 
