@@ -3,24 +3,13 @@ package com.bestiary;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
-import net.runelite.client.config.ConfigSection;
 import net.runelite.client.config.Range;
 import com.bestiary.model.ChatNotifyMode;
 import com.bestiary.model.DetailSectionDefault;
-import com.bestiary.model.DevCaptureMode;
-import com.bestiary.model.DevRarityOverride;
 import com.bestiary.model.OverlayPos;
 
 @ConfigGroup("bestiary")
 public interface BestiaryConfig extends Config {
-
-    @ConfigSection(
-            name = "Developer Tools",
-            description = "Testing options — leave off for normal play",
-            position = 20,
-            closedByDefault = true
-    )
-    String devSection = "devSection";
 
     @ConfigItem(
             keyName = "captureEnabled",
@@ -168,38 +157,4 @@ public interface BestiaryConfig extends Config {
         return true;
     }
 
-    // --- Developer section ---
-
-    @ConfigItem(
-            keyName = "devForceRarity",
-            name = "Force Rarity",
-            description = "Developer mode only: forces every capture to this rarity. No effect in the normal client.",
-            position = 21,
-            section = "devSection"
-    )
-    default DevRarityOverride devForceRarity() {
-        return DevRarityOverride.NONE;
-    }
-
-    @ConfigItem(
-            keyName = "devCaptureMode",
-            name = "Capture Rate Override",
-            description = "Developer mode only: forces the catch rate for testing. No effect in the normal client.",
-            position = 22,
-            section = "devSection"
-    )
-    default DevCaptureMode devCaptureMode() {
-        return DevCaptureMode.NORMAL;
-    }
-
-    @ConfigItem(
-            keyName = "devForceShiny",
-            name = "Always Roll Shiny",
-            description = "Developer mode only: makes every capture shiny. No effect in the normal client.",
-            position = 23,
-            section = "devSection"
-    )
-    default boolean devForceShiny() {
-        return false;
-    }
 }

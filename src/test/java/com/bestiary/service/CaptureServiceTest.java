@@ -87,20 +87,20 @@ public class CaptureServiceTest {
         assertFalse(result.isPresent());
     }
 
-    // --- Forced success ---
+    // --- A successful capture yields a fully-populated card ---
 
     @Test
-    public void captureSucceedsWithForce100DevMode() {
-        when(config.devCaptureMode()).thenReturn(
-                com.bestiary.model.DevCaptureMode.FORCE_100);
-        when(config.devForceRarity()).thenReturn(
-                com.bestiary.model.DevRarityOverride.NONE);
+    public void captureReturnsPopulatedCard() {
         CaptureService service = new CaptureService(config, new Random(SEED));
 
-        Optional<CapturedCreature> result = service.attemptCapture(npc, null, 1, 5, "Lumbridge", "Player", 0);
-        assertTrue(result.isPresent());
+        // Retry at a high level (BEGINNER catch rate ~60% at 99) until one succeeds — the
+        // seeded RNG makes this deterministic.
+        CapturedCreature c = null;
+        for (int i = 0; i < 200 && c == null; i++) {
+            c = service.attemptCapture(npc, null, 99, 5, "Lumbridge", "Player", 0).orElse(null);
+        }
+        assertNotNull("expected at least one capture within 200 attempts", c);
 
-        CapturedCreature c = result.get();
         assertEquals(1, c.npcId);
         assertEquals("Cow", c.npcName);
         assertEquals(5, c.killsBeforeCapture);

@@ -4,8 +4,6 @@ import com.bestiary.BestiaryConfig;
 import com.bestiary.model.CapturedCreature;
 import com.bestiary.model.CreatureQuality;
 import com.bestiary.model.CreatureRarity;
-import com.bestiary.model.DevCaptureMode;
-import com.bestiary.model.DevRarityOverride;
 import com.bestiary.model.DifficultyTier;
 import com.bestiary.model.MonsterRoster;
 import com.bestiary.model.CombatClass;
@@ -15,7 +13,6 @@ import net.runelite.api.NPC;
 import net.runelite.api.coords.WorldPoint;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Singleton;
 import java.time.Instant;
 import java.util.Optional;
@@ -31,21 +28,17 @@ public class CaptureService {
 
     private final BestiaryConfig config;
     private final Random rng;
-    /** Developer-only testing overrides (Force Rarity / Capture Rate / Shiny) are honoured only in dev. */
-    private final boolean developerMode;
 
     @Inject
-    public CaptureService(BestiaryConfig config, @Named("developerMode") boolean developerMode) {
-        this.config        = config;
-        this.developerMode = developerMode;
-        this.rng           = new Random();
+    public CaptureService(BestiaryConfig config) {
+        this.config = config;
+        this.rng    = new Random();
     }
 
-    /** Constructor for tests where a seeded RNG is required (developer overrides enabled). */
+    /** Constructor for tests where a seeded RNG is required. */
     CaptureService(BestiaryConfig config, Random rng) {
-        this.config        = config;
-        this.developerMode = true;
-        this.rng           = rng;
+        this.config = config;
+        this.rng    = rng;
     }
 
     /**
@@ -70,11 +63,7 @@ public class CaptureService {
         String npcName = npc.getName() != null ? npc.getName() : "Unknown";
         DifficultyTier difficulty = MonsterRoster.getDifficulty(npcName, npc.getCombatLevel());
 
-        // Dev testing overrides only apply in developer mode — live users always get the real rate.
-        DevCaptureMode devMode = developerMode ? config.devCaptureMode() : DevCaptureMode.NORMAL;
-        double catchRate = devMode == DevCaptureMode.FORCE_0   ? 0.0
-                        : devMode == DevCaptureMode.FORCE_100 ? 1.0
-                        : calculateCatchRate(captureLevel, difficulty);
+        double catchRate = calculateCatchRate(captureLevel, difficulty);
         double roll = rng.nextDouble();
 
         log.debug("Capture roll for {} [{}]: roll={} catchRate={}", npcName, difficulty.label,
@@ -84,13 +73,10 @@ public class CaptureService {
             return Optional.empty();
         }
 
-        DevRarityOverride forceRarity = developerMode ? config.devForceRarity() : DevRarityOverride.NONE;
-        CreatureRarity rarity = (forceRarity != null && forceRarity != DevRarityOverride.NONE)
-                ? CreatureRarity.fromLabel(forceRarity.name())
-                : RarityRoller.roll(rng, captureLevel);
+        CreatureRarity rarity = RarityRoller.roll(rng, captureLevel);
         // Independent shiny roll — orthogonal to rarity. Base 0.2% at Bestiary level 1,
         // scaling linearly to 2% at level 99. Future shop unlocks / passives can multiply this.
-        boolean shiny = (developerMode && config.devForceShiny()) || rng.nextDouble() < shinyChance(captureLevel);
+        boolean shiny = rng.nextDouble() < shinyChance(captureLevel);
 
         CombatClass combatClass = MonsterRoster.getCombatClass(npcName, npc.getCombatLevel());
         int[] statBases = MonsterRoster.getStatBases(npcName, npc.getCombatLevel());
