@@ -69,6 +69,8 @@ public class CapturedCreature {
     /** An immutable snapshot of the card's state just before one reroll replaced it. */
     public static final class RerollState {
         public final CreatureRarity rarity;
+        /** The 6 combat stats at this point. May be null for reroll entries stored before this was tracked. */
+        public final CreatureQuality quality;
         public final int powerLevel;
         public final boolean shiny;
         public final int prayer;
@@ -77,9 +79,10 @@ public class CapturedCreature {
         /** UTC epoch second the reroll happened. */
         public final long epoch;
 
-        public RerollState(CreatureRarity rarity, int powerLevel, boolean shiny, int prayer,
-                           String rerolledBy, long epoch) {
+        public RerollState(CreatureRarity rarity, CreatureQuality quality, int powerLevel, boolean shiny,
+                           int prayer, String rerolledBy, long epoch) {
             this.rarity     = rarity;
+            this.quality    = quality;
             this.powerLevel = powerLevel;
             this.shiny      = shiny;
             this.prayer     = prayer;

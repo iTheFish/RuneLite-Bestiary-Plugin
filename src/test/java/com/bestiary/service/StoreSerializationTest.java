@@ -54,7 +54,8 @@ public class StoreSerializationTest {
                 .playerName("Zezima").shiny(true).prayer(33).observedHp(120)
                 .rerolledBy("Zezima")
                 .rerollHistory(Collections.singletonList(
-                        new CapturedCreature.RerollState(CreatureRarity.EPIC, 42, false, 10, "Zezima", 1_699_000_000L)))
+                        new CapturedCreature.RerollState(CreatureRarity.EPIC,
+                                new CreatureQuality(40, 41, 42, 43, 44, 45), 42, false, 10, "Zezima", 1_699_000_000L)))
                 .build();
 
         Gson g = gson();

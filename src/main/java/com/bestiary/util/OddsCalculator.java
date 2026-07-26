@@ -49,7 +49,8 @@ public final class OddsCalculator {
         public int hp;
         public int prayer;
         public int powerLevel;
-        public int avgPowerLevel;   // Power Level if every stat (prayer included) rolled its band centre
+        public int avgPowerLevel;      // Power Level if every stat (prayer included) rolled its band centre
+        public int avgShinyPowerLevel; // ...if every stat rolled the centre of its SHINY band
         // Combined odds (stat wiggle is NOT a factor)
         public double perCapture;     // rarity × shiny  — "of your captures, how often this card"
         public double perKill;        // catch × rarity × shiny — "how rare was the whole event"
@@ -106,6 +107,18 @@ public final class OddsCalculator {
         }
         r.avgPowerLevel = Math.round(
                 (avgStatSum + RarityRoller.utilityCentre(prayerBase, r.rarity)) / 7f + r.hp / 6f);
+
+        // Average SHINY roll for this rarity: every stat at the centre of its shiny band.
+        int avgShinyStatSum = 0;
+        for (int i = 0; i < 6; i++) {
+            int[] sb = (i == RarityRoller.AGILITY_INDEX)
+                    ? RarityRoller.shinyUtilityBand(bases[i], r.rarity)
+                    : RarityRoller.shinyBand(bases[i], r.rarity);
+            avgShinyStatSum += (sb[0] + sb[1]) / 2;
+        }
+        int[] pShiny = RarityRoller.shinyUtilityBand(prayerBase, r.rarity);
+        r.avgShinyPowerLevel = Math.round(
+                (avgShinyStatSum + (pShiny[0] + pShiny[1]) / 2) / 7f + r.hp / 6f);
 
         // Stat wiggle is flavour, not part of "how rare is this card" — only rarity (and shiny) count.
         r.perCapture = r.rarityChance * (r.shiny ? r.shinyChance : 1.0);
