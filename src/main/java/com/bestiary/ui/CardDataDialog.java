@@ -25,15 +25,26 @@ public class CardDataDialog extends JDialog {
     private static CardDataDialog current;
     private static final DateTimeFormatter DATE =
             DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm").withZone(ZoneId.systemDefault());
+    private static final DateTimeFormatter DATE_SHORT =
+            DateTimeFormatter.ofPattern("d MMM yy").withZone(ZoneId.systemDefault());
+
+    public static final int TAB_OVERVIEW = 0, TAB_ODDS = 1, TAB_REROLLS = 2;
 
     public static void open(Window owner, CapturedCreature capture) {
+        open(owner, capture, TAB_OVERVIEW);
+    }
+
+    /** Opens the panel on a specific tab (see the TAB_* constants). */
+    public static void open(Window owner, CapturedCreature capture, int tab) {
         if (current != null && current.isShowing()) current.dispose();
         current = new CardDataDialog(owner, capture);
+        if (tab >= 0 && tab < current.tabs.getTabCount()) current.tabs.setSelectedIndex(tab);
         current.setVisible(true);
     }
 
     private final Font body;
     private final Font bodyBold;
+    private final JTabbedPane tabs;
 
     private CardDataDialog(Window owner, CapturedCreature capture) {
         super(owner, "Card data — " + capture.npcName, ModalityType.MODELESS);
@@ -42,7 +53,7 @@ public class CardDataDialog extends JDialog {
         this.body     = FontManager.getRunescapeSmallFont().deriveFont(base + 1f);
         this.bodyBold = body.deriveFont(Font.BOLD);
 
-        JTabbedPane tabs = new JTabbedPane();
+        tabs = new JTabbedPane();
         tabs.setFont(FontManager.getRunescapeSmallFont());
         tabs.setBackground(ColorScheme.DARK_GRAY_COLOR);
         tabs.setForeground(Color.WHITE);
@@ -51,9 +62,9 @@ public class CardDataDialog extends JDialog {
         tabs.addTab("Rerolls", scroll(buildRerollHistory(capture)));
 
         setContentPane(tabs);
-        setPreferredSize(new Dimension(400, 460));
+        setPreferredSize(new Dimension(430, 470));
         pack();
-        setMinimumSize(new Dimension(340, 300));
+        setMinimumSize(new Dimension(360, 300));
         setLocationRelativeTo(owner);
     }
 
@@ -142,8 +153,9 @@ public class CardDataDialog extends JDialog {
 
         Set<String> rerollers = c.uniqueRerollers();
         p.add(sectionHeader("Rerolled " + c.rerollCount() + (c.rerollCount() == 1 ? " time" : " times")));
-        JLabel who = new JLabel(rerollers.size() + (rerollers.size() == 1 ? " reroller: " : " rerollers: ")
-                + String.join(", ", rerollers));
+        JLabel who = new JLabel("<html><div style='width:390px'>"
+                + rerollers.size() + (rerollers.size() == 1 ? " reroller: " : " rerollers: ")
+                + String.join(", ", rerollers) + "</div></html>");
         who.setFont(body);
         who.setForeground(new Color(180, 150, 230));
         who.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -158,7 +170,7 @@ public class CardDataDialog extends JDialog {
         g.insets = new Insets(1, 0, 1, 12);
         g.anchor = GridBagConstraints.WEST;
 
-        String[] heads = {"State", "Rarity", "PWR", "Shiny", "Pray", "By", "When"};
+        String[] heads = {"State", "Rarity", "PWR", "Shiny", "By", "When"};
         for (int i = 0; i < heads.length; i++) {
             g.gridx = i; g.gridy = 0;
             t.add(cell(heads[i], bodyBold, new Color(140, 140, 140)), g);
@@ -170,12 +182,12 @@ public class CardDataDialog extends JDialog {
             CapturedCreature.RerollState s = h.get(i);
             String stateLabel = i == 0 ? "Original" : "Roll " + i;
             addRerollRow(t, g, row++, stateLabel, s.rarity.label, s.rarity.displayColor,
-                    s.powerLevel, s.shiny, s.prayer, s.rerolledBy,
-                    DATE.format(Instant.ofEpochSecond(s.epoch)));
+                    s.powerLevel, s.shiny, s.rerolledBy,
+                    DATE_SHORT.format(Instant.ofEpochSecond(s.epoch)));
         }
         // Current (latest) state
         addRerollRow(t, g, row, "Current", c.rarity.label, c.rarity.displayColor,
-                c.powerLevel(), c.isShiny(), c.prayer, "—", "now");
+                c.powerLevel(), c.isShiny(), "—", "now");
 
         t.setMaximumSize(new Dimension(Integer.MAX_VALUE, t.getPreferredSize().height));
         p.add(t);
@@ -191,7 +203,7 @@ public class CardDataDialog extends JDialog {
     }
 
     private void addRerollRow(JPanel t, GridBagConstraints g, int rowY, String state, String rarity,
-                              Color rarityColor, int pwr, boolean shiny, int prayer, String by, String when) {
+                              Color rarityColor, int pwr, boolean shiny, String by, String when) {
         boolean isCurrent = "Current".equals(state);
         Font f = isCurrent ? bodyBold : body;
         g.gridy = rowY;
@@ -199,9 +211,8 @@ public class CardDataDialog extends JDialog {
         g.gridx = 1; t.add(cell(rarity, f, rarityColor), g);
         g.gridx = 2; t.add(cell(String.valueOf(pwr), f, Color.WHITE), g);
         g.gridx = 3; t.add(cell(shiny ? "✦" : "–", f, shiny ? new Color(255, 215, 0) : new Color(110, 110, 110)), g);
-        g.gridx = 4; t.add(cell(String.valueOf(prayer), f, new Color(170, 170, 170)), g);
-        g.gridx = 5; t.add(cell(by, f, new Color(180, 150, 230)), g);
-        g.gridx = 6; t.add(cell(when, f, new Color(140, 140, 140)), g);
+        g.gridx = 4; t.add(cell(by, f, new Color(180, 150, 230)), g);
+        g.gridx = 5; t.add(cell(when, f, new Color(140, 140, 140)), g);
     }
 
     // -------------------------------------------------------------------------
