@@ -238,6 +238,8 @@ public class AlbumCard extends JPanel {
         // Show the SAME HP the power level was computed from (observed damage preferred),
         // so the heart pill matches the capture popup and the P: value — not the wiki default.
         this.hitpoints      = best.hitpoints();
+        // Hover metadata (#44) — overlay only, never part of the exported PNG.
+        setToolTipText(hoverTip(best));
         init(imageService, true);
     }
 
@@ -264,6 +266,24 @@ public class AlbumCard extends JPanel {
         this.prayerValue    = MonsterRoster.getPrayer(npcName);
         this.hitpoints      = MonsterRoster.getHitpoints(npcName);
         init(imageService, imageService != null);
+    }
+
+    private static final java.time.format.DateTimeFormatter TIP_DATE =
+            java.time.format.DateTimeFormatter.ofPattern("d MMM yyyy").withZone(java.time.ZoneId.systemDefault());
+
+    /** HTML hover tooltip (#44): capture date, region, kills-before. Overlay only — not exported. */
+    private static String hoverTip(CapturedCreature c) {
+        String rarityHex = String.format("#%06x", c.rarity.displayColor.getRGB() & 0xFFFFFF);
+        String region = c.regionName != null && !c.regionName.isEmpty() ? c.regionName : "Unknown";
+        StringBuilder sb = new StringBuilder("<html><b>").append(c.npcName)
+                .append("</b> — <font color='").append(rarityHex).append("'>").append(c.rarity.label)
+                .append("</font>").append(c.isShiny() ? " ✦" : "")
+                .append("<br>Caught: ").append(TIP_DATE.format(c.captureTime))
+                .append("<br>Region: ").append(region)
+                .append("<br>Kills before catch: ").append(c.killsBeforeCapture);
+        if (c.rerollCount() > 0) sb.append("<br>Rerolled ").append(c.rerollCount()).append("×");
+        sb.append("<br><i>Right-click → Card Info for full data</i></html>");
+        return sb.toString();
     }
 
     private void init(@Nullable WikiImageService imgService, boolean fetchImage) {
@@ -380,13 +400,13 @@ public class AlbumCard extends JPanel {
                             CardExportDialog.open(SwingUtilities.getWindowAncestor(AlbumCard.this), only));
                     menu.add(item);
 
-                    JMenuItem oddsItem = new JMenuItem("What were the odds?");
-                    oddsItem.addActionListener(ev ->
-                            OddsDialog.open(SwingUtilities.getWindowAncestor(AlbumCard.this), only));
-                    menu.add(oddsItem);
+                    JMenuItem dataItem = new JMenuItem("Card Info…");
+                    dataItem.addActionListener(ev ->
+                            CardDataDialog.open(SwingUtilities.getWindowAncestor(AlbumCard.this), only));
+                    menu.add(dataItem);
                 } else {
                     JMenu sub = new JMenu("Export Card");
-                    JMenu oddsSub = new JMenu("What were the odds?");
+                    JMenu oddsSub = new JMenu("Card Info…");
                     int shown = Math.min(sorted.size(), 8);
                     for (int i = 0; i < shown; i++) {
                         CapturedCreature c = sorted.get(i);
@@ -402,7 +422,7 @@ public class AlbumCard extends JPanel {
                         JMenuItem oItem = new JMenuItem(label);
                         oItem.setForeground(c.rarity.displayColor);
                         oItem.addActionListener(ev ->
-                                OddsDialog.open(SwingUtilities.getWindowAncestor(AlbumCard.this), c));
+                                CardDataDialog.open(SwingUtilities.getWindowAncestor(AlbumCard.this), c));
                         oddsSub.add(oItem);
                     }
                     menu.add(sub);
