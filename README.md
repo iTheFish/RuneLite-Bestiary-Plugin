@@ -1,105 +1,64 @@
-# RuneLite Bestiary Plugin
+# Bestiary
 
-A Pokémon-style creature collection plugin for Old School RuneScape. Every NPC you kill has a chance to be **captured** — logged to your Bestiary with a rarity tier, quality score, location, and date.
+A card-collection layer for Old School RuneScape. Every monster you kill has a chance to be
+**captured** as a collectible card with a rarity, rolled stats, and the monster's real
+Hitpoints — building a personal bestiary you can browse, showcase, reroll and export.
 
----
+## Features
 
-## Prerequisites
+- **Capture cards on kill** — each kill rolls a catch chance (by monster difficulty tier and your
+  Capture Level) and, on success, a weighted **rarity** (Common → Mythic) plus an independent
+  **shiny** roll.
+- **Power Level** — a card's headline number: the average of its seven rolled stats plus the
+  monster's factual Hitpoints (at a reduced weight), so bosses tower over trash mobs.
+- **Album / Dex** — a grid of every catalogued monster, with search, difficulty filter, per-monster
+  detail pages, and paginated capture views.
+- **Collection views** — grouped by rarity or monster, or a flat individual list; favourites; and
+  rich detail dialogs with per-stat bands and personal bests.
+- **Progression** — a Capture Level (1–99, with virtual levels), XP from kills and captures, and
+  achievements.
+- **Shop (in progress)** — earn Bestiary Credits per capture and spend them on the **Card Reroller**
+  (re-roll a card's stats/shiny), or **discard** cards for credits.
+- **Dashboards & Session Recap** — breakdowns of kills, species, and top captures, plus a
+  shareable per-session summary.
+- **Card export** — save or copy any card as an image, with a unique ID and owner stamp.
+- **Overlay & chat notifications** — an on-screen capture animation and configurable chat messages.
 
-| Tool | Version | Path |
-|------|---------|------|
-| Microsoft OpenJDK | 21 | `C:\Program Files\Microsoft\jdk-21.0.11.10-hotspot` |
-| Apache Maven | 3.9+ | `C:\tools\apache-maven-3.9.9` |
+## Data & privacy
 
-> **Important:** RuneLite's bundled JRE is 11. Maven must use JDK 21 or the build fails. Always set `JAVA_HOME` explicitly before building.
-
----
+- Your collection is stored locally as JSON in `~/.runelite/bestiary/`.
+- With **"Fetch NPC images from the Wiki"** enabled (default), the plugin downloads monster artwork
+  from the OSRS Wiki (`oldschool.runescape.wiki`) — only the monster's name is requested, no account
+  or personal data is sent, and images are cached to disk. Turn the option off to make no network
+  requests at all.
 
 ## Building
 
-```powershell
-$env:JAVA_HOME = "C:\Program Files\Microsoft\jdk-21.0.11.10-hotspot"
-C:\tools\apache-maven-3.9.9\bin\mvn.cmd clean compile -P dev -f F:\repos\Bestiary\pom.xml
-```
-
-Expected output: `BUILD SUCCESS` (a few `WARNING: system modules path` lines are normal).
-
----
-
-## Running in dev mode
-
-The `dev` Maven profile launches the RuneLite test client with all local plugins loaded:
-
-```powershell
-$env:JAVA_HOME = "C:\Program Files\Microsoft\jdk-21.0.11.10-hotspot"
-C:\tools\apache-maven-3.9.9\bin\mvn.cmd exec:java -P dev -f F:\repos\Bestiary\pom.xml
-```
-
-Then in the RuneLite client: open the Plugin Hub → enable **Bestiary**.
-
----
-
-## Quick testing
-
-1. Set **Base Capture Rate = 100%** in the plugin config (guarantees a capture on every kill).
-2. Kill any NPC.
-3. Confirm a card appears in the **Collection** tab under the correct rarity header.
-4. Click the card → verify the Detail dialog shows quality, region name, date.
-5. Kill the same NPC again → verify the chat message is different from the last one (quality score changes).
-
----
-
-## Project structure
+A standard RuneLite external plugin, built with Gradle (targets Java 11 bytecode; a JDK 11+ is
+required — the Gradle wrapper downloads Gradle itself).
 
 ```
-src/main/java/.../bestiary/
-  BestiaryPlugin.java       — main plugin (event wiring, kill/capture flow)
-  BestiaryConfig.java       — all user-facing settings
-  model/                    — data classes (CapturedCreature, BestiaryCollection, CreatureRarity, ...)
-  service/                  — business logic
-    BestiaryDataService     — load/save JSON; owns BestiaryCollection
-    ProgressionService      — XP, level-up, achievement checking
-    CaptureService          — probability roll, rarity assignment, quality generation
-    KillTracker             — per-NPC kill tracking (handles despawn edge cases)
-  ui/                       — all Swing panels and dialogs
-    BestiaryPanel           — root PluginPanel, tabs host
-    CollectionTab           — Grouped/Individual view with rarity section headers
-    ProgressTab             — XP bar, level display, achievement list
-    InfoTab                 — live stats strip + rarity table + how-it-works tiles
-    CreatureCard            — one card per NPC+rarity in Grouped mode
-    CaptureRow              — one compact row per capture in Individual mode
-    CreatureDetailDialog    — full capture history for one NPC+rarity
-    BestiaryOverlay         — in-game overlay notification on capture
-  util/
-    RegionNames             — ~200 OSRS region ID to readable name mappings
-    XpTable                 — OSRS XP formula (matches in-game table exactly)
+./gradlew build        # compile + run tests
+./gradlew run          # launch a from-source RuneLite client with the plugin (developer mode)
+./gradlew shadowJar    # build a sideloadable jar in build/libs/
 ```
 
----
+`./gradlew run` is the easiest way to try it: log in and open the Bestiary panel from the sidebar.
+The `[DEV]` helper buttons and the Developer Tools config only appear in developer mode.
 
-## Data files
+## Project layout
 
-| File | Contents |
-|------|----------|
-| `~/.runelite/bestiary/collection.json` | All captures + kill counts |
-| `~/.runelite/bestiary/progress.json` | XP total, level, unlocked achievements |
+```
+src/main/java/com/bestiary/
+  BestiaryPlugin      — event wiring, kill → capture flow
+  BestiaryConfig      — user-facing settings
+  model/              — CapturedCreature, BestiaryCollection, CreatureRarity, MonsterRoster, ...
+  service/            — CaptureService, ProgressionService, BestiaryDataService,
+                        BestiaryStore (JSON persistence), WikiImageService, KillTracker
+  ui/                 — Swing panels and dialogs (BestiaryPanel, CollectionTab, Album, InfoTab, ...)
+  util/               — RarityRoller, OddsCalculator, XpTable, CardId, RegionNames
+```
 
-Deleting these files resets all progress — useful during development.
+## Licence
 
----
-
-## Configuration options
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| Capture Enabled | true | Master on/off for capture attempts |
-| Base Capture Rate | 10% | Starting probability at level 1 |
-| Max Capture Rate | 60% | Ceiling including all level bonuses |
-| Notify on Capture | true | Chat message on each capture |
-| Notify Rare+ Only | false | Suppress Common/Uncommon notifications |
-| Notify on Level Up | true | Chat message on level increase |
-| Show Capture Overlay | true | In-game overlay popup on capture |
-| Show Capture Animation | false | Pokeball-style shake animation on every kill attempt |
-| Animate Failed Catches | false | Show animation even on failed attempts |
-| Capture XP Enabled | true | Bonus XP on successful captures |
-| Chat Notification Mode | Verbose | Verbose (per-capture + quality) or Batched (30s accumulation) |
+BSD 2-Clause — see [LICENSE](LICENSE).
