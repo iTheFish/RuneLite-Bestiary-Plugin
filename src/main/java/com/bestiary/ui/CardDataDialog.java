@@ -100,7 +100,7 @@ public class CardDataDialog extends JDialog {
     // -------------------------------------------------------------------------
 
     private JComponent buildBottomBar() {
-        JButton export = barButton("Export tab", new Color(60, 90, 150));
+        JButton export = barButton("Copy tab", new Color(60, 90, 150));
         export.addActionListener(e -> flashAfter(export, "✓ Copied",
                 () -> copy(decorate(renderTab(tabs.getSelectedIndex())))));
         JButton save = barButton("Save tab PNG", new Color(55, 110, 60));
@@ -291,8 +291,9 @@ public class CardDataDialog extends JDialog {
         t.setOpaque(false);
         t.setAlignmentX(Component.LEFT_ALIGNMENT);
         GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(2, 0, 2, 16);   // roomy columns; natural widths so nothing clips
+        g.insets = new Insets(2, 0, 2, 8);
         g.anchor = GridBagConstraints.WEST;
+        g.weightx = 1.0;   // fill the table width (otherwise GridBag centres the columns)
 
         String[] heads = {"State", "Rarity", "PWR", "Shiny", "By", "When"};
         for (int i = 0; i < heads.length; i++) {
