@@ -94,19 +94,19 @@ public class RerollGraph extends JPanel {
         }
 
         boolean rerolled = c.rerollCount() > 0;
-        mode = rerolled ? Mode.TIMELINE : Mode.PERCENTILE;
+        mode = Mode.PERCENTILE;   // percentile is the more broadly useful default
 
         chart = new Chart();
         toggles = buildToggles();
         add(buildSwitcher(rerolled), BorderLayout.NORTH);
         add(chart, BorderLayout.CENTER);
         add(toggles, BorderLayout.SOUTH);
-        toggles.setVisible(mode == Mode.TIMELINE);
+        toggles.setVisible(false);
     }
 
     private JComponent buildSwitcher(boolean rerolled) {
         JComboBox<String> combo = new JComboBox<>(rerolled
-                ? new String[]{"Reroll timeline", "Percentile (this rarity)"}
+                ? new String[]{"Percentile (this rarity)", "Reroll timeline"}
                 : new String[]{"Percentile (this rarity)"});
         combo.setFont(FontManager.getRunescapeSmallFont());
         combo.addActionListener(e -> {
@@ -216,31 +216,56 @@ public class RerollGraph extends JPanel {
         private void drawPercentile(Graphics2D g) {
             int w = getWidth(), h = getHeight();
             int n = pctNames.length;
-            int padT = 12, padB = 10, left = 42, right = 92;
-            int barX = left, barW = w - left - right;
-            int rowH = Math.max(16, (h - padT - padB) / Math.max(1, n));
+            int padT = 10, padB = 10, left = 46, right = 118;
+            int barX = left, barW = Math.max(20, w - left - right);
+            int rows = n + 1;   // Overall + per-stat
+            int rowH = Math.max(16, (h - padT - padB) / rows);
+
+            // Overall = average of the per-stat percentiles ("how maxed out" — 50% ≈ an average roll).
+            double overall = 0;
+            for (int i = 0; i < n; i++) overall += pOf(i);
+            overall = n > 0 ? overall / n : 0;
+            drawPctRow(g, padT + rowH / 2, "Overall", overall,
+                    Math.round(overall * 100) + "%  " + tier(overall), barX, barW, true);
+            g.setColor(new Color(72, 72, 72));
+            g.drawLine(4, padT + rowH, w - 6, padT + rowH);
 
             for (int i = 0; i < n; i++) {
-                int cy = padT + i * rowH + rowH / 2;
-                // label
-                g.setColor(new Color(200, 200, 200));
-                g.drawString(pctNames[i].substring(0, Math.min(4, pctNames[i].length())), 4, cy + 4);
-                // track
-                int by = cy - 5;
-                g.setColor(new Color(45, 45, 45));
-                g.fillRoundRect(barX, by, barW, 10, 4, 4);
-                // fill to percentile
-                double p = pctHi[i] > pctLo[i]
-                        ? (pctValue[i] - pctLo[i]) / (double) (pctHi[i] - pctLo[i])
-                        : (pctValue[i] >= pctHi[i] ? 1.0 : 0.5);
-                p = Math.max(0, Math.min(1, p));
-                g.setColor(pctColor(p));
-                g.fillRoundRect(barX, by, Math.max(2, (int) (barW * p)), 10, 4, 4);
-                // value + band + percentile
-                g.setColor(new Color(200, 200, 200));
-                String txt = pctValue[i] + "  (" + Math.round(p * 100) + "%)";
-                g.drawString(txt, barX + barW + 6, cy + 4);
+                int cy = padT + (i + 1) * rowH + rowH / 2;
+                double p = pOf(i);
+                drawPctRow(g, cy, pctNames[i], p,
+                        pctValue[i] + "  (" + Math.round(p * 100) + "%)", barX, barW, false);
             }
+        }
+
+        private double pOf(int i) {
+            double p = pctHi[i] > pctLo[i]
+                    ? (pctValue[i] - pctLo[i]) / (double) (pctHi[i] - pctLo[i])
+                    : (pctValue[i] >= pctHi[i] ? 1.0 : 0.5);
+            return Math.max(0, Math.min(1, p));
+        }
+
+        private void drawPctRow(Graphics2D g, int cy, String label, double p, String rightText,
+                                int barX, int barW, boolean bold) {
+            g.setFont(bold ? FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD)
+                           : FontManager.getRunescapeSmallFont());
+            g.setColor(bold ? new Color(255, 200, 90) : new Color(200, 200, 200));
+            g.drawString(label, 4, cy + 4);
+            int by = cy - 5;
+            g.setColor(new Color(45, 45, 45));
+            g.fillRoundRect(barX, by, barW, 10, 4, 4);
+            g.setColor(pctColor(p));
+            g.fillRoundRect(barX, by, Math.max(2, (int) (barW * p)), 10, 4, 4);
+            g.setColor(bold ? Color.WHITE : new Color(200, 200, 200));
+            g.drawString(rightText, barX + barW + 6, cy + 4);
+        }
+
+        private String tier(double p) {
+            if (p >= 0.85) return "near-max";
+            if (p >= 0.65) return "strong";
+            if (p >= 0.40) return "average";
+            if (p >= 0.20) return "low";
+            return "poor";
         }
 
         private void message(Graphics2D g, int w, int h, String msg) {

@@ -9,10 +9,6 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
 import java.awt.*;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * The "What were the odds?" breakdown for a single capture, as a reusable, width-tracking
@@ -27,11 +23,6 @@ public class OddsView extends JPanel implements Scrollable {
     private final Font body;
     private final Font bodyBold;
 
-    // Paragraphs are fixed-width HTML (JLabels only wrap with an explicit width), so we reflow
-    // them to the panel's actual width whenever it changes — no clipping at any dialog size.
-    private final List<JLabel> paras = new ArrayList<>();
-    private final List<String> paraHtml = new ArrayList<>();
-
     public OddsView(CapturedCreature capture) {
         this.capture = capture;
         this.r = OddsCalculator.compute(capture);
@@ -43,20 +34,6 @@ public class OddsView extends JPanel implements Scrollable {
         setBackground(ColorScheme.DARK_GRAY_COLOR);
         setBorder(new EmptyBorder(12, 14, 12, 14));
         build();
-        addComponentListener(new ComponentAdapter() {
-            @Override public void componentResized(ComponentEvent e) { reflow(); }
-        });
-    }
-
-    private void reflow() {
-        int w = getWidth() - 32;   // minus L/R border (28) + a little slack
-        if (w <= 60) return;
-        for (int i = 0; i < paras.size(); i++) paras.get(i).setText(wrapHtml(paraHtml.get(i), w));
-        revalidate();
-    }
-
-    private static String wrapHtml(String html, int w) {
-        return "<html><div style='width:" + Math.max(120, w) + "px'>" + html + "</div></html>";
     }
 
     private void build() {
@@ -80,8 +57,8 @@ public class OddsView extends JPanel implements Scrollable {
         add(sub);
 
         if (rerolled) {
-            add(paragraph("<font color='#9678c8'>This card was rerolled — the odds below describe a "
-                    + "<i>raw pull</i> at this rarity, not how this particular card was produced.</font>"));
+            add(paragraph("This card was rerolled — the odds below describe a raw pull at this rarity, "
+                    + "not how this particular card was produced.", new Color(150, 120, 200)));
         }
 
         add(Box.createVerticalStrut(8));
@@ -169,15 +146,31 @@ public class OddsView extends JPanel implements Scrollable {
         return badge;
     }
 
-    private JLabel paragraph(String html) {
-        JLabel l = new JLabel(wrapHtml(html, 300));
-        l.setFont(body);
-        l.setForeground(new Color(140, 140, 140));
-        l.setAlignmentX(Component.LEFT_ALIGNMENT);
-        l.setBorder(new EmptyBorder(5, 0, 0, 0));
-        paras.add(l);
-        paraHtml.add(html);
-        return l;
+    private JComponent paragraph(String html) {
+        return paragraph(html, new Color(140, 140, 140));
+    }
+
+    /** A wrapping paragraph. JTextArea wraps to the panel's actual width — reliable at any size. */
+    private JComponent paragraph(String html, Color colour) {
+        JTextArea a = new JTextArea(stripHtml(html));
+        a.setFont(body);
+        a.setForeground(colour);
+        a.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        a.setOpaque(false);
+        a.setEditable(false);
+        a.setFocusable(false);
+        a.setLineWrap(true);
+        a.setWrapStyleWord(true);
+        JPanel wrap = new JPanel(new BorderLayout());
+        wrap.setOpaque(false);
+        wrap.setAlignmentX(Component.LEFT_ALIGNMENT);
+        wrap.setBorder(new EmptyBorder(5, 0, 0, 0));
+        wrap.add(a, BorderLayout.CENTER);
+        return wrap;
+    }
+
+    private static String stripHtml(String html) {
+        return html.replaceAll("<[^>]+>", "").replace("&nbsp;", " ").trim();
     }
 
     private JPanel statsTable() {

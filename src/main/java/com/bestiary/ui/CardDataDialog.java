@@ -28,7 +28,7 @@ public class CardDataDialog extends JDialog {
     private static final DateTimeFormatter DATE_SHORT =
             DateTimeFormatter.ofPattern("d MMM yy").withZone(ZoneId.systemDefault());
 
-    public static final int TAB_OVERVIEW = 0, TAB_ODDS = 1, TAB_REROLLS = 2;
+    public static final int TAB_OVERVIEW = 0, TAB_ODDS = 1, TAB_GRAPH = 2, TAB_REROLLS = 3;
 
     public static void open(Window owner, CapturedCreature capture) {
         open(owner, capture, TAB_OVERVIEW);
@@ -59,8 +59,8 @@ public class CardDataDialog extends JDialog {
         tabs.setForeground(Color.WHITE);
         tabs.addTab("Overview", scroll(buildOverview(capture)));
         tabs.addTab("Odds", scroll(new OddsView(capture)));
-        tabs.addTab("Rerolls", scroll(buildRerollHistory(capture)));
         tabs.addTab("Graph", new RerollGraph(capture));   // percentile + (if rerolled) stat timeline
+        tabs.addTab("Rerolls", scroll(buildRerollHistory(capture)));
 
         setContentPane(tabs);
         pack();
@@ -177,8 +177,17 @@ public class CardDataDialog extends JDialog {
             g.gridx = i; g.gridy = 0;
             t.add(cell(heads[i], bodyBold, new Color(140, 140, 140)), g);
         }
+        // thin rule under the header so the table reads as a table, not floating text
+        GridBagConstraints sep = new GridBagConstraints();
+        sep.gridx = 0; sep.gridy = 1; sep.gridwidth = heads.length;
+        sep.fill = GridBagConstraints.HORIZONTAL;
+        sep.insets = new Insets(2, 0, 4, 0);
+        JPanel rule = new JPanel();
+        rule.setBackground(new Color(70, 70, 70));
+        rule.setPreferredSize(new Dimension(10, 1));
+        t.add(rule, sep);
 
-        int row = 1;
+        int row = 2;
         java.util.List<CapturedCreature.RerollState> h = c.rerollHistory;
         for (int i = 0; i < h.size(); i++) {
             CapturedCreature.RerollState s = h.get(i);
