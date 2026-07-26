@@ -6,12 +6,19 @@ import com.bestiary.util.CardId;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -62,11 +69,15 @@ public class CardDataDialog extends JDialog {
         tabs.addTab("Graph", new RerollGraph(capture));   // percentile + (if rerolled) stat timeline
         tabs.addTab("Rerolls", scroll(buildRerollHistory(capture)));
 
-        setContentPane(tabs);
+        JPanel root = new JPanel(new BorderLayout());
+        root.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        root.add(tabs, BorderLayout.CENTER);
+        root.add(buildBottomBar(), BorderLayout.SOUTH);
+        setContentPane(root);
         pack();
         // pack() sizes to content preferred width (too narrow for the odds paragraphs), so fix it.
-        setSize(new Dimension(440, 500));
-        setMinimumSize(new Dimension(380, 320));
+        setSize(new Dimension(440, 520));
+        setMinimumSize(new Dimension(380, 340));
         setLocationRelativeTo(owner);
     }
 
@@ -77,6 +88,124 @@ public class CardDataDialog extends JDialog {
         sp.getViewport().setBackground(ColorScheme.DARK_GRAY_COLOR);
         sp.getVerticalScrollBar().setUnitIncrement(16);
         return sp;
+    }
+
+    // -------------------------------------------------------------------------
+    // Export (clipboard) / Save (PNG) — this tab or all tabs
+    // -------------------------------------------------------------------------
+
+    private JComponent buildBottomBar() {
+        JButton export = barButton("Export ▾", new Color(60, 90, 150));
+        export.addActionListener(e -> menu(export,
+                () -> flashAfter(export, "✓ Copied", () -> copy(renderTab(tabs.getSelectedIndex()))),
+                () -> flashAfter(export, "✓ Copied", () -> copy(renderAllTabs()))));
+        JButton save = barButton("Save PNG ▾", new Color(55, 110, 60));
+        save.addActionListener(e -> menu(save,
+                () -> save(renderTab(tabs.getSelectedIndex()), "card-" + tabTitle()),
+                () -> save(renderAllTabs(), "card-data")));
+
+        JPanel bar = new JPanel(new GridLayout(1, 2, 6, 0));
+        bar.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        bar.setBorder(new EmptyBorder(6, 8, 8, 8));
+        bar.add(export);
+        bar.add(save);
+        return bar;
+    }
+
+    private String tabTitle() {
+        return tabs.getTitleAt(tabs.getSelectedIndex()).toLowerCase();
+    }
+
+    private JButton barButton(String text, Color bg) {
+        JButton b = new JButton(text);
+        b.setFont(FontManager.getRunescapeSmallFont());
+        b.setBackground(bg);
+        b.setForeground(Color.WHITE);
+        b.setFocusPainted(false);
+        b.setBorderPainted(false);
+        return b;
+    }
+
+    private void menu(JComponent anchor, Runnable thisTab, Runnable allTabs) {
+        JPopupMenu m = new JPopupMenu();
+        JMenuItem a = new JMenuItem("This tab (" + tabs.getTitleAt(tabs.getSelectedIndex()) + ")");
+        a.addActionListener(e -> thisTab.run());
+        JMenuItem b = new JMenuItem("All tabs");
+        b.addActionListener(e -> allTabs.run());
+        m.add(a);
+        m.add(b);
+        m.show(anchor, 0, -m.getPreferredSize().height);
+    }
+
+    private void flashAfter(JButton b, String label, Runnable action) {
+        action.run();
+        String orig = b.getText();
+        b.setText(label);
+        new javax.swing.Timer(1400, e -> {
+            b.setText(orig);
+            ((javax.swing.Timer) e.getSource()).stop();
+        }).start();
+    }
+
+    /** Renders one tab's content (including any scrolled-off part) to an image. */
+    private BufferedImage renderTab(int index) {
+        Component tab = tabs.getComponentAt(index);
+        JComponent c = tab instanceof JScrollPane
+                ? (JComponent) ((JScrollPane) tab).getViewport().getView()
+                : (JComponent) tab;
+        int w = c.getWidth() > 0 ? c.getWidth() : 420;
+        int h = c.getHeight() > 0 ? c.getHeight() : Math.max(200, c.getPreferredSize().height);
+        BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = img.createGraphics();
+        g.setColor(ColorScheme.DARK_GRAY_COLOR);
+        g.fillRect(0, 0, w, h);
+        c.printAll(g);
+        g.dispose();
+        return img;
+    }
+
+    /** Renders every tab (selecting each so it lays out) and stacks them vertically. */
+    private BufferedImage renderAllTabs() {
+        int prev = tabs.getSelectedIndex();
+        List<BufferedImage> parts = new ArrayList<>();
+        for (int i = 0; i < tabs.getTabCount(); i++) {
+            tabs.setSelectedIndex(i);
+            tabs.validate();
+            parts.add(renderTab(i));
+        }
+        tabs.setSelectedIndex(prev);
+
+        int w = 1, h = 0, gap = 10;
+        for (BufferedImage p : parts) { w = Math.max(w, p.getWidth()); h += p.getHeight() + gap; }
+        BufferedImage out = new BufferedImage(w, Math.max(1, h), BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = out.createGraphics();
+        g.setColor(ColorScheme.DARK_GRAY_COLOR);
+        g.fillRect(0, 0, w, h);
+        int y = 0;
+        for (BufferedImage p : parts) { g.drawImage(p, 0, y, null); y += p.getHeight() + gap; }
+        g.dispose();
+        return out;
+    }
+
+    private void copy(BufferedImage img) {
+        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new Transferable() {
+            @Override public DataFlavor[] getTransferDataFlavors() { return new DataFlavor[]{DataFlavor.imageFlavor}; }
+            @Override public boolean isDataFlavorSupported(DataFlavor f) { return DataFlavor.imageFlavor.equals(f); }
+            @Override public Object getTransferData(DataFlavor f) { return img; }
+        }, null);
+    }
+
+    private void save(BufferedImage img, String suggestedName) {
+        JFileChooser fc = new JFileChooser();
+        fc.setSelectedFile(new File(suggestedName + ".png"));
+        if (fc.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
+        File f = fc.getSelectedFile();
+        if (!f.getName().toLowerCase().endsWith(".png")) f = new File(f.getParentFile(), f.getName() + ".png");
+        try {
+            ImageIO.write(img, "png", f);
+        } catch (java.io.IOException ex) {
+            /* best effort — ignore */
+        }
     }
 
     // -------------------------------------------------------------------------
