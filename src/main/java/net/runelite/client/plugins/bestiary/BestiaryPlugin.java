@@ -182,6 +182,13 @@ public class BestiaryPlugin extends Plugin {
 
         String npcName = npc.getName() != null ? npc.getName() : "Unknown";
 
+        // Restrict to the catalogued roster: off-roster NPCs (e.g. Jail guard) are ignored
+        // entirely so they can't pollute kill counts, the dex, XP or the collection.
+        if (!net.runelite.client.plugins.bestiary.model.MonsterRoster.isKnown(npcName)) {
+            log.debug("Ignoring off-roster kill: {}", npcName);
+            return;
+        }
+
         // Track the kill + check kill-count achievements
         dataService.incrementKillCount(npcName);
         sessionTracker.addKill();

@@ -134,15 +134,16 @@ all six stats, times the rarity/shiny chances — and shows the catch chance sep
 
 ## [5] Power Level — *the headline number*
 
-`CapturedCreature.powerLevel()` = `round( (ATK+STR+DEF+MAG+RNG+AGI + Prayer + monsterHP) / 8 )`
+`CapturedCreature.powerLevel()` = `round( (ATK+STR+DEF+MAG+RNG+AGI + Prayer) / 7  +  monsterHP / 6 )`
 
-- Eight terms: the 6 rolled combat stats + the rolled **Prayer** (all on the 1–99 scale) + the
-  monster's **HP**, averaged over 8.
-- HP is a **factual, looked-up** attribute (`MonsterRoster.getHitpoints`), **not** a rolled stat.
-- Because HP is a raw number (single digits for a chicken, hundreds–thousands for a boss), it
-  **dominates the average** for tanky monsters. That's intentional: a maxed chicken can never
-  approach a boss's Power Level. **Power Level can exceed 99** for big bosses.
-- Stats + prayer are basically **flavour** — they nudge Power Level a little; HP decides the tier.
+- Two terms: the **average of the 7 rolled stats** (6 combat + **Prayer**, all on the 1–99 scale),
+  **plus** the monster's **HP at 1/6 weight** (added separately, not folded into the average).
+- HP is the capture's `hitpoints()` — the **observed damage dealt** when known, else the factual
+  looked-up `MonsterRoster.getHitpoints`. It is **not** a rolled stat.
+- Splitting the terms keeps the stat average at face value while HP — the factual,
+  difficulty-tracking number — **separates the tiers**: HP/6 adds ~13 at 80 HP, ~40 at 250 HP,
+  ~165 at 1000 HP. **Power Level can exceed 99** for big bosses.
+- Stats + prayer are basically **flavour** — they set the ~1–99 base; HP decides the tier.
 
 ---
 
@@ -155,7 +156,7 @@ all six stats, times the rarity/shiny chances — and shows the catch chance sep
 | **Power pill `P:xx`** (header) | `powerLevel()` | colour-banded by value (`powerColor`): grey→green→blue→purple→orange→red |
 | **Rarity colour / frame / dots** | `rarity` | frame + the coloured dots |
 | **Shiny wash + ✦ sparkles** | `shiny` | golden overlay; only if the shown capture is shiny |
-| **HP pill** ❤ | `getHitpoints()` | factual; real in-game skill icon |
+| **HP pill** ❤ | capture's `hitpoints()` | observed damage dealt if known, else factual `getHitpoints()`; real in-game skill icon |
 | **Prayer pill** | `getPrayer()` | factual (default 1) |
 | **Agility pill** | rolled `AGI` stat | it's stat index 5, relocated out of the bar block |
 | **Stat bars (ATK/STR/DEF/MAG/RNG)** | the rolled stats | icon = real skill sprite; primary stat's value is amber; 99 = full bar |
@@ -180,9 +181,10 @@ For an album **catalog** card (one per monster) the shown rarity/shiny/stats com
 | How hard primaries spike vs secondaries | the `secondCeil` / `tertiCeil` / gaussian sd | `RarityRoller.generateQuality` |
 | Which stats a monster favours | its `CombatClass` | `MonsterRoster.COMBAT_CLASSES` |
 | A monster's stat floors | its row | `MonsterRoster.STAT_BASES` |
-| **Power Level formula / HP weight** | the `/7` and HP term | `CapturedCreature.powerLevel()` |
+| **Power Level formula / HP weight** | the stat `/7` and the `HP/6` term | `CapturedCreature.powerLevel()` |
 | A monster's HP / Prayer | its entry | `MonsterRoster.HITPOINTS` / `PRAYER` |
 
-**The one knob most worth discussing:** `powerLevel()` currently weights HP as *one of seven equal
-terms* with the six stats. If bosses feel too far ahead (or chickens too high), we change only that
-line — e.g. weight HP more/less, use `log(HP)`, or divide differently — without touching anything else.
+**The one knob most worth discussing:** `powerLevel()` weights HP as a separate `HP/6` term on top of
+the 7-stat average. If bosses feel too far ahead (or low tiers too compressed), we change only that
+line — e.g. shift the `/6` divisor, use `log(HP)`, or cap it — without touching anything else.
+`OddsCalculator.avgPowerLevel` must mirror any change so the "vs average" comparison stays honest.

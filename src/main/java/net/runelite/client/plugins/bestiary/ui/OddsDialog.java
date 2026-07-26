@@ -135,15 +135,18 @@ public class OddsDialog extends JDialog {
 
         root.add(Box.createVerticalStrut(10));
 
-        // Power Level — Prayer is the 7th stat
+        // Power Level — 7-stat average + HP at 1/6 weight
         int sevenStats = r.statSum + r.prayer;
+        int statAvg = Math.round(sevenStats / 7f);
         Color nearWhite = new Color(235, 235, 235);
         root.add(sectionHeader("Power Level"));
         root.add(styleValue(kvRow("7 stats total", body, ColorScheme.LIGHT_GRAY_COLOR,
                 String.valueOf(sevenStats)), nearWhite));
-        root.add(styleValue(kvRow("Hitpoints (factual)", body, new Color(120, 200, 120),
-                String.valueOf(r.hp)), nearWhite));
-        root.add(styleValue(kvRow("= Power Level  (" + sevenStats + " + " + r.hp + ") ÷ 8",
+        root.add(styleValue(kvRow("Stat average  (" + sevenStats + " ÷ 7)", body, ColorScheme.LIGHT_GRAY_COLOR,
+                String.valueOf(statAvg)), nearWhite));
+        root.add(styleValue(kvRow("Hitpoints (factual)  ÷ 6", body, new Color(120, 200, 120),
+                "+" + Math.round(r.hp / 6f)), nearWhite));
+        root.add(styleValue(kvRow("= Power Level  (" + sevenStats + " ÷ 7) + (" + r.hp + " ÷ 6)",
                 body, Color.WHITE, String.valueOf(r.powerLevel)), new Color(120, 200, 120)));
 
         root.add(Box.createVerticalStrut(4));
@@ -157,10 +160,10 @@ public class OddsDialog extends JDialog {
         Color deltaCol = delta > 0 ? new Color(120, 200, 120) : delta < 0 ? new Color(224, 112, 112) : new Color(176, 176, 176);
         root.add(styleValue(kvRow("This card vs average", body, Color.WHITE, deltaStr), deltaCol));
 
-        root.add(paragraph("Power Level averages the 7 stats with the monster's "
-                + "HP, ÷8. HP isn't on the 1–99 scale, so it counts at 1/8 weight — <font color='#a0a0a0'>"
-                + "negligible for a low-HP creature (stats decide), but dominant for a boss "
-                + "(1200&nbsp;HP adds ~150). HP takes over above ~450&nbsp;HP.</font>"));
+        root.add(paragraph("Power Level = the 7-stat average + the monster's HP at 1/6 weight. "
+                + "HP isn't on the 1–99 scale, so it's added separately — <font color='#a0a0a0'>"
+                + "negligible for a low-HP creature (stats decide: +13 at 80&nbsp;HP), but dominant for a "
+                + "boss (1200&nbsp;HP adds ~200). HP takes over above ~420&nbsp;HP.</font>"));
 
         return root;
     }

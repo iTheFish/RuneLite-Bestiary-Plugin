@@ -99,7 +99,7 @@ public final class OddsCalculator {
         int avgStatSum = 0;
         for (int i = 0; i < 6; i++) avgStatSum += RarityRoller.statCentre(bases[i], r.rarity);
         r.avgPowerLevel = Math.round(
-                (avgStatSum + RarityRoller.prayerCentre(prayerBase, r.rarity) + r.hp) / 8f);
+                (avgStatSum + RarityRoller.prayerCentre(prayerBase, r.rarity)) / 7f + r.hp / 6f);
 
         // Stat wiggle is flavour, not part of "how rare is this card" — only rarity (and shiny) count.
         r.perCapture = r.rarityChance * (r.shiny ? r.shinyChance : 1.0);
