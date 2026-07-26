@@ -402,9 +402,9 @@ public class InfoTab extends JPanel {
         // Full-width Open Album (top), Favourites + Catch Rates (middle), full-width Session Recap (bottom).
         JPanel albumRow = new JPanel(new GridLayout(1, 1));
         albumRow.setOpaque(false);
-        albumRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+        albumRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
         albumRow.setAlignmentX(LEFT_ALIGNMENT);
-        albumRow.add(blockBtn("Open Album", ORANGE, openAlbum));
+        albumRow.add(blockBtn("Open Album", ORANGE, openAlbum, true));
 
         JPanel midRow = new JPanel(new GridLayout(1, 2, 4, 0));
         midRow.setOpaque(false);
@@ -436,9 +436,9 @@ public class InfoTab extends JPanel {
 
         JPanel recapRow = new JPanel(new GridLayout(1, 1));
         recapRow.setOpaque(false);
-        recapRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+        recapRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
         recapRow.setAlignmentX(LEFT_ALIGNMENT);
-        recapRow.add(blockBtn("Session Recap", new Color(120, 200, 120), openRecap));
+        recapRow.add(blockBtn("Session Recap", new Color(120, 200, 120), openRecap, true));
 
         container.add(albumRow);
         container.add(Box.createVerticalStrut(4));
@@ -450,13 +450,18 @@ public class InfoTab extends JPanel {
 
     /** A chunky, header-style shortcut button (orange left accent, like the stat boxes). */
     private static JButton blockBtn(String text, Color fg, Runnable action) {
+        return blockBtn(text, fg, action, false);
+    }
+
+    /** Header-style shortcut button; {@code bothAccent} adds an orange bar on both sides like the stat boxes. */
+    private static JButton blockBtn(String text, Color fg, Runnable action, boolean bothAccent) {
         JButton btn = new JButton(text);
         btn.setFont(FontManager.getRunescapeSmallFont());
         btn.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         btn.setForeground(fg);
         btn.setFocusPainted(false);
         btn.setBorder(BorderFactory.createCompoundBorder(
-                new MatteBorder(0, 3, 0, 0, ORANGE),
+                new MatteBorder(0, 3, 0, bothAccent ? 3 : 0, ORANGE),
                 new EmptyBorder(4, 6, 4, 6)));
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btn.addActionListener(e -> action.run());
