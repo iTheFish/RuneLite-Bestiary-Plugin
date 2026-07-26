@@ -26,6 +26,8 @@ public class BestiaryPanel extends PluginPanel {
     private final BestiaryDataService dataService;
     private final ProgressionService progressionService;
     private final SessionTracker sessionTracker;
+    private final boolean developerMode;
+    private final com.bestiary.service.DevOptions devOptions;
 
     private final JLabel statsLabel;
     private CollectionTab collectionTab;
@@ -37,11 +39,15 @@ public class BestiaryPanel extends PluginPanel {
     public BestiaryPanel(BestiaryDataService dataService, ProgressionService progressionService,
                          WikiImageService imageService, BestiaryConfig config,
                          SessionTracker sessionTracker,
-                         net.runelite.client.game.SkillIconManager skillIconManager) {
+                         net.runelite.client.game.SkillIconManager skillIconManager,
+                         @javax.inject.Named("developerMode") boolean developerMode,
+                         com.bestiary.service.DevOptions devOptions) {
         super(false); // false = don't auto-wrap in scroll pane
         this.dataService        = dataService;
         this.progressionService = progressionService;
         this.sessionTracker     = sessionTracker;
+        this.developerMode      = developerMode;
+        this.devOptions         = devOptions;
         CreatureDetailDialog.setConfig(config);
         CreatureDetailDialog.setSaveCallback(dataService::saveNow);
         CardExportDialog.setShared(imageService, dataService::getCollection);
@@ -144,35 +150,91 @@ public class BestiaryPanel extends PluginPanel {
         JPanel panel = new JPanel();
         panel.setOpaque(false);
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(new EmptyBorder(4, 0, 0, 0));
 
-        JButton seedBtn = new JButton("[DEV] Seed Test Data");
-        seedBtn.setFont(FontManager.getRunescapeSmallFont());
-        seedBtn.setBackground(new Color(20, 50, 80));
-        seedBtn.setForeground(new Color(100, 180, 255));
-        seedBtn.setBorderPainted(false);
-        seedBtn.setFocusPainted(false);
-        seedBtn.setToolTipText("Wipe collection and insert 1 capture per rarity for every roster monster");
-        seedBtn.setAlignmentX(CENTER_ALIGNMENT);
-        seedBtn.addActionListener(e -> {
-            dataService.seedTestCollection();
-            refresh();
-        });
-        panel.add(seedBtn);
-        panel.add(Box.createVerticalStrut(3));
+        // Dev-only helpers — hidden for live users (only present when RuneLite runs in developer mode).
+        if (developerMode) {
+            JButton seedBtn = new JButton("[DEV] Seed Test Data");
+            seedBtn.setFont(FontManager.getRunescapeSmallFont());
+            seedBtn.setBackground(new Color(20, 50, 80));
+            seedBtn.setForeground(new Color(100, 180, 255));
+            seedBtn.setBorderPainted(false);
+            seedBtn.setFocusPainted(false);
+            seedBtn.setToolTipText("Wipe collection and insert 1 capture per rarity for every roster monster");
+            seedBtn.addActionListener(e -> {
+                dataService.seedTestCollection();
+                refresh();
+            });
+            panel.add(fullWidth(seedBtn));
+            panel.add(Box.createVerticalStrut(4));
 
-        JButton creditBtn = new JButton("[DEV] +100k Credits");
-        creditBtn.setFont(FontManager.getRunescapeSmallFont());
-        creditBtn.setBackground(new Color(20, 60, 40));
-        creditBtn.setForeground(new Color(120, 220, 150));
-        creditBtn.setBorderPainted(false);
-        creditBtn.setFocusPainted(false);
-        creditBtn.setAlignmentX(CENTER_ALIGNMENT);
-        creditBtn.addActionListener(e -> { dataService.awardCredits(100_000); refresh(); });
-        panel.add(creditBtn);
-        panel.add(Box.createVerticalStrut(3));
+            JButton creditBtn = new JButton("[DEV] +100k Credits");
+            creditBtn.setFont(FontManager.getRunescapeSmallFont());
+            creditBtn.setBackground(new Color(20, 60, 40));
+            creditBtn.setForeground(new Color(120, 220, 150));
+            creditBtn.setBorderPainted(false);
+            creditBtn.setFocusPainted(false);
+            creditBtn.addActionListener(e -> { dataService.awardCredits(100_000); refresh(); });
+            panel.add(fullWidth(creditBtn));
+            panel.add(Box.createVerticalStrut(4));
+
+            // Dev capture overrides (never shown to live users; state lives in DevOptions).
+            panel.add(devCombo("Catch",
+                    com.bestiary.model.DevCaptureMode.values(), devOptions.captureMode,
+                    v -> devOptions.captureMode = v));
+            panel.add(Box.createVerticalStrut(3));
+            panel.add(devCombo("Rarity",
+                    com.bestiary.model.DevRarityOverride.values(), devOptions.forceRarity,
+                    v -> devOptions.forceRarity = v));
+            panel.add(Box.createVerticalStrut(3));
+
+            // Toggle button (not a checkbox — the dark-theme checkbox tick is unreadable).
+            JToggleButton shinyBtn = new JToggleButton();
+            shinyBtn.setSelected(devOptions.forceShiny);
+            shinyBtn.setFont(FontManager.getRunescapeSmallFont());
+            shinyBtn.setFocusPainted(false);
+            shinyBtn.setBorderPainted(false);
+            shinyBtn.setOpaque(true);
+            shinyBtn.setAlignmentX(CENTER_ALIGNMENT);
+            shinyBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
+            Runnable styleShiny = () -> {
+                boolean on = shinyBtn.isSelected();
+                shinyBtn.setText("Always Roll Shiny: " + (on ? "ON ✦" : "OFF"));
+                shinyBtn.setBackground(on ? new Color(120, 90, 20) : ColorScheme.DARKER_GRAY_COLOR);
+                shinyBtn.setForeground(on ? new Color(255, 215, 0) : new Color(150, 150, 150));
+            };
+            styleShiny.run();
+            shinyBtn.addActionListener(e -> { devOptions.forceShiny = shinyBtn.isSelected(); styleShiny.run(); });
+            panel.add(shinyBtn);
+            panel.add(Box.createVerticalStrut(6));
+        }
 
         panel.add(buildWipeBtn());
         return panel;
+    }
+
+    /** A compact "label + dropdown" row for a dev override; calls {@code onChange} on selection. */
+    private static <T> JComponent devCombo(String label, T[] values, T current, java.util.function.Consumer<T> onChange) {
+        JComboBox<T> combo = new JComboBox<>(values);
+        combo.setSelectedItem(current);
+        combo.setFont(FontManager.getRunescapeSmallFont());
+        combo.addActionListener(e -> {
+            @SuppressWarnings("unchecked") T v = (T) combo.getSelectedItem();
+            if (v != null) onChange.accept(v);
+        });
+
+        JLabel l = new JLabel(label);
+        l.setFont(FontManager.getRunescapeSmallFont());
+        l.setForeground(new Color(100, 180, 255));
+        l.setBorder(new EmptyBorder(0, 0, 0, 4));
+
+        JPanel row = new JPanel(new BorderLayout(4, 0));
+        row.setOpaque(false);
+        row.setAlignmentX(CENTER_ALIGNMENT);
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
+        row.add(l,     BorderLayout.WEST);
+        row.add(combo, BorderLayout.CENTER);
+        return row;
     }
 
     private JButton buildWipeBtn() {
@@ -184,6 +246,13 @@ public class BestiaryPanel extends PluginPanel {
         btn.setFocusPainted(false);
         btn.setToolTipText("Permanently delete all captures and progression");
         btn.addActionListener(e -> confirmWipe());
+        return fullWidth(btn);
+    }
+
+    /** Makes a button span the full panel width (consistent bottom-row buttons). */
+    private static JButton fullWidth(JButton btn) {
+        btn.setAlignmentX(CENTER_ALIGNMENT);
+        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
         return btn;
     }
 

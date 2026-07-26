@@ -47,6 +47,15 @@ tasks.register('run', JavaExec) {
 	args "--developer-mode", "--debug"
 }
 
+// Same as `run` but WITHOUT --developer-mode, so the plugin loads exactly as a live user
+// sees it (dev buttons + Developer Tools config hidden). Use this to test the non-dev layout.
+tasks.register('runLive', JavaExec) {
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = pluginMainClass
+
+	jvmArgs "-ea"
+}
+
 tasks.register('shadowJar', Jar) {
 	dependsOn configurations.testRuntimeClasspath
 	manifest {

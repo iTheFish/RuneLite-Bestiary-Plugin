@@ -1,25 +1,29 @@
 package com.bestiary.service;
 
+import com.bestiary.BestiaryConfig;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -89,7 +93,17 @@ public class WikiImageService {
     /** Disk cache directory: ~/.runelite/bestiary/images/ — shared across all profiles. */
     private final File imageCacheDir;
 
-    public WikiImageService() {
+    private final OkHttpClient httpClient;
+    private final BestiaryConfig config;
+
+    @Inject
+    public WikiImageService(OkHttpClient httpClient, BestiaryConfig config) {
+        // Reuse RuneLite's shared OkHttp client, with our shorter timeouts.
+        this.httpClient = httpClient.newBuilder()
+                .connectTimeout(TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                .readTimeout(TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                .build();
+        this.config = config;
         imageCacheDir = new File(System.getProperty("user.home"),
                 ".runelite" + File.separator + "bestiary" + File.separator + "images");
     }
@@ -121,6 +135,12 @@ public class WikiImageService {
                 .filter(n -> !cache.containsKey(n) && !failed.contains(n) && pending.add(n))
                 .collect(Collectors.toList());
         if (toFetch.isEmpty()) return;
+
+        // Respect the user's wiki-fetch toggle — no network when disabled.
+        if (!config.wikiImages()) {
+            toFetch.forEach(pending::remove);
+            return;
+        }
 
         CompletableFuture.runAsync(() -> {
             Map<String, String> urlsByName = new LinkedHashMap<>();
@@ -185,6 +205,9 @@ public class WikiImageService {
             onLoad.run();
             return;
         }
+
+        // Respect the user's wiki-fetch toggle — no network when disabled.
+        if (!config.wikiImages()) return;
 
         if (!pending.add(npcName)) {
             pendingCallbacks.computeIfAbsent(npcName, k -> Collections.synchronizedList(new ArrayList<>())).add(onLoad);
@@ -270,14 +293,12 @@ public class WikiImageService {
         String urlStr = API_BASE + "?action=query&titles=" + titlesParam
                 + "&prop=pageimages&piprop=thumbnail&pithumbsize=" + THUMB_W + "&format=json";
 
-        HttpURLConnection conn = openConnection(urlStr);
-        if (conn.getResponseCode() != 200) { conn.disconnect(); return Collections.emptyMap(); }
-
         String json;
-        try (InputStream is = conn.getInputStream()) {
-            json = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        Request request = new Request.Builder().url(urlStr).header("User-Agent", USER_AGENT).build();
+        try (Response resp = httpClient.newCall(request).execute()) {
+            if (!resp.isSuccessful() || resp.body() == null) return Collections.emptyMap();
+            json = resp.body().string();
         }
-        conn.disconnect();
 
         JsonObject root  = new JsonParser().parse(json).getAsJsonObject();
         JsonObject query = root.has("query") ? root.getAsJsonObject("query") : null;
@@ -320,23 +341,13 @@ public class WikiImageService {
 
     @Nullable
     private BufferedImage downloadImage(String imageUrl) throws Exception {
-        HttpURLConnection conn = openConnection(imageUrl);
-        try {
-            if (conn.getResponseCode() != 200) return null;
-            try (InputStream is = conn.getInputStream()) {
+        Request request = new Request.Builder().url(imageUrl).header("User-Agent", USER_AGENT).build();
+        try (Response resp = httpClient.newCall(request).execute()) {
+            if (!resp.isSuccessful() || resp.body() == null) return null;
+            try (InputStream is = resp.body().byteStream()) {
                 return ImageIO.read(is);
             }
-        } finally {
-            conn.disconnect();
         }
-    }
-
-    private HttpURLConnection openConnection(String urlStr) throws Exception {
-        HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
-        conn.setRequestProperty("User-Agent", USER_AGENT);
-        conn.setConnectTimeout(TIMEOUT_MS);
-        conn.setReadTimeout(TIMEOUT_MS);
-        return conn;
     }
 
     private void firePendingCallbacks(String npcName) {

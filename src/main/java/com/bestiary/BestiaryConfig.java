@@ -3,24 +3,13 @@ package com.bestiary;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
-import net.runelite.client.config.ConfigSection;
 import net.runelite.client.config.Range;
 import com.bestiary.model.ChatNotifyMode;
 import com.bestiary.model.DetailSectionDefault;
-import com.bestiary.model.DevCaptureMode;
-import com.bestiary.model.DevRarityOverride;
 import com.bestiary.model.OverlayPos;
 
 @ConfigGroup("bestiary")
 public interface BestiaryConfig extends Config {
-
-    @ConfigSection(
-            name = "Developer Tools",
-            description = "Testing options — leave off for normal play",
-            position = 20,
-            closedByDefault = true
-    )
-    String devSection = "devSection";
 
     @ConfigItem(
             keyName = "captureEnabled",
@@ -154,38 +143,18 @@ public interface BestiaryConfig extends Config {
         return true;
     }
 
-    // --- Developer section ---
-
     @ConfigItem(
-            keyName = "devForceRarity",
-            name = "Force Rarity",
-            description = "When set, every capture will be assigned this rarity instead of a random roll.",
-            position = 21,
-            section = "devSection"
+            keyName = "wikiImages",
+            name = "Fetch NPC images from the Wiki",
+            description = "<html>Downloads monster artwork from the OSRS Wiki<br>"
+                        + "(oldschool.runescape.wiki) to show on cards and in the album.<br>"
+                        + "Only the monster's name is requested — no account or personal<br>"
+                        + "data is sent — and images are cached to disk.<br>"
+                        + "Turn this off to make no network requests at all.</html>",
+            position = 16
     )
-    default DevRarityOverride devForceRarity() {
-        return DevRarityOverride.NONE;
+    default boolean wikiImages() {
+        return true;
     }
 
-    @ConfigItem(
-            keyName = "devCaptureMode",
-            name = "Capture Rate Override",
-            description = "Override the catch rate for testing. Normal = config-based rate.",
-            position = 22,
-            section = "devSection"
-    )
-    default DevCaptureMode devCaptureMode() {
-        return DevCaptureMode.NORMAL;
-    }
-
-    @ConfigItem(
-            keyName = "devForceShiny",
-            name = "Always Roll Shiny",
-            description = "When enabled, every successful capture is shiny. For testing the shiny visuals.",
-            position = 23,
-            section = "devSection"
-    )
-    default boolean devForceShiny() {
-        return false;
-    }
 }
