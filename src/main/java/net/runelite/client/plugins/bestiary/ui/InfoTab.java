@@ -402,7 +402,7 @@ public class InfoTab extends JPanel {
         // Full-width Open Album (top), Favourites + Catch Rates (middle), full-width Session Recap (bottom).
         JPanel albumRow = new JPanel(new GridLayout(1, 1));
         albumRow.setOpaque(false);
-        albumRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
+        albumRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
         albumRow.setAlignmentX(LEFT_ALIGNMENT);
         albumRow.add(blockBtn("Open Album", ORANGE, openAlbum));
 
@@ -436,7 +436,7 @@ public class InfoTab extends JPanel {
 
         JPanel recapRow = new JPanel(new GridLayout(1, 1));
         recapRow.setOpaque(false);
-        recapRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
+        recapRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
         recapRow.setAlignmentX(LEFT_ALIGNMENT);
         recapRow.add(blockBtn("Session Recap", new Color(120, 200, 120), openRecap));
 
