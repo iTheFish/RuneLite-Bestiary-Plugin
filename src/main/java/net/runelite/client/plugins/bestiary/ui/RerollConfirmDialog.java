@@ -1,6 +1,9 @@
 package net.runelite.client.plugins.bestiary.ui;
 
 import net.runelite.client.plugins.bestiary.model.CapturedCreature;
+import net.runelite.client.plugins.bestiary.model.CreatureRarity;
+import net.runelite.client.plugins.bestiary.service.BestiaryDataService;
+import net.runelite.client.plugins.bestiary.service.CaptureService;
 import net.runelite.client.plugins.bestiary.util.OddsCalculator;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
@@ -18,13 +21,13 @@ public class RerollConfirmDialog extends JDialog {
 
     private static RerollConfirmDialog current;
 
-    public static void open(Window owner, CapturedCreature card, long cost, Runnable onReroll) {
+    public static void open(Window owner, CapturedCreature card, long cost, int currentLevel, Runnable onReroll) {
         if (current != null && current.isShowing()) current.dispose();
-        current = new RerollConfirmDialog(owner, card, cost, onReroll);
+        current = new RerollConfirmDialog(owner, card, cost, currentLevel, onReroll);
         current.setVisible(true);
     }
 
-    private RerollConfirmDialog(Window owner, CapturedCreature card, long cost, Runnable onReroll) {
+    private RerollConfirmDialog(Window owner, CapturedCreature card, long cost, int currentLevel, Runnable onReroll) {
         super(owner, "Reroll card", ModalityType.MODELESS);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setResizable(false);
@@ -49,6 +52,26 @@ public class RerollConfirmDialog extends JDialog {
         JPanel breakdown = OddsBreakdownPanel.build(OddsCalculator.compute(card));
         breakdown.setAlignmentX(Component.LEFT_ALIGNMENT);
         root.add(breakdown);
+
+        // Live reroll chances at the player's current level
+        root.add(Box.createVerticalStrut(10));
+        double shinyPct = CaptureService.shinyChance(currentLevel) * 100.0;
+        double rankPct  = card.rarity == CreatureRarity.MYTHIC ? 0.0 : BestiaryDataService.RARITY_UP_CHANCE * 100.0;
+        JLabel chances = new JLabel(String.format("<html>This reroll: <font color='#78dc78'>shiny %.1f%%</font>"
+                + " &nbsp;·&nbsp; <font color='#ffd24d'>rank up %s</font> (at level %d)</html>",
+                shinyPct, card.rarity == CreatureRarity.MYTHIC ? "— (already Mythic)" : String.format("%.0f%%", rankPct),
+                currentLevel));
+        chances.setFont(FontManager.getRunescapeSmallFont());
+        chances.setForeground(Color.WHITE);
+        chances.setAlignmentX(Component.LEFT_ALIGNMENT);
+        root.add(chances);
+        JLabel warn = new JLabel("<html><div style='width:300px'><i>Rerolling marks this card as "
+                + "'Rerolled by " + card.playerName + "' — it's no longer a raw pull.</i></div></html>");
+        warn.setFont(FontManager.getRunescapeSmallFont());
+        warn.setForeground(new Color(224, 170, 90));
+        warn.setAlignmentX(Component.LEFT_ALIGNMENT);
+        warn.setBorder(new EmptyBorder(3, 0, 0, 0));
+        root.add(warn);
 
         root.add(Box.createVerticalStrut(12));
         JButton reroll = new JButton("Reroll — " + cost + " credits");

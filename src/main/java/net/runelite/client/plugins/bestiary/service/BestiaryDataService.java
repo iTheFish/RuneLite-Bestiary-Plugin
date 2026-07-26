@@ -216,11 +216,14 @@ public class BestiaryDataService {
                 net.runelite.client.plugins.bestiary.util.RarityRoller.generateQuality(cls, rarity, bases, rerollRng, shiny);
         int prayer = net.runelite.client.plugins.bestiary.util.RarityRoller.rollPrayer(
                 net.runelite.client.plugins.bestiary.model.MonsterRoster.getPrayer(c.npcName), rarity, rerollRng, shiny);
+        String reroller = c.playerName != null && !c.playerName.isEmpty() ? c.playerName : "Player";
         CapturedCreature nc = CapturedCreature.builder()
                 .id(c.id).npcId(c.npcId).npcName(c.npcName).npcCombatLevel(c.npcCombatLevel)
                 .rarity(rarity).quality(q).captureTime(c.captureTime).regionName(c.regionName)
-                .captureLevel(c.captureLevel).killsBeforeCapture(c.killsBeforeCapture)
+                .captureLevel(currentLevel)   // reroll happened now → odds reflect the current level
+                .killsBeforeCapture(c.killsBeforeCapture)
                 .playerName(c.playerName).shiny(shiny).prayer(prayer).observedHp(c.observedHp)
+                .rerolledBy(reroller)
                 .build();
         nc.favourite  = c.favourite;
         nc.nickname   = c.nickname;

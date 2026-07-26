@@ -73,7 +73,7 @@ public class BestiaryPanel extends PluginPanel {
                         "You need " + cost + " credits to reroll (you have " + dataService.getCredits() + ").");
                 return;
             }
-            RerollConfirmDialog.open(win, cap, cost, () -> {
+            RerollConfirmDialog.open(win, cap, cost, progressionService.getLevel(), () -> {
                 net.runelite.client.plugins.bestiary.model.CapturedCreature nc =
                         dataService.rerollCard(cap, progressionService.getLevel());
                 refresh();
