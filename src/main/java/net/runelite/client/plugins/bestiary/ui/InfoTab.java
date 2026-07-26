@@ -67,6 +67,8 @@ public class InfoTab extends JPanel {
         header.add(buildStatsStrip());
         header.add(Box.createVerticalStrut(6));
         header.add(buildShortcutRow(openAlbum, openFavourites, openRecap, openCatchRates));
+        header.add(Box.createVerticalStrut(8));
+        header.add(headerDivider());
         header.add(Box.createVerticalStrut(6));
         header.add(buildSubTabBar());
         add(header, BorderLayout.NORTH);
@@ -140,6 +142,16 @@ public class InfoTab extends JPanel {
         }
     }
 
+    /** Orange rule separating the header block from the category tabs. */
+    private static JComponent headerDivider() {
+        JSeparator s = new JSeparator();
+        s.setForeground(new Color(255, 165, 0, 90));
+        s.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        s.setAlignmentX(LEFT_ALIGNMENT);
+        s.setMaximumSize(new Dimension(Integer.MAX_VALUE, 2));
+        return s;
+    }
+
     private static void styleTab(JToggleButton b, boolean active) {
         b.setOpaque(true);
         b.setBackground(active ? ORANGE : ColorScheme.DARKER_GRAY_COLOR);
@@ -178,6 +190,12 @@ public class InfoTab extends JPanel {
 
     private void fillCapturing(JPanel c) {
         c.add(buildRarityTable());
+        JLabel catchHint = new JLabel("Click 'Catch Rates' above to see your current chances.");
+        catchHint.setFont(FontManager.getRunescapeSmallFont());
+        catchHint.setForeground(new Color(140, 140, 140));
+        catchHint.setAlignmentX(LEFT_ALIGNMENT);
+        catchHint.setBorder(new EmptyBorder(3, 11, 0, 0));
+        c.add(catchHint);
         c.add(Box.createVerticalStrut(8));
         c.add(sectionTitle("How capturing works"));
         c.add(tile("Catch rate",
@@ -208,20 +226,18 @@ public class InfoTab extends JPanel {
         c.add(sectionTitle("Reading a card"));
         c.add(tile("Power Level",
                 "Power Level is a card's headline number. It blends the monster's real " +
-                "Hitpoints (a factual OSRS attribute, shown on the card) with the seven rolled " +
-                "stats — the six combat stats plus Prayer.\n\n" +
+                "Hitpoints (a factual OSRS attribute, shown on the card) with the seven rolled stats.\n\n" +
                 "Power Level = average of the 7 stats + HP ÷ 6.\n\n" +
                 "The stat average stays on the 1–99 scale, while HP is added separately so it " +
                 "separates the difficulty tiers: HP adds about +13 at 80 HP, +40 at 250 HP, and " +
-                "+165 at 1000 HP. Big bosses push Power Level well past 99; a chicken stays low no " +
-                "matter how its stats roll. The rolled stats are mostly flavour — HP drives power."));
+                "+165 at 1000 HP. The rolled stats are mostly flavour — HP drives power."));
         c.add(tile("Stats & class",
-                "Every capture rolls six combat stats (Attack, Strength, Defence, Magic, Ranged, " +
-                "Agility) plus Prayer. The monster's combat class decides which stats tend to roll " +
-                "high — a Warrior favours Attack/Strength, a Marksman favours Ranged, an Occultist " +
-                "favours Magic, and so on.\n\n" +
+                "Every capture rolls seven stats — Attack, Strength, Defence, Magic, Ranged, Agility " +
+                "and Prayer (Prayer rolls on a smaller scale, but it's a stat like any other). The " +
+                "monster's combat class decides which tend to roll high — a Warrior favours " +
+                "Attack/Strength, a Marksman favours Ranged, an Occultist favours Magic, and so on.\n\n" +
                 "Higher rarities lift the whole roll toward 99, and bands overlap — so a lucky Rare " +
-                "can beat an unlucky Epic. Gold-outlined bars in the detail dialog mark personal bests."));
+                "can beat an unlucky Epic."));
         c.add(tile("Album",
                 "A full dex grid of every capturable species. Open it via 'Open Album' (in all " +
                 "Collection views and on this tab).\n\n" +
@@ -233,8 +249,7 @@ public class InfoTab extends JPanel {
                 "Right-click any card or row → 'Add to Favourites' to star it (up to 20). " +
                 "Remove a star the same way.\n\n" +
                 "The ★ Favourites button in the Collection header shows all starred cards. In the " +
-                "Album, a ★ Favourites shortcut opens a detail view of every starred capture, with " +
-                "a golden grid export option."));
+                "Album, a ★ Favourites shortcut opens a detail view of every starred capture."));
         c.add(tile("Export",
                 "Right-click any card in Collection, Favourites, or Album → 'Export Card'.\n\n" +
                 "Opens a scaled preview. Copy to clipboard or save as PNG. Each footer shows the " +
@@ -252,7 +267,7 @@ public class InfoTab extends JPanel {
                 "worth about 480 (960 if shiny).\n\n" +
                 "Spend them on the Card Reroller below — more shop features are on the way."));
         c.add(tile("Card Reroller",
-                "Right-click a card → 'Reroll (shop)…' to re-roll its stats, Prayer and shiny at the " +
+                "Right-click a card → 'Reroll (shop)…' to re-roll its stats and shiny at the " +
                 "same monster and rarity — a chance to improve a roll or hit a shiny.\n\n" +
                 "The cost scales with the card's difficulty × rarity (shiny doesn't change it): from " +
                 "25 credits for a Beginner Common up to 4,000 for a Boss Mythic.\n\n" +
@@ -386,19 +401,20 @@ public class InfoTab extends JPanel {
         container.setOpaque(false);
         container.setAlignmentX(LEFT_ALIGNMENT);
 
-        JPanel topRow = new JPanel(new GridLayout(1, 2, 4, 0));
-        topRow.setOpaque(false);
-        topRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
-        topRow.setAlignmentX(LEFT_ALIGNMENT);
-        topRow.add(shortcutBtn("Open Album",   ORANGE,                  openAlbum));
-        topRow.add(shortcutBtn("★ Favourites", new Color(220, 180, 60), openFavourites));
+        // Two big blocks (2 rows tall) mirroring the stat-box header, then a third row.
+        JPanel bigRow = new JPanel(new GridLayout(1, 2, 4, 0));
+        bigRow.setOpaque(false);
+        bigRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+        bigRow.setAlignmentX(LEFT_ALIGNMENT);
+        bigRow.add(blockBtn("Open Album",    ORANGE,                  openAlbum));
+        bigRow.add(blockBtn("Session Recap", new Color(120, 200, 120), openRecap));
 
-        JPanel bottomRow = new JPanel(new GridLayout(1, 2, 4, 0));
-        bottomRow.setOpaque(false);
-        bottomRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
-        bottomRow.setAlignmentX(LEFT_ALIGNMENT);
-        bottomRow.add(shortcutBtn("Session Recap", new Color(120, 200, 120), openRecap));
-        JButton catchBtn = shortcutBtn(" Catch Rates", new Color(100, 180, 220), openCatchRates);
+        JPanel smallRow = new JPanel(new GridLayout(1, 2, 4, 0));
+        smallRow.setOpaque(false);
+        smallRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
+        smallRow.setAlignmentX(LEFT_ALIGNMENT);
+        smallRow.add(blockBtn("★ Favourites", new Color(220, 180, 60), openFavourites));
+        JButton catchBtn = blockBtn(" Catch Rates", new Color(100, 180, 220), openCatchRates);
         final int iD = 13;
         catchBtn.setIcon(new Icon() {
             @Override public int getIconWidth()  { return iD; }
@@ -419,22 +435,24 @@ public class InfoTab extends JPanel {
             }
         });
         catchBtn.setIconTextGap(3);
-        bottomRow.add(catchBtn);
+        smallRow.add(catchBtn);
 
-        container.add(topRow);
+        container.add(bigRow);
         container.add(Box.createVerticalStrut(4));
-        container.add(bottomRow);
+        container.add(smallRow);
         return container;
     }
 
-    private static JButton shortcutBtn(String text, Color fg, Runnable action) {
+    /** A chunky, header-style shortcut button (orange left accent, like the stat boxes). */
+    private static JButton blockBtn(String text, Color fg, Runnable action) {
         JButton btn = new JButton(text);
         btn.setFont(FontManager.getRunescapeSmallFont());
-        btn.setMargin(new Insets(0, 2, 0, 2));
         btn.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         btn.setForeground(fg);
         btn.setFocusPainted(false);
-        btn.setBorderPainted(false);
+        btn.setBorder(BorderFactory.createCompoundBorder(
+                new MatteBorder(0, 3, 0, 0, ORANGE),
+                new EmptyBorder(4, 6, 4, 6)));
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btn.addActionListener(e -> action.run());
         return btn;
