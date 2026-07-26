@@ -60,9 +60,7 @@ public class CardDataDialog extends JDialog {
         tabs.addTab("Overview", scroll(buildOverview(capture)));
         tabs.addTab("Odds", scroll(new OddsView(capture)));
         tabs.addTab("Rerolls", scroll(buildRerollHistory(capture)));
-        if (capture.rerollCount() > 0) {
-            tabs.addTab("Graph", new RerollGraph(capture));   // stat changes across rerolls
-        }
+        tabs.addTab("Graph", new RerollGraph(capture));   // percentile + (if rerolled) stat timeline
 
         setContentPane(tabs);
         pack();
