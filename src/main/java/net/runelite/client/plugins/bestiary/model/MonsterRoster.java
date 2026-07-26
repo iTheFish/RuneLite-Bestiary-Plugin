@@ -581,9 +581,9 @@ public class MonsterRoster {
     // -------------------------------------------------------------------------
     // Per-monster Hitpoints — a REAL, factual OSRS attribute (wiki-sourced).
     // Shown on cards as info, NOT a rolled stat. Drives the "Power Level" metric:
-    //   powerLevel = round((sum of 6 rolled stats + HP) / 7)
-    // Because HP is a raw number (hundreds-thousands for bosses), it dominates
-    // the average for tanky monsters, so Power Level can exceed 99 for bosses.
+    //   powerLevel = round((7 rolled stats incl. Prayer) / 7 + HP / 6)
+    // HP is added separately at 1/6 weight so it separates the difficulty tiers
+    // (raw hundreds-thousands for bosses), and Power Level can exceed 99 for bosses.
     // Unlisted monsters fall back to DEFAULT_HP.
     // -------------------------------------------------------------------------
 
@@ -965,6 +965,18 @@ public class MonsterRoster {
     /** Stable dex numbers from the static roster alone (no kill-count entries). */
     private static final Map<String, Integer> STATIC_DEX =
             assignDexNumbers(buildFullRoster(Collections.emptyMap()));
+
+    /** Case-insensitive lookup of the catalogued roster, for membership tests. */
+    private static final java.util.Set<String> ROSTER_LOWER =
+            ROSTER.stream().map(s -> s.toLowerCase(java.util.Locale.ROOT)).collect(Collectors.toSet());
+
+    /**
+     * True if this NPC name is part of the catalogued Bestiary roster (case-insensitive).
+     * Kills/captures of unknown NPCs are ignored so they can't pollute the dex or collection.
+     */
+    public static boolean isKnown(String npcName) {
+        return npcName != null && ROSTER_LOWER.contains(npcName.toLowerCase(java.util.Locale.ROOT));
+    }
 
     /** Returns the dex number for a monster in the static roster, or 0 if unlisted. */
     public static int getDexNumber(String npcName) {

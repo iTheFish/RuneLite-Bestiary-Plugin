@@ -1,6 +1,11 @@
 package net.runelite.client.plugins.bestiary.model;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -51,6 +56,38 @@ public class CapturedCreature {
     /** Damage the player dealt to this kill ("observed HP"). 0 = unknown → use placeholder. Persisted. */
     public final int observedHp;
 
+    /** Player who last rerolled this card (empty = never rerolled — a raw pull). Persisted. */
+    public final String rerolledBy;
+
+    /**
+     * Chronological log of this card's prior states — one entry per reroll, each capturing what
+     * the card looked like BEFORE that reroll and who performed it. Empty = a raw pull. Persisted.
+     * Drives "Rerolled N times", the unique-reroller count, and (future #77) a per-card Data panel.
+     */
+    public final List<RerollState> rerollHistory;
+
+    /** An immutable snapshot of the card's state just before one reroll replaced it. */
+    public static final class RerollState {
+        public final CreatureRarity rarity;
+        public final int powerLevel;
+        public final boolean shiny;
+        public final int prayer;
+        /** Player who performed the reroll that superseded this state. */
+        public final String rerolledBy;
+        /** UTC epoch second the reroll happened. */
+        public final long epoch;
+
+        public RerollState(CreatureRarity rarity, int powerLevel, boolean shiny, int prayer,
+                           String rerolledBy, long epoch) {
+            this.rarity     = rarity;
+            this.powerLevel = powerLevel;
+            this.shiny      = shiny;
+            this.prayer     = prayer;
+            this.rerolledBy = rerolledBy != null ? rerolledBy : "";
+            this.epoch      = epoch;
+        }
+    }
+
     /** Player has chosen this capture as the album catalog cover for its monster. Persisted; one per npcName. */
     public boolean albumCover;
 
@@ -75,6 +112,10 @@ public class CapturedCreature {
         this.shiny             = b.shiny;
         this.prayer            = b.prayer >= 0 ? b.prayer : MonsterRoster.getPrayer(b.npcName);
         this.observedHp        = b.observedHp;
+        this.rerolledBy        = b.rerolledBy != null ? b.rerolledBy : "";
+        this.rerollHistory     = b.rerollHistory != null
+                ? Collections.unmodifiableList(new ArrayList<>(b.rerollHistory))
+                : Collections.emptyList();
     }
 
     public static Builder builder() {
@@ -96,6 +137,8 @@ public class CapturedCreature {
         private boolean shiny = false;
         private int prayer = -1;   // -1 = unset → defaults to the monster's base prayer
         private int observedHp = 0;
+        private String rerolledBy = "";
+        private List<RerollState> rerollHistory = null;
 
         public Builder id(String v)              { this.id = v; return this; }
         public Builder npcId(int v)             { this.npcId = v; return this; }
@@ -111,6 +154,8 @@ public class CapturedCreature {
         public Builder shiny(boolean v)           { this.shiny = v; return this; }
         public Builder prayer(int v)              { this.prayer = v; return this; }
         public Builder observedHp(int v)          { this.observedHp = v; return this; }
+        public Builder rerolledBy(String v)       { this.rerolledBy = v; return this; }
+        public Builder rerollHistory(List<RerollState> v) { this.rerollHistory = v; return this; }
 
         public CapturedCreature build() {
             if (quality == null) {
@@ -125,6 +170,20 @@ public class CapturedCreature {
         return shiny;
     }
 
+    /** How many times this card has been rerolled (0 = a raw pull). */
+    public int rerollCount() {
+        return rerollHistory.size();
+    }
+
+    /** The distinct set of players who have ever rerolled this card, in first-seen order. */
+    public Set<String> uniqueRerollers() {
+        Set<String> names = new LinkedHashSet<>();
+        for (RerollState s : rerollHistory) {
+            if (s.rerolledBy != null && !s.rerolledBy.isEmpty()) names.add(s.rerolledBy);
+        }
+        return names;
+    }
+
     /**
      * The HP used for this card: the damage the player actually dealt to the kill
      * ("observed HP") when known, else the monster's placeholder wiki HP. For solo
@@ -136,13 +195,14 @@ public class CapturedCreature {
     }
 
     /**
-     * "Power Level" — the headline card metric. Averages the eight value terms: the 6 rolled
-     * combat stats + the rolled Prayer (all on the 1-99 scale) + the monster's HP, over 8.
-     * Because HP is a raw number that dwarfs the 1-99 terms for tanky monsters, Power Level can
-     * exceed 99 for bosses. Stats/prayer are flavour; HP is the real value driver.
+     * "Power Level" — the headline card metric. The average of the 7 rolled stats (6 combat +
+     * Prayer, all on the 1-99 scale) PLUS the monster's HP at 1/6 weight. Splitting the two terms
+     * keeps the stat average at face value (~its rolled quality) while letting HP — the factual,
+     * difficulty-tracking value driver — separate the tiers: HP/6 adds ~13 at 80 HP, ~40 at 250 HP,
+     * ~165 at 1000 HP. Power Level can exceed 99 for bosses; stats/prayer are flavour.
      */
     public int powerLevel() {
-        return Math.round((quality.statSum() + prayer + hitpoints()) / 8f);
+        return Math.round((quality.statSum() + prayer) / 7f + hitpoints() / 6f);
     }
 
     @Override

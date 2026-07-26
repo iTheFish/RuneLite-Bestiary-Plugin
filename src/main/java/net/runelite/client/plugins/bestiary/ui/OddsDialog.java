@@ -12,7 +12,7 @@ import java.awt.*;
 
 /**
  * MODELESS "What were the odds?" breakdown for a single capture: the roll chain
- * (catch, rarity, shiny → per-capture / per-kill odds), the stat/prayer roll
+ * (catch, rarity, shiny → per-capture / per-kill odds), the stat roll
  * bands, and the Power Level maths with an average-roll comparison.
  */
 public class OddsDialog extends JDialog {
@@ -67,17 +67,31 @@ public class OddsDialog extends JDialog {
         root.setBackground(ColorScheme.DARK_GRAY_COLOR);
         root.setBorder(new EmptyBorder(12, 14, 12, 14));
 
-        // Title
+        // Title row — name + rarity on the left, REROLLED flag pinned top-right (if applicable)
+        boolean rerolled = capture.rerolledBy != null && !capture.rerolledBy.isEmpty();
+        Box titleRow = Box.createHorizontalBox();
+        titleRow.setAlignmentX(Component.LEFT_ALIGNMENT);
         JLabel title = new JLabel(capture.npcName + "  —  " + r.rarity.label + (r.shiny ? "  ✦ SHINY" : ""));
         title.setFont(FontManager.getRunescapeBoldFont());
         title.setForeground(r.rarity.displayColor);
-        title.setAlignmentX(Component.LEFT_ALIGNMENT);
-        root.add(title);
+        titleRow.add(title);
+        titleRow.add(Box.createHorizontalGlue());
+        if (rerolled) {
+            titleRow.add(rerolledBadge());
+        }
+        root.add(titleRow);
         JLabel sub = new JLabel("Captured at Bestiary level " + r.level + "  ·  " + r.difficulty.label + " tier");
         sub.setFont(body);
         sub.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
         sub.setAlignmentX(Component.LEFT_ALIGNMENT);
         root.add(sub);
+
+        // These odds describe a fresh (raw) pull. A rerolled card's stats/rarity came from the
+        // reroller, so the odds below are what a raw pull WOULD have looked like — not this card's origin.
+        if (rerolled) {
+            root.add(paragraph("<font color='#9678c8'>This card was rerolled — the odds below describe a "
+                    + "<i>raw pull</i> at this rarity, not how this particular card was produced.</font>"));
+        }
 
         root.add(Box.createVerticalStrut(8));
 
@@ -104,7 +118,7 @@ public class OddsDialog extends JDialog {
         root.add(perKill);
         root.add(paragraph("<i>Per capture = how often a capture is this rarity at level " + r.level
                 + " (high levels make rarities much more common). Per kill folds in the catch chance. "
-                + "Stat and prayer rolls are flavour — they don't affect these odds.</i>"));
+                + "Stat rolls are flavour — they don't affect these odds.</i>"));
 
         root.add(Box.createVerticalStrut(10));
 
@@ -121,15 +135,18 @@ public class OddsDialog extends JDialog {
 
         root.add(Box.createVerticalStrut(10));
 
-        // Power Level — Prayer is the 7th stat
+        // Power Level — 7-stat average + HP at 1/6 weight
         int sevenStats = r.statSum + r.prayer;
+        int statAvg = Math.round(sevenStats / 7f);
         Color nearWhite = new Color(235, 235, 235);
         root.add(sectionHeader("Power Level"));
         root.add(styleValue(kvRow("7 stats total", body, ColorScheme.LIGHT_GRAY_COLOR,
                 String.valueOf(sevenStats)), nearWhite));
-        root.add(styleValue(kvRow("Hitpoints (factual)", body, new Color(120, 200, 120),
-                String.valueOf(r.hp)), nearWhite));
-        root.add(styleValue(kvRow("= Power Level  (" + sevenStats + " + " + r.hp + ") ÷ 8",
+        root.add(styleValue(kvRow("Stat average  (" + sevenStats + " ÷ 7)", body, ColorScheme.LIGHT_GRAY_COLOR,
+                String.valueOf(statAvg)), nearWhite));
+        root.add(styleValue(kvRow("Hitpoints (factual)  ÷ 6", body, new Color(120, 200, 120),
+                "+" + Math.round(r.hp / 6f)), nearWhite));
+        root.add(styleValue(kvRow("= Power Level  (" + sevenStats + " ÷ 7) + (" + r.hp + " ÷ 6)",
                 body, Color.WHITE, String.valueOf(r.powerLevel)), new Color(120, 200, 120)));
 
         root.add(Box.createVerticalStrut(4));
@@ -143,15 +160,26 @@ public class OddsDialog extends JDialog {
         Color deltaCol = delta > 0 ? new Color(120, 200, 120) : delta < 0 ? new Color(224, 112, 112) : new Color(176, 176, 176);
         root.add(styleValue(kvRow("This card vs average", body, Color.WHITE, deltaStr), deltaCol));
 
-        root.add(paragraph("Power Level averages the 7 stats (Prayer counts as the 7th) with the monster's "
-                + "HP, ÷8. HP isn't on the 1–99 scale, so it counts at 1/8 weight — <font color='#a0a0a0'>"
-                + "negligible for a low-HP creature (stats decide), but dominant for a boss "
-                + "(1200&nbsp;HP adds ~150). HP takes over above ~450&nbsp;HP.</font>"));
+        root.add(paragraph("Power Level = the 7-stat average + the monster's HP at 1/6 weight. "
+                + "HP isn't on the 1–99 scale, so it's added separately — <font color='#a0a0a0'>"
+                + "negligible for a low-HP creature (stats decide: +13 at 80&nbsp;HP), but dominant for a "
+                + "boss (1200&nbsp;HP adds ~200). HP takes over above ~420&nbsp;HP.</font>"));
 
         return root;
     }
 
     // ---- helpers ----
+
+    /** Small purple "REROLLED" flag chip for the top-right of the title row. */
+    private JLabel rerolledBadge() {
+        JLabel badge = new JLabel("REROLLED");
+        badge.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        badge.setForeground(new Color(180, 150, 230));
+        badge.setBorder(BorderFactory.createCompoundBorder(
+                new MatteBorder(1, 1, 1, 1, new Color(120, 90, 170)),
+                new EmptyBorder(1, 5, 1, 5)));
+        return badge;
+    }
 
     private JLabel paragraph(String html) {
         JLabel l = new JLabel("<html><div style='width:" + HTML_W + "px'>" + html + "</div></html>");

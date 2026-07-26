@@ -65,6 +65,24 @@ public class BestiaryPanel extends PluginPanel {
             refresh();
             AlbumDialog.refreshOpenAlbum();
         }));
+        AlbumCard.setRerollHandler((owner, cap) -> {
+            Window win = SwingUtilities.getWindowAncestor(owner);
+            long cost = net.runelite.client.plugins.bestiary.service.BestiaryDataService.rerollCost(cap);
+            if (dataService.getCredits() < cost) {
+                RerollResultDialog.info(win, "Card Reroller",
+                        "You need " + cost + " credits to reroll (you have " + dataService.getCredits() + ").");
+                return;
+            }
+            RerollConfirmDialog.open(win, cap, cost, progressionService.getLevel(), () -> {
+                net.runelite.client.plugins.bestiary.model.CapturedCreature nc =
+                        dataService.rerollCard(cap, progressionService.getLevel());
+                refresh();
+                AlbumDialog.refreshOpenAlbum();
+                if (nc != null) {
+                    RerollResultDialog.open(win, cap, nc);   // MODELESS before/after
+                }
+            });
+        });
 
         setLayout(new BorderLayout(0, 6));
         setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -140,6 +158,17 @@ public class BestiaryPanel extends PluginPanel {
             refresh();
         });
         panel.add(seedBtn);
+        panel.add(Box.createVerticalStrut(3));
+
+        JButton creditBtn = new JButton("[DEV] +100k Credits");
+        creditBtn.setFont(FontManager.getRunescapeSmallFont());
+        creditBtn.setBackground(new Color(20, 60, 40));
+        creditBtn.setForeground(new Color(120, 220, 150));
+        creditBtn.setBorderPainted(false);
+        creditBtn.setFocusPainted(false);
+        creditBtn.setAlignmentX(CENTER_ALIGNMENT);
+        creditBtn.addActionListener(e -> { dataService.awardCredits(100_000); refresh(); });
+        panel.add(creditBtn);
         panel.add(Box.createVerticalStrut(3));
 
         panel.add(buildWipeBtn());

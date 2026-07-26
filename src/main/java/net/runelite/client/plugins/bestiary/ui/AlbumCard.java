@@ -35,6 +35,10 @@ public class AlbumCard extends JPanel {
     private static java.util.function.BiConsumer<java.awt.Component, CapturedCreature> discardHandler;
     public static void setDiscardHandler(java.util.function.BiConsumer<java.awt.Component, CapturedCreature> h) { discardHandler = h; }
 
+    /** Reroll hook (shop POC): (menu owner, capture) → confirm + reroll. Wired by BestiaryPanel. */
+    private static java.util.function.BiConsumer<java.awt.Component, CapturedCreature> rerollHandler;
+    public static void setRerollHandler(java.util.function.BiConsumer<java.awt.Component, CapturedCreature> h) { rerollHandler = h; }
+
     // Real in-game skill sprites (HP/Prayer/combat stats), supplied by RuneLite at startup.
     private static net.runelite.client.game.SkillIconManager skillIcons;
     private static final java.util.Map<net.runelite.api.Skill, BufferedImage> ICON_CACHE = new java.util.HashMap<>();
@@ -106,6 +110,7 @@ public class AlbumCard extends JPanel {
     private final int[] avgStats;
     private final int overallQuality; // 0 for locked
     private final int prayerValue;    // rolled prayer of the shown capture; base prayer when locked
+    private final int hitpoints;      // shown capture's HP (observed damage preferred); wiki/default when locked
 
     // Locked-only
     private final int killCount;
@@ -230,6 +235,9 @@ public class AlbumCard extends JPanel {
         this.hasShiny       = best.isShiny();
         this.overallQuality = best.powerLevel();
         this.prayerValue    = best.prayer;
+        // Show the SAME HP the power level was computed from (observed damage preferred),
+        // so the heart pill matches the capture popup and the P: value — not the wiki default.
+        this.hitpoints      = best.hitpoints();
         init(imageService, true);
     }
 
@@ -254,6 +262,7 @@ public class AlbumCard extends JPanel {
         this.hasShiny       = false;
         this.overallQuality = 0;
         this.prayerValue    = MonsterRoster.getPrayer(npcName);
+        this.hitpoints      = MonsterRoster.getHitpoints(npcName);
         init(imageService, imageService != null);
     }
 
@@ -409,12 +418,21 @@ public class AlbumCard extends JPanel {
                     }));
                     menu.add(nickItem);
                 }
-                if (discardHandler != null && !locked && captures != null && captures.size() == 1) {
+                if (!locked && captures != null && captures.size() == 1
+                        && (discardHandler != null || rerollHandler != null)) {
                     menu.addSeparator();
-                    JMenuItem discardItem = new JMenuItem("Discard…");
-                    discardItem.setForeground(new Color(224, 112, 112));
-                    discardItem.addActionListener(ev -> discardHandler.accept(AlbumCard.this, captures.get(0)));
-                    menu.add(discardItem);
+                    if (rerollHandler != null) {
+                        JMenuItem rerollItem = new JMenuItem("Reroll (shop)…");
+                        rerollItem.setForeground(new Color(120, 200, 120));
+                        rerollItem.addActionListener(ev -> rerollHandler.accept(AlbumCard.this, captures.get(0)));
+                        menu.add(rerollItem);
+                    }
+                    if (discardHandler != null) {
+                        JMenuItem discardItem = new JMenuItem("Discard…");
+                        discardItem.setForeground(new Color(224, 112, 112));
+                        discardItem.addActionListener(ev -> discardHandler.accept(AlbumCard.this, captures.get(0)));
+                        menu.add(discardItem);
+                    }
                 }
                 menu.show(AlbumCard.this, e.getX(), e.getY());
             }
@@ -733,7 +751,7 @@ public class AlbumCard extends JPanel {
             int agW = usable - hpW - prW;
             int aY = ATTR_Y;
             int x0 = imgX;
-            int hp = net.runelite.client.plugins.bestiary.model.MonsterRoster.getHitpoints(npcName);
+            int hp = hitpoints;
             int prayer = prayerValue;
             drawAttrPill(g2, x0, aY, hpW, ATTR_H, IconType.HP, String.valueOf(hp), locked);
             x0 += hpW + gap;

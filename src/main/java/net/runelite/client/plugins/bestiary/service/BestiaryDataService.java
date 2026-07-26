@@ -175,6 +175,106 @@ public class BestiaryDataService {
     }
 
     // -------------------------------------------------------------------------
+    // Shop (POC)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Cost of one "Card Reroller" use, scaled by the card's difficulty tier × rarity
+     * (shiny does NOT affect cost). Difficulty sets a base (= a Common card's cost) and
+     * rarity multiplies it, so rerolling a high-tier rare card costs far more than a
+     * beginner common. Anchors: Beginner Common 25 → Mythic 500; Boss Common 200 → Mythic 4000.
+     */
+    public static long rerollCost(CapturedCreature c) {
+        return rerollBaseCost(MonsterRoster.getDifficulty(c.npcName, c.npcCombatLevel))
+                * rerollRarityMultiplier(c.rarity);
+    }
+
+    /** Per-difficulty base cost — the price of rerolling a Common card of that tier. */
+    private static long rerollBaseCost(net.runelite.client.plugins.bestiary.model.DifficultyTier d) {
+        switch (d) {
+            case BEGINNER: return 25;
+            case EASY:     return 40;
+            case MEDIUM:   return 60;
+            case HARD:     return 90;
+            case ELITE:    return 130;
+            case BOSS:     return 200;
+            default:       return 60;
+        }
+    }
+
+    /** Rarity multiplier applied to the difficulty base (Common 1× → Mythic 20×). */
+    private static long rerollRarityMultiplier(CreatureRarity r) {
+        switch (r) {
+            case COMMON:    return 1;
+            case UNCOMMON:  return 2;
+            case RARE:      return 4;
+            case EPIC:      return 7;
+            case LEGENDARY: return 12;
+            case MYTHIC:    return 20;
+            default:        return 1;
+        }
+    }
+
+    /** Base chance a non-Mythic reroll bumps up one rarity (raised later by shop unlocks). */
+    public static final double RARITY_UP_CHANCE = 0.05;
+
+    private final Random rerollRng = new Random();
+
+    /** Deducts credits if affordable; persists. Returns false if too poor. */
+    public boolean spendCredits(long amount) {
+        if (collection.credits < amount) return false;
+        collection.credits -= amount;
+        db.setMetadata(META_CREDITS, String.valueOf(collection.credits));
+        return true;
+    }
+
+    /**
+     * Card Reroller (shop POC): for {@link #rerollCost} credits, re-rolls a card's stats,
+     * prayer and shiny at the SAME rarity/monster (a chance to improve stats or hit shiny).
+     * Keeps id + metadata (favourite/nickname/album-cover/observed HP). Returns the new
+     * card, or null if the player can't afford it.
+     */
+    public CapturedCreature rerollCard(CapturedCreature c, int currentLevel) {
+        if (!spendCredits(rerollCost(c))) return null;
+        // Non-Mythic cards get a small chance to move up a rarity.
+        CreatureRarity rarity = c.rarity;
+        if (rarity != CreatureRarity.MYTHIC && rerollRng.nextDouble() < RARITY_UP_CHANCE) {
+            rarity = CreatureRarity.values()[rarity.ordinal() + 1];
+        }
+        net.runelite.client.plugins.bestiary.model.CombatClass cls =
+                net.runelite.client.plugins.bestiary.model.MonsterRoster.getCombatClass(c.npcName, c.npcCombatLevel);
+        int[] bases = net.runelite.client.plugins.bestiary.model.MonsterRoster.getStatBases(c.npcName, c.npcCombatLevel);
+        // A shiny stays shiny; a non-shiny gets a fresh shiny roll.
+        boolean shiny = c.isShiny() || rerollRng.nextDouble() < CaptureService.shinyChance(currentLevel);
+        net.runelite.client.plugins.bestiary.model.CreatureQuality q =
+                net.runelite.client.plugins.bestiary.util.RarityRoller.generateQuality(cls, rarity, bases, rerollRng, shiny);
+        int prayer = net.runelite.client.plugins.bestiary.util.RarityRoller.rollPrayer(
+                net.runelite.client.plugins.bestiary.model.MonsterRoster.getPrayer(c.npcName), rarity, rerollRng, shiny);
+        String reroller = c.playerName != null && !c.playerName.isEmpty() ? c.playerName : "Player";
+        // Log the card's pre-reroll state, then carry the whole history forward onto the new card.
+        java.util.List<CapturedCreature.RerollState> history = new java.util.ArrayList<>(c.rerollHistory);
+        history.add(new CapturedCreature.RerollState(
+                c.rarity, c.powerLevel(), c.isShiny(), c.prayer, reroller, java.time.Instant.now().getEpochSecond()));
+        CapturedCreature nc = CapturedCreature.builder()
+                .id(c.id).npcId(c.npcId).npcName(c.npcName).npcCombatLevel(c.npcCombatLevel)
+                .rarity(rarity).quality(q).captureTime(c.captureTime).regionName(c.regionName)
+                .captureLevel(currentLevel)   // reroll happened now → odds reflect the current level
+                .killsBeforeCapture(c.killsBeforeCapture)
+                .playerName(c.playerName).shiny(shiny).prayer(prayer).observedHp(c.observedHp)
+                .rerolledBy(reroller)
+                .rerollHistory(history)
+                .build();
+        nc.favourite  = c.favourite;
+        nc.nickname   = c.nickname;
+        nc.albumCover = c.albumCover;
+        // Replace in place (by id) so it can't leave a stale/duplicate copy behind.
+        if (!collection.replaceCapture(nc)) collection.addCapture(nc);
+        db.deleteCapture(c.id);
+        db.insertCapture(nc);
+        return nc;
+    }
+
+    // -------------------------------------------------------------------------
     // Dev tools
     // -------------------------------------------------------------------------
 
