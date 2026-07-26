@@ -147,6 +147,7 @@ public class BestiaryPanel extends PluginPanel {
         JPanel panel = new JPanel();
         panel.setOpaque(false);
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(new EmptyBorder(4, 0, 0, 0));
 
         // Dev-only helpers — hidden for live users (only present when RuneLite runs in developer mode).
         if (developerMode) {
@@ -157,13 +158,12 @@ public class BestiaryPanel extends PluginPanel {
             seedBtn.setBorderPainted(false);
             seedBtn.setFocusPainted(false);
             seedBtn.setToolTipText("Wipe collection and insert 1 capture per rarity for every roster monster");
-            seedBtn.setAlignmentX(CENTER_ALIGNMENT);
             seedBtn.addActionListener(e -> {
                 dataService.seedTestCollection();
                 refresh();
             });
-            panel.add(seedBtn);
-            panel.add(Box.createVerticalStrut(3));
+            panel.add(fullWidth(seedBtn));
+            panel.add(Box.createVerticalStrut(4));
 
             JButton creditBtn = new JButton("[DEV] +100k Credits");
             creditBtn.setFont(FontManager.getRunescapeSmallFont());
@@ -171,10 +171,9 @@ public class BestiaryPanel extends PluginPanel {
             creditBtn.setForeground(new Color(120, 220, 150));
             creditBtn.setBorderPainted(false);
             creditBtn.setFocusPainted(false);
-            creditBtn.setAlignmentX(CENTER_ALIGNMENT);
             creditBtn.addActionListener(e -> { dataService.awardCredits(100_000); refresh(); });
-            panel.add(creditBtn);
-            panel.add(Box.createVerticalStrut(3));
+            panel.add(fullWidth(creditBtn));
+            panel.add(Box.createVerticalStrut(4));
         }
 
         panel.add(buildWipeBtn());
@@ -190,6 +189,13 @@ public class BestiaryPanel extends PluginPanel {
         btn.setFocusPainted(false);
         btn.setToolTipText("Permanently delete all captures and progression");
         btn.addActionListener(e -> confirmWipe());
+        return fullWidth(btn);
+    }
+
+    /** Makes a button span the full panel width (consistent bottom-row buttons). */
+    private static JButton fullWidth(JButton btn) {
+        btn.setAlignmentX(CENTER_ALIGNMENT);
+        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
         return btn;
     }
 

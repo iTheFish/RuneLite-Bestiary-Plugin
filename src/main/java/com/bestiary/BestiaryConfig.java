@@ -157,9 +157,11 @@ public interface BestiaryConfig extends Config {
     @ConfigItem(
             keyName = "wikiImages",
             name = "Fetch NPC images from the Wiki",
-            description = "Downloads monster artwork from the OSRS Wiki (oldschool.runescape.wiki) to show on cards "
-                        + "and in the album. Only the monster's name is requested — no account or personal data is "
-                        + "sent — and images are cached to disk. Turn this off to make no network requests at all.",
+            description = "<html>Downloads monster artwork from the OSRS Wiki<br>"
+                        + "(oldschool.runescape.wiki) to show on cards and in the album.<br>"
+                        + "Only the monster's name is requested — no account or personal<br>"
+                        + "data is sent — and images are cached to disk.<br>"
+                        + "Turn this off to make no network requests at all.</html>",
             position = 16
     )
     default boolean wikiImages() {
