@@ -14,9 +14,17 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
 
+/**
+ * The Info tab: a persistent header (live stat boxes + shortcut buttons) over a set of
+ * category sub-tabs. Each sub-tab swaps the scrollable content below it (invisible
+ * scrollbar), so the reference material reads as tidy sections instead of one long
+ * uncategorised wall of text.
+ */
 public class InfoTab extends JPanel {
 
     private static final Color ORANGE = new Color(255, 165, 0);
@@ -34,6 +42,10 @@ public class InfoTab extends JPanel {
     private final JLabel levelVal    = statValue("1");
     private final JLabel killsVal    = statValue("0");
 
+    // Category sub-tabs
+    private final JPanel contentCards = new JPanel(new CardLayout());
+    private final List<JToggleButton> catButtons = new ArrayList<>();
+
     public InfoTab(BestiaryDataService dataService, ProgressionService progressionService,
                    Runnable openAlbum, Runnable openFavourites, Runnable openRecap,
                    Runnable openCatchRates,
@@ -47,46 +59,30 @@ public class InfoTab extends JPanel {
         setLayout(new BorderLayout());
         setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-        // Override getPreferredSize so BoxLayout uses the viewport's actual width,
-        // allowing JTextArea children to wrap at the panel boundary.
-        JPanel content = new JPanel() {
-            @Override
-            public Dimension getPreferredSize() {
-                Dimension d = super.getPreferredSize();
-                if (getParent() != null) d.width = getParent().getWidth();
-                return d;
-            }
-        };
-        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
-        content.setBackground(ColorScheme.DARK_GRAY_COLOR);
-        content.setBorder(new EmptyBorder(6, 6, 6, 6));
+        // Persistent header: live stats + shortcuts + the category bar
+        JPanel header = new JPanel();
+        header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
+        header.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        header.setBorder(new EmptyBorder(6, 6, 4, 6));
+        header.add(buildStatsStrip());
+        header.add(Box.createVerticalStrut(6));
+        header.add(buildShortcutRow(openAlbum, openFavourites, openRecap, openCatchRates));
+        header.add(Box.createVerticalStrut(8));
+        header.add(headerDivider());
+        header.add(Box.createVerticalStrut(6));
+        header.add(buildSubTabBar());
+        add(header, BorderLayout.NORTH);
 
-        // Live stats strip
-        content.add(buildStatsStrip());
-        content.add(Box.createVerticalStrut(6));
-        content.add(buildShortcutRow(openAlbum, openFavourites, openRecap, openCatchRates));
-        content.add(Box.createVerticalStrut(10));
+        // One scrollable card per category
+        contentCards.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        addCategory(0, this::fillCapturing);
+        addCategory(1, this::fillCards);
+        addCategory(2, this::fillEconomy);
+        addCategory(3, this::fillProgress);
+        addCategory(4, this::fillAlerts);
+        add(contentCards, BorderLayout.CENTER);
 
-        // Rarity quick-reference table
-        content.add(buildRarityTable());
-        content.add(Box.createVerticalStrut(10));
-
-        // Slim info tiles
-        content.add(buildInfoTiles());
-        content.add(Box.createVerticalStrut(8));
-
-        // Dev tip
-        content.add(tipRow("Dev: Use 'Capture Rate Override' (FORCE_100 / FORCE_0) and 'Force Rarity' in the Developer Tools config section for testing."));
-
-        JScrollPane scroll = new JScrollPane(content);
-        scroll.setBorder(null);
-        scroll.getViewport().setBackground(ColorScheme.DARK_GRAY_COLOR);
-        scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scroll.getVerticalScrollBar().setUnitIncrement(16);
-        scroll.getVerticalScrollBar().setPreferredSize(new Dimension(0, 0));
-        add(scroll, BorderLayout.CENTER);
-
+        selectCategory(0);
         refresh();
     }
 
@@ -96,6 +92,239 @@ public class InfoTab extends JPanel {
         capturesVal.setText(FMT.format(col.totalCaptures()));
         levelVal.setText(String.valueOf(progressionService.getLevel()));
         killsVal.setText(FMT.format(col.totalKills()));
+    }
+
+    // -------------------------------------------------------------------------
+    // Category sub-tabs
+    // -------------------------------------------------------------------------
+
+    private static final String[] CATEGORIES = {"Capturing", "Cards", "Economy", "Progress", "Alerts"};
+
+    private JPanel buildSubTabBar() {
+        JPanel bar = new JPanel();
+        bar.setLayout(new BoxLayout(bar, BoxLayout.Y_AXIS));
+        bar.setOpaque(false);
+        bar.setAlignmentX(LEFT_ALIGNMENT);
+
+        // 3 on top, 2 below — keeps labels readable in the narrow side panel.
+        JPanel row1 = new JPanel(new GridLayout(1, 3, 4, 0));
+        JPanel row2 = new JPanel(new GridLayout(1, 2, 4, 0));
+        row1.setOpaque(false); row2.setOpaque(false);
+        row1.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
+        row2.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
+        row1.setAlignmentX(LEFT_ALIGNMENT); row2.setAlignmentX(LEFT_ALIGNMENT);
+
+        for (int i = 0; i < CATEGORIES.length; i++) {
+            final int idx = i;
+            JToggleButton b = new JToggleButton(CATEGORIES[i]);
+            b.setFont(FontManager.getRunescapeSmallFont());
+            b.setFocusPainted(false);
+            b.setBorderPainted(false);
+            b.setMargin(new Insets(2, 2, 2, 2));
+            b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            b.addActionListener(e -> selectCategory(idx));
+            styleTab(b, false);
+            catButtons.add(b);
+            (i < 3 ? row1 : row2).add(b);
+        }
+
+        bar.add(row1);
+        bar.add(Box.createVerticalStrut(4));
+        bar.add(row2);
+        return bar;
+    }
+
+    private void selectCategory(int idx) {
+        ((CardLayout) contentCards.getLayout()).show(contentCards, "cat" + idx);
+        for (int i = 0; i < catButtons.size(); i++) {
+            styleTab(catButtons.get(i), i == idx);
+            catButtons.get(i).setSelected(i == idx);
+        }
+    }
+
+    /** Orange rule separating the header block from the category tabs. */
+    private static JComponent headerDivider() {
+        JSeparator s = new JSeparator();
+        s.setForeground(new Color(255, 165, 0, 90));
+        s.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        s.setAlignmentX(LEFT_ALIGNMENT);
+        s.setMaximumSize(new Dimension(Integer.MAX_VALUE, 2));
+        return s;
+    }
+
+    private static void styleTab(JToggleButton b, boolean active) {
+        b.setOpaque(true);
+        b.setBackground(active ? ORANGE : ColorScheme.DARKER_GRAY_COLOR);
+        b.setForeground(active ? new Color(30, 30, 30) : ColorScheme.LIGHT_GRAY_COLOR);
+    }
+
+    /** Builds a scrollable (invisible scrollbar) content card and registers it under "cat{idx}". */
+    private void addCategory(int idx, Consumer<JPanel> fill) {
+        JPanel content = new JPanel() {
+            @Override
+            public Dimension getPreferredSize() {
+                // Track the viewport width so JTextArea tiles wrap at the panel edge.
+                Dimension d = super.getPreferredSize();
+                if (getParent() != null) d.width = getParent().getWidth();
+                return d;
+            }
+        };
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        content.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        content.setBorder(new EmptyBorder(6, 6, 8, 6));
+        fill.accept(content);
+
+        JScrollPane scroll = new JScrollPane(content);
+        scroll.setBorder(null);
+        scroll.getViewport().setBackground(ColorScheme.DARK_GRAY_COLOR);
+        scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        scroll.getVerticalScrollBar().setPreferredSize(new Dimension(0, 0));
+        contentCards.add(scroll, "cat" + idx);
+    }
+
+    // -------------------------------------------------------------------------
+    // Category content
+    // -------------------------------------------------------------------------
+
+    private void fillCapturing(JPanel c) {
+        c.add(buildRarityTable());
+        JPanel catchHint = noteArea("Click 'Catch Rates' above to see your current chances.",
+                new Color(205, 205, 205));
+        catchHint.setBorder(new EmptyBorder(3, 11, 0, 0));
+        c.add(catchHint);
+        c.add(Box.createVerticalStrut(8));
+        c.add(sectionTitle("How capturing works"));
+        c.add(tile("Catch rate",
+                "Each kill rolls a capture attempt. The chance depends on two things: " +
+                "the monster's difficulty tier and your current Capture Level.\n\n" +
+                "Beginner (cows, goblins): 20% at level 1, rising to 60% at level 99.\n" +
+                "Easy (lesser demons, skeletons): 15% → 50%.\n" +
+                "Medium (hill giants, moss giants): 10% → 40%.\n" +
+                "Hard (hellhounds, gargoyles): 6% → 28%.\n" +
+                "Elite (Adamant/Rune dragons): 3% → 15%.\n" +
+                "Boss (Cerberus, Callisto, etc.): 1.5% → 8%.\n\n" +
+                "Only catalogued roster monsters are tracked — off-roster NPCs are ignored."));
+        c.add(tile("Rarity",
+                "When a capture succeeds, a second weighted roll picks the rarity. " +
+                "At level 1 the weights match the base percentages in the table above; " +
+                "each level shifts weight toward rarer outcomes.\n\n" +
+                "Example: Mythic goes from 0.1% at level 1 to ~1.5% at level 99 — " +
+                "about 15× more likely. Common drops from ~75% to ~46% over the same range."));
+        c.add(tile("Shiny",
+                "After rarity, a third independent roll decides whether the capture is shiny. " +
+                "It is orthogonal to rarity — any rarity can be shiny, from a Common to a Mythic.\n\n" +
+                "The chance scales with your level: 0.2% at level 1 up to 2% at level 99.\n\n" +
+                "A shiny always rolls near-max stats (the top of its band), gets a golden card " +
+                "with twinkling sparkles, and is announced in chat with a ✦ SHINY ✦ marker."));
+    }
+
+    private void fillCards(JPanel c) {
+        c.add(sectionTitle("Reading a card"));
+        c.add(tile("Power Level",
+                "Power Level is a card's headline number. It blends the monster's real " +
+                "Hitpoints (a factual OSRS attribute, shown on the card) with the seven rolled stats.\n\n" +
+                "Power Level = average of the 7 stats + HP ÷ 6.\n\n" +
+                "The stat average stays on the 1–99 scale, while HP is added separately so it " +
+                "separates the difficulty tiers: HP adds about +13 at 80 HP, +40 at 250 HP, and " +
+                "+165 at 1000 HP. The rolled stats are mostly flavour — HP drives power."));
+        c.add(tile("Stats & class",
+                "Every capture rolls seven stats — Attack, Strength, Defence, Magic, Ranged, Agility " +
+                "and Prayer (Prayer rolls on a smaller scale). The " +
+                "monster's combat class decides which tend to roll high — a Warrior favours " +
+                "Attack/Strength, a Marksman favours Ranged, an Occultist favours Magic, and so on.\n\n" +
+                "Higher rarities lift the whole roll toward 99, and bands overlap — so a lucky Rare " +
+                "can beat an unlucky Epic."));
+        c.add(tile("Album",
+                "A full dex grid of every capturable species. Open it via 'Open Album' (in all " +
+                "Collection views and on this tab).\n\n" +
+                "Clicking a species card opens a detail view of all your captures of it, paginated " +
+                "(8 / 12 / 16 per page) with a sort dropdown and rarity filter. Each catalog card " +
+                "shows the species image, combat level, difficulty tier, and rarity dots for " +
+                "rarities you have caught. Search or filter by difficulty to narrow the catalog."));
+        c.add(tile("Favourites",
+                "Right-click any card or row → 'Add to Favourites' to star it (up to 20). " +
+                "Remove a star the same way.\n\n" +
+                "The ★ Favourites button in the Collection header shows all starred cards. In the " +
+                "Album, a ★ Favourites shortcut opens a detail view of every starred capture."));
+        c.add(tile("Export",
+                "Right-click any card in Collection, Favourites, or Album → 'Export Card'.\n\n" +
+                "Opens a scaled preview. Copy to clipboard or save as PNG. Each footer shows the " +
+                "card's unique ID, the player who captured it, a 'Rerolled N times' line if it has " +
+                "been rerolled, and the OSRS | Bestiary stamp.\n\n" +
+                "In the Album detail view, 'Export Page' saves the current page as a grid image."));
+    }
+
+    private void fillEconomy(JPanel c) {
+        c.add(sectionTitle("Credits & the shop"));
+        c.add(tile("Bestiary Credits",
+                "You earn Bestiary Credits on every successful capture. The award scales with " +
+                "difficulty × rarity, and a shiny doubles it.\n\n" +
+                "Rough guide: a Beginner Common is worth a couple of credits; a Boss Mythic is " +
+                "worth about 480 (960 if shiny).\n\n" +
+                "Spend them on the Card Reroller below — more shop features are on the way."));
+        c.add(tile("Card Reroller",
+                "Right-click a card → 'Reroll (shop)…' to re-roll its stats and shiny at the " +
+                "same monster and rarity — a chance to improve a roll or hit a shiny.\n\n" +
+                "The cost scales with the card's difficulty × rarity (shiny doesn't change it): from " +
+                "25 credits for a Beginner Common up to 4,000 for a Boss Mythic.\n\n" +
+                "A shiny stays shiny. Non-Mythic cards have a 5% chance to rank up one rarity. Your " +
+                "favourite, nickname and album cover are kept. A rerolled card is marked " +
+                "'Rerolled N times' and shows a before/after result with a 'What were the odds?' " +
+                "breakdown — remember those odds describe a raw pull, not a rerolled card."));
+        c.add(tile("Discard",
+                "Don't want a card? Right-click → 'Discard…' to trade it for credits — the refund is " +
+                "its base capture value, and shinies add a flat bonus. From the Album you can " +
+                "multi-select to discard several at once.\n\n" +
+                "Discarding is permanent: the card is removed from your collection."));
+        c.add(tile("Shop",
+                "The Shop tab is where credits are spent. The Card Reroller is the first tool; the " +
+                "wider shop economy (passive unlocks, more tools) is still being built."));
+    }
+
+    private void fillProgress(JPanel c) {
+        c.add(sectionTitle("Progress & stats"));
+        c.add(tile("XP & levels",
+                "You earn experience from kills and captures. Your Capture Level runs 1–99 " +
+                "(with virtual levels beyond).\n\n" +
+                "Kill XP = max of 10 or (combat level × 10). A level 50 enemy gives 500 XP per kill.\n\n" +
+                "Captures add a bonus: the kill XP × the rarity multiplier — Common 1×, Uncommon 2×, " +
+                "Rare 5×, Epic 10×, Legendary 25×, Mythic 50×.\n\n" +
+                "Example: a Rare goblin (level 2, kill XP 20) gives 20 × 5 = 100 bonus XP."));
+        c.add(tile("Dashboards",
+                "The four stat boxes at the top of this tab are clickable — each opens a dashboard: " +
+                "Progression, Kills, Species and Caught.\n\n" +
+                "They break down your collection with bar charts and top-10 tables. Right-click a " +
+                "box to copy that dashboard as a shareable card image."));
+        c.add(tile("Session Recap",
+                "A button on the Progress tab shows every capture made since you last logged in, " +
+                "with rarity (colour-coded), Power Level, region and time, plus a rarity summary.\n\n" +
+                "'Copy Summary' places the list on your clipboard as a code block so it pastes " +
+                "cleanly into Discord."));
+    }
+
+    private void fillAlerts(JPanel c) {
+        c.add(sectionTitle("Notifications & data"));
+        c.add(tile("Capture overlay",
+                "A small notification panel appears on screen each time a capture succeeds. " +
+                "Position and width are configurable in the RuneLite Config panel under Bestiary.\n\n" +
+                "An optional collection-jar animation can play on every kill attempt before the " +
+                "result is revealed — toggle 'Show Capture Animation' in Config. Rapid kills queue " +
+                "so every result still plays."));
+        c.add(tile("Chat notifications",
+                "Two modes, selected in Config under 'Chat Notification Mode':\n\n" +
+                "Verbose — one message per capture with rarity, NPC name, kill number and Power " +
+                "Level. The kill number keeps messages unique (RuneLite drops duplicates).\n\n" +
+                "Batched — repeated NPC+rarity kills are held for 5 seconds of inactivity then sent " +
+                "as one summary (e.g. '3× Common Goblin captured!  Kill #42  PWR:28, 35, 41'). " +
+                "Shinies always announce immediately."));
+        c.add(tile("Reset Collection",
+                "The 'Reset Collection' button at the bottom of the panel permanently deletes all " +
+                "captures, kill counts, XP, levels and achievements. You are asked to confirm twice."));
+        c.add(Box.createVerticalStrut(4));
+        c.add(tipRow("Dev: use 'Capture Rate Override' (FORCE_100 / FORCE_0), 'Force Rarity' and " +
+                "'Always Roll Shiny' in the Developer Tools config section for testing."));
     }
 
     // -------------------------------------------------------------------------
@@ -170,19 +399,19 @@ public class InfoTab extends JPanel {
         container.setOpaque(false);
         container.setAlignmentX(LEFT_ALIGNMENT);
 
-        JPanel topRow = new JPanel(new GridLayout(1, 2, 4, 0));
-        topRow.setOpaque(false);
-        topRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
-        topRow.setAlignmentX(LEFT_ALIGNMENT);
-        topRow.add(shortcutBtn("Open Album",   ORANGE,                  openAlbum));
-        topRow.add(shortcutBtn("★ Favourites", new Color(220, 180, 60), openFavourites));
+        // Full-width Open Album (top), Favourites + Catch Rates (middle), full-width Session Recap (bottom).
+        JPanel albumRow = new JPanel(new GridLayout(1, 1));
+        albumRow.setOpaque(false);
+        albumRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+        albumRow.setAlignmentX(LEFT_ALIGNMENT);
+        albumRow.add(blockBtn("Open Album", ORANGE, openAlbum));
 
-        JPanel bottomRow = new JPanel(new GridLayout(1, 2, 4, 0));
-        bottomRow.setOpaque(false);
-        bottomRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
-        bottomRow.setAlignmentX(LEFT_ALIGNMENT);
-        bottomRow.add(shortcutBtn("Session Recap", new Color(120, 200, 120), openRecap));
-        JButton catchBtn = shortcutBtn(" Catch Rates", new Color(100, 180, 220), openCatchRates);
+        JPanel midRow = new JPanel(new GridLayout(1, 2, 4, 0));
+        midRow.setOpaque(false);
+        midRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
+        midRow.setAlignmentX(LEFT_ALIGNMENT);
+        midRow.add(blockBtn("★ Favourites", new Color(220, 180, 60), openFavourites));
+        JButton catchBtn = blockBtn(" Catch Rates", new Color(100, 180, 220), openCatchRates);
         final int iD = 13;
         catchBtn.setIcon(new Icon() {
             @Override public int getIconWidth()  { return iD; }
@@ -203,22 +432,32 @@ public class InfoTab extends JPanel {
             }
         });
         catchBtn.setIconTextGap(3);
-        bottomRow.add(catchBtn);
+        midRow.add(catchBtn);
 
-        container.add(topRow);
+        JPanel recapRow = new JPanel(new GridLayout(1, 1));
+        recapRow.setOpaque(false);
+        recapRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+        recapRow.setAlignmentX(LEFT_ALIGNMENT);
+        recapRow.add(blockBtn("Session Recap", new Color(120, 200, 120), openRecap));
+
+        container.add(albumRow);
         container.add(Box.createVerticalStrut(4));
-        container.add(bottomRow);
+        container.add(midRow);
+        container.add(Box.createVerticalStrut(4));
+        container.add(recapRow);
         return container;
     }
 
-    private static JButton shortcutBtn(String text, Color fg, Runnable action) {
+    /** A chunky, header-style shortcut button (orange left accent, like the stat boxes). */
+    private static JButton blockBtn(String text, Color fg, Runnable action) {
         JButton btn = new JButton(text);
         btn.setFont(FontManager.getRunescapeSmallFont());
-        btn.setMargin(new Insets(0, 2, 0, 2));
         btn.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         btn.setForeground(fg);
         btn.setFocusPainted(false);
-        btn.setBorderPainted(false);
+        btn.setBorder(BorderFactory.createCompoundBorder(
+                new MatteBorder(0, 3, 0, 0, ORANGE),
+                new EmptyBorder(4, 6, 4, 6)));
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btn.addActionListener(e -> action.run());
         return btn;
@@ -240,10 +479,15 @@ public class InfoTab extends JPanel {
         title.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         title.setForeground(ORANGE);
 
-        JLabel subtitle = new JLabel("Catch chance improves with your Capture Level");
+        JTextArea subtitle = new JTextArea("Catch chance improves with your Capture Level.");
         subtitle.setFont(FontManager.getRunescapeSmallFont());
-        subtitle.setForeground(new Color(120, 120, 120));
-        subtitle.setToolTipText("Catch chance improves with your Capture Level");
+        subtitle.setForeground(new Color(190, 190, 190));
+        subtitle.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        subtitle.setOpaque(false);
+        subtitle.setEditable(false);
+        subtitle.setFocusable(false);
+        subtitle.setLineWrap(true);
+        subtitle.setWrapStyleWord(true);
 
         JPanel titleBlock = new JPanel(new BorderLayout(0, 1));
         titleBlock.setOpaque(false);
@@ -303,116 +547,36 @@ public class InfoTab extends JPanel {
     }
 
     // -------------------------------------------------------------------------
-    // Slim info tiles (term | definition layout)
+    // Shared tile / section helpers
     // -------------------------------------------------------------------------
 
-    private JPanel buildInfoTiles() {
-        JPanel outer = new JPanel(new BorderLayout(0, 4));
-        outer.setOpaque(false);
-        outer.setAlignmentX(LEFT_ALIGNMENT);
-        outer.setBorder(BorderFactory.createCompoundBorder(
-                new MatteBorder(0, 3, 0, 0, ORANGE),
-                new EmptyBorder(3, 8, 3, 0)));
+    private static JLabel sectionTitle(String text) {
+        JLabel l = new JLabel(text.toUpperCase());
+        l.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        l.setForeground(ORANGE);
+        l.setAlignmentX(LEFT_ALIGNMENT);
+        l.setBorder(new EmptyBorder(0, 0, 4, 0));
+        return l;
+    }
 
-        JLabel title = new JLabel("How It Works");
-        title.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
-        title.setForeground(ORANGE);
+    /** A wrapping, label-style note (JTextArea so long text reflows at the panel width). */
+    private static JPanel noteArea(String text, Color colour) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setOpaque(false);
+        panel.setAlignmentX(LEFT_ALIGNMENT);
 
-        JPanel tiles = new JPanel();
-        tiles.setLayout(new BoxLayout(tiles, BoxLayout.Y_AXIS));
-        tiles.setOpaque(false);
+        JTextArea a = new JTextArea(text);
+        a.setFont(FontManager.getRunescapeSmallFont());
+        a.setForeground(colour);
+        a.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        a.setOpaque(false);
+        a.setEditable(false);
+        a.setFocusable(false);
+        a.setLineWrap(true);
+        a.setWrapStyleWord(true);
 
-        tiles.add(tile("Catch rate",
-                "Each kill rolls a capture attempt. The chance depends on two things: " +
-                "the monster's difficulty tier and your current Capture Level.\n\n" +
-                "Beginner monsters (cows, goblins): 20% at level 1, rising to 60% at level 99.\n" +
-                "Easy (lesser demons, skeletons): 15% → 50%.\n" +
-                "Medium (hill giants, moss giants): 10% → 40%.\n" +
-                "Hard (hellhounds, gargoyles): 6% → 28%.\n" +
-                "Elite (Adamant/Rune dragons): 3% → 15%.\n" +
-                "Boss (Cerberus, Callisto, etc.): 1.5% → 8%."));
-        tiles.add(tile("Rarity",
-                "When a capture succeeds, a second weighted roll picks the rarity. " +
-                "At level 1 the weights match the base percentages shown in the table above. " +
-                "Each level shifts weight toward rarer outcomes.\n\n" +
-                "Example: Mythic goes from 0.1% at level 1 to 1.5% at level 99 — " +
-                "about 15 times more likely. Common drops from 75% to 46% over the same range."));
-        tiles.add(tile("Shiny",
-                "After rarity, a third independent roll decides whether the capture is shiny. " +
-                "It is orthogonal to rarity — any rarity can be shiny, from a Common all the way to a Mythic.\n\n" +
-                "The chance scales with your level: 0.2% at level 1 up to 2% at level 99.\n\n" +
-                "A shiny always rolls near-max stats (the very top of its band), gets a golden card " +
-                "with twinkling sparkles, and is announced in chat with a ✦ SHINY ✦ marker."));
-        tiles.add(tile("Power Level",
-                "Power Level is a card's headline number. It combines the monster's real " +
-                "Hitpoints (a factual OSRS attribute, shown as card info) with the six rolled " +
-                "stats:\n\n" +
-                "Power Level = (Attack + Strength + Defence + Magic + Ranged + Agility + HP) / 7.\n\n" +
-                "Because HP dwarfs the 1–99 stats for tanky monsters, big bosses can push Power " +
-                "Level well past 99, while a chicken stays low no matter how good its stats roll. " +
-                "The rolled stats are mostly flavour — HP is what drives a card's power.\n\n" +
-                "Which stats roll high still depends on the monster's class " +
-                "(e.g. a Brute rolls high Attack and Strength; a Ranger rolls high Ranged and Agility), " +
-                "and higher rarities shift all stats toward the top. " +
-                "Gold-outlined bars in the detail dialog mark your personal bests."));
-        tiles.add(tile("XP",
-                "You earn experience from kills and captures.\n\n" +
-                "Kill XP = maximum of 10 or (combat level × 10). " +
-                "A level 50 enemy gives 500 XP per kill; a level 1 enemy gives at least 10 XP.\n\n" +
-                "Captures add a bonus on top: the kill XP multiplied by the rarity. " +
-                "Common: 1×, Uncommon: 2×, Rare: 5×, Epic: 10×, Legendary: 25×, Mythic: 50×.\n\n" +
-                "Example: catching a Rare goblin (level 2, kill XP = 20) gives 20 × 5 = 100 bonus XP."));
-        tiles.add(tile("Overlay",
-                "A small notification panel appears on screen each time a capture succeeds. " +
-                "Position (top-left, top-centre, top-right, bottom-left, bottom-right) and width " +
-                "(150–300 px) are configurable in the RuneLite Config panel under Bestiary.\n\n" +
-                "An optional Pokeball-style animation can play on every kill attempt before " +
-                "the result is revealed — toggle 'Show Capture Animation' in Config."));
-        tiles.add(tile("Chat notifications",
-                "Two modes, selected in Config under 'Chat Notification Mode':\n\n" +
-                "Verbose — one chat message per capture showing the rarity, NPC name, kill number, " +
-                "and Power Level. The kill number ensures no two messages are identical " +
-                "(RuneLite silently drops duplicate messages).\n\n" +
-                "Batched — if you kill the same NPC+rarity multiple times in quick succession, " +
-                "messages are held for 5 seconds of inactivity then sent as one summary " +
-                "(e.g. '3× Common Goblin captured!  Kill #42  PWR:28, 35, 41')."));
-        tiles.add(tile("Album",
-                "A full dex grid showing every capturable species in the game. " +
-                "Open it via the 'Open Album' button visible in all Collection views and on this tab.\n\n" +
-                "Clicking a species card opens a detail view showing all your captures of that species, " +
-                "paginated (8 / 12 / 16 per page) with a sort dropdown and rarity filter.\n\n" +
-                "Each catalog card shows the species image, combat level, difficulty tier, " +
-                "and rarity dots for rarities you have caught. " +
-                "Use the search box or difficulty dropdown to filter the catalog."));
-        tiles.add(tile("Favourites",
-                "Right-click any capture card or row → 'Add to Favourites' to star it. " +
-                "Up to 20 captures can be starred. Remove a star the same way.\n\n" +
-                "The ★ Favourites button in the Collection header shows all starred cards. " +
-                "Click a card to open its export preview; right-click to copy, rename, or unstar.\n\n" +
-                "In the Album, a ★ Favourites shortcut opens a detail view of all starred captures " +
-                "across every species, with a golden grid export option."));
-        tiles.add(tile("Export",
-                "Right-click any card in the Collection, Favourites, or Album views → 'Export Card'.\n\n" +
-                "Opens a preview of the capture at 3× scale. " +
-                "Copy to clipboard or save as PNG. " +
-                "Each card footer shows the unique 28-character ID, your player name, and the OSRS | Bestiary stamp.\n\n" +
-                "In the Album detail view, use 'Export Page' to export the current page as a grid image " +
-                "(2–4 columns depending on page size).\n\n" +
-                "You can also right-click capture rows directly to copy a card to clipboard without opening the export preview."));
-        tiles.add(tile("Session Recap",
-                "A button on the Progress tab shows all captures made since you last logged in.\n\n" +
-                "The recap lists every capture with its rarity (colour-coded), Power Level, " +
-                "region, and time. A rarity pill summary at the top shows your totals at a glance.\n\n" +
-                "'Copy Summary' places the list on your clipboard, formatted as a code block " +
-                "so it displays cleanly when pasted into Discord or a text editor."));
-        tiles.add(tile("Reset Collection",
-                "The 'Reset Collection' button at the bottom of the panel permanently deletes " +
-                "all captures, kill counts, XP, levels, and achievements. " +
-                "You will be asked to confirm twice before anything is erased."));
-
-        outer.add(title, BorderLayout.NORTH);
-        outer.add(tiles, BorderLayout.CENTER);
-        return outer;
+        panel.add(a, BorderLayout.CENTER);
+        return panel;
     }
 
     private static JPanel tile(String term, String definition) {
