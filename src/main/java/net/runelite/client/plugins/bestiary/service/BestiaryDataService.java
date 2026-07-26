@@ -12,36 +12,35 @@ import lombok.extern.slf4j.Slf4j;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
 /**
- * Loads and saves the bestiary collection and progression state via SQLite.
- * Mutations to captures and kill counts are written immediately. Mutable
- * creature fields (favourite, nickname, playerName, regionName) are flushed
- * as a batch by saveNow(), which is called from UI callbacks after changes.
+ * Loads and saves the bestiary collection and progression state as JSON (via
+ * {@link BestiaryStore}). The whole collection lives in memory here; mutations update it
+ * and then persist a snapshot — debounced for high-frequency events (kills, credits),
+ * immediate for valuable/rare ones (captures, rerolls, discards) and lifecycle events.
  */
 @Slf4j
 @Singleton
 public class BestiaryDataService {
 
-    private static final String META_CREDITS      = "credits";
-    private static final String META_TOTAL_XP     = "total_xp";
-    private static final String META_ACHIEVEMENTS = "achievements";
-
     private final ProgressionService progressionService;
-    private final BestiaryDatabase db;
+    private final BestiaryStore store;
 
     @Getter
     private BestiaryCollection collection = new BestiaryCollection();
     private ProgressionService.ProgressionState progressionState = new ProgressionService.ProgressionState();
 
     @Inject
-    public BestiaryDataService(ProgressionService progressionService, BestiaryDatabase db) {
+    public BestiaryDataService(ProgressionService progressionService, BestiaryStore store) {
         this.progressionService = progressionService;
-        this.db = db;
+        this.store = store;
     }
 
     // -------------------------------------------------------------------------
@@ -50,55 +49,46 @@ public class BestiaryDataService {
 
     /** Must be called from the client thread during plugin startUp. */
     public void load() {
-        db.open();
+        BestiaryStore.StoreData d = store.load();
         collection = new BestiaryCollection();
-
-        List<CapturedCreature> captures = db.loadAllCaptures();
-        for (CapturedCreature c : captures) {
+        for (CapturedCreature c : d.captures) {
             collection.creatures.add(c);
             collection.captureCountByNpc.merge(c.npcName, 1, Integer::sum);
         }
-
-        collection.killCounts = db.loadKillCounts();
-        collection.credits    = parseLong(db.getMetadata(META_CREDITS, "0"), 0L);
+        collection.killCounts = new HashMap<>(d.killCounts);
+        collection.credits    = d.credits;
 
         progressionState = new ProgressionService.ProgressionState();
-        progressionState.totalXp = parseLong(db.getMetadata(META_TOTAL_XP, "0"), 0L);
-        progressionState.unlockedAchievements = loadAchievements();
+        progressionState.totalXp = d.totalXp;
+        progressionState.unlockedAchievements = parseAchievements(d.achievements);
 
         progressionService.init(progressionState, collection);
-        log.info("Bestiary loaded from DB: {} captures", collection.totalCaptures());
+        log.info("Bestiary loaded: {} captures", collection.totalCaptures());
     }
 
-    /**
-     * Flushes all mutable creature fields and metadata to disk. Called from UI
-     * callbacks after favourite/nickname/playerName changes.
-     */
+    /** Flushes the current state to disk immediately. Called from UI callbacks after edits. */
     public void saveNow() {
-        db.batchUpdateMutable(collection.creatures);
-        saveMetadata();
+        persistNow();
     }
 
-    /** No-op: individual mutations are written immediately. Kept for API compatibility. */
+    /** Debounced save. Kept for API compatibility with callers that don't need an immediate flush. */
     public void scheduleSave() {
-        saveNow();
+        persist();
     }
 
     /** Permanently deletes all data and resets in-memory state. */
     public void wipeCollection() {
-        db.deleteAllCaptures();
-        db.deleteAllKillCounts();
-        db.deleteAllMetadata();
         collection       = new BestiaryCollection();
         progressionState = new ProgressionService.ProgressionState();
         progressionService.init(progressionState, collection);
+        persistNow();
         log.info("Bestiary collection wiped");
     }
 
-    /** Closes the database connection. Call from plugin shutDown. */
+    /** Flushes and stops the store writer. Call from plugin shutDown. */
     public void shutdown() {
-        saveNow();
-        db.close();
+        persistNow();
+        store.close();
     }
 
     // -------------------------------------------------------------------------
@@ -107,23 +97,17 @@ public class BestiaryDataService {
 
     public void addCapture(CapturedCreature c) {
         collection.addCapture(c);
-        db.insertCapture(c);
-        saveMetadata();
+        persistNow();   // a capture is rare + valuable — write immediately
     }
 
     public void incrementKillCount(String npcName) {
         collection.incrementKillCount(npcName);
-        db.upsertKillCount(npcName, collection.getKillCount(npcName));
-        saveMetadata();
+        persist();      // high-frequency — debounce
     }
 
-    /**
-     * Persists mutable fields of a single creature immediately. Use this after
-     * targeted changes (e.g. a single card's favourite or nickname was just changed)
-     * when you want to avoid a full batch flush.
-     */
+    /** Persists mutable fields of a single creature (favourite/nickname/etc. already changed in memory). */
     public void updateCapture(CapturedCreature c) {
-        db.updateCaptureMutable(c);
+        persist();
     }
 
     public ProgressionService.ProgressionState getProgressionState() {
@@ -136,7 +120,7 @@ public class BestiaryDataService {
 
     public void awardCredits(long amount) {
         collection.credits += amount;
-        db.setMetadata(META_CREDITS, String.valueOf(collection.credits));
+        persist();
     }
 
     /** Credits a card is worth if discarded. */
@@ -152,9 +136,9 @@ public class BestiaryDataService {
      */
     public long discardCapture(CapturedCreature c) {
         if (!collection.removeCapture(c)) return 0;   // already discarded — award nothing
-        db.deleteCapture(c.id);
         long credits = discardValue(c);
-        awardCredits(credits);
+        collection.credits += credits;
+        persistNow();
         return credits;
     }
 
@@ -163,15 +147,15 @@ public class BestiaryDataService {
         long total = 0;
         for (CapturedCreature c : cards) {
             if (!collection.removeCapture(c)) continue;
-            db.deleteCapture(c.id);
             total += discardValue(c);
         }
-        awardCredits(total);
+        collection.credits += total;
+        persistNow();
         return total;
     }
 
     public void saveProgressionState() {
-        saveMetadata();
+        persist();
     }
 
     // -------------------------------------------------------------------------
@@ -224,7 +208,7 @@ public class BestiaryDataService {
     public boolean spendCredits(long amount) {
         if (collection.credits < amount) return false;
         collection.credits -= amount;
-        db.setMetadata(META_CREDITS, String.valueOf(collection.credits));
+        persist();
         return true;
     }
 
@@ -269,8 +253,7 @@ public class BestiaryDataService {
         nc.albumCover = c.albumCover;
         // Replace in place (by id) so it can't leave a stale/duplicate copy behind.
         if (!collection.replaceCapture(nc)) collection.addCapture(nc);
-        db.deleteCapture(c.id);
-        db.insertCapture(nc);
+        persistNow();
         return nc;
     }
 
@@ -328,18 +311,16 @@ public class BestiaryDataService {
                     .build();
 
                 collection.addCapture(c);
-                db.insertCapture(c);
                 idx++;
             }
             rng.setSeed(name.hashCode());
             collection.killCounts.put(name, killsBefore[5] + rng.nextInt(200));
-            db.upsertKillCount(name, collection.killCounts.get(name));
         }
 
         // Set Bestiary level to 99 and grant demo credits so the Shop has a balance
         progressionState.totalXp = 13_034_431L;
         collection.credits       = 25_000L;
-        saveMetadata();
+        persistNow();
         log.info("Dev seed complete: {} captures across {} monsters",
             collection.totalCaptures(), MonsterRoster.ROSTER.size());
     }
@@ -359,32 +340,40 @@ public class BestiaryDataService {
     // Internal
     // -------------------------------------------------------------------------
 
-    private void saveMetadata() {
-        db.setMetadata(META_CREDITS,  String.valueOf(collection.credits));
-        db.setMetadata(META_TOTAL_XP, String.valueOf(progressionState.totalXp));
-        String achievements = progressionState.unlockedAchievements.stream()
-            .map(Enum::name)
-            .collect(Collectors.joining(","));
-        db.setMetadata(META_ACHIEVEMENTS, achievements);
+    /** Debounced snapshot write (coalesces high-frequency mutations). */
+    private void persist() {
+        store.save(snapshot());
     }
 
-    private EnumSet<Achievement> loadAchievements() {
+    /** Immediate snapshot write. */
+    private void persistNow() {
+        store.saveNow(snapshot());
+    }
+
+    /** Builds a cheap shallow-copy snapshot so the writer thread never races the collection. */
+    private BestiaryStore.StoreData snapshot() {
+        BestiaryStore.StoreData d = new BestiaryStore.StoreData();
+        d.version     = BestiaryStore.VERSION;
+        d.captures    = new ArrayList<>(collection.creatures);
+        d.killCounts  = new LinkedHashMap<>(collection.killCounts);
+        d.credits     = collection.credits;
+        d.totalXp     = progressionState.totalXp;
+        d.achievements = progressionState.unlockedAchievements.stream()
+                .map(Enum::name).collect(Collectors.toList());
+        return d;
+    }
+
+    private EnumSet<Achievement> parseAchievements(List<String> names) {
         EnumSet<Achievement> set = EnumSet.noneOf(Achievement.class);
-        String raw = db.getMetadata(META_ACHIEVEMENTS, "");
-        if (!raw.isEmpty()) {
-            for (String name : raw.split(",")) {
+        if (names != null) {
+            for (String name : names) {
                 try {
                     set.add(Achievement.valueOf(name.trim()));
                 } catch (IllegalArgumentException ignored) {
-                    log.warn("Unknown achievement in DB: {}", name);
+                    log.warn("Unknown achievement in store: {}", name);
                 }
             }
         }
         return set;
-    }
-
-    private static long parseLong(String s, long defaultValue) {
-        try { return Long.parseLong(s); }
-        catch (NumberFormatException e) { return defaultValue; }
     }
 }

@@ -7,8 +7,8 @@ import java.util.Map;
 
 /**
  * Container for the player's entire bestiary — the in-memory model.
- * Persistence is handled by BestiaryDatabase (SQLite); this object is loaded
- * from / synced to the DB by BestiaryDataService.
+ * Persistence is handled by BestiaryStore (JSON); this object is loaded
+ * from / snapshotted to disk by BestiaryDataService.
  */
 public class BestiaryCollection {
 
