@@ -128,6 +128,13 @@ public class OddsView extends JPanel implements Scrollable {
         Color deltaCol = delta > 0 ? new Color(120, 200, 120) : delta < 0 ? new Color(224, 112, 112) : new Color(176, 176, 176);
         add(styleValue(kvRow("This card vs average", body, Color.WHITE, deltaStr), deltaCol));
 
+        add(styleValue(kvRow("Average " + r.rarity.label + " shiny roll", body, ColorScheme.LIGHT_GRAY_COLOR,
+                String.valueOf(r.avgShinyPowerLevel)), nearWhite));
+        int dShiny = r.powerLevel - r.avgShinyPowerLevel;
+        String dShinyStr = dShiny > 0 ? "+" + dShiny + " above avg shiny" : dShiny < 0 ? dShiny + " below avg shiny" : "bang on avg shiny";
+        Color dShinyCol = dShiny > 0 ? new Color(120, 200, 120) : dShiny < 0 ? new Color(224, 112, 112) : new Color(176, 176, 176);
+        add(styleValue(kvRow("This card vs average shiny", body, Color.WHITE, dShinyStr), dShinyCol));
+
         add(paragraph("Power Level = the 7-stat average + the monster's HP at 1/6 weight. "
                 + "HP isn't on the 1–99 scale, so it's added separately — <font color='#a0a0a0'>"
                 + "negligible for a low-HP creature (stats decide: +13 at 80&nbsp;HP), but dominant for a "

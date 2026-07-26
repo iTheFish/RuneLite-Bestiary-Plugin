@@ -68,6 +68,11 @@ public class CardDataDialog extends JDialog {
         tabs.addTab("Odds", scroll(new OddsView(capture)));
         tabs.addTab("Graph", new RerollGraph(capture));   // percentile + (if rerolled) stat timeline
         tabs.addTab("Rerolls", scroll(buildRerollHistory(capture)));
+        // A tab's scroll pane can open part-scrolled (layout quirk) — force it back to the top.
+        tabs.addChangeListener(e -> SwingUtilities.invokeLater(() -> {
+            Component tc = tabs.getSelectedComponent();
+            if (tc instanceof JScrollPane) ((JScrollPane) tc).getViewport().setViewPosition(new Point(0, 0));
+        }));
 
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -97,12 +102,12 @@ public class CardDataDialog extends JDialog {
     private JComponent buildBottomBar() {
         JButton export = barButton("Export ▾", new Color(60, 90, 150));
         export.addActionListener(e -> menu(export,
-                () -> flashAfter(export, "✓ Copied", () -> copy(renderTab(tabs.getSelectedIndex()))),
-                () -> flashAfter(export, "✓ Copied", () -> copy(renderAllTabs()))));
+                () -> flashAfter(export, "✓ Copied", () -> copy(decorate(renderTab(tabs.getSelectedIndex())))),
+                () -> flashAfter(export, "✓ Copied", () -> copy(renderGrid()))));
         JButton save = barButton("Save PNG ▾", new Color(55, 110, 60));
         save.addActionListener(e -> menu(save,
-                () -> save(renderTab(tabs.getSelectedIndex()), "card-" + tabTitle()),
-                () -> save(renderAllTabs(), "card-data")));
+                () -> save(decorate(renderTab(tabs.getSelectedIndex())), "card-" + tabTitle()),
+                () -> save(renderGrid(), "card-data")));
 
         JPanel bar = new JPanel(new GridLayout(1, 2, 6, 0));
         bar.setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -164,27 +169,67 @@ public class CardDataDialog extends JDialog {
         return img;
     }
 
-    /** Renders every tab (selecting each so it lays out) and stacks them vertically. */
-    private BufferedImage renderAllTabs() {
+    /** Renders every tab (each with a footer) into a 2×2 grid on a dark backdrop, dashboard-style. */
+    private BufferedImage renderGrid() {
         int prev = tabs.getSelectedIndex();
-        List<BufferedImage> parts = new ArrayList<>();
+        List<BufferedImage> cells = new ArrayList<>();
         for (int i = 0; i < tabs.getTabCount(); i++) {
             tabs.setSelectedIndex(i);
             tabs.validate();
-            parts.add(renderTab(i));
+            cells.add(decorate(renderTab(i)));
         }
         tabs.setSelectedIndex(prev);
 
-        int w = 1, h = 0, gap = 10;
-        for (BufferedImage p : parts) { w = Math.max(w, p.getWidth()); h += p.getHeight() + gap; }
-        BufferedImage out = new BufferedImage(w, Math.max(1, h), BufferedImage.TYPE_INT_RGB);
+        int cols = 2;
+        int rows = (cells.size() + cols - 1) / cols;
+        int colW = 1;
+        for (BufferedImage c : cells) colW = Math.max(colW, c.getWidth());
+        int[] rowH = new int[rows];
+        for (int i = 0; i < cells.size(); i++) rowH[i / cols] = Math.max(rowH[i / cols], cells.get(i).getHeight());
+
+        int pad = 14, gap = 10;
+        int totalRowH = 0;
+        for (int rh : rowH) totalRowH += rh;
+        int W = pad * 2 + colW * cols + gap * (cols - 1);
+        int H = pad * 2 + totalRowH + gap * (rows - 1);
+
+        BufferedImage out = new BufferedImage(W, H, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = out.createGraphics();
-        g.setColor(ColorScheme.DARK_GRAY_COLOR);
-        g.fillRect(0, 0, w, h);
-        int y = 0;
-        for (BufferedImage p : parts) { g.drawImage(p, 0, y, null); y += p.getHeight() + gap; }
+        g.setColor(new Color(10, 10, 10));
+        g.fillRect(0, 0, W, H);
+        int y = pad;
+        for (int rrow = 0; rrow < rows; rrow++) {
+            int x = pad;
+            for (int cc = 0; cc < cols; cc++) {
+                int idx = rrow * cols + cc;
+                if (idx < cells.size()) g.drawImage(cells.get(idx), x, y, null);
+                x += colW + gap;
+            }
+            y += rowH[rrow] + gap;
+        }
         g.dispose();
         return out;
+    }
+
+    /** Wraps a rendered tab with a dashboard-style footer (orange rule + brand line). */
+    private BufferedImage decorate(BufferedImage c) {
+        int footerH = 24;
+        int W = c.getWidth(), H = c.getHeight() + footerH;
+        BufferedImage dst = new BufferedImage(W, H, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = dst.createGraphics();
+        g.setColor(ColorScheme.DARK_GRAY_COLOR);
+        g.fillRect(0, 0, W, H);
+        g.drawImage(c, 0, 0, null);
+        int fy = c.getHeight() + 3;
+        g.setColor(new Color(255, 165, 0, 60));
+        g.fillRect(12, fy, W - 24, 1);
+        g.setFont(FontManager.getRunescapeSmallFont());
+        FontMetrics fm = g.getFontMetrics();
+        String footer = "RuneLite · Bestiary Plugin";
+        g.setColor(new Color(110, 110, 110));
+        g.drawString(footer, (W - fm.stringWidth(footer)) / 2, fy + 7 + fm.getAscent());
+        g.dispose();
+        return dst;
     }
 
     private void copy(BufferedImage img) {
@@ -300,6 +345,7 @@ public class CardDataDialog extends JDialog {
         GridBagConstraints g = new GridBagConstraints();
         g.insets = new Insets(2, 0, 2, 10);
         g.anchor = GridBagConstraints.WEST;
+        g.weightx = 1.0;   // spread the columns across the panel width
 
         String[] heads = {"State", "Rarity", "PWR", "Shiny", "By", "When"};
         for (int i = 0; i < heads.length; i++) {

@@ -216,7 +216,7 @@ public class RerollGraph extends JPanel {
         private void drawPercentile(Graphics2D g) {
             int w = getWidth(), h = getHeight();
             int n = pctNames.length;
-            int padT = 10, padB = 10, left = 46, right = 118;
+            int padT = 10, padB = 10, left = 64, right = 118;
             int barX = left, barW = Math.max(20, w - left - right);
             int rows = n + 1;   // Overall + per-stat
             int rowH = Math.max(16, (h - padT - padB) / rows);
