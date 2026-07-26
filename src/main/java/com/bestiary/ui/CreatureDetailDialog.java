@@ -5,7 +5,6 @@ import com.bestiary.model.BestiaryCollection;
 import com.bestiary.model.CapturedCreature;
 import com.bestiary.model.CreatureQuality;
 import com.bestiary.model.CreatureRarity;
-import com.bestiary.model.DetailSectionDefault;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 
@@ -104,10 +103,8 @@ public class CreatureDetailDialog extends JDialog {
         this.dialogBest  = computeBests(captures);
         this.currentSort = defaultSort;
 
-        // Sync session state from config. If the config value changed since last open, reset the
-        // session to match the new default — then future manual toggles take over again.
-        boolean configCollapsed = sharedConfig != null
-                && sharedConfig.detailSectionDefault() == DetailSectionDefault.COLLAPSED;
+        // Rarity sections start expanded; manual per-session toggles take over from there.
+        boolean configCollapsed = false;
         if (configCollapsed != lastConfigCollapsed) {
             lastConfigCollapsed = configCollapsed;
             sessionCollapsed.clear();

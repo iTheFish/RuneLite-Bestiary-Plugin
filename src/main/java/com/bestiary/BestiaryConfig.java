@@ -5,7 +5,6 @@ import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.Range;
 import com.bestiary.model.ChatNotifyMode;
-import com.bestiary.model.DetailSectionDefault;
 import com.bestiary.model.OverlayPos;
 
 @ConfigGroup("bestiary")
@@ -100,16 +99,6 @@ public interface BestiaryConfig extends Config {
     )
     default ChatNotifyMode chatNotifyMode() {
         return ChatNotifyMode.VERBOSE;
-    }
-
-    @ConfigItem(
-            keyName = "detailSectionDefault",
-            name = "Detail Rarity Sections",
-            description = "Whether rarity sections in the capture detail dialog start expanded or collapsed",
-            position = 11
-    )
-    default DetailSectionDefault detailSectionDefault() {
-        return DetailSectionDefault.EXPANDED;
     }
 
     @ConfigItem(
