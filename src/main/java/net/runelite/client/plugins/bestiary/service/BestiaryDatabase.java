@@ -30,7 +30,7 @@ import java.util.Map;
 public class BestiaryDatabase {
 
     private static final String DB_NAME = "bestiary.db";
-    private static final int    SCHEMA_VERSION = 7;
+    private static final int    SCHEMA_VERSION = 8;
 
     private final File dbFile;
     private Connection conn;
@@ -118,7 +118,8 @@ public class BestiaryDatabase {
                 "  album_cover          INTEGER NOT NULL DEFAULT 0," +
                 "  prayer               INTEGER NOT NULL DEFAULT 1," +
                 "  observed_hp          INTEGER NOT NULL DEFAULT 0," +
-                "  rerolled_by          TEXT    NOT NULL DEFAULT ''" +
+                "  rerolled_by          TEXT    NOT NULL DEFAULT ''," +
+                "  reroll_history       TEXT    NOT NULL DEFAULT ''" +
                 ")"
             );
             st.executeUpdate(
@@ -141,8 +142,8 @@ public class BestiaryDatabase {
             "(id, npc_id, npc_name, npc_combat_level, rarity," +
             " stat_atk, stat_str, stat_def, stat_mag, stat_rng, stat_agi," +
             " capture_time, region_name, capture_level, kills_before_capture," +
-            " player_name, nickname, favourite, shiny, album_cover, prayer, observed_hp, rerolled_by)" +
-            " VALUES (?,?,?,?,?, ?,?,?,?,?,?, ?,?,?,?, ?,?,?,?,?, ?,?,?)";
+            " player_name, nickname, favourite, shiny, album_cover, prayer, observed_hp, rerolled_by, reroll_history)" +
+            " VALUES (?,?,?,?,?, ?,?,?,?,?,?, ?,?,?,?, ?,?,?,?,?, ?,?,?,?)";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, c.id);
             ps.setInt(2, c.npcId);
@@ -167,6 +168,7 @@ public class BestiaryDatabase {
             ps.setInt(21, c.prayer);
             ps.setInt(22, c.observedHp);
             ps.setString(23, c.rerolledBy != null ? c.rerolledBy : "");
+            ps.setString(24, encodeRerollHistory(c.rerollHistory));
             ps.executeUpdate();
         } catch (SQLException e) {
             log.error("Failed to insert capture {}", c.id, e);
@@ -228,7 +230,7 @@ public class BestiaryDatabase {
             "SELECT id, npc_id, npc_name, npc_combat_level, rarity," +
             " stat_atk, stat_str, stat_def, stat_mag, stat_rng, stat_agi," +
             " capture_time, region_name, capture_level, kills_before_capture," +
-            " player_name, nickname, favourite, shiny, album_cover, prayer, observed_hp, rerolled_by" +
+            " player_name, nickname, favourite, shiny, album_cover, prayer, observed_hp, rerolled_by, reroll_history" +
             " FROM captures ORDER BY capture_time ASC";
         try (Statement st = conn.createStatement(); ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
@@ -252,6 +254,7 @@ public class BestiaryDatabase {
                     .prayer(rs.getInt("prayer"))
                     .observedHp(rs.getInt("observed_hp"))
                     .rerolledBy(rs.getString("rerolled_by"))
+                    .rerollHistory(decodeRerollHistory(rs.getString("reroll_history")))
                     .build();
                 c.nickname   = rs.getString("nickname");
                 c.favourite  = rs.getInt("favourite") == 1;
@@ -279,6 +282,51 @@ public class BestiaryDatabase {
         } catch (SQLException e) {
             log.error("Failed to delete capture {}", id, e);
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Reroll history encoding
+    // -------------------------------------------------------------------------
+    // One record per reroll, fields '|'-separated, records ';'-separated:
+    //   rarity|powerLevel|shiny(1/0)|prayer|epoch|rerolledBy
+    // OSRS display names can't contain '|' or ';', so no escaping is needed.
+
+    static String encodeRerollHistory(List<CapturedCreature.RerollState> history) {
+        if (history == null || history.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
+        for (CapturedCreature.RerollState s : history) {
+            if (sb.length() > 0) sb.append(';');
+            sb.append(s.rarity.name()).append('|')
+              .append(s.powerLevel).append('|')
+              .append(s.shiny ? 1 : 0).append('|')
+              .append(s.prayer).append('|')
+              .append(s.epoch).append('|')
+              .append(s.rerolledBy != null ? s.rerolledBy : "");
+        }
+        return sb.toString();
+    }
+
+    static List<CapturedCreature.RerollState> decodeRerollHistory(String raw) {
+        List<CapturedCreature.RerollState> out = new ArrayList<>();
+        if (raw == null || raw.isEmpty()) return out;
+        for (String rec : raw.split(";")) {
+            if (rec.isEmpty()) continue;
+            // limit 6 so a name containing stray characters stays in the last field
+            String[] f = rec.split("\\|", 6);
+            if (f.length < 6) continue;
+            try {
+                out.add(new CapturedCreature.RerollState(
+                        CreatureRarity.valueOf(f[0]),
+                        Integer.parseInt(f[1]),
+                        "1".equals(f[2]),
+                        Integer.parseInt(f[3]),
+                        f[5],
+                        Long.parseLong(f[4])));
+            } catch (IllegalArgumentException ex) {
+                log.warn("Skipping malformed reroll history record: {}", rec);
+            }
+        }
+        return out;
     }
 
     // -------------------------------------------------------------------------

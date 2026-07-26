@@ -87,7 +87,7 @@ public class CardExportDialog extends JDialog {
         g2.setColor(new Color(12, 12, 12));
         g2.fillRect(0, AlbumCard.CARD_H, AlbumCard.CARD_W, bottomH);
         String ownerStr = "Captured by " + capturedBy;
-        drawBanner(g2, 0, AlbumCard.CARD_H, AlbumCard.CARD_W, bottomH, cardId, ownerStr, capture.rerolledBy);
+        drawBanner(g2, 0, AlbumCard.CARD_H, AlbumCard.CARD_W, bottomH, cardId, ownerStr, capture.rerollCount());
         g2.dispose();
         card.removeNotify();
 
@@ -112,7 +112,7 @@ public class CardExportDialog extends JDialog {
     private final String cardId;
     private final String owner;
     private final String npcName;
-    private final String rerolledBy;
+    private final int rerollCount;
 
     public CardExportDialog(Window owner, CapturedCreature capture,
                             BestiaryCollection collection,
@@ -129,7 +129,7 @@ public class CardExportDialog extends JDialog {
         this.card.setShowQuality(true);
         this.cardId = CardId.encode(dexNumber, capture);
         this.owner  = capturedBy;
-        this.rerolledBy = capture.rerolledBy;
+        this.rerollCount = capture.rerollCount();
 
         // Re-query the live collection at click time to avoid stale snapshot
         card.setClickOverride(() -> {
@@ -161,7 +161,7 @@ public class CardExportDialog extends JDialog {
                 g2.fillRect(0, AlbumCard.CARD_H, AlbumCard.CARD_W, BOTTOM_H);
                 String ownerStr = "Captured by " + CardExportDialog.this.owner;
                 drawBanner(g2, 0, AlbumCard.CARD_H, AlbumCard.CARD_W, BOTTOM_H, cardId, ownerStr,
-                        capture.rerolledBy);
+                        capture.rerollCount());
                 g2.dispose();
             }
         };
@@ -306,7 +306,7 @@ public class CardExportDialog extends JDialog {
         g2.setColor(new Color(12, 12, 12));
         g2.fillRect(0, AlbumCard.CARD_H, AlbumCard.CARD_W, bottomH);
         String ownerStr = "Captured by " + owner;
-        drawBanner(g2, 0, AlbumCard.CARD_H, AlbumCard.CARD_W, bottomH, cardId, ownerStr, rerolledBy);
+        drawBanner(g2, 0, AlbumCard.CARD_H, AlbumCard.CARD_W, bottomH, cardId, ownerStr, rerollCount);
 
         g2.dispose();
         return img;
@@ -345,12 +345,12 @@ public class CardExportDialog extends JDialog {
     }
 
     static void drawBanner(Graphics2D g2, int bX, int bY, int bannerW, int bannerH, String cardId, String ownerStr) {
-        drawBanner(g2, bX, bY, bannerW, bannerH, cardId, ownerStr, "");
+        drawBanner(g2, bX, bY, bannerW, bannerH, cardId, ownerStr, 0);
     }
 
-    /** Draws the banner: UniqueID + Captured by (+ optional Rerolled by) centred, brand pinned bottom. */
+    /** Draws the banner: UniqueID + Captured by (+ optional Rerolled N times) centred, brand pinned bottom. */
     static void drawBanner(Graphics2D g2, int bX, int bY, int bannerW, int bannerH,
-                           String cardId, String ownerStr, String rerolledBy) {
+                           String cardId, String ownerStr, int rerollCount) {
         // Shrink the ID font if the (now longer) ID would overflow the banner width.
         float idSize = 7f;
         while (idSize > 4f && FontManager.getRunescapeSmallFont().deriveFont(idSize)
@@ -369,8 +369,8 @@ public class CardExportDialog extends JDialog {
         g2.setFont(brandFont);
         g2.setColor(new Color(110, 110, 110));
         g2.drawString(brand, bX + (bannerW - bfm.stringWidth(brand)) / 2, brandY);
-        // UniqueID + Captured by (+ optional Rerolled by) centred above the brand line
-        boolean rerolled = rerolledBy != null && !rerolledBy.isEmpty();
+        // UniqueID + Captured by (+ optional Rerolled N times) centred above the brand line
+        boolean rerolled = rerollCount > 0;
         Font reFont = FontManager.getRunescapeSmallFont().deriveFont(Font.ITALIC, 8f);
         g2.setFont(reFont); FontMetrics rfm = g2.getFontMetrics();
         int gap    = 2;
@@ -385,7 +385,7 @@ public class CardExportDialog extends JDialog {
         int y2 = startY + ifm.getHeight() + gap;
         g2.drawString(ownerStr, bX + (bannerW - pfm.stringWidth(ownerStr)) / 2, y2 + pfm.getAscent());
         if (rerolled) {
-            String reStr = "Rerolled by " + rerolledBy;
+            String reStr = "Rerolled " + rerollCount + (rerollCount == 1 ? " time" : " times");
             g2.setFont(reFont);
             g2.setColor(new Color(150, 120, 200));
             int y3 = y2 + pfm.getHeight() + gap;

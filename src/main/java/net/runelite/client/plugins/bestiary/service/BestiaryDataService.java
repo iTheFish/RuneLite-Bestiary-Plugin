@@ -217,6 +217,10 @@ public class BestiaryDataService {
         int prayer = net.runelite.client.plugins.bestiary.util.RarityRoller.rollPrayer(
                 net.runelite.client.plugins.bestiary.model.MonsterRoster.getPrayer(c.npcName), rarity, rerollRng, shiny);
         String reroller = c.playerName != null && !c.playerName.isEmpty() ? c.playerName : "Player";
+        // Log the card's pre-reroll state, then carry the whole history forward onto the new card.
+        java.util.List<CapturedCreature.RerollState> history = new java.util.ArrayList<>(c.rerollHistory);
+        history.add(new CapturedCreature.RerollState(
+                c.rarity, c.powerLevel(), c.isShiny(), c.prayer, reroller, java.time.Instant.now().getEpochSecond()));
         CapturedCreature nc = CapturedCreature.builder()
                 .id(c.id).npcId(c.npcId).npcName(c.npcName).npcCombatLevel(c.npcCombatLevel)
                 .rarity(rarity).quality(q).captureTime(c.captureTime).regionName(c.regionName)
@@ -224,6 +228,7 @@ public class BestiaryDataService {
                 .killsBeforeCapture(c.killsBeforeCapture)
                 .playerName(c.playerName).shiny(shiny).prayer(prayer).observedHp(c.observedHp)
                 .rerolledBy(reroller)
+                .rerollHistory(history)
                 .build();
         nc.favourite  = c.favourite;
         nc.nickname   = c.nickname;
