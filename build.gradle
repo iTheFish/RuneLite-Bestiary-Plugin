@@ -14,7 +14,7 @@ repositories {
 }
 
 def runeLiteVersion = 'latest.release'
-def pluginMainClass = 'net.runelite.client.plugins.bestiary.BestiaryPluginTest'
+def pluginMainClass = 'com.bestiary.BestiaryPluginTest'
 
 dependencies {
 	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
@@ -31,7 +31,7 @@ dependencies {
 	testAnnotationProcessor 'org.projectlombok:lombok:1.18.30'
 }
 
-group = 'net.runelite.client.plugins.bestiary'
+group = 'com.bestiary'
 version = '1.0'
 
 tasks.withType(JavaCompile).configureEach {
