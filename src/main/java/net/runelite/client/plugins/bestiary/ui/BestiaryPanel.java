@@ -160,6 +160,17 @@ public class BestiaryPanel extends PluginPanel {
         panel.add(seedBtn);
         panel.add(Box.createVerticalStrut(3));
 
+        JButton creditBtn = new JButton("[DEV] +100k Credits");
+        creditBtn.setFont(FontManager.getRunescapeSmallFont());
+        creditBtn.setBackground(new Color(20, 60, 40));
+        creditBtn.setForeground(new Color(120, 220, 150));
+        creditBtn.setBorderPainted(false);
+        creditBtn.setFocusPainted(false);
+        creditBtn.setAlignmentX(CENTER_ALIGNMENT);
+        creditBtn.addActionListener(e -> { dataService.awardCredits(100_000); refresh(); });
+        panel.add(creditBtn);
+        panel.add(Box.createVerticalStrut(3));
+
         panel.add(buildWipeBtn());
         return panel;
     }

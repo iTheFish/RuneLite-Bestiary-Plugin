@@ -225,9 +225,10 @@ public class BestiaryDataService {
         nc.favourite  = c.favourite;
         nc.nickname   = c.nickname;
         nc.albumCover = c.albumCover;
-        collection.removeCapture(c);
-        collection.addCapture(nc);
-        db.insertCapture(nc);   // INSERT OR REPLACE keyed on id
+        // Replace in place (by id) so it can't leave a stale/duplicate copy behind.
+        if (!collection.replaceCapture(nc)) collection.addCapture(nc);
+        db.deleteCapture(c.id);
+        db.insertCapture(nc);
         return nc;
     }
 

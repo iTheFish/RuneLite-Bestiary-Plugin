@@ -31,6 +31,17 @@ public class BestiaryCollection {
         captureCountByNpc.merge(c.npcName, 1, Integer::sum);
     }
 
+    /** Replaces a capture (matched by id) in place. Returns true if one was found. */
+    public boolean replaceCapture(CapturedCreature nc) {
+        for (int i = 0; i < creatures.size(); i++) {
+            if (creatures.get(i).id.equals(nc.id)) {
+                creatures.set(i, nc);
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** Removes a capture from the collection. Returns true only if it was present. */
     public boolean removeCapture(CapturedCreature c) {
         if (creatures.remove(c)) {
