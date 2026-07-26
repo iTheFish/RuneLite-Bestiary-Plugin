@@ -11,3 +11,6 @@ CLAUDE.md
 # Gradle
 .gradle
 build/
+
+# Local scratch / review CSVs (kept locally, not published)
+*.csv
