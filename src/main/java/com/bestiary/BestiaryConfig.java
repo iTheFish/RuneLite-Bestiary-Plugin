@@ -159,7 +159,7 @@ public interface BestiaryConfig extends Config {
     @ConfigItem(
             keyName = "devForceRarity",
             name = "Force Rarity",
-            description = "When set, every capture will be assigned this rarity instead of a random roll.",
+            description = "Developer mode only: forces every capture to this rarity. No effect in the normal client.",
             position = 21,
             section = "devSection"
     )
@@ -170,7 +170,7 @@ public interface BestiaryConfig extends Config {
     @ConfigItem(
             keyName = "devCaptureMode",
             name = "Capture Rate Override",
-            description = "Override the catch rate for testing. Normal = config-based rate.",
+            description = "Developer mode only: forces the catch rate for testing. No effect in the normal client.",
             position = 22,
             section = "devSection"
     )
@@ -181,7 +181,7 @@ public interface BestiaryConfig extends Config {
     @ConfigItem(
             keyName = "devForceShiny",
             name = "Always Roll Shiny",
-            description = "When enabled, every successful capture is shiny. For testing the shiny visuals.",
+            description = "Developer mode only: makes every capture shiny. No effect in the normal client.",
             position = 23,
             section = "devSection"
     )

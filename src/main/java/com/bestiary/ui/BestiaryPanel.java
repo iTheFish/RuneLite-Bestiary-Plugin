@@ -26,6 +26,7 @@ public class BestiaryPanel extends PluginPanel {
     private final BestiaryDataService dataService;
     private final ProgressionService progressionService;
     private final SessionTracker sessionTracker;
+    private final boolean developerMode;
 
     private final JLabel statsLabel;
     private CollectionTab collectionTab;
@@ -37,11 +38,13 @@ public class BestiaryPanel extends PluginPanel {
     public BestiaryPanel(BestiaryDataService dataService, ProgressionService progressionService,
                          WikiImageService imageService, BestiaryConfig config,
                          SessionTracker sessionTracker,
-                         net.runelite.client.game.SkillIconManager skillIconManager) {
+                         net.runelite.client.game.SkillIconManager skillIconManager,
+                         @javax.inject.Named("developerMode") boolean developerMode) {
         super(false); // false = don't auto-wrap in scroll pane
         this.dataService        = dataService;
         this.progressionService = progressionService;
         this.sessionTracker     = sessionTracker;
+        this.developerMode      = developerMode;
         CreatureDetailDialog.setConfig(config);
         CreatureDetailDialog.setSaveCallback(dataService::saveNow);
         CardExportDialog.setShared(imageService, dataService::getCollection);
@@ -145,31 +148,34 @@ public class BestiaryPanel extends PluginPanel {
         panel.setOpaque(false);
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
-        JButton seedBtn = new JButton("[DEV] Seed Test Data");
-        seedBtn.setFont(FontManager.getRunescapeSmallFont());
-        seedBtn.setBackground(new Color(20, 50, 80));
-        seedBtn.setForeground(new Color(100, 180, 255));
-        seedBtn.setBorderPainted(false);
-        seedBtn.setFocusPainted(false);
-        seedBtn.setToolTipText("Wipe collection and insert 1 capture per rarity for every roster monster");
-        seedBtn.setAlignmentX(CENTER_ALIGNMENT);
-        seedBtn.addActionListener(e -> {
-            dataService.seedTestCollection();
-            refresh();
-        });
-        panel.add(seedBtn);
-        panel.add(Box.createVerticalStrut(3));
+        // Dev-only helpers — hidden for live users (only present when RuneLite runs in developer mode).
+        if (developerMode) {
+            JButton seedBtn = new JButton("[DEV] Seed Test Data");
+            seedBtn.setFont(FontManager.getRunescapeSmallFont());
+            seedBtn.setBackground(new Color(20, 50, 80));
+            seedBtn.setForeground(new Color(100, 180, 255));
+            seedBtn.setBorderPainted(false);
+            seedBtn.setFocusPainted(false);
+            seedBtn.setToolTipText("Wipe collection and insert 1 capture per rarity for every roster monster");
+            seedBtn.setAlignmentX(CENTER_ALIGNMENT);
+            seedBtn.addActionListener(e -> {
+                dataService.seedTestCollection();
+                refresh();
+            });
+            panel.add(seedBtn);
+            panel.add(Box.createVerticalStrut(3));
 
-        JButton creditBtn = new JButton("[DEV] +100k Credits");
-        creditBtn.setFont(FontManager.getRunescapeSmallFont());
-        creditBtn.setBackground(new Color(20, 60, 40));
-        creditBtn.setForeground(new Color(120, 220, 150));
-        creditBtn.setBorderPainted(false);
-        creditBtn.setFocusPainted(false);
-        creditBtn.setAlignmentX(CENTER_ALIGNMENT);
-        creditBtn.addActionListener(e -> { dataService.awardCredits(100_000); refresh(); });
-        panel.add(creditBtn);
-        panel.add(Box.createVerticalStrut(3));
+            JButton creditBtn = new JButton("[DEV] +100k Credits");
+            creditBtn.setFont(FontManager.getRunescapeSmallFont());
+            creditBtn.setBackground(new Color(20, 60, 40));
+            creditBtn.setForeground(new Color(120, 220, 150));
+            creditBtn.setBorderPainted(false);
+            creditBtn.setFocusPainted(false);
+            creditBtn.setAlignmentX(CENTER_ALIGNMENT);
+            creditBtn.addActionListener(e -> { dataService.awardCredits(100_000); refresh(); });
+            panel.add(creditBtn);
+            panel.add(Box.createVerticalStrut(3));
+        }
 
         panel.add(buildWipeBtn());
         return panel;
