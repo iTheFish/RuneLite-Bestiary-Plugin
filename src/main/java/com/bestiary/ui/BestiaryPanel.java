@@ -27,6 +27,7 @@ public class BestiaryPanel extends PluginPanel {
     private final ProgressionService progressionService;
     private final SessionTracker sessionTracker;
     private final boolean developerMode;
+    private final com.bestiary.service.DevOptions devOptions;
 
     private final JLabel statsLabel;
     private CollectionTab collectionTab;
@@ -39,12 +40,14 @@ public class BestiaryPanel extends PluginPanel {
                          WikiImageService imageService, BestiaryConfig config,
                          SessionTracker sessionTracker,
                          net.runelite.client.game.SkillIconManager skillIconManager,
-                         @javax.inject.Named("developerMode") boolean developerMode) {
+                         @javax.inject.Named("developerMode") boolean developerMode,
+                         com.bestiary.service.DevOptions devOptions) {
         super(false); // false = don't auto-wrap in scroll pane
         this.dataService        = dataService;
         this.progressionService = progressionService;
         this.sessionTracker     = sessionTracker;
         this.developerMode      = developerMode;
+        this.devOptions         = devOptions;
         CreatureDetailDialog.setConfig(config);
         CreatureDetailDialog.setSaveCallback(dataService::saveNow);
         CardExportDialog.setShared(imageService, dataService::getCollection);
@@ -174,10 +177,55 @@ public class BestiaryPanel extends PluginPanel {
             creditBtn.addActionListener(e -> { dataService.awardCredits(100_000); refresh(); });
             panel.add(fullWidth(creditBtn));
             panel.add(Box.createVerticalStrut(4));
+
+            // Dev capture overrides (never shown to live users; state lives in DevOptions).
+            panel.add(devCombo("Catch",
+                    com.bestiary.model.DevCaptureMode.values(), devOptions.captureMode,
+                    v -> devOptions.captureMode = v));
+            panel.add(Box.createVerticalStrut(3));
+            panel.add(devCombo("Rarity",
+                    com.bestiary.model.DevRarityOverride.values(), devOptions.forceRarity,
+                    v -> devOptions.forceRarity = v));
+            panel.add(Box.createVerticalStrut(3));
+
+            JCheckBox shinyBox = new JCheckBox("Always Roll Shiny", devOptions.forceShiny);
+            shinyBox.setFont(FontManager.getRunescapeSmallFont());
+            shinyBox.setForeground(new Color(100, 180, 255));
+            shinyBox.setOpaque(false);
+            shinyBox.setFocusPainted(false);
+            shinyBox.setAlignmentX(CENTER_ALIGNMENT);
+            shinyBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
+            shinyBox.addActionListener(e -> devOptions.forceShiny = shinyBox.isSelected());
+            panel.add(shinyBox);
+            panel.add(Box.createVerticalStrut(6));
         }
 
         panel.add(buildWipeBtn());
         return panel;
+    }
+
+    /** A compact "label + dropdown" row for a dev override; calls {@code onChange} on selection. */
+    private static <T> JComponent devCombo(String label, T[] values, T current, java.util.function.Consumer<T> onChange) {
+        JComboBox<T> combo = new JComboBox<>(values);
+        combo.setSelectedItem(current);
+        combo.setFont(FontManager.getRunescapeSmallFont());
+        combo.addActionListener(e -> {
+            @SuppressWarnings("unchecked") T v = (T) combo.getSelectedItem();
+            if (v != null) onChange.accept(v);
+        });
+
+        JLabel l = new JLabel(label);
+        l.setFont(FontManager.getRunescapeSmallFont());
+        l.setForeground(new Color(100, 180, 255));
+        l.setBorder(new EmptyBorder(0, 0, 0, 4));
+
+        JPanel row = new JPanel(new BorderLayout(4, 0));
+        row.setOpaque(false);
+        row.setAlignmentX(CENTER_ALIGNMENT);
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
+        row.add(l,     BorderLayout.WEST);
+        row.add(combo, BorderLayout.CENTER);
+        return row;
     }
 
     private JButton buildWipeBtn() {
