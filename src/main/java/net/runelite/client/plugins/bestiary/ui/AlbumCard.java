@@ -110,6 +110,7 @@ public class AlbumCard extends JPanel {
     private final int[] avgStats;
     private final int overallQuality; // 0 for locked
     private final int prayerValue;    // rolled prayer of the shown capture; base prayer when locked
+    private final int hitpoints;      // shown capture's HP (observed damage preferred); wiki/default when locked
 
     // Locked-only
     private final int killCount;
@@ -234,6 +235,9 @@ public class AlbumCard extends JPanel {
         this.hasShiny       = best.isShiny();
         this.overallQuality = best.powerLevel();
         this.prayerValue    = best.prayer;
+        // Show the SAME HP the power level was computed from (observed damage preferred),
+        // so the heart pill matches the capture popup and the P: value — not the wiki default.
+        this.hitpoints      = best.hitpoints();
         init(imageService, true);
     }
 
@@ -258,6 +262,7 @@ public class AlbumCard extends JPanel {
         this.hasShiny       = false;
         this.overallQuality = 0;
         this.prayerValue    = MonsterRoster.getPrayer(npcName);
+        this.hitpoints      = MonsterRoster.getHitpoints(npcName);
         init(imageService, imageService != null);
     }
 
@@ -746,7 +751,7 @@ public class AlbumCard extends JPanel {
             int agW = usable - hpW - prW;
             int aY = ATTR_Y;
             int x0 = imgX;
-            int hp = net.runelite.client.plugins.bestiary.model.MonsterRoster.getHitpoints(npcName);
+            int hp = hitpoints;
             int prayer = prayerValue;
             drawAttrPill(g2, x0, aY, hpW, ATTR_H, IconType.HP, String.valueOf(hp), locked);
             x0 += hpW + gap;
