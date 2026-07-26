@@ -7,3 +7,7 @@ target/
 
 # AI handover file — kept locally only, not published to GitHub
 CLAUDE.md
+
+# Gradle
+.gradle
+build/
