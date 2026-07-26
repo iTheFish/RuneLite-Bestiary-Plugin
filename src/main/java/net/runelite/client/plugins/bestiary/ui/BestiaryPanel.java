@@ -73,19 +73,15 @@ public class BestiaryPanel extends PluginPanel {
                         "You need " + cost + " credits to reroll (you have " + dataService.getCredits() + ").");
                 return;
             }
-            String label = (cap.isShiny() ? "✦ " : "") + cap.rarity.label + " " + cap.npcName;
-            int choice = JOptionPane.showConfirmDialog(owner,
-                    "Reroll " + label + " for " + cost + " credits?\n"
-                    + "Stats, prayer and shiny re-roll (a shiny stays shiny; a small chance to rank up).",
-                    "Card Reroller", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-            if (choice != JOptionPane.YES_OPTION) return;
-            net.runelite.client.plugins.bestiary.model.CapturedCreature nc =
-                    dataService.rerollCard(cap, progressionService.getLevel());
-            refresh();
-            AlbumDialog.refreshOpenAlbum();
-            if (nc != null) {
-                RerollResultDialog.open(win, cap, nc);   // MODELESS before/after
-            }
+            RerollConfirmDialog.open(win, cap, cost, () -> {
+                net.runelite.client.plugins.bestiary.model.CapturedCreature nc =
+                        dataService.rerollCard(cap, progressionService.getLevel());
+                refresh();
+                AlbumDialog.refreshOpenAlbum();
+                if (nc != null) {
+                    RerollResultDialog.open(win, cap, nc);   // MODELESS before/after
+                }
+            });
         });
 
         setLayout(new BorderLayout(0, 6));
