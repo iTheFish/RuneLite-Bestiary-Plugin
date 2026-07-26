@@ -57,16 +57,20 @@ public class RerollConfirmDialog extends JDialog {
         root.add(Box.createVerticalStrut(10));
         double shinyPct = CaptureService.shinyChance(currentLevel) * 100.0;
         double rankPct  = card.rarity == CreatureRarity.MYTHIC ? 0.0 : BestiaryDataService.RARITY_UP_CHANCE * 100.0;
-        JLabel chances = new JLabel(String.format("<html>This reroll: <font color='#78dc78'>shiny %.1f%%</font>"
+        // A shiny card stays shiny through a reroll, so there's no shiny chance to quote.
+        String shinyStr = card.isShiny()
+                ? "<font color='#ffd24d'>already shiny ✦ (stays shiny)</font>"
+                : String.format("<font color='#78dc78'>shiny %.1f%%</font>", shinyPct);
+        JLabel chances = new JLabel(String.format("<html>This reroll: %s"
                 + " &nbsp;·&nbsp; <font color='#ffd24d'>rank up %s</font> (at level %d)</html>",
-                shinyPct, card.rarity == CreatureRarity.MYTHIC ? "— (already Mythic)" : String.format("%.0f%%", rankPct),
+                shinyStr, card.rarity == CreatureRarity.MYTHIC ? "— (already Mythic)" : String.format("%.0f%%", rankPct),
                 currentLevel));
         chances.setFont(FontManager.getRunescapeSmallFont());
         chances.setForeground(Color.WHITE);
         chances.setAlignmentX(Component.LEFT_ALIGNMENT);
         root.add(chances);
-        JLabel warn = new JLabel("<html><div style='width:300px'><i>Rerolling marks this card as "
-                + "'Rerolled by " + card.playerName + "' — it's no longer a raw pull.</i></div></html>");
+        JLabel warn = new JLabel("<html><div style='width:300px'><i>Disclaimer: rerolling marks this card as "
+                + "rerolled — it's no longer a raw pull.</i></div></html>");
         warn.setFont(FontManager.getRunescapeSmallFont());
         warn.setForeground(new Color(224, 170, 90));
         warn.setAlignmentX(Component.LEFT_ALIGNMENT);

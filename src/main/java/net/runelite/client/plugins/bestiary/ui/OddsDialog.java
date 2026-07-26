@@ -67,17 +67,31 @@ public class OddsDialog extends JDialog {
         root.setBackground(ColorScheme.DARK_GRAY_COLOR);
         root.setBorder(new EmptyBorder(12, 14, 12, 14));
 
-        // Title
+        // Title row — name + rarity on the left, REROLLED flag pinned top-right (if applicable)
+        boolean rerolled = capture.rerolledBy != null && !capture.rerolledBy.isEmpty();
+        Box titleRow = Box.createHorizontalBox();
+        titleRow.setAlignmentX(Component.LEFT_ALIGNMENT);
         JLabel title = new JLabel(capture.npcName + "  —  " + r.rarity.label + (r.shiny ? "  ✦ SHINY" : ""));
         title.setFont(FontManager.getRunescapeBoldFont());
         title.setForeground(r.rarity.displayColor);
-        title.setAlignmentX(Component.LEFT_ALIGNMENT);
-        root.add(title);
+        titleRow.add(title);
+        titleRow.add(Box.createHorizontalGlue());
+        if (rerolled) {
+            titleRow.add(rerolledBadge());
+        }
+        root.add(titleRow);
         JLabel sub = new JLabel("Captured at Bestiary level " + r.level + "  ·  " + r.difficulty.label + " tier");
         sub.setFont(body);
         sub.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
         sub.setAlignmentX(Component.LEFT_ALIGNMENT);
         root.add(sub);
+
+        // These odds describe a fresh (raw) pull. A rerolled card's stats/rarity came from the
+        // reroller, so the odds below are what a raw pull WOULD have looked like — not this card's origin.
+        if (rerolled) {
+            root.add(paragraph("<font color='#9678c8'>This card was rerolled — the odds below describe a "
+                    + "<i>raw pull</i> at this rarity, not how this particular card was produced.</font>"));
+        }
 
         root.add(Box.createVerticalStrut(8));
 
@@ -152,6 +166,17 @@ public class OddsDialog extends JDialog {
     }
 
     // ---- helpers ----
+
+    /** Small purple "REROLLED" flag chip for the top-right of the title row. */
+    private JLabel rerolledBadge() {
+        JLabel badge = new JLabel("REROLLED");
+        badge.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        badge.setForeground(new Color(180, 150, 230));
+        badge.setBorder(BorderFactory.createCompoundBorder(
+                new MatteBorder(1, 1, 1, 1, new Color(120, 90, 170)),
+                new EmptyBorder(1, 5, 1, 5)));
+        return badge;
+    }
 
     private JLabel paragraph(String html) {
         JLabel l = new JLabel("<html><div style='width:" + HTML_W + "px'>" + html + "</div></html>");
