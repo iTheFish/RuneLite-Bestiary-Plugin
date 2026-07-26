@@ -100,14 +100,11 @@ public class CardDataDialog extends JDialog {
     // -------------------------------------------------------------------------
 
     private JComponent buildBottomBar() {
-        JButton export = barButton("Export ▾", new Color(60, 90, 150));
-        export.addActionListener(e -> menu(export,
-                () -> flashAfter(export, "✓ Copied", () -> copy(decorate(renderTab(tabs.getSelectedIndex())))),
-                () -> flashAfter(export, "✓ Copied", () -> copy(renderGrid()))));
-        JButton save = barButton("Save PNG ▾", new Color(55, 110, 60));
-        save.addActionListener(e -> menu(save,
-                () -> save(decorate(renderTab(tabs.getSelectedIndex())), "card-" + tabTitle()),
-                () -> save(renderGrid(), "card-data")));
+        JButton export = barButton("Export tab", new Color(60, 90, 150));
+        export.addActionListener(e -> flashAfter(export, "✓ Copied",
+                () -> copy(decorate(renderTab(tabs.getSelectedIndex())))));
+        JButton save = barButton("Save tab PNG", new Color(55, 110, 60));
+        save.addActionListener(e -> save(decorate(renderTab(tabs.getSelectedIndex())), "card-" + tabTitle()));
 
         JPanel bar = new JPanel(new GridLayout(1, 2, 6, 0));
         bar.setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -129,17 +126,6 @@ public class CardDataDialog extends JDialog {
         b.setFocusPainted(false);
         b.setBorderPainted(false);
         return b;
-    }
-
-    private void menu(JComponent anchor, Runnable thisTab, Runnable allTabs) {
-        JPopupMenu m = new JPopupMenu();
-        JMenuItem a = new JMenuItem("This tab (" + tabs.getTitleAt(tabs.getSelectedIndex()) + ")");
-        a.addActionListener(e -> thisTab.run());
-        JMenuItem b = new JMenuItem("All tabs");
-        b.addActionListener(e -> allTabs.run());
-        m.add(a);
-        m.add(b);
-        m.show(anchor, 0, -m.getPreferredSize().height);
     }
 
     private void flashAfter(JButton b, String label, Runnable action) {
@@ -171,63 +157,7 @@ public class CardDataDialog extends JDialog {
 
     private static final int FOOTER_H = 24;
 
-    /** Renders every tab into a uniform 2×2 grid (all cells same width) on a dark backdrop. */
-    private BufferedImage renderGrid() {
-        int prev = tabs.getSelectedIndex();
-        List<BufferedImage> content = new ArrayList<>();
-        for (int i = 0; i < tabs.getTabCount(); i++) {
-            tabs.setSelectedIndex(i);
-            tabs.validate();
-            content.add(renderTab(i));
-        }
-        tabs.setSelectedIndex(prev);
-
-        int cols = 2;
-        int rows = (content.size() + cols - 1) / cols;
-        int colW = 1;
-        for (BufferedImage c : content) colW = Math.max(colW, c.getWidth());   // every cell same width
-        int[] rowContentH = new int[rows];
-        for (int i = 0; i < content.size(); i++)
-            rowContentH[i / cols] = Math.max(rowContentH[i / cols], content.get(i).getHeight());
-
-        int pad = 14, gap = 10;
-        int totalH = 0;
-        for (int rh : rowContentH) totalH += rh + FOOTER_H;
-        int W = pad * 2 + colW * cols + gap * (cols - 1);
-        int H = pad * 2 + totalH + gap * (rows - 1);
-
-        BufferedImage out = new BufferedImage(W, H, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g = out.createGraphics();
-        g.setColor(new Color(10, 10, 10));
-        g.fillRect(0, 0, W, H);
-        int y = pad;
-        for (int rrow = 0; rrow < rows; rrow++) {
-            int cellH = rowContentH[rrow] + FOOTER_H;
-            int x = pad;
-            for (int cc = 0; cc < cols; cc++) {
-                int idx = rrow * cols + cc;
-                if (idx < content.size()) g.drawImage(cell(content.get(idx), colW, cellH), x, y, null);
-                x += colW + gap;
-            }
-            y += cellH + gap;
-        }
-        g.dispose();
-        return out;
-    }
-
-    /** A tab's content padded to a uniform w×h cell, with the footer pinned to the bottom. */
-    private BufferedImage cell(BufferedImage content, int w, int h) {
-        BufferedImage dst = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g = dst.createGraphics();
-        g.setColor(ColorScheme.DARK_GRAY_COLOR);
-        g.fillRect(0, 0, w, h);
-        g.drawImage(content, 0, 0, null);
-        drawFooter(g, w, h - FOOTER_H);
-        g.dispose();
-        return dst;
-    }
-
-    /** Wraps a single rendered tab with a footer (used for the "This tab" export). */
+    /** Wraps a rendered tab with a dashboard-style footer. */
     private BufferedImage decorate(BufferedImage c) {
         BufferedImage dst = new BufferedImage(c.getWidth(), c.getHeight() + FOOTER_H, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = dst.createGraphics();
@@ -361,14 +291,12 @@ public class CardDataDialog extends JDialog {
         t.setOpaque(false);
         t.setAlignmentX(Component.LEFT_ALIGNMENT);
         GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(2, 0, 2, 6);
+        g.insets = new Insets(2, 0, 2, 16);   // roomy columns; natural widths so nothing clips
         g.anchor = GridBagConstraints.WEST;
-        g.weightx = 1.0;   // spread the columns across the panel width
 
         String[] heads = {"State", "Rarity", "PWR", "Shiny", "By", "When"};
         for (int i = 0; i < heads.length; i++) {
             g.gridx = i; g.gridy = 0;
-            g.weightx = (i == heads.length - 1) ? 0 : 1;   // last col keeps natural width (no clip)
             t.add(cell(heads[i], bodyBold, new Color(140, 140, 140)), g);
         }
         // thin rule under the header so the table reads as a table, not floating text
@@ -412,13 +340,12 @@ public class CardDataDialog extends JDialog {
         boolean isCurrent = "Current".equals(state);
         Font f = isCurrent ? bodyBold : body;
         g.gridy = rowY;
-        g.weightx = 1;
         g.gridx = 0; t.add(cell(state, f, isCurrent ? Color.WHITE : new Color(200, 200, 200)), g);
         g.gridx = 1; t.add(cell(rarity, f, rarityColor), g);
         g.gridx = 2; t.add(cell(String.valueOf(pwr), f, Color.WHITE), g);
         g.gridx = 3; t.add(cell(shiny ? "✦" : "–", f, shiny ? new Color(255, 215, 0) : new Color(110, 110, 110)), g);
         g.gridx = 4; t.add(cell(by, f, new Color(180, 150, 230)), g);
-        g.gridx = 5; g.weightx = 0; t.add(cell(when, f, new Color(140, 140, 140)), g);
+        g.gridx = 5; t.add(cell(when, f, new Color(140, 140, 140)), g);
     }
 
     // -------------------------------------------------------------------------
