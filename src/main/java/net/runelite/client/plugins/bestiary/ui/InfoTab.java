@@ -190,10 +190,8 @@ public class InfoTab extends JPanel {
 
     private void fillCapturing(JPanel c) {
         c.add(buildRarityTable());
-        JLabel catchHint = new JLabel("Click 'Catch Rates' above to see your current chances.");
-        catchHint.setFont(FontManager.getRunescapeSmallFont());
-        catchHint.setForeground(new Color(140, 140, 140));
-        catchHint.setAlignmentX(LEFT_ALIGNMENT);
+        JPanel catchHint = noteArea("Click 'Catch Rates' above to see your current chances.",
+                new Color(205, 205, 205));
         catchHint.setBorder(new EmptyBorder(3, 11, 0, 0));
         c.add(catchHint);
         c.add(Box.createVerticalStrut(8));
@@ -233,7 +231,7 @@ public class InfoTab extends JPanel {
                 "+165 at 1000 HP. The rolled stats are mostly flavour — HP drives power."));
         c.add(tile("Stats & class",
                 "Every capture rolls seven stats — Attack, Strength, Defence, Magic, Ranged, Agility " +
-                "and Prayer (Prayer rolls on a smaller scale, but it's a stat like any other). The " +
+                "and Prayer (Prayer rolls on a smaller scale). The " +
                 "monster's combat class decides which tend to roll high — a Warrior favours " +
                 "Attack/Strength, a Marksman favours Ranged, an Occultist favours Magic, and so on.\n\n" +
                 "Higher rarities lift the whole roll toward 99, and bands overlap — so a lucky Rare " +
@@ -401,19 +399,18 @@ public class InfoTab extends JPanel {
         container.setOpaque(false);
         container.setAlignmentX(LEFT_ALIGNMENT);
 
-        // Two big blocks (2 rows tall) mirroring the stat-box header, then a third row.
-        JPanel bigRow = new JPanel(new GridLayout(1, 2, 4, 0));
-        bigRow.setOpaque(false);
-        bigRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
-        bigRow.setAlignmentX(LEFT_ALIGNMENT);
-        bigRow.add(blockBtn("Open Album",    ORANGE,                  openAlbum));
-        bigRow.add(blockBtn("Session Recap", new Color(120, 200, 120), openRecap));
+        // Full-width Open Album (top), Favourites + Catch Rates (middle), full-width Session Recap (bottom).
+        JPanel albumRow = new JPanel(new GridLayout(1, 1));
+        albumRow.setOpaque(false);
+        albumRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
+        albumRow.setAlignmentX(LEFT_ALIGNMENT);
+        albumRow.add(blockBtn("Open Album", ORANGE, openAlbum));
 
-        JPanel smallRow = new JPanel(new GridLayout(1, 2, 4, 0));
-        smallRow.setOpaque(false);
-        smallRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
-        smallRow.setAlignmentX(LEFT_ALIGNMENT);
-        smallRow.add(blockBtn("★ Favourites", new Color(220, 180, 60), openFavourites));
+        JPanel midRow = new JPanel(new GridLayout(1, 2, 4, 0));
+        midRow.setOpaque(false);
+        midRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
+        midRow.setAlignmentX(LEFT_ALIGNMENT);
+        midRow.add(blockBtn("★ Favourites", new Color(220, 180, 60), openFavourites));
         JButton catchBtn = blockBtn(" Catch Rates", new Color(100, 180, 220), openCatchRates);
         final int iD = 13;
         catchBtn.setIcon(new Icon() {
@@ -435,11 +432,19 @@ public class InfoTab extends JPanel {
             }
         });
         catchBtn.setIconTextGap(3);
-        smallRow.add(catchBtn);
+        midRow.add(catchBtn);
 
-        container.add(bigRow);
+        JPanel recapRow = new JPanel(new GridLayout(1, 1));
+        recapRow.setOpaque(false);
+        recapRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
+        recapRow.setAlignmentX(LEFT_ALIGNMENT);
+        recapRow.add(blockBtn("Session Recap", new Color(120, 200, 120), openRecap));
+
+        container.add(albumRow);
         container.add(Box.createVerticalStrut(4));
-        container.add(smallRow);
+        container.add(midRow);
+        container.add(Box.createVerticalStrut(4));
+        container.add(recapRow);
         return container;
     }
 
@@ -474,10 +479,15 @@ public class InfoTab extends JPanel {
         title.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         title.setForeground(ORANGE);
 
-        JLabel subtitle = new JLabel("Catch chance improves with your Capture Level");
+        JTextArea subtitle = new JTextArea("Catch chance improves with your Capture Level.");
         subtitle.setFont(FontManager.getRunescapeSmallFont());
-        subtitle.setForeground(new Color(120, 120, 120));
-        subtitle.setToolTipText("Catch chance improves with your Capture Level");
+        subtitle.setForeground(new Color(190, 190, 190));
+        subtitle.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        subtitle.setOpaque(false);
+        subtitle.setEditable(false);
+        subtitle.setFocusable(false);
+        subtitle.setLineWrap(true);
+        subtitle.setWrapStyleWord(true);
 
         JPanel titleBlock = new JPanel(new BorderLayout(0, 1));
         titleBlock.setOpaque(false);
@@ -547,6 +557,26 @@ public class InfoTab extends JPanel {
         l.setAlignmentX(LEFT_ALIGNMENT);
         l.setBorder(new EmptyBorder(0, 0, 4, 0));
         return l;
+    }
+
+    /** A wrapping, label-style note (JTextArea so long text reflows at the panel width). */
+    private static JPanel noteArea(String text, Color colour) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setOpaque(false);
+        panel.setAlignmentX(LEFT_ALIGNMENT);
+
+        JTextArea a = new JTextArea(text);
+        a.setFont(FontManager.getRunescapeSmallFont());
+        a.setForeground(colour);
+        a.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        a.setOpaque(false);
+        a.setEditable(false);
+        a.setFocusable(false);
+        a.setLineWrap(true);
+        a.setWrapStyleWord(true);
+
+        panel.add(a, BorderLayout.CENTER);
+        return panel;
     }
 
     private static JPanel tile(String term, String definition) {
