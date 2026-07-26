@@ -354,7 +354,15 @@ public class CardDataDialog extends JDialog {
     // -------------------------------------------------------------------------
 
     private JPanel column() {
-        JPanel p = new JPanel();
+        // Track the scroll viewport width so full-width children (the reroll table) fill it
+        // instead of the panel sizing to a wide child's preferred width and clipping.
+        JPanel p = new JPanel() {
+            @Override public Dimension getPreferredSize() {
+                Dimension d = super.getPreferredSize();
+                if (getParent() != null) d.width = getParent().getWidth();
+                return d;
+            }
+        };
         p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
         p.setBackground(ColorScheme.DARK_GRAY_COLOR);
         p.setBorder(new EmptyBorder(12, 14, 12, 14));
