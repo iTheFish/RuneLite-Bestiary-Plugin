@@ -83,12 +83,15 @@ public final class RarityRoller {
                                                   int[] bases, Random rng, boolean shiny) {
         int[] stats = new int[6];
         for (int i = 0; i < 6; i++) {
-            int[] band = statBand(bases[i], rarity);
+            // Agility (index 5), like Prayer, is a utility stat rolled at HALF scale.
+            boolean utility = (i == AGILITY_INDEX);
+            int[] band = utility ? utilityBand(bases[i], rarity) : statBand(bases[i], rarity);
             if (shiny) {
                 // Anchor to the TOP of the band + bonus, so a shiny always beats a
-                // same-rarity non-shiny (which can only reach band top).
-                int bonus = SHINY_MIN_BONUS + rng.nextInt(SHINY_MAX_BONUS - SHINY_MIN_BONUS + 1); // +6..+20
-                stats[i] = clampStat(band[1] + bonus);
+                // same-rarity non-shiny (which can only reach band top). Utility stats
+                // get half the bonus, matching their half-scale bands.
+                int fullBonus = SHINY_MIN_BONUS + rng.nextInt(SHINY_MAX_BONUS - SHINY_MIN_BONUS + 1); // +6..+20
+                stats[i] = clampStat(band[1] + (utility ? fullBonus / 2 : fullBonus));
             } else {
                 stats[i] = band[0] + (band[1] > band[0] ? rng.nextInt(band[1] - band[0] + 1) : 0);
             }
@@ -140,36 +143,38 @@ public final class RarityRoller {
         return new int[]{clampStat(hi + SHINY_MIN_BONUS), clampStat(hi + SHINY_MAX_BONUS)};
     }
 
-    /** The [lo, hi] range a SHINY prayer rolls in: prayer band top + half bonus (clamped). */
-    public static int[] shinyPrayerBand(int base, CreatureRarity rarity) {
-        int hi = prayerBand(base, rarity)[1];
-        return new int[]{clampStat(hi + SHINY_MIN_BONUS / 2), clampStat(hi + SHINY_MAX_BONUS / 2)};
-    }
+    // Prayer AND Agility are "utility" stats rolled at HALF scale (the other five are full-scale
+    // combat stats). They stay ~1 for low-base monsters at low rarity and only climb at high
+    // rarity / shiny (base 1 → ~40 at Mythic). Same banded, overlapping model — just halved lift.
+    public static final int    AGILITY_INDEX = 5;
+    public static final double UTILITY_SCALE = 0.5;
 
-    // Prayer uses the same banded model at HALF scale, so it stays ~1 for low-prayer
-    // monsters at low rarity and only climbs at high rarity / shiny (base 1 → ~40 at Mythic).
-    public static final double PRAYER_SCALE = 0.5;
-
-    /** The inclusive [lo, hi] range a non-shiny prayer rolls in (half the stat lift). */
-    public static int[] prayerBand(int base, CreatureRarity rarity) {
+    /** The inclusive [lo, hi] range a non-shiny utility stat (Prayer/Agility) rolls in. */
+    public static int[] utilityBand(int base, CreatureRarity rarity) {
         int i = rarity.ordinal();
         int hr = STAT_CAP - base;
-        int lo = clampStat(base + PRAYER_SCALE * LIFT_LO[i] * hr);
-        int hi = clampStat(base + PRAYER_SCALE * LIFT_HI[i] * hr);
+        int lo = clampStat(base + UTILITY_SCALE * LIFT_LO[i] * hr);
+        int hi = clampStat(base + UTILITY_SCALE * LIFT_HI[i] * hr);
         if (hi < lo) hi = lo;
         return new int[]{lo, hi};
     }
 
-    /** Prayer's expected value at a rarity (band midpoint). */
-    public static int prayerCentre(int base, CreatureRarity rarity) {
+    /** A utility stat's expected value at a rarity (band midpoint). */
+    public static int utilityCentre(int base, CreatureRarity rarity) {
         int i = rarity.ordinal();
         double midLift = (LIFT_LO[i] + LIFT_HI[i]) / 2.0;
-        return clampStat(base + PRAYER_SCALE * midLift * (STAT_CAP - base));
+        return clampStat(base + UTILITY_SCALE * midLift * (STAT_CAP - base));
     }
 
-    /** Rolls a capture's prayer: banded like a stat but half-scale; shiny gets a smaller boost. */
+    /** The [lo, hi] range a SHINY utility stat rolls in: band top + half bonus (clamped). */
+    public static int[] shinyUtilityBand(int base, CreatureRarity rarity) {
+        int hi = utilityBand(base, rarity)[1];
+        return new int[]{clampStat(hi + SHINY_MIN_BONUS / 2), clampStat(hi + SHINY_MAX_BONUS / 2)};
+    }
+
+    /** Rolls a capture's prayer: a utility stat (half scale); shiny gets a smaller boost. */
     public static int rollPrayer(int base, CreatureRarity rarity, Random rng, boolean shiny) {
-        int[] b = prayerBand(base, rarity);
+        int[] b = utilityBand(base, rarity);
         if (shiny) {
             int bonus = (SHINY_MIN_BONUS + rng.nextInt(SHINY_MAX_BONUS - SHINY_MIN_BONUS + 1)) / 2;
             return clampStat(b[1] + bonus);   // top of the band + bonus

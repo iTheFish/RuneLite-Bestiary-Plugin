@@ -78,15 +78,16 @@ public final class OddsCalculator {
                                  : RarityRoller.statBand(bases[i], r.rarity);
             r.stats.add(new StatOdds(STAT_NAMES[i], bases[i], vals[i], centre, band[0], band[1]));
         }
-        // Prayer is a rolled stat too (half scale).
+        // Prayer is a utility stat (half scale).
         int prayerBase = MonsterRoster.getPrayer(c.npcName);
-        int[] pBand = r.shiny ? RarityRoller.shinyPrayerBand(prayerBase, r.rarity)
-                             : RarityRoller.prayerBand(prayerBase, r.rarity);
+        int[] pBand = r.shiny ? RarityRoller.shinyUtilityBand(prayerBase, r.rarity)
+                             : RarityRoller.utilityBand(prayerBase, r.rarity);
         r.stats.add(new StatOdds("Prayer", prayerBase, c.prayer,
-                RarityRoller.prayerCentre(prayerBase, r.rarity), pBand[0], pBand[1]));
-        int centreAgi = RarityRoller.statCentre(bases[5], r.rarity);
-        int[] bandAgi = r.shiny ? RarityRoller.shinyBand(bases[5], r.rarity)
-                               : RarityRoller.statBand(bases[5], r.rarity);
+                RarityRoller.utilityCentre(prayerBase, r.rarity), pBand[0], pBand[1]));
+        // Agility is a utility stat too — half scale, same as Prayer.
+        int centreAgi = RarityRoller.utilityCentre(bases[5], r.rarity);
+        int[] bandAgi = r.shiny ? RarityRoller.shinyUtilityBand(bases[5], r.rarity)
+                               : RarityRoller.utilityBand(bases[5], r.rarity);
         r.stats.add(new StatOdds(STAT_NAMES[5], bases[5], vals[5], centreAgi, bandAgi[0], bandAgi[1]));
 
         // Power Level inputs
@@ -95,11 +96,16 @@ public final class OddsCalculator {
         r.prayer     = c.prayer;
         r.powerLevel = c.powerLevel();
 
-        // Average-roll Power Level for this rarity: every stat (prayer included) at its band centre.
+        // Average-roll Power Level for this rarity: every stat at its band centre. Agility (5)
+        // and Prayer are utility stats (half scale); the other five are full-scale combat stats.
         int avgStatSum = 0;
-        for (int i = 0; i < 6; i++) avgStatSum += RarityRoller.statCentre(bases[i], r.rarity);
+        for (int i = 0; i < 6; i++) {
+            avgStatSum += (i == RarityRoller.AGILITY_INDEX)
+                    ? RarityRoller.utilityCentre(bases[i], r.rarity)
+                    : RarityRoller.statCentre(bases[i], r.rarity);
+        }
         r.avgPowerLevel = Math.round(
-                (avgStatSum + RarityRoller.prayerCentre(prayerBase, r.rarity)) / 7f + r.hp / 6f);
+                (avgStatSum + RarityRoller.utilityCentre(prayerBase, r.rarity)) / 7f + r.hp / 6f);
 
         // Stat wiggle is flavour, not part of "how rare is this card" — only rarity (and shiny) count.
         r.perCapture = r.rarityChance * (r.shiny ? r.shinyChance : 1.0);

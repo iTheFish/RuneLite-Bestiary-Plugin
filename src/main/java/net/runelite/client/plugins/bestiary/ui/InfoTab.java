@@ -231,7 +231,7 @@ public class InfoTab extends JPanel {
                 "+165 at 1000 HP. The rolled stats are mostly flavour — HP drives power."));
         c.add(tile("Stats & class",
                 "Every capture rolls seven stats — Attack, Strength, Defence, Magic, Ranged, Agility " +
-                "and Prayer (Prayer rolls on a smaller scale). The " +
+                "and Prayer (Prayer and Agility roll on a smaller scale). The " +
                 "monster's combat class decides which tend to roll high — a Warrior favours " +
                 "Attack/Strength, a Marksman favours Ranged, an Occultist favours Magic, and so on.\n\n" +
                 "Higher rarities lift the whole roll toward 99, and bands overlap — so a lucky Rare " +

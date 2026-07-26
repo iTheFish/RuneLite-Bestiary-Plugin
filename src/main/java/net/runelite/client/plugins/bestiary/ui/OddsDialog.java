@@ -129,7 +129,7 @@ public class OddsDialog extends JDialog {
         root.add(statsTable());
         root.add(paragraph("Higher rarities lift the roll toward 99 (bigger lift for low stats); "
                 + "lower rarities can dip below the base — never under 1. Bands overlap, so a lucky Rare "
-                + "can beat an unlucky Epic. Prayer rolls the same way at half scale. "
+                + "can beat an unlucky Epic. Prayer and Agility roll the same way at half scale. "
                 + "<font color='#a0a0a0'>Example, base&nbsp;50: Common&nbsp;37–50, Uncommon&nbsp;41–52, "
                 + "Rare&nbsp;45–53, Epic&nbsp;50–61, Legendary&nbsp;56–74, Mythic&nbsp;70–90.</font>"));
 
