@@ -188,15 +188,24 @@ public class BestiaryPanel extends PluginPanel {
                     v -> devOptions.forceRarity = v));
             panel.add(Box.createVerticalStrut(3));
 
-            JCheckBox shinyBox = new JCheckBox("Always Roll Shiny", devOptions.forceShiny);
-            shinyBox.setFont(FontManager.getRunescapeSmallFont());
-            shinyBox.setForeground(new Color(100, 180, 255));
-            shinyBox.setOpaque(false);
-            shinyBox.setFocusPainted(false);
-            shinyBox.setAlignmentX(CENTER_ALIGNMENT);
-            shinyBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
-            shinyBox.addActionListener(e -> devOptions.forceShiny = shinyBox.isSelected());
-            panel.add(shinyBox);
+            // Toggle button (not a checkbox — the dark-theme checkbox tick is unreadable).
+            JToggleButton shinyBtn = new JToggleButton();
+            shinyBtn.setSelected(devOptions.forceShiny);
+            shinyBtn.setFont(FontManager.getRunescapeSmallFont());
+            shinyBtn.setFocusPainted(false);
+            shinyBtn.setBorderPainted(false);
+            shinyBtn.setOpaque(true);
+            shinyBtn.setAlignmentX(CENTER_ALIGNMENT);
+            shinyBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
+            Runnable styleShiny = () -> {
+                boolean on = shinyBtn.isSelected();
+                shinyBtn.setText("Always Roll Shiny: " + (on ? "ON ✦" : "OFF"));
+                shinyBtn.setBackground(on ? new Color(120, 90, 20) : ColorScheme.DARKER_GRAY_COLOR);
+                shinyBtn.setForeground(on ? new Color(255, 215, 0) : new Color(150, 150, 150));
+            };
+            styleShiny.run();
+            shinyBtn.addActionListener(e -> { devOptions.forceShiny = shinyBtn.isSelected(); styleShiny.run(); });
+            panel.add(shinyBtn);
             panel.add(Box.createVerticalStrut(6));
         }
 
