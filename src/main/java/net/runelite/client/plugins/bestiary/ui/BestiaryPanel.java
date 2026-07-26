@@ -67,7 +67,7 @@ public class BestiaryPanel extends PluginPanel {
         }));
         AlbumCard.setRerollHandler((owner, cap) -> {
             Window win = SwingUtilities.getWindowAncestor(owner);
-            long cost = net.runelite.client.plugins.bestiary.service.BestiaryDataService.REROLL_COST;
+            long cost = net.runelite.client.plugins.bestiary.service.BestiaryDataService.rerollCost(cap);
             if (dataService.getCredits() < cost) {
                 RerollResultDialog.info(win, "Card Reroller",
                         "You need " + cost + " credits to reroll (you have " + dataService.getCredits() + ").");
