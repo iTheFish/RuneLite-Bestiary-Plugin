@@ -1168,6 +1168,226 @@ public class MonsterRoster {
         return PRAYER.getOrDefault(npcName, 1);
     }
 
+    // -------------------------------------------------------------------------
+    // Per-monster combat level (OSRS wiki). Used by the dev seed so seeded
+    // captures separate by Power Level the way live captures do (Power Level
+    // now includes combatLevel/6). Variant-spanning names use a representative
+    // average. Unlisted names fall back to 0 → caller uses a tier-based default.
+    // -------------------------------------------------------------------------
+
+    private static final Map<String, Integer> COMBAT_LEVELS;
+    static {
+        Map<String, Integer> c = new HashMap<>();
+        // F2P / Early game
+        c.put("Chicken",             1);
+        c.put("Cow",                 2);
+        c.put("Cow calf",            2);
+        c.put("Duck",                1);
+        c.put("Ram",                 2);
+        c.put("Seagull",             3);
+        c.put("Man",                 2);
+        c.put("Woman",               2);
+        c.put("Farmer",              7);
+        c.put("Goblin",              5);
+        c.put("Guard",               21);
+        c.put("Rat",                 1);
+        c.put("Giant rat",           6);
+        c.put("Imp",                 2);
+        c.put("Zombie",              18);
+        c.put("Skeleton",            22);
+        c.put("Ghost",               19);
+        c.put("Barbarian",           15);
+        c.put("Warrior",             19);
+        c.put("Wizard",              9);
+        c.put("Dark wizard",         20);
+        c.put("Minotaur",            19);
+        c.put("Bear",                19);
+        c.put("Grizzly bear",        21);
+        c.put("Unicorn",             15);
+        c.put("Spider",              1);
+        c.put("Giant spider",        32);
+        c.put("Scorpion",            14);
+        c.put("Hill giant",          28);
+        c.put("Moss giant",          48);
+        c.put("Fire giant",          86);
+        c.put("Ice giant",           53);
+        c.put("Earth warrior",       51);
+        c.put("Lesser demon",        82);
+        c.put("Greater demon",       92);
+        c.put("Black demon",         172);
+        c.put("Black knight",        33);
+        c.put("White knight",        38);
+        c.put("Hobgoblin",           28);
+        c.put("Chaos druid",         13);
+        c.put("Rock crab",           13);
+        c.put("Sand crab",           15);
+        c.put("Swamp crab",          23);
+        c.put("Gemstone crab",       250);
+        c.put("Pirate",              23);
+        c.put("Rogue",               15);
+        // Slayer monsters
+        c.put("Abyssal demon",       124);
+        c.put("Aberrant spectre",    96);
+        c.put("Deviant spectre",     169);
+        c.put("Ankou",               86);
+        c.put("Banshee",             23);
+        c.put("Twisted banshee",     89);
+        c.put("Basilisk",            61);
+        c.put("Basilisk knight",     204);
+        c.put("Bloodveld",           76);
+        c.put("Mutated bloodveld",   123);
+        c.put("Cave bug",            6);
+        c.put("Cave crawler",        23);
+        c.put("Cave slime",          23);
+        c.put("Cave horror",         80);
+        c.put("Dagannoth",           74);
+        c.put("Dark beast",          182);
+        c.put("Drake",               192);
+        c.put("Dust devil",          93);
+        c.put("Fever spider",        40);
+        c.put("Fleshcrawler",        35);
+        c.put("Gargoyle",            111);
+        c.put("Hellhound",           122);
+        c.put("Hydra",               194);
+        c.put("Ice troll",           82);
+        c.put("Mountain troll",      69);
+        c.put("Troll",               69);
+        c.put("Infernal mage",       66);
+        c.put("Jelly",               78);
+        c.put("Warped jelly",        112);
+        c.put("Kalphite soldier",    85);
+        c.put("Kalphite guardian",   141);
+        c.put("Kalphite worker",     28);
+        c.put("Kurask",              106);
+        c.put("Lizardman",           53);
+        c.put("Lizardman brute",     73);
+        c.put("Lizardman shaman",    150);
+        c.put("Mogre",               60);
+        c.put("Nechryael",           115);
+        c.put("Greater nechryael",   200);
+        c.put("Pyrefiend",           43);
+        c.put("Rockslugs",           29);
+        c.put("Smoke devil",         160);
+        c.put("Spiritual warrior",   90);
+        c.put("Spiritual mage",      120);
+        c.put("Spiritual ranger",    91);
+        c.put("Suqah",               111);
+        c.put("Turoth",              89);
+        c.put("Vampyre",             34);
+        c.put("Vyrewatch",           123);
+        c.put("Waterfiend",          115);
+        c.put("Wyrm",                99);
+        c.put("Wyvern",              139);
+        c.put("Ancient wyvern",      210);
+        c.put("Skeletal wyvern",     140);
+        c.put("Fossil island wyvern",145);
+        c.put("Warped tortoise",     92);
+        c.put("Tortoise",            79);
+        c.put("Zombie pirate",       57);
+        // Dragons
+        c.put("Baby blue dragon",    48);
+        c.put("Baby green dragon",   44);
+        c.put("Green dragon",        88);
+        c.put("Blue dragon",         111);
+        c.put("Red dragon",          152);
+        c.put("Black dragon",        227);
+        c.put("Lava dragon",         252);
+        c.put("Bronze dragon",       131);
+        c.put("Iron dragon",         189);
+        c.put("Steel dragon",        246);
+        c.put("Mithril dragon",      304);
+        c.put("Adamant dragon",      338);
+        c.put("Rune dragon",         380);
+        c.put("Brutal black dragon", 318);
+        c.put("Brutal red dragon",   289);
+        c.put("Brutal blue dragon",  271);
+        c.put("Brutal green dragon", 227);
+        // Wilderness / other
+        c.put("Dark warrior",        8);
+        c.put("Ice warrior",         57);
+        c.put("Ice spider",          43);
+        // Bosses
+        c.put("Scurrius",            409);
+        c.put("Giant Mole",          230);
+        c.put("King Black Dragon",   276);
+        c.put("Chaos Elemental",     305);
+        c.put("Chaos Fanatic",       202);
+        c.put("Crazy Archaeologist", 204);
+        c.put("Scorpia",             225);
+        c.put("Deranged Archaeologist", 276);
+        c.put("Sarachnis",           318);
+        c.put("Hespori",             284);
+        c.put("Obor",                106);
+        c.put("Bryophyta",           128);
+        c.put("Cerberus",            318);
+        c.put("Kraken",              291);
+        c.put("Thermonuclear smoke devil", 281);
+        c.put("Alchemical Hydra",    426);
+        c.put("Zulrah",              725);
+        c.put("Vorkath",             732);
+        c.put("Phantom Muspah",      881);
+        c.put("Duke Sucellus",       605);
+        c.put("The Leviathan",       685);
+        c.put("Vardorvis",           785);
+        c.put("The Whisperer",       685);
+        c.put("Nex",                 1001);
+        c.put("TzTok-Jad",           702);
+        c.put("TzKal-Zuk",           1400);
+        c.put("Araxxor",             542);
+        c.put("Hueycoatl",           740);
+        c.put("Sol Heredit",         926);
+        c.put("Amoxliatl",           249);
+        c.put("Callisto",            470);
+        c.put("Artio",               331);
+        c.put("Venenatis",           464);
+        c.put("Spindel",             302);
+        c.put("Vet'ion",             454);
+        c.put("Calvar'ion",          302);
+        c.put("Corporeal Beast",     785);
+        c.put("Commander Zilyana",   596);
+        c.put("General Graardor",    624);
+        c.put("K'ril Tsutsaroth",    650);
+        c.put("Kree'arra",           580);
+        c.put("Dagannoth Rex",       303);
+        c.put("Dagannoth Prime",     303);
+        c.put("Dagannoth Supreme",   303);
+        c.put("Dusk",                429);
+        c.put("Dawn",                429);
+        c.put("The Nightmare",       814);
+        c.put("Phosani's Nightmare", 881);
+        c.put("Ahrim the Blighted",  98);
+        c.put("Dharok the Wretched", 115);
+        c.put("Guthan the Infested", 115);
+        c.put("Karil the Tainted",   98);
+        c.put("Torag the Corrupted", 115);
+        c.put("Verac the Defiled",   115);
+        c.put("Tekton",              450);
+        c.put("Great Olm",           750);
+        c.put("Vespula",             452);
+        c.put("Maiden of Sugadinti", 940);
+        c.put("Pestilent Bloat",     870);
+        c.put("Sotetseg",            995);
+        c.put("Xarpus",              578);
+        c.put("Verzik Vitur",        1520);
+        c.put("Akkha",               800);
+        c.put("Ba-Ba",               800);
+        c.put("Kephri",              800);
+        c.put("Zebak",               800);
+        c.put("Tumeken's Warden",    750);
+        c.put("Elidinis' Warden",    750);
+        c.put("Abyssal Sire",        350);
+        COMBAT_LEVELS = Collections.unmodifiableMap(c);
+    }
+
+    /**
+     * Returns the monster's OSRS combat level, or 0 when unknown. Live captures
+     * store the actual killed NPC's combat level; this map exists mainly so the
+     * dev seed can vary combat level per monster (and as a display fallback).
+     */
+    public static int getCombatLevel(String npcName) {
+        return COMBAT_LEVELS.getOrDefault(npcName, 0);
+    }
+
     /** Assigns stable alphabetical dex numbers to the full roster. */
     public static Map<String, Integer> assignDexNumbers(List<String> fullRoster) {
         Map<String, Integer> nums = new LinkedHashMap<>();

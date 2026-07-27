@@ -370,6 +370,11 @@ public class BestiaryDataService {
     }
 
     private static int combatLevelForSeed(String npcName) {
+        // Prefer the real per-monster combat level so seeded cards separate by
+        // Power Level (which includes combatLevel/6) the way live captures do.
+        int actual = MonsterRoster.getCombatLevel(npcName);
+        if (actual > 0) return actual;
+        // Unlisted monster: fall back to a flat per-difficulty-tier value.
         switch (MonsterRoster.getDifficulty(npcName, -1)) {
             case BEGINNER: return 5;
             case EASY:     return 30;
