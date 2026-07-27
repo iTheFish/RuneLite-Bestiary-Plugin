@@ -56,6 +56,7 @@ public class BestiaryStore {
         public long credits;
         public long totalXp;
         public List<String> achievements = new ArrayList<>();
+        public Map<String, Integer> shopUpgrades = new LinkedHashMap<>();
     }
 
     private final File file;
@@ -99,6 +100,7 @@ public class BestiaryStore {
         if (d.captures == null)    d.captures = new ArrayList<>();
         if (d.killCounts == null)  d.killCounts = new LinkedHashMap<>();
         if (d.achievements == null) d.achievements = new ArrayList<>();
+        if (d.shopUpgrades == null) d.shopUpgrades = new LinkedHashMap<>();
         return d;
     }
 

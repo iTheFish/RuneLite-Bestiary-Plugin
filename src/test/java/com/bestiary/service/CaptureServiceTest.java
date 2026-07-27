@@ -83,7 +83,7 @@ public class CaptureServiceTest {
     public void returnEmptyWhenCaptureDisabled() {
         when(config.captureEnabled()).thenReturn(false);
         CaptureService service = new CaptureService(config, new Random(SEED));
-        Optional<CapturedCreature> result = service.attemptCapture(npc, null, 1, 0, "Test", "Player", 0);
+        Optional<CapturedCreature> result = service.attemptCapture(npc, null, 1, 0, "Test", "Player", 0, 0.0);
         assertFalse(result.isPresent());
     }
 
@@ -95,7 +95,7 @@ public class CaptureServiceTest {
         dev.captureMode = com.bestiary.model.DevCaptureMode.FORCE_100;
         CaptureService service = new CaptureService(config, new Random(SEED), dev);
 
-        Optional<CapturedCreature> result = service.attemptCapture(npc, null, 1, 5, "Lumbridge", "Player", 0);
+        Optional<CapturedCreature> result = service.attemptCapture(npc, null, 1, 5, "Lumbridge", "Player", 0, 0.0);
         assertTrue(result.isPresent());
 
         CapturedCreature c = result.get();

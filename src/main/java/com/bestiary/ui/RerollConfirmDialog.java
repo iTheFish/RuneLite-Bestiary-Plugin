@@ -21,13 +21,15 @@ public class RerollConfirmDialog extends JDialog {
 
     private static RerollConfirmDialog current;
 
-    public static void open(Window owner, CapturedCreature card, long cost, int currentLevel, Runnable onReroll) {
+    public static void open(Window owner, CapturedCreature card, long cost, int currentLevel,
+                            double shinyBonus, double rarityBonus, Runnable onReroll) {
         if (current != null && current.isShowing()) current.dispose();
-        current = new RerollConfirmDialog(owner, card, cost, currentLevel, onReroll);
+        current = new RerollConfirmDialog(owner, card, cost, currentLevel, shinyBonus, rarityBonus, onReroll);
         current.setVisible(true);
     }
 
-    private RerollConfirmDialog(Window owner, CapturedCreature card, long cost, int currentLevel, Runnable onReroll) {
+    private RerollConfirmDialog(Window owner, CapturedCreature card, long cost, int currentLevel,
+                               double shinyBonus, double rarityBonus, Runnable onReroll) {
         super(owner, "Reroll card", ModalityType.MODELESS);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setResizable(false);
@@ -55,15 +57,20 @@ public class RerollConfirmDialog extends JDialog {
 
         // Live reroll chances at the player's current level
         root.add(Box.createVerticalStrut(10));
-        double shinyPct = CaptureService.shinyChance(currentLevel) * 100.0;
-        double rankPct  = card.rarity == CreatureRarity.MYTHIC ? 0.0 : BestiaryDataService.RARITY_UP_CHANCE * 100.0;
+        // Live odds include the passive shop bonuses, since the reroll itself applies them.
+        double shinyPct = (CaptureService.shinyChance(currentLevel) + shinyBonus) * 100.0;
+        double rankPct  = card.rarity == CreatureRarity.MYTHIC
+                ? 0.0 : (BestiaryDataService.RARITY_UP_CHANCE + rarityBonus) * 100.0;
+        String shinyBonusStr = shinyBonus > 0 ? String.format(" <font color='#ffd24d'>(+%.1f%%)</font>", shinyBonus * 100.0) : "";
+        String rankBonusStr  = rarityBonus > 0 ? String.format(" (+%.0f%%)", rarityBonus * 100.0) : "";
         // A shiny card stays shiny through a reroll, so there's no shiny chance to quote.
         String shinyStr = card.isShiny()
                 ? "<font color='#ffd24d'>already shiny ✦ (stays shiny)</font>"
-                : String.format("<font color='#78dc78'>shiny %.1f%%</font>", shinyPct);
+                : String.format("<font color='#78dc78'>shiny %.1f%%</font>%s", shinyPct, shinyBonusStr);
         JLabel chances = new JLabel(String.format("<html>This reroll: %s"
                 + " &nbsp;·&nbsp; <font color='#ffd24d'>rank up %s</font> (at level %d)</html>",
-                shinyStr, card.rarity == CreatureRarity.MYTHIC ? "— (already Mythic)" : String.format("%.0f%%", rankPct),
+                shinyStr, card.rarity == CreatureRarity.MYTHIC ? "— (already Mythic)"
+                        : String.format("%.0f%%%s", rankPct, rankBonusStr),
                 currentLevel));
         chances.setFont(FontManager.getRunescapeSmallFont());
         chances.setForeground(Color.WHITE);

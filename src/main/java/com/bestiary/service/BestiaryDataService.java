@@ -55,8 +55,9 @@ public class BestiaryDataService {
             collection.creatures.add(c);
             collection.captureCountByNpc.merge(c.npcName, 1, Integer::sum);
         }
-        collection.killCounts = new HashMap<>(d.killCounts);
-        collection.credits    = d.credits;
+        collection.killCounts   = new HashMap<>(d.killCounts);
+        collection.credits      = d.credits;
+        collection.shopUpgrades = new HashMap<>(d.shopUpgrades);
 
         progressionState = new ProgressionService.ProgressionState();
         progressionState.totalXp = d.totalXp;
@@ -212,6 +213,46 @@ public class BestiaryDataService {
         return true;
     }
 
+    // --- Passive shop upgrades (#39) ---
+
+    /** Tiers currently owned of a passive upgrade. */
+    public int getUpgradeTier(com.bestiary.model.ShopUpgrade u) {
+        return collection.getUpgradeTier(u);
+    }
+
+    /** Cost of the next tier, or -1 if the upgrade is already maxed. */
+    public long upgradeCost(com.bestiary.model.ShopUpgrade u) {
+        int owned = collection.getUpgradeTier(u);
+        return owned >= u.maxTier ? -1 : u.costForNextTier(owned);
+    }
+
+    /**
+     * Buys the next tier of a passive upgrade if it's not maxed and the player can afford it.
+     * Returns true on success. Persists immediately (a purchase is rare + valuable).
+     */
+    public boolean purchaseUpgrade(com.bestiary.model.ShopUpgrade u) {
+        int owned = collection.getUpgradeTier(u);
+        if (owned >= u.maxTier) return false;
+        long cost = u.costForNextTier(owned);
+        if (collection.credits < cost) return false;
+        collection.credits -= cost;
+        collection.shopUpgrades.put(u.name(), owned + 1);
+        persistNow();
+        return true;
+    }
+
+    /** Passive shiny-chance bonus from the Shiny Charm upgrade (added on top of the level-scaled base). */
+    public double bonusShinyChance() {
+        return com.bestiary.model.ShopUpgrade.SHINY_CHANCE.effectFor(
+                collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.SHINY_CHANCE));
+    }
+
+    /** Passive reroll rarity-up bonus from the Reroll Fortune upgrade. */
+    public double bonusRerollRarityChance() {
+        return com.bestiary.model.ShopUpgrade.REROLL_RARITY.effectFor(
+                collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.REROLL_RARITY));
+    }
+
     /**
      * Card Reroller (shop POC): for {@link #rerollCost} credits, re-rolls a card's stats,
      * prayer and shiny at the SAME rarity/monster (a chance to improve stats or hit shiny).
@@ -220,16 +261,18 @@ public class BestiaryDataService {
      */
     public CapturedCreature rerollCard(CapturedCreature c, int currentLevel) {
         if (!spendCredits(rerollCost(c))) return null;
-        // Non-Mythic cards get a small chance to move up a rarity.
+        // Non-Mythic cards get a small chance to move up a rarity (raised by the Reroll Fortune shop upgrade).
         CreatureRarity rarity = c.rarity;
-        if (rarity != CreatureRarity.MYTHIC && rerollRng.nextDouble() < RARITY_UP_CHANCE) {
+        if (rarity != CreatureRarity.MYTHIC
+                && rerollRng.nextDouble() < RARITY_UP_CHANCE + bonusRerollRarityChance()) {
             rarity = CreatureRarity.values()[rarity.ordinal() + 1];
         }
         com.bestiary.model.CombatClass cls =
                 com.bestiary.model.MonsterRoster.getCombatClass(c.npcName, c.npcCombatLevel);
         int[] bases = com.bestiary.model.MonsterRoster.getStatBases(c.npcName, c.npcCombatLevel);
-        // A shiny stays shiny; a non-shiny gets a fresh shiny roll.
-        boolean shiny = c.isShiny() || rerollRng.nextDouble() < CaptureService.shinyChance(currentLevel);
+        // A shiny stays shiny; a non-shiny gets a fresh shiny roll (raised by the Shiny Charm shop upgrade).
+        boolean shiny = c.isShiny()
+                || rerollRng.nextDouble() < CaptureService.shinyChance(currentLevel) + bonusShinyChance();
         com.bestiary.model.CreatureQuality q =
                 com.bestiary.util.RarityRoller.generateQuality(cls, rarity, bases, rerollRng, shiny);
         int prayer = com.bestiary.util.RarityRoller.rollPrayer(
@@ -245,6 +288,7 @@ public class BestiaryDataService {
                 .captureLevel(currentLevel)   // reroll happened now → odds reflect the current level
                 .killsBeforeCapture(c.killsBeforeCapture)
                 .playerName(c.playerName).shiny(shiny).prayer(prayer).observedHp(c.observedHp)
+                .shinyBonus(bonusShinyChance())   // reroll re-rolled shiny with the current passive bonus
                 .rerolledBy(reroller)
                 .rerollHistory(history)
                 .build();
@@ -357,6 +401,7 @@ public class BestiaryDataService {
         d.captures    = new ArrayList<>(collection.creatures);
         d.killCounts  = new LinkedHashMap<>(collection.killCounts);
         d.credits     = collection.credits;
+        d.shopUpgrades = new LinkedHashMap<>(collection.shopUpgrades);
         d.totalXp     = progressionState.totalXp;
         d.achievements = progressionState.unlockedAchievements.stream()
                 .map(Enum::name).collect(Collectors.toList());

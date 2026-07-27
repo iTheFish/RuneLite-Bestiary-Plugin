@@ -66,7 +66,7 @@ public class CaptureService {
     public Optional<CapturedCreature> attemptCapture(NPC npc, WorldPoint location,
                                                      int captureLevel, int killCount,
                                                      String regionName, String playerName,
-                                                     int observedDamage) {
+                                                     int observedDamage, double shinyBonus) {
         if (!config.captureEnabled()) {
             return Optional.empty();
         }
@@ -91,7 +91,7 @@ public class CaptureService {
                 : RarityRoller.roll(rng, captureLevel);
         // Independent shiny roll — orthogonal to rarity. Base 0.2% at Bestiary level 1,
         // scaling linearly to 2% at level 99. Future shop unlocks / passives can multiply this.
-        boolean shiny = dev.forceShiny || rng.nextDouble() < shinyChance(captureLevel);
+        boolean shiny = dev.forceShiny || rng.nextDouble() < shinyChance(captureLevel) + shinyBonus;
 
         CombatClass combatClass = MonsterRoster.getCombatClass(npcName, npc.getCombatLevel());
         int[] statBases = MonsterRoster.getStatBases(npcName, npc.getCombatLevel());
@@ -100,6 +100,7 @@ public class CaptureService {
 
         CapturedCreature creature = CapturedCreature.builder()
                 .shiny(shiny)
+                .shinyBonus(shinyBonus)
                 .prayer(prayer)
                 .observedHp(observedDamage)
                 .npcId(npc.getId())

@@ -56,6 +56,14 @@ public class CapturedCreature {
     /** Damage the player dealt to this kill ("observed HP"). 0 = unknown → use placeholder. Persisted. */
     public final int observedHp;
 
+    /**
+     * The passive shiny-chance bonus (from the Shiny Charm shop upgrade) that was in effect when
+     * this card's shiny was rolled — at capture, or at the most recent reroll. 0 for legacy/seed
+     * cards and captures made with no charm. Persisted so the Odds view can show the shiny odds
+     * that actually applied at the time, not the current bonus.
+     */
+    public final double shinyBonus;
+
     /** Player who last rerolled this card (empty = never rerolled — a raw pull). Persisted. */
     public final String rerolledBy;
 
@@ -115,6 +123,7 @@ public class CapturedCreature {
         this.shiny             = b.shiny;
         this.prayer            = b.prayer >= 0 ? b.prayer : MonsterRoster.getPrayer(b.npcName);
         this.observedHp        = b.observedHp;
+        this.shinyBonus        = b.shinyBonus;
         this.rerolledBy        = b.rerolledBy != null ? b.rerolledBy : "";
         this.rerollHistory     = b.rerollHistory != null
                 ? Collections.unmodifiableList(new ArrayList<>(b.rerollHistory))
@@ -140,6 +149,7 @@ public class CapturedCreature {
         private boolean shiny = false;
         private int prayer = -1;   // -1 = unset → defaults to the monster's base prayer
         private int observedHp = 0;
+        private double shinyBonus = 0.0;
         private String rerolledBy = "";
         private List<RerollState> rerollHistory = null;
 
@@ -157,6 +167,7 @@ public class CapturedCreature {
         public Builder shiny(boolean v)           { this.shiny = v; return this; }
         public Builder prayer(int v)              { this.prayer = v; return this; }
         public Builder observedHp(int v)          { this.observedHp = v; return this; }
+        public Builder shinyBonus(double v)       { this.shinyBonus = v; return this; }
         public Builder rerolledBy(String v)       { this.rerolledBy = v; return this; }
         public Builder rerollHistory(List<RerollState> v) { this.rerollHistory = v; return this; }
 

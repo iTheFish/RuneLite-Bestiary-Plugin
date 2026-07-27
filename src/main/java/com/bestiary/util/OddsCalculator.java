@@ -40,6 +40,7 @@ public final class OddsCalculator {
         public DifficultyTier difficulty;
         public CreatureRarity rarity;
         public boolean shiny;
+        public double shinyBonus;     // passive Shiny Charm bonus that applied to this card (0 = none)
         public double catchChance;    // 0..1 — chance a kill yields a capture
         public double rarityChance;   // 0..1 — chance a capture is this rarity
         public double shinyChance;    // 0..1 — chance of the shiny outcome (shiny or not)
@@ -65,7 +66,10 @@ public final class OddsCalculator {
 
         r.catchChance  = CaptureService.calculateCatchRate(r.level, r.difficulty);
         r.rarityChance = RarityRoller.rarityChance(r.level, r.rarity);
-        double sc      = CaptureService.shinyChance(r.level);
+        // Use the shiny bonus that applied to THIS card (at its capture/reroll), not the current one,
+        // so a card caught before the Shiny Charm was unlocked still shows its true odds.
+        r.shinyBonus   = Math.max(0.0, c.shinyBonus);
+        double sc      = Math.min(1.0, CaptureService.shinyChance(r.level) + r.shinyBonus);
         r.shinyChance  = r.shiny ? sc : (1.0 - sc);
 
         int[] bases = MonsterRoster.getStatBases(c.npcName, c.npcCombatLevel);
