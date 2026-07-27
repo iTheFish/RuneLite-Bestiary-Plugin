@@ -182,6 +182,30 @@ public class ProgressionService {
             case LEVEL_95:  return level >= 95;
             case LEVEL_99:  return level >= 99;
 
+            // Credits earned / spent (lifetime)
+            case EARN_1K: case EARN_5K: case EARN_10K: case EARN_50K: case EARN_100K:
+                return collection.lifetimeCreditsEarned >= a.countThreshold;
+            case SPEND_1K: case SPEND_5K: case SPEND_10K: case SPEND_50K: case SPEND_100K:
+                return collection.lifetimeCreditsSpent >= a.countThreshold;
+
+            // Rerolls
+            case REROLL_FIRST: case REROLL_5: case REROLL_10: case REROLL_25: case REROLL_50:
+                return collection.totalRerolls() >= a.countThreshold;
+            case REROLL_RANK_UP:
+                return collection.hasRerollRankUp();
+
+            // Collection milestones
+            case POWERHOUSE:
+                return collection.maxPowerLevel() >= 150;
+            case FULL_HOUSE:
+                return collection.hasFullRaritySet();
+            case CHROMATIC:
+                return collection.shinyCount() >= a.countThreshold;
+            case COMPLETIONIST:
+                return collection.isAlbumComplete();
+            case CURATED:
+                return collection.hasFavourite();
+
             default: return false;
         }
     }
