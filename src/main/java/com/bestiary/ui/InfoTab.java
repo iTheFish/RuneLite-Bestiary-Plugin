@@ -75,11 +75,12 @@ public class InfoTab extends JPanel {
 
         // One scrollable card per category
         contentCards.setBackground(ColorScheme.DARK_GRAY_COLOR);
-        addCategory(0, this::fillCapturing);
-        addCategory(1, this::fillCards);
-        addCategory(2, this::fillEconomy);
-        addCategory(3, this::fillProgress);
-        addCategory(4, this::fillAlerts);
+        addCategory(0, this::fillGuide);
+        addCategory(1, this::fillCapturing);
+        addCategory(2, this::fillCards);
+        addCategory(3, this::fillEconomy);
+        addCategory(4, this::fillProgress);
+        addCategory(5, this::fillAlerts);
         add(contentCards, BorderLayout.CENTER);
 
         selectCategory(0);
@@ -98,7 +99,7 @@ public class InfoTab extends JPanel {
     // Category sub-tabs
     // -------------------------------------------------------------------------
 
-    private static final String[] CATEGORIES = {"Capturing", "Cards", "Economy", "Progress", "Alerts"};
+    private static final String[] CATEGORIES = {"Guide", "Capturing", "Cards", "Economy", "Progress", "Alerts"};
 
     private JPanel buildSubTabBar() {
         JPanel bar = new JPanel();
@@ -106,9 +107,9 @@ public class InfoTab extends JPanel {
         bar.setOpaque(false);
         bar.setAlignmentX(LEFT_ALIGNMENT);
 
-        // 3 on top, 2 below — keeps labels readable in the narrow side panel.
+        // 3 on top, 3 below — keeps labels readable in the narrow side panel.
         JPanel row1 = new JPanel(new GridLayout(1, 3, 4, 0));
-        JPanel row2 = new JPanel(new GridLayout(1, 2, 4, 0));
+        JPanel row2 = new JPanel(new GridLayout(1, 3, 4, 0));
         row1.setOpaque(false); row2.setOpaque(false);
         row1.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
         row2.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
@@ -187,6 +188,60 @@ public class InfoTab extends JPanel {
     // -------------------------------------------------------------------------
     // Category content
     // -------------------------------------------------------------------------
+
+    private void fillGuide(JPanel c) {
+        c.add(sectionTitle("Your guide to the Bestiary"));
+        c.add(tile("The short version",
+                "Bestiary turns your everyday kills into a collectible card game. Every monster you " +
+                "fight is a chance to 'capture' it as a card, rolled with its own stats, a rarity, " +
+                "and a small chance to be shiny. Catch them, level up, and build an album to show off.\n\n" +
+                "It can feel like a lot at first, but it clicks quickly, and before long you'll be on " +
+                "your way to 99 Bestiary and sharing sick cards with your friends. The other Info " +
+                "tabs go deep on every system; this one is the quick tour."));
+        c.add(tile("Starting off",
+                "There's nothing you have to configure to begin, just fight monsters. In the RuneLite " +
+                "Config panel under Bestiary you can tune the capture overlay, animations and chat " +
+                "notifications to taste (level-up alerts are on by default).\n\n" +
+                "What you'll notice straight away: a capture notification (with an optional " +
+                "collection-jar animation) on each kill, new catches landing in the Cards tab, your " +
+                "Capture Level ticking up, and Bestiary Credits building. Only catalogued roster " +
+                "monsters are tracked.\n\n" +
+                "To find and share your cards, open the Album (button at the top), click a card for " +
+                "its details, right-click to Favourite it, and use Export to save or copy a card " +
+                "image to post to your friends."));
+        c.add(tile("Early levels",
+                "Low-level monsters have the best catch rates, so beginner and easy mobs are the " +
+                "quickest way to fill your album and bank early captures. Two shop unlocks are worth " +
+                "grabbing as soon as you can: Hunter's Bounty (more credits per capture) and " +
+                "Salvager's Eye (more credits when you discard). Both are cheap and snowball your " +
+                "credit income for everything else.\n\n" +
+                "Remember catching pays cards, credits and XP, while high-level kills give steady XP " +
+                "even without a catch, so mix in tougher monsters if you're chasing levels."));
+        c.add(tile("Mid game",
+                "You've probably found the Favourites star and the card export by now, so copy your " +
+                "best cards and share them around. You're likely sitting on a stack of duplicates " +
+                "too: use Discard (right-click a card, or bulk-discard from the Album) to turn them " +
+                "into credits and keep your album tidy.\n\n" +
+                "Around level 50 your catch rates are much healthier (beginners near 50%, mediums " +
+                "near 25%). How's your RNG treating you? Tap any stat box at the top to open the " +
+                "dashboards and see your rarity spread, species progress and economy at a glance."));
+        c.add(tile("Late mid-game",
+                "Credits piling up? Time to spend them. The Card Reroller re-rolls a card's stats " +
+                "and shiny at the same monster and rarity, a shot at a better roll, a shiny, or even " +
+                "a rarity rank-up (raised by the Reroll Fortune and Reroll Shine unlocks). Rerolled " +
+                "cards keep a history you can view, and the Economy dashboard tracks your reroll " +
+                "activity.\n\n" +
+                "This is the stage to chase perfect versions of your favourite monsters and hunt " +
+                "shinies in earnest, while you wait on the pricier shop unlocks."));
+        c.add(tile("End game",
+                "Did that level 92 achievement bring back some memories? You're deep in it now, but " +
+                "level 92 is only halfway to 99 in XP. The last stretch is all about the best " +
+                "XP-per-hour and the rarest catches.\n\n" +
+                "Catch rates cap out (beginner 60%, boss 8%), high-value captures are capped at the " +
+                "combat-100 XP scale, and top rarities and shinies stay genuinely rare, so the " +
+                "album's final slots and the flashiest cards are a real flex. Keep at it: 99 " +
+                "Bestiary and a full dex await."));
+    }
 
     private void fillCapturing(JPanel c) {
         c.add(buildRarityTable());
