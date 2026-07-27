@@ -57,6 +57,13 @@ public class BestiaryDataService {
         }
         collection.killCounts   = new HashMap<>(d.killCounts);
         collection.credits      = d.credits;
+        collection.lifetimeCreditsEarned = d.lifetimeCreditsEarned;
+        collection.lifetimeCreditsSpent  = d.lifetimeCreditsSpent;
+        // Legacy saves predate lifetime tracking — baseline "earned" from the current balance
+        // so the economy dashboard/achievements aren't zeroed for existing players.
+        if (collection.lifetimeCreditsEarned == 0 && collection.credits > 0) {
+            collection.lifetimeCreditsEarned = collection.credits;
+        }
         collection.shopUpgrades = new HashMap<>(d.shopUpgrades);
 
         progressionState = new ProgressionService.ProgressionState();
@@ -120,15 +127,53 @@ public class BestiaryDataService {
     }
 
     public void awardCredits(long amount) {
-        collection.credits += amount;
+        addCredits(amount);
         persist();
     }
 
-    /** Credits a card is worth if discarded. */
+    /**
+     * Awards capture credits after applying the Hunter's Bounty passive boost. Returns the
+     * actual credits granted (so the caller can show the real, boosted number).
+     */
+    public long awardCaptureCredits(long base) {
+        long total = Math.max(1L, Math.round(base * (1.0 + captureCreditBonus())));
+        addCredits(total);
+        persist();
+        return total;
+    }
+
+    /** Adds credits and tracks the lifetime-earned total. */
+    private void addCredits(long amount) {
+        if (amount <= 0) return;
+        collection.credits += amount;
+        collection.lifetimeCreditsEarned += amount;
+    }
+
+    /** Deducts credits and tracks the lifetime-spent total. Caller must have checked affordability. */
+    private void subtractCredits(long amount) {
+        if (amount <= 0) return;
+        collection.credits -= amount;
+        collection.lifetimeCreditsSpent += amount;
+    }
+
+    /** Passive capture-credit bonus from the Hunter's Bounty upgrade (fraction, e.g. 0.06 = +6%). */
+    public double captureCreditBonus() {
+        return com.bestiary.model.ShopUpgrade.CREDIT_CAPTURE.effectFor(
+                collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.CREDIT_CAPTURE));
+    }
+
+    /** Passive discard-credit bonus from the Salvager's Eye upgrade. */
+    public double discardCreditBonus() {
+        return com.bestiary.model.ShopUpgrade.CREDIT_DISCARD.effectFor(
+                collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.CREDIT_DISCARD));
+    }
+
+    /** Credits a card is worth if discarded, including the Salvager's Eye passive boost. */
     public long discardValue(CapturedCreature c) {
-        return com.bestiary.util.CreditCalculator.forDiscard(
+        long base = com.bestiary.util.CreditCalculator.forDiscard(
                 com.bestiary.model.MonsterRoster.getDifficulty(c.npcName, c.npcCombatLevel),
                 c.rarity, c.isShiny());
+        return Math.max(1L, Math.round(base * (1.0 + discardCreditBonus())));
     }
 
     /**
@@ -138,7 +183,7 @@ public class BestiaryDataService {
     public long discardCapture(CapturedCreature c) {
         if (!collection.removeCapture(c)) return 0;   // already discarded — award nothing
         long credits = discardValue(c);
-        collection.credits += credits;
+        addCredits(credits);
         persistNow();
         return credits;
     }
@@ -150,7 +195,7 @@ public class BestiaryDataService {
             if (!collection.removeCapture(c)) continue;
             total += discardValue(c);
         }
-        collection.credits += total;
+        addCredits(total);
         persistNow();
         return total;
     }
@@ -208,7 +253,7 @@ public class BestiaryDataService {
     /** Deducts credits if affordable; persists. Returns false if too poor. */
     public boolean spendCredits(long amount) {
         if (collection.credits < amount) return false;
-        collection.credits -= amount;
+        subtractCredits(amount);
         persist();
         return true;
     }
@@ -235,16 +280,22 @@ public class BestiaryDataService {
         if (owned >= u.maxTier) return false;
         long cost = u.costForNextTier(owned);
         if (collection.credits < cost) return false;
-        collection.credits -= cost;
+        subtractCredits(cost);
         collection.shopUpgrades.put(u.name(), owned + 1);
         persistNow();
         return true;
     }
 
-    /** Passive shiny-chance bonus from the Shiny Charm upgrade (added on top of the level-scaled base). */
+    /** Passive capture shiny-chance bonus from the Shiny Charm upgrade (on top of the level-scaled base). */
     public double bonusShinyChance() {
         return com.bestiary.model.ShopUpgrade.SHINY_CHANCE.effectFor(
                 collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.SHINY_CHANCE));
+    }
+
+    /** Shiny-chance bonus applied when rerolling a card, from the Reroll Shine upgrade. */
+    public double bonusRerollShinyChance() {
+        return com.bestiary.model.ShopUpgrade.REROLL_SHINY.effectFor(
+                collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.REROLL_SHINY));
     }
 
     /** Passive reroll rarity-up bonus from the Reroll Fortune upgrade. */
@@ -270,9 +321,9 @@ public class BestiaryDataService {
         com.bestiary.model.CombatClass cls =
                 com.bestiary.model.MonsterRoster.getCombatClass(c.npcName, c.npcCombatLevel);
         int[] bases = com.bestiary.model.MonsterRoster.getStatBases(c.npcName, c.npcCombatLevel);
-        // A shiny stays shiny; a non-shiny gets a fresh shiny roll (raised by the Shiny Charm shop upgrade).
+        // A shiny stays shiny; a non-shiny gets a fresh shiny roll (raised by the Reroll Shine shop upgrade).
         boolean shiny = c.isShiny()
-                || rerollRng.nextDouble() < CaptureService.shinyChance(currentLevel) + bonusShinyChance();
+                || rerollRng.nextDouble() < CaptureService.shinyChance(currentLevel) + bonusRerollShinyChance();
         com.bestiary.model.CreatureQuality q =
                 com.bestiary.util.RarityRoller.generateQuality(cls, rarity, bases, rerollRng, shiny);
         int prayer = com.bestiary.util.RarityRoller.rollPrayer(
@@ -288,7 +339,7 @@ public class BestiaryDataService {
                 .captureLevel(currentLevel)   // reroll happened now → odds reflect the current level
                 .killsBeforeCapture(c.killsBeforeCapture)
                 .playerName(c.playerName).shiny(shiny).prayer(prayer).observedHp(c.observedHp)
-                .shinyBonus(bonusShinyChance())   // reroll re-rolled shiny with the current passive bonus
+                .shinyBonus(bonusRerollShinyChance())   // reroll re-rolled shiny with the current reroll bonus
                 .rerolledBy(reroller)
                 .rerollHistory(history)
                 .build();
@@ -406,6 +457,8 @@ public class BestiaryDataService {
         d.captures    = new ArrayList<>(collection.creatures);
         d.killCounts  = new LinkedHashMap<>(collection.killCounts);
         d.credits     = collection.credits;
+        d.lifetimeCreditsEarned = collection.lifetimeCreditsEarned;
+        d.lifetimeCreditsSpent  = collection.lifetimeCreditsSpent;
         d.shopUpgrades = new LinkedHashMap<>(collection.shopUpgrades);
         d.totalXp     = progressionState.totalXp;
         d.achievements = progressionState.unlockedAchievements.stream()

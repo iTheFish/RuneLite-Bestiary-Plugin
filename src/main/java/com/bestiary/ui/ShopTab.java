@@ -1,5 +1,6 @@
 package com.bestiary.ui;
 
+import com.bestiary.model.ShopCategory;
 import com.bestiary.model.ShopUpgrade;
 import com.bestiary.service.BestiaryDataService;
 import com.bestiary.service.ProgressionService;
@@ -88,13 +89,6 @@ public class ShopTab extends JPanel {
         upgradesPanel.setLayout(new BoxLayout(upgradesPanel, BoxLayout.Y_AXIS));
         upgradesPanel.setBorder(new EmptyBorder(10, 4, 8, 4));
 
-        JLabel heading = new JLabel("PASSIVE UNLOCKS");
-        heading.setFont(FontManager.getRunescapeSmallFont());
-        heading.setForeground(DIM);
-        heading.setAlignmentX(LEFT_ALIGNMENT);
-        upgradesPanel.add(heading);
-        upgradesPanel.add(Box.createVerticalStrut(6));
-
         rebuildUpgrades();
 
         JScrollPane sp = new JScrollPane(upgradesPanel);
@@ -107,18 +101,35 @@ public class ShopTab extends JPanel {
         return sp;
     }
 
-    /** Rebuilds the upgrade cards from current state (cheap — a couple of rows). */
+    /** Rebuilds the upgrade cards from current state, grouped under category headings. */
     private void rebuildUpgrades() {
-        // Drop everything after the heading + strut (indices 0 and 1).
-        while (upgradesPanel.getComponentCount() > 2) {
-            upgradesPanel.remove(upgradesPanel.getComponentCount() - 1);
-        }
-        for (ShopUpgrade u : ShopUpgrade.values()) {
-            upgradesPanel.add(upgradeCard(u));
-            upgradesPanel.add(Box.createVerticalStrut(8));
+        upgradesPanel.removeAll();
+        boolean firstCategory = true;
+        for (ShopCategory cat : ShopCategory.values()) {
+            boolean any = false;
+            for (ShopUpgrade u : ShopUpgrade.values()) {
+                if (u.category != cat) continue;
+                if (!any) {
+                    if (!firstCategory) upgradesPanel.add(Box.createVerticalStrut(12));
+                    upgradesPanel.add(categoryHeading(cat.label.toUpperCase()));
+                    upgradesPanel.add(Box.createVerticalStrut(6));
+                    any = true;
+                    firstCategory = false;
+                }
+                upgradesPanel.add(upgradeCard(u));
+                upgradesPanel.add(Box.createVerticalStrut(8));
+            }
         }
         upgradesPanel.revalidate();
         upgradesPanel.repaint();
+    }
+
+    private JLabel categoryHeading(String text) {
+        JLabel heading = new JLabel(text);
+        heading.setFont(FontManager.getRunescapeSmallFont());
+        heading.setForeground(DIM);
+        heading.setAlignmentX(LEFT_ALIGNMENT);
+        return heading;
     }
 
     private JPanel upgradeCard(ShopUpgrade u) {

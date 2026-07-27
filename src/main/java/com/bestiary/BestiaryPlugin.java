@@ -232,12 +232,12 @@ public class BestiaryPlugin extends Plugin {
             sessionTracker.add(creature);
             dataService.addCapture(creature);
 
-            // Award Bestiary Credits (difficulty × rarity, shiny doubles)
-            long credits = com.bestiary.util.CreditCalculator.forCapture(
+            // Award Bestiary Credits (difficulty × rarity, shiny doubles; Hunter's Bounty adds a passive %)
+            long baseCredits = com.bestiary.util.CreditCalculator.forCapture(
                     com.bestiary.model.MonsterRoster.getDifficulty(
                             creature.npcName, creature.npcCombatLevel),
                     creature.rarity, creature.isShiny());
-            dataService.awardCredits(credits);
+            dataService.awardCaptureCredits(baseCredits);
 
             if (config.captureXpEnabled()) {
                 long ckXp       = Math.max(10L, (long) Math.max(1, creature.npcCombatLevel) * 10);
