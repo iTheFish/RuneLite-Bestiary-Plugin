@@ -296,11 +296,13 @@ public class MonsterRoster {
         // Attack-style x weight taxonomy (#70). AGI/Prayer are per-monster (STAT_BASES / PRAYER).
 
         // WARRIOR - pure melee
+        // NOTE: passive animals (chickens, cows, rats, spiders, scorpions) are intentionally
+        // omitted here so deriveProfileClass() classifies them as NIMBLE / MEATSHIELD instead.
         for (String n : Arrays.asList(
-            "Chicken","Cow","Cow calf","Duck","Ram","Seagull","Man","Woman","Farmer",
-            "Goblin","Guard","Rat","Giant rat","Imp","Zombie","Skeleton","Ghost",
-            "Barbarian","Warrior","Minotaur","Bear","Grizzly bear","Unicorn","Spider",
-            "Giant spider","Scorpion","Hill giant","Moss giant","Earth warrior",
+            "Man","Woman","Farmer",
+            "Goblin","Guard","Imp","Zombie","Skeleton","Ghost",
+            "Barbarian","Warrior","Minotaur","Bear","Grizzly bear","Unicorn",
+            "Hill giant","Moss giant","Earth warrior",
             "Black knight","White knight","Hobgoblin","Chaos druid","Chaos druid warrior",
             "Pirate","Rogue","Ankou","Spiritual warrior","Lizardman","Lizardman brute",
             "Turoth","Mogre","Kalphite","Kalphite soldier","Kalphite worker","Ice warrior",
@@ -313,10 +315,11 @@ public class MonsterRoster {
         )) { a.put(n, WARRIOR); }
 
         // JUGGERNAUT - melee + high defence (tanky)
+        // NOTE: crabs are omitted so deriveProfileClass() classifies them as MEATSHIELD (low-damage AFK lumps).
         for (String n : Arrays.asList(
             "Lesser demon","Greater demon","Black demon","Fire giant","Ice giant","Gargoyle","Basilisk",
-            "Basilisk knight","Kalphite guardian","Rock crab","Sand crab","Swamp crab",
-            "Gemstone crab","Tortoise","Warped tortoise","Bloodveld","Mutated bloodveld",
+            "Basilisk knight","Kalphite guardian",
+            "Tortoise","Warped tortoise","Bloodveld","Mutated bloodveld",
             "Torag the Corrupted","Giant Mole","Callisto","Artio","Corporeal Beast",
             "General Graardor","K'ril Tsutsaroth","Dagannoth Rex","Tekton","Duke Sucellus",
             "Vardorvis"
@@ -531,7 +534,7 @@ public class MonsterRoster {
         b.put("Nex", new int[]{90, 81, 78, 69, 90, 75});
         b.put("TzTok-Jad", new int[]{75, 75, 70, 85, 85, 15});
         b.put("TzKal-Zuk", new int[]{90, 90, 85, 65, 65, 1});
-        b.put("Araxxor", new int[]{77, 77, 41, 44, 63, 60});
+        b.put("Araxxor", new int[]{77, 77, 47, 44, 63, 60});
         b.put("Hueycoatl", new int[]{62, 62, 60, 62, 62, 25});
         b.put("Sol Heredit", new int[]{90, 90, 75, 60, 60, 30});
         b.put("Amoxliatl", new int[]{1, 1, 24, 55, 1, 35});
@@ -573,7 +576,7 @@ public class MonsterRoster {
         b.put("Zebak", new int[]{55, 75, 55, 55, 55, 10});
         b.put("Tumeken's Warden", new int[]{80, 85, 48, 77, 75, 15});
         b.put("Elidinis' Warden", new int[]{80, 85, 48, 77, 75, 15});
-        b.put("Abyssal Sire", new int[]{54, 41, 75, 60, 1, 15});
+        b.put("Abyssal Sire", new int[]{55, 45, 65, 60, 1, 15});
         
         STAT_BASES = Collections.unmodifiableMap(b);
     }
@@ -913,7 +916,31 @@ public class MonsterRoster {
     /** Returns the combat class for a given NPC, falling back to tier-based default. */
     public static CombatClass getCombatClass(String npcName, int combatLevel) {
         CombatClass cls = COMBAT_CLASSES.get(npcName);
-        return cls != null ? cls : classFromTier(getDifficulty(npcName, combatLevel));
+        if (cls != null) return cls;
+        CombatClass profile = deriveProfileClass(npcName);
+        if (profile != null) return profile;
+        return classFromTier(getDifficulty(npcName, combatLevel));
+    }
+
+    /**
+     * Programmatically classifies passive creatures from their stat profile, so animals
+     * aren't lumped into WARRIOR. Only applies to monsters with no explicit COMBAT_CLASSES
+     * entry (explicit assignments always win). A creature counts as "passive" when its best
+     * offensive stat (ATK/STR/MAG/RNG) is negligible (<= {@link #PASSIVE_OFFENCE}). Passive
+     * creatures split by mobility: fast + fragile → NIMBLE, otherwise a defensive MEATSHIELD.
+     * Returns null when the monster isn't passive (real attacker) or has no stat bases.
+     */
+    private static final int PASSIVE_OFFENCE = 15;
+    private static CombatClass deriveProfileClass(String npcName) {
+        int[] bases = STAT_BASES.get(npcName);
+        if (bases == null) return null;
+        int offence = Math.max(Math.max(bases[0], bases[1]), Math.max(bases[3], bases[4]));
+        if (offence > PASSIVE_OFFENCE) return null; // genuine attacker → leave to tier default
+        int hp  = getHitpoints(npcName);
+        int agi = bases[5];
+        // Fast, fragile skirmisher (rats, chickens, spiders) vs. slow tanky lump (cows, crabs).
+        if (hp <= 25 && agi >= 40) return CombatClass.NIMBLE;
+        return CombatClass.MEATSHIELD;
     }
 
     /** Returns the biological species for a given NPC. Falls back to OTHER for unlisted monsters. */
