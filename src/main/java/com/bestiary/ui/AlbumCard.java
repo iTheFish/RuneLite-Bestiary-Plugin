@@ -51,7 +51,10 @@ public class AlbumCard extends JPanel {
     }
 
     public static final int CARD_W = 165;
-    public static final int CARD_H = 300;
+    // Card face height. The stat block ends at STATS_Y + 5*STAT_ROW (~285), so this leaves
+    // a small bottom margin. Both the album grid and the export/preview (card + banner) key
+    // off this, so trimming it tightens the dead space under the last stat row everywhere.
+    public static final int CARD_H = 290;
 
     private static final int PAD      = 8;
     private static final int LABEL_W  = 26;
