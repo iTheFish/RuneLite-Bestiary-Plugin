@@ -66,9 +66,10 @@ public class WikiImageService {
         m.put("Kalphite soldier",    "Kalphite Soldier");
         m.put("Kalphite guardian",   "Kalphite Guardian");
         m.put("Kalphite worker",     "Kalphite Worker");
-        m.put("Ice warrior",         "Ice Warrior");
-        m.put("Ice spider",          "Ice Spider");
         m.put("Dark warrior",        "Dark Warrior");
+        // NOTE: "Ice warrior"/"Ice spider" are already the canonical wiki titles (lowercase
+        // second word) — no mapping needed; forcing "Ice Warrior"/"Ice Spider" was a redirect
+        // that pageimages can't resolve, so those were left out on purpose.
         // Name/structure differences
         m.put("Rockslugs",           "Rockslug");
         m.put("Fleshcrawler",        "Flesh Crawler");
@@ -78,8 +79,12 @@ public class WikiImageService {
         m.put("Wyvern",              "Skeletal Wyvern");     // disambiguation
         m.put("Kalphite",            "Kalphite Worker");     // disambiguation
         m.put("Fossil island wyvern","Long-tailed Wyvern");  // no generic page
-        m.put("Scurrius",            "Scurrius, the Rat King");
         m.put("Maiden of Sugadinti", "The Maiden of Sugadinti");
+        // Redirect targets / case fixes — pageimages doesn't follow redirects, so map to canonical.
+        m.put("Hill giant",          "Hill Giant");
+        m.put("Crazy Archaeologist", "Crazy archaeologist");
+        m.put("Deranged Archaeologist","Deranged archaeologist");
+        m.put("Hueycoatl",           "The Hueycoatl");
         // "Troll" has no usable representative page — omit so it gets no image gracefully
         WIKI_IMAGE_NAMES = java.util.Collections.unmodifiableMap(m);
     }

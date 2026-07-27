@@ -216,7 +216,8 @@ public class InfoTab extends JPanel {
                 "After rarity, a third independent roll decides whether the capture is shiny. " +
                 "It is orthogonal to rarity — any rarity can be shiny, from a Common to a Mythic.\n\n" +
                 "The chance scales with your level: 0.2% at level 1 up to 2% at level 99. The " +
-                "Shiny Charm shop unlock adds up to +0.5% on top (and also boosts reroll shinies).\n\n" +
+                "Shiny Charm shop unlock adds up to +0.5% on top (a separate Reroll Shine unlock " +
+                "raises shiny odds when you reroll).\n\n" +
                 "A shiny always rolls near-max stats (the top of its band), gets a golden card " +
                 "with twinkling sparkles, and is announced in chat with a ✦ SHINY ✦ marker."));
     }
@@ -233,11 +234,12 @@ public class InfoTab extends JPanel {
                 "The rolled stats are mostly flavour — difficulty drives power."));
         c.add(tile("Stats & class",
                 "Every capture rolls seven stats — Attack, Strength, Defence, Magic, Ranged, Agility " +
-                "and Prayer (Prayer and Agility roll on a smaller scale). The " +
-                "monster's combat class decides which tend to roll high — a Warrior favours " +
-                "Attack/Strength, a Marksman favours Ranged, an Occultist favours Magic, and so on.\n\n" +
-                "Higher rarities lift the whole roll toward 99, and bands overlap — so a lucky Rare " +
-                "can beat an unlucky Epic."));
+                "and Prayer (Prayer and Agility roll on a smaller scale).\n\n" +
+                "Each stat is rolled from that monster's own base value for it — so a hard-hitting " +
+                "monster tends to roll high Attack/Strength, a caster high Magic, and so on. Rarity " +
+                "then lifts the whole roll toward 99 (higher rarity = higher lift), and shiny cards " +
+                "anchor to the very top of the band plus a bonus. Within each band there's random " +
+                "wiggle room, and the bands overlap — so a lucky Rare can beat an unlucky Epic."));
         c.add(tile("Album",
                 "A full dex grid of every capturable species. Open it via 'Open Album' (in all " +
                 "Collection views and on this tab).\n\n" +
@@ -284,6 +286,10 @@ public class InfoTab extends JPanel {
                 "its base capture value, and shinies add a flat bonus. From the Album you can " +
                 "multi-select to discard several at once.\n\n" +
                 "Discarding is permanent: the card is removed from your collection."));
+        c.add(tile("Shop",
+                "The Shop tab is where credits are spent. It offers the Card Reroller (right-click a " +
+                "card) and the passive unlocks below, grouped into Progression and Rerolls " +
+                "categories; more tools are on the way."));
         c.add(tile("Passive unlocks",
                 "The Shop tab sells permanent passive upgrades in two categories, each with 5 tiers " +
                 "(cost rises per tier):\n\n" +
@@ -295,9 +301,6 @@ public class InfoTab extends JPanel {
                 "• Reroll Shine — +0.1% per tier to the shiny chance when you reroll a card.\n" +
                 "• Reroll Fortune — +1% per tier to the chance a reroll ranks a card up one rarity.\n\n" +
                 "Each card shows its current bonus and what the next tier upgrades it to before you buy."));
-        c.add(tile("Shop",
-                "The Shop tab is where credits are spent. It offers the Card Reroller (right-click a " +
-                "card) and the passive unlocks above; more tools are on the way."));
     }
 
     private void fillProgress(JPanel c) {
@@ -343,6 +346,11 @@ public class InfoTab extends JPanel {
                 "Batched — repeated NPC+rarity kills are held for 5 seconds of inactivity then sent " +
                 "as one summary (e.g. '3× Common Goblin captured!  Kill #42  PWR:28, 35, 41'). " +
                 "Shinies always announce immediately."));
+        c.add(tile("Level-up alerts",
+                "When your Capture Level increases, a gold banner plays on the overlay and a message " +
+                "is sent to your chatbox.\n\n" +
+                "The chat message is controlled by 'Notify On Level Up' in Config (on by default) — " +
+                "turn it off if you only want the on-screen banner."));
         c.add(tile("Reset Collection",
                 "The 'Reset Collection' button at the bottom of the panel permanently deletes all " +
                 "captures, kill counts, XP, levels and achievements. You are asked to confirm twice."));
@@ -435,7 +443,7 @@ public class InfoTab extends JPanel {
         midRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
         midRow.setAlignmentX(LEFT_ALIGNMENT);
         midRow.add(blockBtn("★ Favourites", new Color(220, 180, 60), openFavourites));
-        JButton catchBtn = blockBtn(" Catch Rates", new Color(100, 180, 220), openCatchRates);
+        JButton catchBtn = blockBtn(" Catch Rates", new Color(100, 180, 220), openCatchRates, true);
         final int iD = 13;
         catchBtn.setIcon(new Icon() {
             @Override public int getIconWidth()  { return iD; }
