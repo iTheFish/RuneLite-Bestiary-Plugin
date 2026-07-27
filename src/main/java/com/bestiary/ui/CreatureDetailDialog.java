@@ -363,9 +363,7 @@ public class CreatureDetailDialog extends JDialog {
         topLine.setOpaque(false);
 
         int quality = c.powerLevel();
-        Color qualColor = quality >= 80 ? new Color(80, 220, 80)
-                        : quality >= 50 ? new Color(220, 220, 80)
-                        : new Color(160, 160, 160);
+        Color qualColor = AlbumCard.powerColor(quality);
 
         String star = c.favourite ? "★  " : "";
         String qualText = c.nickname != null && !c.nickname.isEmpty()

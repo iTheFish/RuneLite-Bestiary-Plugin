@@ -1047,7 +1047,8 @@ public class DashboardDialog extends JDialog {
     }
 
     private static Color qualColor(int q) {
-        return q >= 80 ? new Color(80, 220, 80) : q >= 50 ? new Color(220, 220, 80) : new Color(155, 155, 155);
+        // Single source of truth for Power Level banding (see AlbumCard.powerColor).
+        return AlbumCard.powerColor(q);
     }
 
     private static Graphics2D g2(Graphics g) {
