@@ -350,7 +350,7 @@ public class InfoTab extends JPanel {
         strip.setAlignmentX(LEFT_ALIGNMENT);
 
         strip.add(clickable(statBox("Level",   levelVal,    false), DashboardDialog.DashView.PROGRESSION));
-        strip.add(clickable(statBox("Kills",   killsVal,    true),  DashboardDialog.DashView.KILLS));
+        strip.add(clickable(statBox("Kills",   killsVal,    true),  DashboardDialog.DashView.PROGRESSION));
         strip.add(clickable(statBox("Species", speciesVal,  false), DashboardDialog.DashView.SPECIES));
         strip.add(clickable(statBox("Caught",  capturesVal, true),  DashboardDialog.DashView.CAUGHT));
 
