@@ -245,9 +245,8 @@ public class BestiaryPlugin extends Plugin {
             dataService.awardCaptureCredits(baseCredits);
 
             if (config.captureXpEnabled()) {
-                long ckXp       = Math.max(10L, (long) Math.max(1, creature.npcCombatLevel) * 10);
-                long captureXp  = Math.round(ckXp * creature.rarity.xpMultiplier);
-                sessionTracker.addXp(captureXp);
+                sessionTracker.addXp(
+                        ProgressionService.captureXp(creature.npcCombatLevel, creature.rarity));
             }
             List<Achievement> newAchievements = progressionService.recordCapture(creature, config.captureXpEnabled());
 

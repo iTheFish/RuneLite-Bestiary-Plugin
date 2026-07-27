@@ -77,12 +77,21 @@ public class ProgressionService {
      */
     public List<Achievement> recordCapture(CapturedCreature creature, boolean awardXp) {
         if (awardXp) {
-            int combatLevel = Math.max(1, creature.npcCombatLevel);
-            long killXp     = Math.max(10L, (long) combatLevel * 10);
-            long captureXp  = Math.round(killXp * creature.rarity.xpMultiplier);
-            addXp(captureXp);
+            addXp(captureXp(creature.npcCombatLevel, creature.rarity));
         }
         return checkNewAchievements(creature);
+    }
+
+    /**
+     * Capture XP = base × rarity multiplier, where base = max(10, combatLevel × 10) with the
+     * combat level CAPPED at 100. The cap stops very-high-level monsters (which exist in droves)
+     * from awarding runaway XP: nothing exceeds the combat-100 scale
+     * (Common 1,000 → Mythic 50,000).
+     */
+    public static long captureXp(int npcCombatLevel, CreatureRarity rarity) {
+        int combatLevel = Math.max(1, Math.min(100, npcCombatLevel));
+        long base       = Math.max(10L, (long) combatLevel * 10);
+        return Math.round(base * rarity.xpMultiplier);
     }
 
     /** Current Capture Level (1\u00e2\u20ac"100). */
