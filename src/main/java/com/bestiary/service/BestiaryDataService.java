@@ -136,7 +136,7 @@ public class BestiaryDataService {
      * actual credits granted (so the caller can show the real, boosted number).
      */
     public long awardCaptureCredits(long base) {
-        long total = Math.max(1L, Math.round(base * (1.0 + captureCreditBonus())));
+        long total = Math.max(1L, base + captureCreditFlatBonus());
         addCredits(total);
         persist();
         return total;
@@ -156,9 +156,9 @@ public class BestiaryDataService {
         collection.lifetimeCreditsSpent += amount;
     }
 
-    /** Passive capture-credit bonus from the Hunter's Bounty upgrade (fraction, e.g. 0.06 = +6%). */
-    public double captureCreditBonus() {
-        return com.bestiary.model.ShopUpgrade.CREDIT_CAPTURE.effectFor(
+    /** Flat capture-credit bonus from the Hunter's Bounty upgrade (+2 credits per tier). */
+    public long captureCreditFlatBonus() {
+        return (long) com.bestiary.model.ShopUpgrade.CREDIT_CAPTURE.effectFor(
                 collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.CREDIT_CAPTURE));
     }
 

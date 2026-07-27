@@ -374,21 +374,65 @@ public class DashboardDialog extends JDialog {
         rgrid.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
         rgrid.add(miniCard("Rerolls",  FMT.format(col.totalRerolls())));
         rgrid.add(miniCard("Cards",    FMT.format(cardsRerolled)));
-        rgrid.add(miniCard("Rank-ups", FMT.format(countRankUps(col)), true));
+        rgrid.add(miniCard("Rank-ups / Shiny+",
+                countRankUps(col) + " / " + countShinyGained(col), true));
         root.add(rgrid);
         root.add(gap(10));
 
         root.add(sectionHeader("SHOP UPGRADES"));
         JPanel bars = col();
-        bars.setBorder(new EmptyBorder(0, 12, 0, 12));
+        bars.setBorder(new EmptyBorder(0, 12, 4, 12));
         for (ShopUpgrade u : ShopUpgrade.values()) {
-            int owned = dataService.getUpgradeTier(u);
-            bars.add(barRow(u.title, GOLD, owned, u.maxTier, owned + "/" + u.maxTier, ""));
-            bars.add(gap(4));
+            bars.add(upgradePipRow(u, dataService.getUpgradeTier(u)));
         }
         root.add(bars);
         root.add(gap(16));
         return root;
+    }
+
+    /** A "Upgrade name .... ●●●○○" row: filled gold pips for owned tiers, dark for the rest. */
+    private JPanel upgradePipRow(ShopUpgrade u, int owned) {
+        JPanel row = new JPanel(new BorderLayout(8, 0));
+        row.setOpaque(false);
+        row.setBorder(new EmptyBorder(2, 0, 2, 0));
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 22));
+
+        JLabel name = new JLabel(u.title);
+        name.setFont(FontManager.getRunescapeSmallFont());
+        name.setForeground(TEXT);
+
+        JPanel pips = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 2));
+        pips.setOpaque(false);
+        for (int i = 0; i < u.maxTier; i++) pips.add(new DashPip(i < owned));
+
+        row.add(name, BorderLayout.WEST);
+        row.add(pips, BorderLayout.EAST);
+        return row;
+    }
+
+    /** Small round tier indicator for the Economy view's shop-upgrade rows. */
+    private static final class DashPip extends JComponent {
+        private final boolean on;
+        DashPip(boolean on) { this.on = on; setPreferredSize(new Dimension(11, 11)); }
+        @Override protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(on ? GOLD : new Color(70, 70, 70));
+            g2.fillOval(0, 0, 10, 10);
+            g2.dispose();
+        }
+    }
+
+    /** Number of cards that are shiny now but were non-shiny in an earlier (pre-reroll) state. */
+    private static int countShinyGained(BestiaryCollection col) {
+        int n = 0;
+        for (CapturedCreature c : col.creatures) {
+            if (!c.isShiny()) continue;
+            for (CapturedCreature.RerollState s : c.rerollHistory) {
+                if (!s.shiny) { n++; break; }
+            }
+        }
+        return n;
     }
 
     /** Total reroll operations that bumped a card up a rarity, across the collection. */
@@ -1586,7 +1630,7 @@ public class DashboardDialog extends JDialog {
         int H = 4 + PAD + 60 + 12 + 70 + 12
                 + 22 + 6 + 3 * 20 + 8           // credits (3 rows)
                 + 22 + 6 + 3 * 20 + 8           // rerolls (3 rows)
-                + 22 + 6 + upRows * 22 + 8      // shop upgrade bars
+                + 22 + 6 + upRows * 20 + 8      // shop upgrade pip rows
                 + 36 + PAD;
 
         BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
@@ -1607,14 +1651,14 @@ public class DashboardDialog extends JDialog {
         y += 6;
         y = drawCardKV(g, "Total rerolls",  FMT.format(col.totalRerolls()), TEXT, y, PAD, W);
         y = drawCardKV(g, "Cards rerolled", FMT.format(cardsRerolled),      TEXT, y, PAD, W);
-        y = drawCardKV(g, "Rarity rank-ups",FMT.format(countRankUps(col)),  new Color(170, 120, 235), y, PAD, W);
+        y = drawCardKV(g, "Rank-ups / Shiny+",
+                countRankUps(col) + " / " + countShinyGained(col), new Color(170, 120, 235), y, PAD, W);
         y += 8;
 
         y = drawCardSectionHeader(g, "SHOP UPGRADES", y, W, PAD);
         y += 6;
         for (ShopUpgrade u : ups) {
-            int owned = ds.getUpgradeTier(u);
-            y = drawCardBarRow(g, u.title, GOLD, owned, u.maxTier, owned + "/" + u.maxTier, "", y, PAD, W);
+            y = drawCardPipRow(g, u.title, ds.getUpgradeTier(u), u.maxTier, y, PAD, W);
         }
         y += 8;
 
@@ -1631,6 +1675,23 @@ public class DashboardDialog extends JDialog {
         g.drawString(label, PAD + 4, y + fm.getAscent());
         g.setColor(valColor);
         g.drawString(value, W - PAD - fm.stringWidth(value), y + fm.getAscent());
+        return y + 20;
+    }
+
+    /** Draws a "label ....... ●●●○○" row with filled gold pips for owned tiers. Returns the new y. */
+    private static int drawCardPipRow(Graphics2D g, String label, int owned, int max, int y, int PAD, int W) {
+        g.setFont(FontManager.getRunescapeSmallFont());
+        FontMetrics fm = g.getFontMetrics();
+        g.setColor(new Color(210, 210, 210));
+        g.drawString(label, PAD + 4, y + fm.getAscent());
+        int d = 10, gap = 5;
+        int totalW = max * d + (max - 1) * gap;
+        int x = W - PAD - totalW;
+        int cy = y + fm.getAscent() / 2 - d / 2;
+        for (int i = 0; i < max; i++) {
+            g.setColor(i < owned ? GOLD : new Color(70, 70, 70));
+            g.fillOval(x + i * (d + gap), cy, d, d);
+        }
         return y + 20;
     }
 

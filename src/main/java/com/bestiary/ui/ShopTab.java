@@ -174,8 +174,11 @@ public class ShopTab extends JPanel {
         descWrap.add(desc, BorderLayout.CENTER);
         card.add(descWrap);
 
-        // Current effect: "+0.3% shiny chance"
-        JLabel effect = new JLabel("Current bonus: +" + formatPct(u.effectFor(owned)));
+        // Effect: current bonus, and (unless maxed) what the next tier upgrades it to.
+        String effectText = maxed
+                ? "Bonus: " + formatEffect(u, owned) + "  (max)"
+                : "Bonus: " + formatEffect(u, owned) + "  →  " + formatEffect(u, owned + 1);
+        JLabel effect = new JLabel(effectText);
         effect.setFont(FontManager.getRunescapeSmallFont());
         effect.setForeground(GOLD);
         effect.setAlignmentX(LEFT_ALIGNMENT);
@@ -206,12 +209,13 @@ public class ShopTab extends JPanel {
             buy.setForeground(PIP_ON);
         } else {
             boolean afford = dataService.getCredits() >= cost;
-            buy.setText("Buy tier " + (owned + 1) + "  —  " + cost + " cr");
+            buy.setText("Buy tier " + (owned + 1) + "  —  " + cost + " credits");
             buy.setEnabled(afford);
             buy.setForeground(afford ? GOLD : DIM);
             buy.addActionListener(e -> {
                 if (dataService.purchaseUpgrade(u)) {
                     refresh();
+                    BestiaryPanel.recheckAchievements();
                 }
             });
         }
@@ -223,6 +227,13 @@ public class ShopTab extends JPanel {
     /** Formats a fractional probability as a percentage, e.g. 0.003 -> "0.3%". */
     private static String formatPct(double frac) {
         return String.format("%.1f%%", frac * 100.0);
+    }
+
+    /** Formats an upgrade's total effect at {@code tiers} — flat credits or a percentage. */
+    private static String formatEffect(ShopUpgrade u, int tiers) {
+        return u.isFlatCredits()
+                ? "+" + (long) u.effectFor(tiers) + " credits"
+                : "+" + formatPct(u.effectFor(tiers));
     }
 
     /** A small round tier indicator. */

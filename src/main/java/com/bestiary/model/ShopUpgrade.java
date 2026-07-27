@@ -10,11 +10,11 @@ package com.bestiary.model;
  */
 public enum ShopUpgrade {
 
-    /** +credits from every capture (cheap, early-game). */
+    /** Flat +credits added to every capture reward (cheap, early-game). effect = flat credits/tier. */
     CREDIT_CAPTURE(
             "Hunter's Bounty",
-            "Raises the credits you earn from every capture.",
-            ShopCategory.PROGRESSION, 5, new long[]{10, 20, 50, 100, 250}, 0.02),
+            "Adds flat bonus credits to every capture (helps low-tier catches too).",
+            ShopCategory.PROGRESSION, 5, new long[]{10, 20, 50, 100, 250}, 2.0),
 
     /** +credits from discarding cards (cheap, early-game). */
     CREDIT_DISCARD(
@@ -84,5 +84,10 @@ public enum ShopUpgrade {
     /** Total passive bonus granted by owning {@code ownedTiers} tiers. */
     public double effectFor(int ownedTiers) {
         return perTierEffect * Math.max(0, Math.min(maxTier, ownedTiers));
+    }
+
+    /** True if {@link #effectFor} is a flat credit amount (vs. a fractional percentage). */
+    public boolean isFlatCredits() {
+        return this == CREDIT_CAPTURE;
     }
 }

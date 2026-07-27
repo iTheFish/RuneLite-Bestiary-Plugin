@@ -29,6 +29,20 @@ public class BestiaryPanel extends PluginPanel {
     private final boolean developerMode;
     private final com.bestiary.service.DevOptions devOptions;
 
+    /** Set by the plugin — sends chat messages for achievements unlocked outside the capture flow. */
+    private static java.util.function.Consumer<java.util.List<com.bestiary.model.Achievement>> achievementNotifier;
+    public static void setAchievementNotifier(
+            java.util.function.Consumer<java.util.List<com.bestiary.model.Achievement>> n) {
+        achievementNotifier = n;
+    }
+
+    /** The live singleton, so non-capture actions elsewhere can trigger an achievement re-check. */
+    private static BestiaryPanel instance;
+    /** Re-checks achievements after a non-capture action (favourite, purchase, etc.). EDT-only. */
+    public static void recheckAchievements() {
+        if (instance != null) instance.checkAndNotifyAchievements();
+    }
+
     private final JLabel statsLabel;
     private CollectionTab collectionTab;
     private ProgressTab progressTab;
@@ -43,6 +57,7 @@ public class BestiaryPanel extends PluginPanel {
                          @javax.inject.Named("developerMode") boolean developerMode,
                          com.bestiary.service.DevOptions devOptions) {
         super(false); // false = don't auto-wrap in scroll pane
+        instance = this;
         this.dataService        = dataService;
         this.progressionService = progressionService;
         this.sessionTracker     = sessionTracker;
@@ -80,7 +95,7 @@ public class BestiaryPanel extends PluginPanel {
                 return;
             }
             RerollConfirmDialog.open(win, cap, cost, progressionService.getLevel(),
-                    dataService.bonusShinyChance(), dataService.bonusRerollRarityChance(), () -> {
+                    dataService.bonusRerollShinyChance(), dataService.bonusRerollRarityChance(), () -> {
                 com.bestiary.model.CapturedCreature nc =
                         dataService.rerollCard(cap, progressionService.getLevel());
                 refresh();
@@ -307,10 +322,26 @@ public class BestiaryPanel extends PluginPanel {
         int captures = dataService.getCollection().totalCaptures();
         statsLabel.setText(species + " species  |  " + captures + " captures");
 
+        checkAndNotifyAchievements();
+
         collectionTab.refresh();
         shopTab.refresh();
         progressTab.refresh();
         infoTab.refresh();
+    }
+
+    /**
+     * Catches achievements unlocked by non-capture actions (rerolls, favourites, purchases,
+     * discards). checkNewAchievements only returns entries not already unlocked, so calling it
+     * repeatedly is cheap and can't double-notify the capture path.
+     */
+    private void checkAndNotifyAchievements() {
+        java.util.List<com.bestiary.model.Achievement> newly =
+                progressionService.checkNewAchievements(null);
+        if (!newly.isEmpty()) {
+            dataService.saveProgressionState();
+            if (achievementNotifier != null) achievementNotifier.accept(newly);
+        }
     }
 }
 

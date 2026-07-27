@@ -87,6 +87,10 @@ public class BestiaryPlugin extends Plugin {
     protected void startUp() {
         dataService.load();
 
+        // Achievements unlocked by non-capture actions (rerolls, favourites, purchases) are detected
+        // on panel refresh; announce them in chat just like capture achievements.
+        BestiaryPanel.setAchievementNotifier(list -> list.forEach(this::sendAchievementMessage));
+
         navButton = NavigationButton.builder()
                 .tooltip("Bestiary")
                 .icon(buildPanelIcon())

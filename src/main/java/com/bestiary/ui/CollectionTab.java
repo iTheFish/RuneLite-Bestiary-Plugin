@@ -272,7 +272,9 @@ public class CollectionTab extends JPanel {
         CardExportDialog.disposeOpen();
         Map<String, List<CapturedCreature>> byNpc = dataService.getCollection().creatures.stream()
                 .collect(Collectors.groupingBy(c -> c.npcName));
-        AlbumDialog.setOnFavouriteChanged(() -> { dataService.saveNow(); rebuildCards(); });
+        AlbumDialog.setOnFavouriteChanged(() -> {
+            dataService.saveNow(); rebuildCards(); BestiaryPanel.recheckAchievements();
+        });
         new AlbumDialog(parent, byNpc, dataService.getCollection().killCounts,
                 dataService.getCollection(), imageService, startFavourites);
     }
