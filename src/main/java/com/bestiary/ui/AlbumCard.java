@@ -773,12 +773,23 @@ public class AlbumCard extends JPanel {
         // --- Stat bars (captured) / empty outlines (locked) ---
         g2.setFont(smallFont);
         sfm = g2.getFontMetrics();
+        // Gold highlight is now stat-driven (class no longer influences stats): a stat glows
+        // if it's maxed (>= HL_MAX) or is one of the two highest AND meaningfully high (>= HL_MIN),
+        // so weak monsters (e.g. a chicken with all-1 combat stats) don't glow.
+        final int HL_MIN = 50, HL_MAX = 90;
+        int hl2nd = 0;
+        if (!locked) {
+            int[] top = java.util.Arrays.copyOf(avgStats, STAT_LABELS.length); // ATK..RNG only
+            java.util.Arrays.sort(top); // ascending
+            hl2nd = top[top.length - 2]; // 2nd-highest combat stat
+        }
         for (int i = 0; i < STAT_LABELS.length; i++) {
             int rowY     = STATS_Y + i * STAT_ROW;
             int baseline = rowY + (STAT_ROW + sfm.getAscent() - sfm.getDescent()) / 2;
 
             g2.setFont(smallFont);
-            boolean primary = !locked && combatClass.isPrimary(i);
+            boolean primary = !locked
+                && (avgStats[i] >= HL_MAX || (avgStats[i] >= HL_MIN && avgStats[i] >= hl2nd));
             // Skill icon as the row label (falls back to the abbreviation if unavailable)
             BufferedImage statIcon = skillImg(STAT_SKILLS[i]);
             if (statIcon != null) {
@@ -812,7 +823,7 @@ public class AlbumCard extends JPanel {
                 g2.setFont(boldFont);
                 FontMetrics vfm = g2.getFontMetrics();
                 String valStr = String.valueOf(avgStats[i]);
-                // Amber value marks a primary stat for this combat class (the icon replaced the label cue)
+                // Amber value marks a standout stat (top-two / maxed) — see hl2nd above.
                 g2.setColor(primary ? new Color(230, 190, 80) : Color.WHITE);
                 g2.drawString(valStr, imgX + imgW - vfm.stringWidth(valStr), baseline);
             }

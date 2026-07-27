@@ -26,7 +26,12 @@ public enum CombatClass {
     MARKSMAN ("Marksman",  new int[]{4},       new int[]{0, 1, 3}),// ranged          | dump ATK STR MAG
     BATTLEMAGE("Battlemage", new int[]{0, 1, 3}, new int[]{4}),   // melee+magic      | dump RNG
     WARDEN   ("Warden",    new int[]{0, 1, 4}, new int[]{3}),     // melee+ranged     | dump MAG
-    OCCULTIST("Occultist", new int[]{3, 4},    new int[]{0, 1});  // magic+ranged     | dump ATK STR
+    OCCULTIST("Occultist", new int[]{3, 4},    new int[]{0, 1}),  // magic+ranged     | dump ATK STR
+
+    // ---- Profile-derived flavour classes (assigned programmatically, not by attack style):
+    // MEATSHIELD = passive/tanky (low damage, often high HP) e.g. cows, crabs.
+    // NIMBLE     = fast + fragile (very low HP, high agility) e.g. rats, chickens, spiders. ----
+    MEATSHIELD("Meatshield", new int[]{2}, new int[]{3, 4});      // defensive lump    | dump MAG RNG
 
     public final String label;
     public final int[]  primaryIndices;
