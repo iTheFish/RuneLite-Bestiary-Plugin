@@ -250,11 +250,12 @@ public class InfoTab extends JPanel {
                 "The ★ Favourites button in the Collection header shows all starred cards. In the " +
                 "Album, a ★ Favourites shortcut opens a detail view of every starred capture."));
         c.add(tile("Export",
-                "Right-click any card in Collection, Favourites, or Album → 'Export Card'.\n\n" +
-                "Opens a scaled preview. Copy to clipboard or save as PNG. Each footer shows the " +
+                "Left-click a card, or right-click → 'Card info + export'. The card window opens on " +
+                "its Export tab: a scaled preview with Copy Image / Save PNG. Each footer shows the " +
                 "card's unique ID, the player who captured it, a 'Rerolled N times' line if it has " +
                 "been rerolled, and the OSRS | Bestiary stamp.\n\n" +
-                "In the Album detail view, 'Export Page' saves the current page as a grid image."));
+                "Right-click → 'Copy' still copies the card straight to the clipboard without opening " +
+                "the window. In the Album detail view, 'Export Page' saves the current page as a grid."));
     }
 
     private void fillEconomy(JPanel c) {
