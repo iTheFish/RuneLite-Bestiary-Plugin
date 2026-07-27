@@ -34,14 +34,15 @@ final class OddsBreakdownPanel {
 
         root.add(Box.createVerticalStrut(10));
 
-        // Power Level: 7-stat average + HP at 1/6 weight (Prayer is the 7th stat)
+        // Power Level: 7-stat average + HP at 1/6 weight + combat level at 1/6 weight (Prayer is the 7th stat)
         int sevenStats = r.statSum + r.prayer;
         int statAvg = Math.round(sevenStats / 7f);
         Color nearWhite = new Color(235, 235, 235);
         root.add(header("Power Level", bodyBold));
         root.add(value(kvRow("Stat average  (" + sevenStats + " ÷ 7)", body, ColorScheme.LIGHT_GRAY_COLOR, String.valueOf(statAvg)), nearWhite));
         root.add(value(kvRow("Hitpoints (factual)  ÷ 6", body, new Color(120, 200, 120), "+" + Math.round(r.hp / 6f)), nearWhite));
-        root.add(value(kvRow("= Power Level  (" + sevenStats + " ÷ 7) + (" + r.hp + " ÷ 6)", body, Color.WHITE,
+        root.add(value(kvRow("Combat level (factual)  ÷ 6", body, new Color(120, 200, 120), "+" + Math.round(r.combatLevel / 6f)), nearWhite));
+        root.add(value(kvRow("= Power Level  (" + sevenStats + " ÷ 7) + (" + r.hp + " ÷ 6) + (" + r.combatLevel + " ÷ 6)", body, Color.WHITE,
                 String.valueOf(r.powerLevel)), new Color(120, 200, 120)));
 
         root.add(Box.createVerticalStrut(4));

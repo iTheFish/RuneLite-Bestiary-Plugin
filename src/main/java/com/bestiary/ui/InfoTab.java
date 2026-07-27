@@ -224,12 +224,13 @@ public class InfoTab extends JPanel {
     private void fillCards(JPanel c) {
         c.add(sectionTitle("Reading a card"));
         c.add(tile("Power Level",
-                "Power Level is a card's headline number. It blends the monster's real " +
-                "Hitpoints (a factual OSRS attribute, shown on the card) with the seven rolled stats.\n\n" +
-                "Power Level = average of the 7 stats + HP ÷ 6.\n\n" +
-                "The stat average stays on the 1–99 scale, while HP is added separately so it " +
-                "separates the difficulty tiers: HP adds about +13 at 80 HP, +40 at 250 HP, and " +
-                "+165 at 1000 HP. The rolled stats are mostly flavour — HP drives power."));
+                "Power Level is a card's headline number. It blends two factual OSRS attributes of the " +
+                "monster — its Hitpoints and its combat level — with the seven rolled stats.\n\n" +
+                "Power Level = average of the 7 stats + HP ÷ 6 + combat level ÷ 6.\n\n" +
+                "The stat average stays on the 1–99 scale, while HP and combat level are added " +
+                "separately (equal weight) so they separate the difficulty tiers: HP adds ~+13 at 80 HP " +
+                "and ~+165 at 1000 HP; combat level adds ~+21 at 124 and ~+233 at 1400. " +
+                "The rolled stats are mostly flavour — difficulty drives power."));
         c.add(tile("Stats & class",
                 "Every capture rolls seven stats — Attack, Strength, Defence, Magic, Ranged, Agility " +
                 "and Prayer (Prayer and Agility roll on a smaller scale). The " +
