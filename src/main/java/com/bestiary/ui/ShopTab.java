@@ -103,7 +103,10 @@ public class ShopTab extends JPanel {
         sp.getViewport().addComponentListener(new java.awt.event.ComponentAdapter() {
             @Override
             public void componentResized(java.awt.event.ComponentEvent e) {
-                int w = sp.getViewport().getWidth() - 30; // card + panel padding
+                // Subtract card + panel chrome (~26px) plus a comfortable spare margin so the
+                // fixed-width HTML div never overruns the content area (Swing HTML clips rather
+                // than re-wraps if it's a hair too wide).
+                int w = sp.getViewport().getWidth() - 40;
                 if (w > 60 && Math.abs(w - descWrapWidth) > 4) {
                     descWrapWidth = w;
                     rebuildUpgrades();
