@@ -760,11 +760,13 @@ public class AlbumCard extends JPanel {
             int agW = usable - hpW - prW;
             int aY = ATTR_Y;
             int x0 = imgX;
-            int hp = hitpoints;
-            int prayer = prayerValue;
-            drawAttrPill(g2, x0, aY, hpW, ATTR_H, IconType.HP, String.valueOf(hp), locked);
+            // Locked cards hide the factual HP/Prayer too (show "?"), matching Agility —
+            // uncaptured monsters reveal nothing until encountered.
+            String hpVal     = locked ? "?" : String.valueOf(hitpoints);
+            String prayerVal = locked ? "?" : String.valueOf(prayerValue);
+            drawAttrPill(g2, x0, aY, hpW, ATTR_H, IconType.HP, hpVal, locked);
             x0 += hpW + gap;
-            drawAttrPill(g2, x0, aY, prW, ATTR_H, IconType.PRAYER, String.valueOf(prayer), locked);
+            drawAttrPill(g2, x0, aY, prW, ATTR_H, IconType.PRAYER, prayerVal, locked);
             x0 += prW + gap;
             String agiVal = locked ? "?" : String.valueOf(avgStats[AGI_STAT_INDEX]);
             drawAttrPill(g2, x0, aY, agW, ATTR_H, IconType.AGILITY, agiVal, locked);
