@@ -123,7 +123,6 @@ public class ShopTab extends JPanel {
                 new LineBorder(new Color(255, 165, 0, 70), 1, true),
                 new EmptyBorder(8, 8, 8, 8)));
         card.setAlignmentX(LEFT_ALIGNMENT);
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, card.getMaximumSize().height));
 
         JLabel title = new JLabel(u.title);
         title.setFont(FontManager.getRunescapeBoldFont());
@@ -131,12 +130,9 @@ public class ShopTab extends JPanel {
         title.setAlignmentX(LEFT_ALIGNMENT);
         card.add(title);
 
-        JTextArea desc = new JTextArea(u.description);
-        desc.setEditable(false);
-        desc.setFocusable(false);
-        desc.setLineWrap(true);
-        desc.setWrapStyleWord(true);
-        desc.setOpaque(false);
+        // Fixed-width HTML label wraps reliably and reports a real preferred height
+        // (a wrapping JTextArea inside a BoxLayout does not — it collapses the card).
+        JLabel desc = new JLabel("<html><div style='width:175px'>" + u.description + "</div></html>");
         desc.setFont(FontManager.getRunescapeSmallFont());
         desc.setForeground(DIM);
         desc.setBorder(new EmptyBorder(2, 0, 4, 0));
@@ -187,6 +183,9 @@ public class ShopTab extends JPanel {
         card.add(Box.createVerticalStrut(4));
         card.add(buy);
 
+        // Pin the card to its natural height so the parent BoxLayout can't stretch it
+        // (and, critically, can't collapse it — see the desc-label note above).
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, card.getPreferredSize().height));
         return card;
     }
 
