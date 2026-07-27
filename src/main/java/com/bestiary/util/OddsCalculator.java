@@ -101,7 +101,7 @@ public final class OddsCalculator {
         r.hp         = c.hitpoints();
         r.prayer     = c.prayer;
         r.powerLevel = c.powerLevel();
-        // Combat level is a second factual difficulty term (1/10 weight); mirror powerLevel().
+        // Combat level is a second factual difficulty term (1/6 weight, same as HP); mirror powerLevel().
         int cmb = Math.max(0, c.npcCombatLevel);
         r.combatLevel = cmb;
 
@@ -114,7 +114,7 @@ public final class OddsCalculator {
                     : RarityRoller.statCentre(bases[i], r.rarity);
         }
         r.avgPowerLevel = Math.round(
-                (avgStatSum + RarityRoller.utilityCentre(prayerBase, r.rarity)) / 7f + r.hp / 6f + cmb / 10f);
+                (avgStatSum + RarityRoller.utilityCentre(prayerBase, r.rarity)) / 7f + r.hp / 6f + cmb / 6f);
 
         // Average SHINY roll for this rarity: every stat at the centre of its shiny band.
         int avgShinyStatSum = 0;
@@ -126,7 +126,7 @@ public final class OddsCalculator {
         }
         int[] pShiny = RarityRoller.shinyUtilityBand(prayerBase, r.rarity);
         r.avgShinyPowerLevel = Math.round(
-                (avgShinyStatSum + (pShiny[0] + pShiny[1]) / 2) / 7f + r.hp / 6f + cmb / 10f);
+                (avgShinyStatSum + (pShiny[0] + pShiny[1]) / 2) / 7f + r.hp / 6f + cmb / 6f);
 
         // Stat wiggle is flavour, not part of "how rare is this card" — only rarity (and shiny) count.
         r.perCapture = r.rarityChance * (r.shiny ? r.shinyChance : 1.0);

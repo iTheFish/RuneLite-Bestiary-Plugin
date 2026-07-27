@@ -116,9 +116,9 @@ public class OddsView extends JPanel implements Scrollable {
                 String.valueOf(statAvg)), nearWhite));
         add(styleValue(kvRow("Hitpoints (factual)  ÷ 6", body, new Color(120, 200, 120),
                 "+" + Math.round(r.hp / 6f)), nearWhite));
-        add(styleValue(kvRow("Combat level (factual)  ÷ 10", body, new Color(120, 200, 120),
-                "+" + Math.round(r.combatLevel / 10f)), nearWhite));
-        add(styleValue(kvRow("= Power Level  (" + sevenStats + " ÷ 7) + (" + r.hp + " ÷ 6) + (" + r.combatLevel + " ÷ 10)",
+        add(styleValue(kvRow("Combat level (factual)  ÷ 6", body, new Color(120, 200, 120),
+                "+" + Math.round(r.combatLevel / 6f)), nearWhite));
+        add(styleValue(kvRow("= Power Level  (" + sevenStats + " ÷ 7) + (" + r.hp + " ÷ 6) + (" + r.combatLevel + " ÷ 6)",
                 body, Color.WHITE, String.valueOf(r.powerLevel)), new Color(120, 200, 120)));
 
         add(Box.createVerticalStrut(4));
@@ -139,10 +139,10 @@ public class OddsView extends JPanel implements Scrollable {
         Color dShinyCol = dShiny > 0 ? new Color(120, 200, 120) : dShiny < 0 ? new Color(224, 112, 112) : new Color(176, 176, 176);
         add(styleValue(kvRow("This card vs average shiny", body, Color.WHITE, dShinyStr), dShinyCol));
 
-        add(paragraph("Power Level = the 7-stat average + the monster's HP at 1/6 weight + its combat "
-                + "level at 1/10 weight. HP and combat level aren't on the 1–99 scale, so they're added "
+        add(paragraph("Power Level = the 7-stat average + the monster's HP and combat level, each at "
+                + "1/6 weight. HP and combat level aren't on the 1–99 scale, so they're added "
                 + "separately — <font color='#a0a0a0'>negligible for a weak creature (stats decide), but "
-                + "dominant for a boss (1200&nbsp;HP adds ~200, a 1400 combat level ~140).</font>"));
+                + "dominant for a boss (1200&nbsp;HP adds ~200, a 1400 combat level ~233).</font>"));
     }
 
     // ---- helpers ----

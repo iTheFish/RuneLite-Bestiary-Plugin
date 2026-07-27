@@ -226,10 +226,10 @@ public class InfoTab extends JPanel {
         c.add(tile("Power Level",
                 "Power Level is a card's headline number. It blends two factual OSRS attributes of the " +
                 "monster — its Hitpoints and its combat level — with the seven rolled stats.\n\n" +
-                "Power Level = average of the 7 stats + HP ÷ 6 + combat level ÷ 10.\n\n" +
+                "Power Level = average of the 7 stats + HP ÷ 6 + combat level ÷ 6.\n\n" +
                 "The stat average stays on the 1–99 scale, while HP and combat level are added " +
-                "separately so they separate the difficulty tiers: HP adds ~+13 at 80 HP and ~+165 at " +
-                "1000 HP; combat level adds a smaller secondary lift (~+12 at 124, ~+140 at 1400). " +
+                "separately (equal weight) so they separate the difficulty tiers: HP adds ~+13 at 80 HP " +
+                "and ~+165 at 1000 HP; combat level adds ~+21 at 124 and ~+233 at 1400. " +
                 "The rolled stats are mostly flavour — difficulty drives power."));
         c.add(tile("Stats & class",
                 "Every capture rolls seven stats — Attack, Strength, Defence, Magic, Ranged, Agility " +
