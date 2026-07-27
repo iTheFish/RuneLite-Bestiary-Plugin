@@ -282,7 +282,7 @@ public class AlbumCard extends JPanel {
                 .append("<br>Region: ").append(region)
                 .append("<br>Kills before catch: ").append(c.killsBeforeCapture);
         if (c.rerollCount() > 0) sb.append("<br>Rerolled ").append(c.rerollCount()).append("×");
-        sb.append("<br><i>Right-click → Card Info for full data</i></html>");
+        sb.append("<br><i>Left-click or right-click → Card info + export</i></html>");
         return sb.toString();
     }
 
@@ -394,38 +394,27 @@ public class AlbumCard extends JPanel {
                         .thenComparingInt(c -> -c.powerLevel()));
 
                 if (sorted.size() == 1) {
-                    JMenuItem item = new JMenuItem("Export Card");
                     CapturedCreature only = sorted.get(0);
-                    item.addActionListener(ev ->
-                            CardExportDialog.open(SwingUtilities.getWindowAncestor(AlbumCard.this), only));
-                    menu.add(item);
-
-                    JMenuItem dataItem = new JMenuItem("Card Info…");
+                    JMenuItem dataItem = new JMenuItem("Card info + export");
                     dataItem.addActionListener(ev ->
-                            CardDataDialog.open(SwingUtilities.getWindowAncestor(AlbumCard.this), only));
+                            CardDataDialog.open(SwingUtilities.getWindowAncestor(AlbumCard.this),
+                                    only, CardDataDialog.TAB_EXPORT));
                     menu.add(dataItem);
                 } else {
-                    JMenu sub = new JMenu("Export Card");
-                    JMenu oddsSub = new JMenu("Card Info…");
+                    JMenu oddsSub = new JMenu("Card info + export");
                     int shown = Math.min(sorted.size(), 8);
                     for (int i = 0; i < shown; i++) {
                         CapturedCreature c = sorted.get(i);
                         String label = (c.nickname != null && !c.nickname.isEmpty())
                                 ? "\"" + c.nickname + "\"  PWR:" + c.powerLevel()
                                 : c.rarity.label + "  PWR:" + c.powerLevel();
-                        JMenuItem item = new JMenuItem(label);
-                        item.setForeground(c.rarity.displayColor);
-                        item.addActionListener(ev ->
-                                CardExportDialog.open(SwingUtilities.getWindowAncestor(AlbumCard.this), c));
-                        sub.add(item);
-
                         JMenuItem oItem = new JMenuItem(label);
                         oItem.setForeground(c.rarity.displayColor);
                         oItem.addActionListener(ev ->
-                                CardDataDialog.open(SwingUtilities.getWindowAncestor(AlbumCard.this), c));
+                                CardDataDialog.open(SwingUtilities.getWindowAncestor(AlbumCard.this),
+                                        c, CardDataDialog.TAB_EXPORT));
                         oddsSub.add(oItem);
                     }
-                    menu.add(sub);
                     menu.add(oddsSub);
                 }
                 if (!locked && captures != null && captures.size() == 1) {

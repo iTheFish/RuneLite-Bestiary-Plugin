@@ -120,7 +120,7 @@ public class CaptureRow extends JPanel {
                     });
                     menu.add(coverItem);
 
-                    JMenuItem exportItem = new JMenuItem("Export Card");
+                    JMenuItem exportItem = new JMenuItem("Card info + export");
                     exportItem.addActionListener(ev ->
                             CardExportDialog.open(SwingUtilities.getWindowAncestor(CaptureRow.this), capture));
                     menu.add(exportItem);

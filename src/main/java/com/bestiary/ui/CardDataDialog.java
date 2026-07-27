@@ -35,10 +35,10 @@ public class CardDataDialog extends JDialog {
     private static final DateTimeFormatter DATE_SHORT =
             DateTimeFormatter.ofPattern("d/M/yy").withZone(ZoneId.systemDefault());
 
-    public static final int TAB_OVERVIEW = 0, TAB_ODDS = 1, TAB_GRAPH = 2, TAB_REROLLS = 3;
+    public static final int TAB_EXPORT = 0, TAB_OVERVIEW = 1, TAB_ODDS = 2, TAB_GRAPH = 3, TAB_REROLLS = 4;
 
     public static void open(Window owner, CapturedCreature capture) {
-        open(owner, capture, TAB_OVERVIEW);
+        open(owner, capture, TAB_EXPORT);
     }
 
     /** Opens the panel on a specific tab (see the TAB_* constants). */
@@ -49,9 +49,16 @@ public class CardDataDialog extends JDialog {
         current.setVisible(true);
     }
 
+    /** Close any open Card data dialog (called when the collection is reset / Album opens). */
+    public static void disposeOpen() {
+        if (current != null && current.isDisplayable()) current.dispose();
+        current = null;
+    }
+
     private final Font body;
     private final Font bodyBold;
     private final JTabbedPane tabs;
+    private final JComponent bottomBar;
 
     private CardDataDialog(Window owner, CapturedCreature capture) {
         super(owner, "Card data — " + capture.npcName, ModalityType.MODELESS);
@@ -64,26 +71,50 @@ public class CardDataDialog extends JDialog {
         tabs.setFont(FontManager.getRunescapeSmallFont());
         tabs.setBackground(ColorScheme.DARK_GRAY_COLOR);
         tabs.setForeground(Color.WHITE);
+        tabs.addTab("Export", buildExportTab(capture));   // primary: card preview + Copy/Save
         tabs.addTab("Overview", scroll(buildOverview(capture)));
         tabs.addTab("Odds", scroll(new OddsView(capture)));
         tabs.addTab("Graph", new RerollGraph(capture));   // percentile + (if rerolled) stat timeline
         tabs.addTab("Rerolls", scroll(buildRerollHistory(capture)));
+        bottomBar = buildBottomBar();
+        bottomBar.setVisible(false);   // Export is the first/selected tab
+
         // A tab's scroll pane can open part-scrolled (layout quirk) — force it back to the top.
-        tabs.addChangeListener(e -> SwingUtilities.invokeLater(() -> {
-            Component tc = tabs.getSelectedComponent();
-            if (tc instanceof JScrollPane) ((JScrollPane) tc).getViewport().setViewPosition(new Point(0, 0));
-        }));
+        // The generic Copy/Save-tab bar only applies to the data tabs; the Export tab has its own.
+        tabs.addChangeListener(e -> {
+            bottomBar.setVisible(tabs.getSelectedIndex() != TAB_EXPORT);
+            SwingUtilities.invokeLater(() -> {
+                Component tc = tabs.getSelectedComponent();
+                if (tc instanceof JScrollPane) ((JScrollPane) tc).getViewport().setViewPosition(new Point(0, 0));
+            });
+        });
 
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(ColorScheme.DARK_GRAY_COLOR);
         root.add(tabs, BorderLayout.CENTER);
-        root.add(buildBottomBar(), BorderLayout.SOUTH);
+        root.add(bottomBar, BorderLayout.SOUTH);
         setContentPane(root);
         pack();
         // pack() sizes to content preferred width (too narrow for the odds paragraphs), so fix it.
-        setSize(new Dimension(440, 520));
-        setMinimumSize(new Dimension(380, 340));
+        // Tall enough to show the 2× card preview on the Export tab without scrolling.
+        setSize(new Dimension(440, 740));
+        setMinimumSize(new Dimension(380, 420));
         setLocationRelativeTo(owner);
+    }
+
+    /** Export tab: card preview centred above a bottom-anchored Copy/Save row (its own layout). */
+    private JComponent buildExportTab(CapturedCreature capture) {
+        return CardExportDialog.sharedImageService() != null
+                ? new CardExportPanel(capture)
+                : scroll(placeholder("Export unavailable."));
+    }
+
+    private JComponent placeholder(String text) {
+        JLabel l = new JLabel(text);
+        l.setFont(body);
+        l.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+        l.setBorder(new EmptyBorder(16, 16, 16, 16));
+        return l;
     }
 
     private JScrollPane scroll(JComponent content) {

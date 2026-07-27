@@ -396,7 +396,7 @@ public class CreatureDetailDialog extends JDialog {
                 });
                 menu.add(favItem);
 
-                JMenuItem exportItem = new JMenuItem("Export Card");
+                JMenuItem exportItem = new JMenuItem("Card info + export");
                 exportItem.addActionListener(ev ->
                         CardExportDialog.open(CreatureDetailDialog.this, c));
                 menu.add(exportItem);
