@@ -86,6 +86,9 @@ public class BestiaryPlugin extends Plugin {
     @Override
     protected void startUp() {
         dataService.load();
+        // Odds views describe shiny odds; the Shiny Charm upgrade raises them, so let the
+        // calculator read the current passive bonus without threading it through every call-site.
+        com.bestiary.util.OddsCalculator.setShinyBonusSupplier(dataService::bonusShinyChance);
 
         navButton = NavigationButton.builder()
                 .tooltip("Bestiary")

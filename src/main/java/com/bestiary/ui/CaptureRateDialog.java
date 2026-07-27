@@ -24,12 +24,12 @@ public class CaptureRateDialog extends JDialog {
 
     private static CaptureRateDialog current;
 
-    public static void open(Window owner, ProgressionService ps) {
+    public static void open(Window owner, ProgressionService ps, double shinyBonus) {
         if (current != null) current.dispose();
-        current = new CaptureRateDialog(owner, ps.getLevel());
+        current = new CaptureRateDialog(owner, ps.getLevel(), shinyBonus);
     }
 
-    private CaptureRateDialog(Window owner, int level) {
+    private CaptureRateDialog(Window owner, int level, double shinyBonus) {
         super(owner, "Capture Rates", ModalityType.MODELESS);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setResizable(false);
@@ -60,8 +60,12 @@ public class CaptureRateDialog extends JDialog {
         root.add(noteRow("then rarity is decided. Both improve as your level rises."));
         root.add(Box.createVerticalStrut(8));
 
-        double shinyPct = (0.002 + Math.max(0, Math.min(98, level - 1)) / 98.0 * (0.02 - 0.002)) * 100.0;
-        JLabel shinyTitle = new JLabel(String.format("SHINY CHANCE:  %.2f%%", shinyPct));
+        double baseShiny = com.bestiary.service.CaptureService.shinyChance(level);
+        double shinyPct  = (baseShiny + shinyBonus) * 100.0;
+        String shinyText = shinyBonus > 0
+                ? String.format("SHINY CHANCE:  %.2f%%  (+%.2f%% from Shiny Charm)", shinyPct, shinyBonus * 100.0)
+                : String.format("SHINY CHANCE:  %.2f%%", shinyPct);
+        JLabel shinyTitle = new JLabel(shinyText);
         shinyTitle.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         shinyTitle.setForeground(new Color(255, 235, 120));
         shinyTitle.setAlignmentX(LEFT_ALIGNMENT);

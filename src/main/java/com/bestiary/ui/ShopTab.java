@@ -30,6 +30,8 @@ public class ShopTab extends JPanel {
 
     private JLabel creditsLabel;
     private JPanel upgradesPanel;
+    /** Live wrap width for the HTML description labels; updated from the viewport width. */
+    private int descWrapWidth = 165;
 
     public ShopTab(BestiaryDataService dataService, ProgressionService progressionService) {
         this.dataService        = dataService;
@@ -94,6 +96,18 @@ public class ShopTab extends JPanel {
         sp.setOpaque(false);
         sp.getViewport().setOpaque(false);
         sp.getVerticalScrollBar().setUnitIncrement(16);
+        // The panel width is only known once shown; recompute the description wrap width
+        // from the live viewport so the HTML labels wrap to the real width (and re-wrap on resize).
+        sp.getViewport().addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                int w = sp.getViewport().getWidth() - 30; // card + panel padding
+                if (w > 60 && Math.abs(w - descWrapWidth) > 4) {
+                    descWrapWidth = w;
+                    rebuildUpgrades();
+                }
+            }
+        });
         return sp;
     }
 
@@ -132,7 +146,7 @@ public class ShopTab extends JPanel {
 
         // Fixed-width HTML label wraps reliably and reports a real preferred height
         // (a wrapping JTextArea inside a BoxLayout does not — it collapses the card).
-        JLabel desc = new JLabel("<html><div style='width:175px'>" + u.description + "</div></html>");
+        JLabel desc = new JLabel("<html><div style='width:" + descWrapWidth + "px'>" + u.description + "</div></html>");
         desc.setFont(FontManager.getRunescapeSmallFont());
         desc.setForeground(DIM);
         desc.setBorder(new EmptyBorder(2, 0, 4, 0));

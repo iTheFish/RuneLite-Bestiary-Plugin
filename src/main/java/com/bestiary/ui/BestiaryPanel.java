@@ -79,7 +79,8 @@ public class BestiaryPanel extends PluginPanel {
                         "You need " + cost + " credits to reroll (you have " + dataService.getCredits() + ").");
                 return;
             }
-            RerollConfirmDialog.open(win, cap, cost, progressionService.getLevel(), () -> {
+            RerollConfirmDialog.open(win, cap, cost, progressionService.getLevel(),
+                    dataService.bonusShinyChance(), dataService.bonusRerollRarityChance(), () -> {
                 com.bestiary.model.CapturedCreature nc =
                         dataService.rerollCard(cap, progressionService.getLevel());
                 refresh();
@@ -132,7 +133,8 @@ public class BestiaryPanel extends PluginPanel {
                 () -> collectionTab.openAlbum(SwingUtilities.getWindowAncestor(this)),
                 () -> { tabs.setSelectedIndex(1); collectionTab.showFavourites(); },
                 () -> SessionRecapDialog.open(SwingUtilities.getWindowAncestor(this), sessionTracker),
-                () -> CaptureRateDialog.open(SwingUtilities.getWindowAncestor(this), progressionService),
+                () -> CaptureRateDialog.open(SwingUtilities.getWindowAncestor(this), progressionService,
+                        dataService.bonusShinyChance()),
                 view -> DashboardDialog.open(SwingUtilities.getWindowAncestor(this), dataService, progressionService, view),
                 view -> DashboardDialog.copyViewToClipboard(dataService, progressionService, view));
 
