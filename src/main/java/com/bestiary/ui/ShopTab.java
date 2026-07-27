@@ -96,6 +96,8 @@ public class ShopTab extends JPanel {
         sp.setOpaque(false);
         sp.getViewport().setOpaque(false);
         sp.getVerticalScrollBar().setUnitIncrement(16);
+        // Never scroll horizontally — the panel width is fixed; content must wrap to it.
+        sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         // The panel width is only known once shown; recompute the description wrap width
         // from the live viewport so the HTML labels wrap to the real width (and re-wrap on resize).
         sp.getViewport().addComponentListener(new java.awt.event.ComponentAdapter() {

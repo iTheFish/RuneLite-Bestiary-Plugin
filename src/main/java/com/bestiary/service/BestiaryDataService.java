@@ -288,6 +288,7 @@ public class BestiaryDataService {
                 .captureLevel(currentLevel)   // reroll happened now → odds reflect the current level
                 .killsBeforeCapture(c.killsBeforeCapture)
                 .playerName(c.playerName).shiny(shiny).prayer(prayer).observedHp(c.observedHp)
+                .shinyBonus(bonusShinyChance())   // reroll re-rolled shiny with the current passive bonus
                 .rerolledBy(reroller)
                 .rerollHistory(history)
                 .build();

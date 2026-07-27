@@ -70,8 +70,10 @@ public class OddsView extends JPanel implements Scrollable {
         add(kvRow("This rarity", body, r.rarity.displayColor,
                 OddsCalculator.pct(r.rarityChance) + "  (" + OddsCalculator.oneIn(r.rarityChance) + ")"));
         if (r.shiny) {
+            String bonusNote = r.shinyBonus > 0 ? "  (+" + OddsCalculator.pct(r.shinyBonus) + ")" : "";
             add(kvRow("Shiny", body, new Color(255, 215, 0),
-                    OddsCalculator.pct(r.shinyChance) + "  (" + OddsCalculator.oneIn(r.shinyChance) + ")"));
+                    OddsCalculator.pct(r.shinyChance) + bonusNote
+                            + "  (" + OddsCalculator.oneIn(r.shinyChance) + ")"));
         }
         add(Box.createVerticalStrut(4));
         add(separator());

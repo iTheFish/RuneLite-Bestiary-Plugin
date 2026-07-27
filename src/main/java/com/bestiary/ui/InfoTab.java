@@ -215,7 +215,8 @@ public class InfoTab extends JPanel {
         c.add(tile("Shiny",
                 "After rarity, a third independent roll decides whether the capture is shiny. " +
                 "It is orthogonal to rarity — any rarity can be shiny, from a Common to a Mythic.\n\n" +
-                "The chance scales with your level: 0.2% at level 1 up to 2% at level 99.\n\n" +
+                "The chance scales with your level: 0.2% at level 1 up to 2% at level 99. The " +
+                "Shiny Charm shop unlock adds up to +0.5% on top (and also boosts reroll shinies).\n\n" +
                 "A shiny always rolls near-max stats (the top of its band), gets a golden card " +
                 "with twinkling sparkles, and is announced in chat with a ✦ SHINY ✦ marker."));
     }
@@ -269,7 +270,8 @@ public class InfoTab extends JPanel {
                 "same monster and rarity — a chance to improve a roll or hit a shiny.\n\n" +
                 "The cost scales with the card's difficulty × rarity (shiny doesn't change it): from " +
                 "25 credits for a Beginner Common up to 4,000 for a Boss Mythic.\n\n" +
-                "A shiny stays shiny. Non-Mythic cards have a 5% chance to rank up one rarity. Your " +
+                "A shiny stays shiny. Non-Mythic cards have a 5% base chance to rank up one rarity " +
+                "(raised by the Reroll Fortune shop unlock). Your " +
                 "favourite, nickname and album cover are kept. A rerolled card is marked " +
                 "'Rerolled N times' and shows a before/after result with a 'What were the odds?' " +
                 "breakdown — remember those odds describe a raw pull, not a rerolled card."));
@@ -278,9 +280,17 @@ public class InfoTab extends JPanel {
                 "its base capture value, and shinies add a flat bonus. From the Album you can " +
                 "multi-select to discard several at once.\n\n" +
                 "Discarding is permanent: the card is removed from your collection."));
+        c.add(tile("Passive unlocks",
+                "The Shop tab sells permanent passive upgrades, each with 5 tiers (cost rises per " +
+                "tier):\n\n" +
+                "• Shiny Charm — +0.1% shiny per tier (up to +0.5%), applied to every capture and " +
+                "reroll.\n" +
+                "• Reroll Fortune — +1% per tier to the chance a reroll ranks a card up one rarity.\n\n" +
+                "Bonuses apply automatically once bought and are reflected in the Capture Rates and " +
+                "reroll odds screens."));
         c.add(tile("Shop",
-                "The Shop tab is where credits are spent. The Card Reroller is the first tool; the " +
-                "wider shop economy (passive unlocks, more tools) is still being built."));
+                "The Shop tab is where credits are spent. It offers the Card Reroller (right-click a " +
+                "card) and the passive unlocks above; more tools are on the way."));
     }
 
     private void fillProgress(JPanel c) {

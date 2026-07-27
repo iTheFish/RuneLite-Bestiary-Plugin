@@ -279,7 +279,23 @@ public class BestiaryPanel extends PluginPanel {
         if (second != JOptionPane.YES_OPTION) return;
 
         dataService.wipeCollection();
+        closeAllBestiaryWindows();   // open albums/dashboards/card views now show stale data
         refresh();
+    }
+
+    /**
+     * Disposes every open Bestiary dialog (album, dashboards, card data/export, odds, etc.) after a
+     * reset, since they'd otherwise keep showing the wiped collection. Matches by package so it also
+     * covers any dialog added later without needing per-class hooks. The sidebar panel isn't a
+     * Window, so it's untouched.
+     */
+    private static void closeAllBestiaryWindows() {
+        for (Window w : Window.getWindows()) {
+            if (w != null && w.isDisplayable()
+                    && w.getClass().getName().startsWith("com.bestiary.")) {
+                w.dispose();
+            }
+        }
     }
 
     /**

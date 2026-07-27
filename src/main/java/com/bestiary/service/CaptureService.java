@@ -100,6 +100,7 @@ public class CaptureService {
 
         CapturedCreature creature = CapturedCreature.builder()
                 .shiny(shiny)
+                .shinyBonus(shinyBonus)
                 .prayer(prayer)
                 .observedHp(observedDamage)
                 .npcId(npc.getId())
