@@ -210,13 +210,18 @@ public class CapturedCreature {
 
     /**
      * "Power Level" — the headline card metric. The average of the 7 rolled stats (6 combat +
-     * Prayer, all on the 1-99 scale) PLUS the monster's HP at 1/6 weight. Splitting the two terms
-     * keeps the stat average at face value (~its rolled quality) while letting HP — the factual,
-     * difficulty-tracking value driver — separate the tiers: HP/6 adds ~13 at 80 HP, ~40 at 250 HP,
-     * ~165 at 1000 HP. Power Level can exceed 99 for bosses; stats/prayer are flavour.
+     * Prayer, all on the 1-99 scale) PLUS two factual difficulty terms: the monster's HP at 1/6
+     * weight and its combat level at 1/10 weight. Splitting the terms keeps the stat average at
+     * face value (~its rolled quality) while the two objective attributes separate the tiers:
+     * HP/6 adds ~13 at 80 HP, ~40 at 250 HP, ~165 at 1000 HP; combat level/10 adds a smaller,
+     * secondary lift (~12 at cmb 124, ~140 at cmb 1400). Combat level is the killed NPC's own
+     * level (stored per capture), so same-name variants keep their individual value. Power Level
+     * can exceed 99 for bosses; stats/prayer are flavour.
      */
     public int powerLevel() {
-        return Math.round((quality.statSum() + prayer) / 7f + hitpoints() / 6f);
+        return Math.round((quality.statSum() + prayer) / 7f
+                + hitpoints() / 6f
+                + Math.max(0, npcCombatLevel) / 10f);
     }
 
     @Override

@@ -134,16 +134,20 @@ all six stats, times the rarity/shiny chances — and shows the catch chance sep
 
 ## [5] Power Level — *the headline number*
 
-`CapturedCreature.powerLevel()` = `round( (ATK+STR+DEF+MAG+RNG+AGI + Prayer) / 7  +  monsterHP / 6 )`
+`CapturedCreature.powerLevel()` = `round( (ATK+STR+DEF+MAG+RNG+AGI + Prayer) / 7  +  monsterHP / 6  +  combatLevel / 10 )`
 
-- Two terms: the **average of the 7 rolled stats** (6 combat + **Prayer**, all on the 1–99 scale),
-  **plus** the monster's **HP at 1/6 weight** (added separately, not folded into the average).
+- Three terms: the **average of the 7 rolled stats** (6 combat + **Prayer**, all on the 1–99 scale),
+  **plus** the monster's **HP at 1/6 weight**, **plus** its **combat level at 1/10 weight** (both added
+  separately, not folded into the average).
 - HP is the capture's `hitpoints()` — the **observed damage dealt** when known, else the factual
-  looked-up `MonsterRoster.getHitpoints`. It is **not** a rolled stat.
-- Splitting the terms keeps the stat average at face value while HP — the factual,
-  difficulty-tracking number — **separates the tiers**: HP/6 adds ~13 at 80 HP, ~40 at 250 HP,
-  ~165 at 1000 HP. **Power Level can exceed 99** for big bosses.
-- Stats + prayer are basically **flavour** — they set the ~1–99 base; HP decides the tier.
+  looked-up `MonsterRoster.getHitpoints`. Combat level is the killed NPC's own `npcCombatLevel`
+  (stored per capture, so same-name variants keep their individual value). Neither is a rolled stat.
+- Splitting the terms keeps the stat average at face value while HP and combat level — the factual,
+  difficulty-tracking numbers — **separate the tiers**: HP/6 adds ~13 at 80 HP, ~165 at 1000 HP;
+  combat level/10 adds a smaller secondary lift (~12 at cmb 124, ~140 at cmb 1400).
+  **Power Level can exceed 99** for big bosses.
+- Stats + prayer are basically **flavour** — they set the ~1–99 base; HP and combat level decide the tier.
+- **Mirror:** `OddsCalculator.avgPowerLevel` / `avgShinyPowerLevel` include the same `+ cmb/10` term.
 
 ---
 
@@ -181,10 +185,11 @@ For an album **catalog** card (one per monster) the shown rarity/shiny/stats com
 | How hard primaries spike vs secondaries | the `secondCeil` / `tertiCeil` / gaussian sd | `RarityRoller.generateQuality` |
 | Which stats a monster favours | its `CombatClass` | `MonsterRoster.COMBAT_CLASSES` |
 | A monster's stat floors | its row | `MonsterRoster.STAT_BASES` |
-| **Power Level formula / HP weight** | the stat `/7` and the `HP/6` term | `CapturedCreature.powerLevel()` |
+| **Power Level formula / HP + cmb weight** | the stat `/7`, the `HP/6` and the `cmb/10` terms | `CapturedCreature.powerLevel()` |
 | A monster's HP / Prayer | its entry | `MonsterRoster.HITPOINTS` / `PRAYER` |
 
-**The one knob most worth discussing:** `powerLevel()` weights HP as a separate `HP/6` term on top of
-the 7-stat average. If bosses feel too far ahead (or low tiers too compressed), we change only that
-line — e.g. shift the `/6` divisor, use `log(HP)`, or cap it — without touching anything else.
+**The one knob most worth discussing:** `powerLevel()` weights HP as a separate `HP/6` term and combat
+level as a `cmb/10` term on top of the 7-stat average. If bosses feel too far ahead (or low tiers too
+compressed), we change only those divisors — e.g. shift `/6` or `/10`, use `log`, or cap them — without
+touching anything else. (Remember to mirror any change in `OddsCalculator`.)
 `OddsCalculator.avgPowerLevel` must mirror any change so the "vs average" comparison stays honest.
