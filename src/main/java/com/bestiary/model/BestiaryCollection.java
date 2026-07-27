@@ -24,6 +24,14 @@ public class BestiaryCollection {
     /** Bestiary Credits — earned on capture, spent in the Shop. */
     public long credits = 0;
 
+    /** Owned shop-upgrade tiers, keyed by {@link ShopUpgrade#name()}. Absent = 0 tiers. */
+    public Map<String, Integer> shopUpgrades = new HashMap<>();
+
+    /** Tiers owned of a passive shop upgrade (0 if never bought). */
+    public int getUpgradeTier(ShopUpgrade u) {
+        return shopUpgrades.getOrDefault(u.name(), 0);
+    }
+
     // --- mutators called by BestiaryDataService ---
 
     public void addCapture(CapturedCreature c) {
