@@ -28,7 +28,9 @@ import java.util.stream.Collectors;
  */
 public class CardExportPanel extends JPanel {
 
-    private static final int PREVIEW_SCALE = 2;
+    // Preview scale is < 2 so the card + banner + Copy/Save buttons all fit the card window
+    // without scrolling. The exported PNG/clipboard image still renders at 3× (see renderCard).
+    private static final double PREVIEW_SCALE = 1.7;
     private static final int BOTTOM_H = 42;
 
     private final AlbumCard card;
@@ -63,8 +65,8 @@ public class CardExportPanel extends JPanel {
         });
 
         JPanel previewPanel = new JPanel() {
-            { setPreferredSize(new Dimension(AlbumCard.CARD_W * PREVIEW_SCALE,
-                                             (AlbumCard.CARD_H + BOTTOM_H) * PREVIEW_SCALE));
+            { setPreferredSize(new Dimension((int) (AlbumCard.CARD_W * PREVIEW_SCALE),
+                                             (int) ((AlbumCard.CARD_H + BOTTOM_H) * PREVIEW_SCALE)));
               setOpaque(false); }
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
