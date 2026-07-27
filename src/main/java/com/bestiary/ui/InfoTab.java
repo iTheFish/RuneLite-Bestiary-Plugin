@@ -266,13 +266,15 @@ public class InfoTab extends JPanel {
                 "difficulty × rarity, and a shiny doubles it.\n\n" +
                 "Rough guide: a Beginner Common is worth a couple of credits; a Boss Mythic is " +
                 "worth about 480 (960 if shiny).\n\n" +
-                "Spend them on the Card Reroller below — more shop features are on the way."));
+                "Spend them in the Shop on the Card Reroller and passive unlocks below. Your lifetime " +
+                "earned and spent totals are tracked in the Economy dashboard."));
         c.add(tile("Card Reroller",
                 "Right-click a card → 'Reroll (shop)…' to re-roll its stats and shiny at the " +
                 "same monster and rarity — a chance to improve a roll or hit a shiny.\n\n" +
                 "The cost scales with the card's difficulty × rarity (shiny doesn't change it): from " +
                 "25 credits for a Beginner Common up to 4,000 for a Boss Mythic.\n\n" +
-                "A shiny stays shiny. Non-Mythic cards have a 5% base chance to rank up one rarity " +
+                "A shiny stays shiny; a non-shiny gets a fresh shiny roll (raised by the Reroll Shine " +
+                "shop unlock). Non-Mythic cards have a 5% base chance to rank up one rarity " +
                 "(raised by the Reroll Fortune shop unlock). Your " +
                 "favourite, nickname and album cover are kept. A rerolled card is marked " +
                 "'Rerolled N times' and shows a before/after result with a 'What were the odds?' " +
@@ -283,13 +285,16 @@ public class InfoTab extends JPanel {
                 "multi-select to discard several at once.\n\n" +
                 "Discarding is permanent: the card is removed from your collection."));
         c.add(tile("Passive unlocks",
-                "The Shop tab sells permanent passive upgrades, each with 5 tiers (cost rises per " +
-                "tier):\n\n" +
-                "• Shiny Charm — +0.1% shiny per tier (up to +0.5%), applied to every capture and " +
-                "reroll.\n" +
+                "The Shop tab sells permanent passive upgrades in two categories, each with 5 tiers " +
+                "(cost rises per tier):\n\n" +
+                "Progression:\n" +
+                "• Hunter's Bounty — +2 credits per tier (up to +10) added to every capture reward.\n" +
+                "• Salvager's Eye — +2% per tier to credits earned from discarding cards.\n" +
+                "• Shiny Charm — +0.1% per tier (up to +0.5%) to your capture shiny chance.\n\n" +
+                "Rerolls:\n" +
+                "• Reroll Shine — +0.1% per tier to the shiny chance when you reroll a card.\n" +
                 "• Reroll Fortune — +1% per tier to the chance a reroll ranks a card up one rarity.\n\n" +
-                "Bonuses apply automatically once bought and are reflected in the Capture Rates and " +
-                "reroll odds screens."));
+                "Each card shows its current bonus and what the next tier upgrades it to before you buy."));
         c.add(tile("Shop",
                 "The Shop tab is where credits are spent. It offers the Card Reroller (right-click a " +
                 "card) and the passive unlocks above; more tools are on the way."));
@@ -300,15 +305,22 @@ public class InfoTab extends JPanel {
         c.add(tile("XP & levels",
                 "You earn experience from kills and captures. Your Capture Level runs 1–99 " +
                 "(with virtual levels beyond).\n\n" +
-                "Kill XP scales with the monster's difficulty tier: Beginner 5, Easy 10, Medium 15, " +
+                "Kill XP is a flat amount by difficulty tier: Beginner 5, Easy 10, Medium 15, " +
                 "Hard 20, Elite 25, Boss 30. Only monsters in the roster award XP.\n\n" +
-                "Captures add a much bigger bonus, scaled by the monster's combat level and the card's " +
-                "rarity multiplier — Common 1×, Uncommon 2×, Rare 5×, Epic 10×, Legendary 25×, Mythic 50×."));
+                "Capture XP is a much bigger bonus: base × rarity multiplier, where base = the " +
+                "monster's combat level × 10 (minimum 10), capped at combat level 100. Multipliers: " +
+                "Common 1×, Uncommon 2×, Rare 5×, Epic 10×, Legendary 25×, Mythic 50×.\n\n" +
+                "Examples: a Common catch of a level-2 mob = 20 XP; a Rare catch of a level-50 mob = " +
+                "500 × 5 = 2,500 XP. The cap means any monster level 100+ pays the same ceiling — up " +
+                "to Mythic 50,000. For reference, level 99 is 13,034,431 XP.\n\n" +
+                "So low-level mobs are best caught for cards + credits, while high-level kills are a " +
+                "steady XP source even when you don't land the catch."));
         c.add(tile("Dashboards",
                 "The four stat boxes at the top of this tab are clickable — each opens a dashboard: " +
-                "Progression, Kills, Species and Caught.\n\n" +
-                "They break down your collection with bar charts and top-10 tables. Right-click a " +
-                "box to copy that dashboard as a shareable card image."));
+                "Progression, Economy, Species and Caught.\n\n" +
+                "They break down your collection with bar charts and top-10 tables. The Economy " +
+                "dashboard shows lifetime credits earned/spent, reroll activity and your owned shop " +
+                "upgrades. Right-click a box to copy that dashboard as a shareable card image."));
         c.add(tile("Session Recap",
                 "A button on the Progress tab shows every capture made since you last logged in, " +
                 "with rarity (colour-coded), Power Level, region and time, plus a rarity summary.\n\n" +
