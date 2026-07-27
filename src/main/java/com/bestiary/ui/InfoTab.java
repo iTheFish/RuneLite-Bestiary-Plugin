@@ -300,10 +300,10 @@ public class InfoTab extends JPanel {
         c.add(tile("XP & levels",
                 "You earn experience from kills and captures. Your Capture Level runs 1–99 " +
                 "(with virtual levels beyond).\n\n" +
-                "Kill XP = max of 10 or (combat level × 10). A level 50 enemy gives 500 XP per kill.\n\n" +
-                "Captures add a bonus: the kill XP × the rarity multiplier — Common 1×, Uncommon 2×, " +
-                "Rare 5×, Epic 10×, Legendary 25×, Mythic 50×.\n\n" +
-                "Example: a Rare goblin (level 2, kill XP 20) gives 20 × 5 = 100 bonus XP."));
+                "Kill XP scales with the monster's difficulty tier: Beginner 5, Easy 10, Medium 15, " +
+                "Hard 20, Elite 25, Boss 30. Only monsters in the roster award XP.\n\n" +
+                "Captures add a much bigger bonus, scaled by the monster's combat level and the card's " +
+                "rarity multiplier — Common 1×, Uncommon 2×, Rare 5×, Epic 10×, Legendary 25×, Mythic 50×."));
         c.add(tile("Dashboards",
                 "The four stat boxes at the top of this tab are clickable — each opens a dashboard: " +
                 "Progression, Kills, Species and Caught.\n\n" +

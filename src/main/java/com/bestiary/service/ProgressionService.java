@@ -4,6 +4,8 @@ import com.bestiary.model.Achievement;
 import com.bestiary.model.BestiaryCollection;
 import com.bestiary.model.CapturedCreature;
 import com.bestiary.model.CreatureRarity;
+import com.bestiary.model.DifficultyTier;
+import com.bestiary.model.MonsterRoster;
 import com.bestiary.util.XpTable;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.NPC;
@@ -47,13 +49,26 @@ public class ProgressionService {
     // --- XP ---
 
     /**
-     * Awards kill XP: {@code max(10, combatLevel * 10)}.
-     * Returns the newly unlocked level if a level-up occurred, or 0.
+     * Awards Bestiary XP for a kill, scaled by the monster's difficulty tier
+     * (Beginner 5 → Boss 30). Returns the newly unlocked level if a level-up occurred, or 0.
      */
     public int recordKill(NPC npc) {
-        int combatLevel = Math.max(1, npc.getCombatLevel());
-        long xp         = Math.max(10L, (long) combatLevel * 10);
-        return addXp(xp);
+        String name = npc.getName() != null ? npc.getName() : "";
+        DifficultyTier tier = MonsterRoster.getDifficulty(name, npc.getCombatLevel());
+        return addXp(killXp(tier));
+    }
+
+    /** Bestiary kill XP by difficulty tier: Beginner 5, Easy 10, Medium 15, Hard 20, Elite 25, Boss 30. */
+    public static long killXp(DifficultyTier tier) {
+        switch (tier) {
+            case BEGINNER: return 5;
+            case EASY:     return 10;
+            case MEDIUM:   return 15;
+            case HARD:     return 20;
+            case ELITE:    return 25;
+            case BOSS:     return 30;
+            default:       return 10;
+        }
     }
 
     /**

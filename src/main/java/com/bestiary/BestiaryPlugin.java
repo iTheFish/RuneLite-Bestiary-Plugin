@@ -201,7 +201,9 @@ public class BestiaryPlugin extends Plugin {
             sendAchievementMessage(a);
         }
 
-        long killXp  = Math.max(10L, (long) Math.max(1, npc.getCombatLevel()) * 10);
+        com.bestiary.model.DifficultyTier killTier =
+                com.bestiary.model.MonsterRoster.getDifficulty(npcName, npc.getCombatLevel());
+        long killXp  = com.bestiary.service.ProgressionService.killXp(killTier);
         sessionTracker.addXp(killXp);
         int newLevel = progressionService.recordKill(npc);
         if (newLevel > 0) {
@@ -212,7 +214,6 @@ public class BestiaryPlugin extends Plugin {
             if (config.showCaptureAnimation() || config.showOverlay()) {
                 overlay.enqueueLevelUp(newLevel);
             }
-            SwingUtilities.invokeLater(panel::refresh);
         }
 
         // Attempt capture
@@ -270,9 +271,11 @@ public class BestiaryPlugin extends Plugin {
             for (Achievement a : newAchievements) {
                 sendAchievementMessage(a);
             }
-
-            SwingUtilities.invokeLater(panel::refresh);
         });
+
+        // Refresh the panel after every kill — not just on level-ups or captures — so kill XP,
+        // kill counts and any newly unlocked achievements are always reflected immediately.
+        SwingUtilities.invokeLater(panel::refresh);
     }
 
     /**
