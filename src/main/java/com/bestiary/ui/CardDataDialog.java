@@ -102,24 +102,11 @@ public class CardDataDialog extends JDialog {
         setLocationRelativeTo(owner);
     }
 
-    /** Export tab: the card preview + Copy/Save, centred and scrollable on small screens. */
+    /** Export tab: card preview centred above a bottom-anchored Copy/Save row (its own layout). */
     private JComponent buildExportTab(CapturedCreature capture) {
-        JComponent inner = CardExportDialog.sharedImageService() != null
+        return CardExportDialog.sharedImageService() != null
                 ? new CardExportPanel(capture)
-                : placeholder("Export unavailable.");
-        JPanel holder = new JPanel(new GridBagLayout()) {
-            @Override public Dimension getPreferredSize() {
-                Dimension d = super.getPreferredSize();
-                if (getParent() != null) d.width = getParent().getWidth();
-                return d;
-            }
-        };
-        holder.setBackground(ColorScheme.DARK_GRAY_COLOR);
-        GridBagConstraints g = new GridBagConstraints();
-        g.gridx = 0; g.gridy = 0; g.anchor = GridBagConstraints.NORTH;
-        g.insets = new Insets(4, 4, 4, 4);
-        holder.add(inner, g);
-        return scroll(holder);
+                : scroll(placeholder("Export unavailable."));
     }
 
     private JComponent placeholder(String text) {

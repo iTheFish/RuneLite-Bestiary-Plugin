@@ -155,17 +155,33 @@ public class CardExportPanel extends JPanel {
 
         JPanel btnRow = new JPanel(new GridLayout(1, 2, 6, 0));
         btnRow.setOpaque(false);
+        btnRow.setBorder(new EmptyBorder(8, 0, 0, 0));
         btnRow.add(copyBtn);
         btnRow.add(saveBtn);
 
-        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        // Preview centred in a viewport-width holder so it stays centred (and scrolls if the
+        // window is short); the Copy/Save row is pinned to the bottom of the tab.
+        JPanel centre = new JPanel(new GridBagLayout()) {
+            @Override public Dimension getPreferredSize() {
+                Dimension d = super.getPreferredSize();
+                if (getParent() != null) d.width = getParent().getWidth();
+                return d;
+            }
+        };
+        centre.setOpaque(false);
+        centre.add(previewPanel, new GridBagConstraints());
+        JScrollPane previewScroll = new JScrollPane(centre,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        previewScroll.setBorder(null);
+        previewScroll.setOpaque(false);
+        previewScroll.getViewport().setOpaque(false);
+        previewScroll.getVerticalScrollBar().setUnitIncrement(16);
+
+        setLayout(new BorderLayout());
         setBackground(ColorScheme.DARK_GRAY_COLOR);
-        setBorder(new EmptyBorder(12, 12, 12, 12));
-        previewPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        btnRow.setAlignmentX(Component.CENTER_ALIGNMENT);
-        add(previewPanel);
-        add(Box.createVerticalStrut(10));
-        add(btnRow);
+        setBorder(new EmptyBorder(10, 12, 10, 12));
+        add(previewScroll, BorderLayout.CENTER);
+        add(btnRow, BorderLayout.SOUTH);
     }
 
     /** Free the card's shimmer registration when this tab/panel is torn down. */
