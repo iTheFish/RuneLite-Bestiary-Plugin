@@ -54,6 +54,8 @@ public class BestiaryStore {
         public List<CapturedCreature> captures = new ArrayList<>();
         public Map<String, Integer> killCounts = new LinkedHashMap<>();
         public long credits;
+        public long lifetimeCreditsEarned;
+        public long lifetimeCreditsSpent;
         public long totalXp;
         public List<String> achievements = new ArrayList<>();
         public Map<String, Integer> shopUpgrades = new LinkedHashMap<>();

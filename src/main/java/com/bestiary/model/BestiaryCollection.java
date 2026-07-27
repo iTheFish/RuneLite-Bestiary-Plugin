@@ -24,12 +24,76 @@ public class BestiaryCollection {
     /** Bestiary Credits — earned on capture, spent in the Shop. */
     public long credits = 0;
 
+    /** Lifetime credits ever earned (captures + discards + bonuses). Never decreases. */
+    public long lifetimeCreditsEarned = 0;
+
+    /** Lifetime credits ever spent (rerolls + shop upgrades). Never decreases. */
+    public long lifetimeCreditsSpent = 0;
+
     /** Owned shop-upgrade tiers, keyed by {@link ShopUpgrade#name()}. Absent = 0 tiers. */
     public Map<String, Integer> shopUpgrades = new HashMap<>();
 
     /** Tiers owned of a passive shop upgrade (0 if never bought). */
     public int getUpgradeTier(ShopUpgrade u) {
         return shopUpgrades.getOrDefault(u.name(), 0);
+    }
+
+    // --- Aggregate helpers (used by achievements + the economy dashboard) ---
+
+    /** Total reroll operations performed across every owned card. */
+    public int totalRerolls() {
+        int sum = 0;
+        for (CapturedCreature c : creatures) sum += c.rerollCount();
+        return sum;
+    }
+
+    /** True if any card was ever bumped up a rarity by a reroll (its history holds a lower rarity). */
+    public boolean hasRerollRankUp() {
+        for (CapturedCreature c : creatures) {
+            for (CapturedCreature.RerollState s : c.rerollHistory) {
+                if (s.rarity != null && s.rarity.ordinal() < c.rarity.ordinal()) return true;
+            }
+        }
+        return false;
+    }
+
+    /** Number of shiny cards owned. */
+    public long shinyCount() {
+        return creatures.stream().filter(CapturedCreature::isShiny).count();
+    }
+
+    /** Highest Power Level of any owned card (0 if empty). */
+    public int maxPowerLevel() {
+        int max = 0;
+        for (CapturedCreature c : creatures) max = Math.max(max, c.powerLevel());
+        return max;
+    }
+
+    /** True if any single monster has been caught in all six rarities. */
+    public boolean hasFullRaritySet() {
+        Map<String, java.util.EnumSet<CreatureRarity>> byName = new HashMap<>();
+        for (CapturedCreature c : creatures) {
+            byName.computeIfAbsent(c.npcName, k -> java.util.EnumSet.noneOf(CreatureRarity.class)).add(c.rarity);
+        }
+        for (java.util.EnumSet<CreatureRarity> set : byName.values()) {
+            if (set.size() >= CreatureRarity.values().length) return true;
+        }
+        return false;
+    }
+
+    /** True if at least one card is favourited. */
+    public boolean hasFavourite() {
+        return creatures.stream().anyMatch(c -> c.favourite);
+    }
+
+    /** True once every monster on the roster has at least one capture (album complete). */
+    public boolean isAlbumComplete() {
+        java.util.Set<String> caught = new java.util.HashSet<>();
+        for (CapturedCreature c : creatures) caught.add(c.npcName);
+        for (String name : MonsterRoster.ROSTER) {
+            if (!caught.contains(name)) return false;
+        }
+        return true;
     }
 
     // --- mutators called by BestiaryDataService ---

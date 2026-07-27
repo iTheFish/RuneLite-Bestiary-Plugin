@@ -7,6 +7,7 @@ import com.bestiary.model.CreatureRarity;
 import com.bestiary.model.CreatureSpecies;
 import com.bestiary.model.DifficultyTier;
 import com.bestiary.model.MonsterRoster;
+import com.bestiary.model.ShopUpgrade;
 import com.bestiary.service.BestiaryDataService;
 import com.bestiary.service.ProgressionService;
 import com.bestiary.util.XpTable;
@@ -35,7 +36,7 @@ public class DashboardDialog extends JDialog {
 
     public enum DashView {
         PROGRESSION("Progression"),
-        KILLS      ("Kills"),
+        ECONOMY    ("Economy"),
         SPECIES    ("Species"),
         CAUGHT     ("Caught");
 
@@ -344,63 +345,105 @@ public class DashboardDialog extends JDialog {
     }
 
     // =========================================================================
-    // KILLS VIEW
+    // ECONOMY VIEW — credits earned/spent + reroll activity + owned unlocks
     // =========================================================================
 
-    private JPanel buildKillsView() {
+    private JPanel buildEconomyView() {
         JPanel root = col();
         BestiaryCollection col = dataService.getCollection();
 
-        root.add(heroStat(FMT.format(col.totalKills()), "TOTAL KILLS", ORANGE));
+        root.add(heroStat(FMT.format(col.credits), "CREDIT BALANCE", GOLD));
         root.add(gap(10));
-        root.add(sectionHeader("TOP 5 SPECIES BY KILLS"));
 
-        List<Map.Entry<String, Integer>> sorted = col.killCounts.entrySet().stream()
-                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-                .limit(5)
-                .collect(Collectors.toList());
+        root.add(sectionHeader("CREDITS"));
+        JPanel cgrid = new JPanel(new GridLayout(1, 3, 6, 0));
+        cgrid.setOpaque(false);
+        cgrid.setBorder(new EmptyBorder(0, 12, 0, 12));
+        cgrid.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
+        cgrid.add(miniCard("Earned",  FMT.format(col.lifetimeCreditsEarned)));
+        cgrid.add(miniCard("Spent",   FMT.format(col.lifetimeCreditsSpent)));
+        cgrid.add(miniCard("Balance", FMT.format(col.credits), true));
+        root.add(cgrid);
+        root.add(gap(10));
 
+        root.add(sectionHeader("REROLLS"));
+        long cardsRerolled = col.creatures.stream().filter(c -> c.rerollCount() > 0).count();
+        JPanel rgrid = new JPanel(new GridLayout(1, 3, 6, 0));
+        rgrid.setOpaque(false);
+        rgrid.setBorder(new EmptyBorder(0, 12, 0, 12));
+        rgrid.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
+        rgrid.add(miniCard("Rerolls",  FMT.format(col.totalRerolls())));
+        rgrid.add(miniCard("Cards",    FMT.format(cardsRerolled)));
+        rgrid.add(miniCard("Rank-ups / Shiny+",
+                countRankUps(col) + " / " + countShinyGained(col), true));
+        root.add(rgrid);
+        root.add(gap(10));
+
+        root.add(sectionHeader("SHOP UPGRADES"));
         JPanel bars = col();
-        bars.setBorder(new EmptyBorder(0, 12, 0, 12));
-        if (sorted.isEmpty()) {
-            bars.add(emptyNote("No kills recorded yet."));
-        } else {
-            int max = sorted.get(0).getValue();
-            for (Map.Entry<String, Integer> e : sorted) {
-                bars.add(barRow(e.getKey(), ORANGE, e.getValue(), max, FMT.format(e.getValue()), ""));
-                bars.add(gap(4));
-            }
+        bars.setBorder(new EmptyBorder(0, 12, 4, 12));
+        for (ShopUpgrade u : ShopUpgrade.values()) {
+            bars.add(upgradePipRow(u, dataService.getUpgradeTier(u)));
         }
         root.add(bars);
-        root.add(gap(10));
-        root.add(sectionHeader("TOP 5 KILLS PER CAPTURE  (best → worst)"));
-
-        List<String> capNames = col.captureCountByNpc.entrySet().stream()
-                .filter(e -> e.getValue() > 0)
-                .sorted(Comparator.comparingDouble(e ->
-                        (double) col.getKillCount(e.getKey()) / Math.max(1, e.getValue())))
-                .map(Map.Entry::getKey)
-                .limit(5)
-                .collect(Collectors.toList());
-
-        JPanel ratioPanel = col();
-        ratioPanel.setBorder(new EmptyBorder(0, 12, 0, 12));
-        if (capNames.isEmpty()) {
-            ratioPanel.add(emptyNote("No captures yet."));
-        } else {
-            int maxR = capNames.stream()
-                    .mapToInt(n -> col.getKillCount(n) / Math.max(1, col.getCaptureCount(n)))
-                    .max().orElse(1);
-            for (String name : capNames) {
-                int k = col.getKillCount(name), c = Math.max(1, col.getCaptureCount(name));
-                int r = k / c;
-                ratioPanel.add(barRow(name, new Color(90, 170, 110), r, maxR, "1 in " + r, ""));
-                ratioPanel.add(gap(4));
-            }
-        }
-        root.add(ratioPanel);
         root.add(gap(16));
         return root;
+    }
+
+    /** A "Upgrade name .... ●●●○○" row: filled gold pips for owned tiers, dark for the rest. */
+    private JPanel upgradePipRow(ShopUpgrade u, int owned) {
+        JPanel row = new JPanel(new BorderLayout(8, 0));
+        row.setOpaque(false);
+        row.setBorder(new EmptyBorder(2, 0, 2, 0));
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 22));
+
+        JLabel name = new JLabel(u.title);
+        name.setFont(FontManager.getRunescapeSmallFont());
+        name.setForeground(TEXT);
+
+        JPanel pips = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 2));
+        pips.setOpaque(false);
+        for (int i = 0; i < u.maxTier; i++) pips.add(new DashPip(i < owned));
+
+        row.add(name, BorderLayout.WEST);
+        row.add(pips, BorderLayout.EAST);
+        return row;
+    }
+
+    /** Small round tier indicator for the Economy view's shop-upgrade rows. */
+    private static final class DashPip extends JComponent {
+        private final boolean on;
+        DashPip(boolean on) { this.on = on; setPreferredSize(new Dimension(11, 11)); }
+        @Override protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(on ? GOLD : new Color(70, 70, 70));
+            g2.fillOval(0, 0, 10, 10);
+            g2.dispose();
+        }
+    }
+
+    /** Number of cards that are shiny now but were non-shiny in an earlier (pre-reroll) state. */
+    private static int countShinyGained(BestiaryCollection col) {
+        int n = 0;
+        for (CapturedCreature c : col.creatures) {
+            if (!c.isShiny()) continue;
+            for (CapturedCreature.RerollState s : c.rerollHistory) {
+                if (!s.shiny) { n++; break; }
+            }
+        }
+        return n;
+    }
+
+    /** Total reroll operations that bumped a card up a rarity, across the collection. */
+    private static int countRankUps(BestiaryCollection col) {
+        int n = 0;
+        for (CapturedCreature c : col.creatures) {
+            for (CapturedCreature.RerollState s : c.rerollHistory) {
+                if (s.rarity != null && s.rarity.ordinal() < c.rarity.ordinal()) n++;
+            }
+        }
+        return n;
     }
 
     // =========================================================================
@@ -956,7 +999,7 @@ public class DashboardDialog extends JDialog {
 
     private JPanel buildView(DashView v) {
         switch (v) {
-            case KILLS:   return buildKillsView();
+            case ECONOMY: return buildEconomyView();
             case SPECIES: return buildSpeciesView();
             case CAUGHT:  return buildCaughtView();
             default:      return buildProgressionView();
@@ -1149,7 +1192,7 @@ public class DashboardDialog extends JDialog {
 
     public static BufferedImage renderCard(BestiaryDataService ds, ProgressionService ps, DashView view) {
         switch (view) {
-            case KILLS:   return renderKillsCard(ds);
+            case ECONOMY: return renderEconomyCard(ds);
             case SPECIES: return renderSpeciesCard(ds);
             case CAUGHT:  return renderCaughtCard(ds);
             default:      return renderProgressionCard(ds, ps);
@@ -1158,18 +1201,18 @@ public class DashboardDialog extends JDialog {
 
     private static BufferedImage renderAllCard(BestiaryDataService ds, ProgressionService ps) {
         BufferedImage prog    = renderProgressionCard(ds, ps);
-        BufferedImage kills   = renderKillsCard(ds);
+        BufferedImage economy = renderEconomyCard(ds);
         BufferedImage species = renderSpeciesCard(ds);
         BufferedImage caught  = renderCaughtCard(ds);
 
         int gap   = 10, pad = 16;
         int colW  = Math.max(prog.getWidth(), species.getWidth());
-        int row1H = Math.max(prog.getHeight(),    kills.getHeight());
+        int row1H = Math.max(prog.getHeight(),    economy.getHeight());
         int row2H = Math.max(species.getHeight(), caught.getHeight());
 
         // Pad shorter cards to row height so footers align
         prog    = padCardToHeight(prog,    row1H);
-        kills   = padCardToHeight(kills,   row1H);
+        economy = padCardToHeight(economy, row1H);
         species = padCardToHeight(species, row2H);
         caught  = padCardToHeight(caught,  row2H);
 
@@ -1181,7 +1224,7 @@ public class DashboardDialog extends JDialog {
         g.setColor(new Color(10, 10, 10));
         g.fillRect(0, 0, W, H);
         g.drawImage(prog,    pad,              pad,               null);
-        g.drawImage(kills,   pad + colW + gap, pad,               null);
+        g.drawImage(economy, pad + colW + gap, pad,               null);
         g.drawImage(species, pad,              pad + row1H + gap, null);
         g.drawImage(caught,  pad + colW + gap, pad + row1H + gap, null);
         g.dispose();
@@ -1575,63 +1618,82 @@ public class DashboardDialog extends JDialog {
         return y + fm.getHeight() + 4;
     }
 
-    // ---- KILLS card ----
+    // ---- ECONOMY card ----
 
-    private static BufferedImage renderKillsCard(BestiaryDataService ds) {
+    private static BufferedImage renderEconomyCard(BestiaryDataService ds) {
         BestiaryCollection col = ds.getCollection();
         String account = resolveAccount(ds), date = todayStr();
 
-        List<Map.Entry<String, Integer>> top = col.killCounts.entrySet().stream()
-                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-                .limit(5).collect(Collectors.toList());
-        List<Map.Entry<String, Integer>> ratios = col.captureCountByNpc.entrySet().stream()
-                .filter(e -> e.getValue() > 0)
-                .sorted(Comparator.comparingInt(e ->
-                        col.getKillCount(e.getKey()) / Math.max(1, e.getValue())))
-                .limit(5).collect(Collectors.toList());
+        long cardsRerolled = col.creatures.stream().filter(c -> c.rerollCount() > 0).count();
+        ShopUpgrade[] ups  = ShopUpgrade.values();
         final int W = 480, PAD = 24;
-        int barRows = Math.max(1, top.size()), ratioRows = Math.max(1, ratios.size());
-        int H = 4 + PAD + 60 + 12 + 70 + 12 + 22 + 6 + barRows * 22 + 8
-                + 22 + 6 + ratioRows * 22 + 8
+        int upRows = ups.length;
+        int H = 4 + PAD + 60 + 12 + 70 + 12
+                + 22 + 6 + 3 * 20 + 8           // credits (3 rows)
+                + 22 + 6 + 3 * 20 + 8           // rerolls (3 rows)
+                + 22 + 6 + upRows * 20 + 8      // shop upgrade pip rows
                 + 36 + PAD;
 
         BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = cardGraphics(img);
 
-        int y = drawCardBase(g, W, H, account, "KILLS", date, PAD);
-        y = drawHeroStat(g, FMT.format(col.totalKills()), "TOTAL KILLS", ORANGE, y, W, PAD);
+        int y = drawCardBase(g, W, H, account, "ECONOMY", date, PAD);
+        y = drawHeroStat(g, FMT.format(col.credits), "CREDIT BALANCE", GOLD, y, W, PAD);
         y += 12;
 
-        y = drawCardSectionHeader(g, "TOP 5 SPECIES BY KILLS", y, W, PAD);
+        y = drawCardSectionHeader(g, "CREDITS", y, W, PAD);
         y += 6;
-        if (top.isEmpty()) {
-            g.setFont(FontManager.getRunescapeSmallFont()); g.setColor(DIM);
-            g.drawString("No kills recorded yet", PAD + 6, y + g.getFontMetrics().getAscent()); y += 22;
-        } else {
-            int maxK = top.get(0).getValue();
-            for (Map.Entry<String, Integer> e : top)
-                y = drawCardBarRow(g, e.getKey(), ORANGE, e.getValue(), maxK, FMT.format(e.getValue()), "", y, PAD, W);
-        }
+        y = drawCardKV(g, "Earned",  FMT.format(col.lifetimeCreditsEarned), GOLD, y, PAD, W);
+        y = drawCardKV(g, "Spent",   FMT.format(col.lifetimeCreditsSpent),  new Color(224, 150, 120), y, PAD, W);
+        y = drawCardKV(g, "Balance", FMT.format(col.credits),               TEXT, y, PAD, W);
         y += 8;
 
-        y = drawCardSectionHeader(g, "TOP 5 KILLS PER CAPTURE", y, W, PAD);
+        y = drawCardSectionHeader(g, "REROLLS", y, W, PAD);
         y += 6;
-        if (ratios.isEmpty()) {
-            g.setFont(FontManager.getRunescapeSmallFont()); g.setColor(DIM);
-            g.drawString("No captures yet", PAD + 6, y + g.getFontMetrics().getAscent()); y += 22;
-        } else {
-            int maxR = ratios.stream().mapToInt(e -> col.getKillCount(e.getKey()) / Math.max(1, e.getValue())).max().orElse(1);
-            Color green = new Color(80, 190, 100);
-            for (Map.Entry<String, Integer> e : ratios) {
-                int r = col.getKillCount(e.getKey()) / Math.max(1, e.getValue());
-                y = drawCardBarRow(g, e.getKey(), green, r, maxR, "1 in " + r, "", y, PAD, W);
-            }
+        y = drawCardKV(g, "Total rerolls",  FMT.format(col.totalRerolls()), TEXT, y, PAD, W);
+        y = drawCardKV(g, "Cards rerolled", FMT.format(cardsRerolled),      TEXT, y, PAD, W);
+        y = drawCardKV(g, "Rank-ups / Shiny+",
+                countRankUps(col) + " / " + countShinyGained(col), new Color(170, 120, 235), y, PAD, W);
+        y += 8;
+
+        y = drawCardSectionHeader(g, "SHOP UPGRADES", y, W, PAD);
+        y += 6;
+        for (ShopUpgrade u : ups) {
+            y = drawCardPipRow(g, u.title, ds.getUpgradeTier(u), u.maxTier, y, PAD, W);
         }
         y += 8;
 
         drawCardFooter(g, H - 36, W, PAD);
         g.dispose();
         return img;
+    }
+
+    /** Draws a "label ......... value" row (label left, value right-aligned). Returns the new y. */
+    private static int drawCardKV(Graphics2D g, String label, String value, Color valColor, int y, int PAD, int W) {
+        g.setFont(FontManager.getRunescapeSmallFont());
+        FontMetrics fm = g.getFontMetrics();
+        g.setColor(new Color(210, 210, 210));
+        g.drawString(label, PAD + 4, y + fm.getAscent());
+        g.setColor(valColor);
+        g.drawString(value, W - PAD - fm.stringWidth(value), y + fm.getAscent());
+        return y + 20;
+    }
+
+    /** Draws a "label ....... ●●●○○" row with filled gold pips for owned tiers. Returns the new y. */
+    private static int drawCardPipRow(Graphics2D g, String label, int owned, int max, int y, int PAD, int W) {
+        g.setFont(FontManager.getRunescapeSmallFont());
+        FontMetrics fm = g.getFontMetrics();
+        g.setColor(new Color(210, 210, 210));
+        g.drawString(label, PAD + 4, y + fm.getAscent());
+        int d = 10, gap = 5;
+        int totalW = max * d + (max - 1) * gap;
+        int x = W - PAD - totalW;
+        int cy = y + fm.getAscent() / 2 - d / 2;
+        for (int i = 0; i < max; i++) {
+            g.setColor(i < owned ? GOLD : new Color(70, 70, 70));
+            g.fillOval(x + i * (d + gap), cy, d, d);
+        }
+        return y + 20;
     }
 
     // ---- SPECIES card ----

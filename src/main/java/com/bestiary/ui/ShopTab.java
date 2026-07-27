@@ -1,5 +1,6 @@
 package com.bestiary.ui;
 
+import com.bestiary.model.ShopCategory;
 import com.bestiary.model.ShopUpgrade;
 import com.bestiary.service.BestiaryDataService;
 import com.bestiary.service.ProgressionService;
@@ -88,13 +89,6 @@ public class ShopTab extends JPanel {
         upgradesPanel.setLayout(new BoxLayout(upgradesPanel, BoxLayout.Y_AXIS));
         upgradesPanel.setBorder(new EmptyBorder(10, 4, 8, 4));
 
-        JLabel heading = new JLabel("PASSIVE UNLOCKS");
-        heading.setFont(FontManager.getRunescapeSmallFont());
-        heading.setForeground(DIM);
-        heading.setAlignmentX(LEFT_ALIGNMENT);
-        upgradesPanel.add(heading);
-        upgradesPanel.add(Box.createVerticalStrut(6));
-
         rebuildUpgrades();
 
         JScrollPane sp = new JScrollPane(upgradesPanel);
@@ -107,18 +101,35 @@ public class ShopTab extends JPanel {
         return sp;
     }
 
-    /** Rebuilds the upgrade cards from current state (cheap — a couple of rows). */
+    /** Rebuilds the upgrade cards from current state, grouped under category headings. */
     private void rebuildUpgrades() {
-        // Drop everything after the heading + strut (indices 0 and 1).
-        while (upgradesPanel.getComponentCount() > 2) {
-            upgradesPanel.remove(upgradesPanel.getComponentCount() - 1);
-        }
-        for (ShopUpgrade u : ShopUpgrade.values()) {
-            upgradesPanel.add(upgradeCard(u));
-            upgradesPanel.add(Box.createVerticalStrut(8));
+        upgradesPanel.removeAll();
+        boolean firstCategory = true;
+        for (ShopCategory cat : ShopCategory.values()) {
+            boolean any = false;
+            for (ShopUpgrade u : ShopUpgrade.values()) {
+                if (u.category != cat) continue;
+                if (!any) {
+                    if (!firstCategory) upgradesPanel.add(Box.createVerticalStrut(12));
+                    upgradesPanel.add(categoryHeading(cat.label.toUpperCase()));
+                    upgradesPanel.add(Box.createVerticalStrut(6));
+                    any = true;
+                    firstCategory = false;
+                }
+                upgradesPanel.add(upgradeCard(u));
+                upgradesPanel.add(Box.createVerticalStrut(8));
+            }
         }
         upgradesPanel.revalidate();
         upgradesPanel.repaint();
+    }
+
+    private JLabel categoryHeading(String text) {
+        JLabel heading = new JLabel(text);
+        heading.setFont(FontManager.getRunescapeSmallFont());
+        heading.setForeground(DIM);
+        heading.setAlignmentX(LEFT_ALIGNMENT);
+        return heading;
     }
 
     private JPanel upgradeCard(ShopUpgrade u) {
@@ -163,8 +174,11 @@ public class ShopTab extends JPanel {
         descWrap.add(desc, BorderLayout.CENTER);
         card.add(descWrap);
 
-        // Current effect: "+0.3% shiny chance"
-        JLabel effect = new JLabel("Current bonus: +" + formatPct(u.effectFor(owned)));
+        // Effect: current bonus, and (unless maxed) what the next tier upgrades it to.
+        String effectText = maxed
+                ? "Bonus: " + formatEffect(u, owned) + "  (max)"
+                : "Bonus: " + formatEffect(u, owned) + "  →  " + formatEffect(u, owned + 1);
+        JLabel effect = new JLabel(effectText);
         effect.setFont(FontManager.getRunescapeSmallFont());
         effect.setForeground(GOLD);
         effect.setAlignmentX(LEFT_ALIGNMENT);
@@ -195,12 +209,13 @@ public class ShopTab extends JPanel {
             buy.setForeground(PIP_ON);
         } else {
             boolean afford = dataService.getCredits() >= cost;
-            buy.setText("Buy tier " + (owned + 1) + "  —  " + cost + " cr");
+            buy.setText("Buy tier " + (owned + 1) + "  —  " + cost + " credits");
             buy.setEnabled(afford);
             buy.setForeground(afford ? GOLD : DIM);
             buy.addActionListener(e -> {
                 if (dataService.purchaseUpgrade(u)) {
                     refresh();
+                    BestiaryPanel.recheckAchievements();
                 }
             });
         }
@@ -212,6 +227,13 @@ public class ShopTab extends JPanel {
     /** Formats a fractional probability as a percentage, e.g. 0.003 -> "0.3%". */
     private static String formatPct(double frac) {
         return String.format("%.1f%%", frac * 100.0);
+    }
+
+    /** Formats an upgrade's total effect at {@code tiers} — flat credits or a percentage. */
+    private static String formatEffect(ShopUpgrade u, int tiers) {
+        return u.isFlatCredits()
+                ? "+" + (long) u.effectFor(tiers) + " credits"
+                : "+" + formatPct(u.effectFor(tiers));
     }
 
     /** A small round tier indicator. */
