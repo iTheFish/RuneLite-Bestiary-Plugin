@@ -395,8 +395,7 @@ public class BestiaryOverlay extends Overlay {
         drawCentered(g, c.npcName, tx, 44 + dy);
         // Power Level
         int q = c.powerLevel();
-        Color qcol = q >= 80 ? new Color(90, 220, 90) : q >= 50 ? new Color(220, 220, 90) : new Color(180, 180, 180);
-        g.setColor(qcol);
+        g.setColor(AlbumCard.powerColor(q));
         g.setFont(getFont(Font.BOLD, 13));
         drawCentered(g, "Power  " + q + "   ·   " + c.hitpoints() + " HP", tx, 64 + dy);
         // Hint

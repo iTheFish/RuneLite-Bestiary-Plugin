@@ -3,6 +3,7 @@ package com.bestiary.ui;
 import com.bestiary.model.BestiaryCollection;
 import com.bestiary.model.CapturedCreature;
 import com.bestiary.model.CreatureRarity;
+import com.bestiary.model.CreatureSpecies;
 import com.bestiary.model.DifficultyTier;
 import com.bestiary.model.MonsterRoster;
 import com.bestiary.service.WikiImageService;
@@ -116,6 +117,7 @@ public class AlbumDialog extends JDialog {
     private boolean        showLocked       = true;
     private String         searchTerm       = "";
     private DifficultyTier filterDifficulty = null;
+    private CreatureSpecies filterSpecies   = null;
 
     // Detail view state
     private String              detailMonsterName    = null;
@@ -235,12 +237,18 @@ public class AlbumDialog extends JDialog {
             @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { update(); }
         });
 
+        // Both filter dropdowns share this fixed width so the tier box and the
+        // species box beneath it line up and never resize with the dialog.
+        final int FILTER_W = 100;
+
         String[] diffOptions = {"All tiers", "Beginner", "Easy", "Medium", "Hard", "Elite", "Boss"};
         JComboBox<String> diffBox = new JComboBox<>(diffOptions);
         diffBox.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         diffBox.setForeground(Color.WHITE);
         diffBox.setFont(FontManager.getRunescapeSmallFont());
-        diffBox.setPreferredSize(new Dimension(100, diffBox.getPreferredSize().height));
+        Dimension filterDim = new Dimension(FILTER_W, diffBox.getPreferredSize().height);
+        diffBox.setPreferredSize(filterDim);
+        diffBox.setMaximumSize(filterDim);
         diffBox.addActionListener(e -> {
             int idx = diffBox.getSelectedIndex();
             filterDifficulty = idx == 0 ? null : DifficultyTier.values()[idx - 1];
@@ -250,8 +258,33 @@ public class AlbumDialog extends JDialog {
         row2.add(searchBox, BorderLayout.CENTER);
         row2.add(diffBox,   BorderLayout.EAST);
 
+        // Row 2b: species filter, sitting directly under the tier dropdown (same width).
+        JPanel row2b = new JPanel(new BorderLayout(6, 0));
+        row2b.setOpaque(false);
+        row2b.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
+        row2b.setBorder(new EmptyBorder(4, 0, 0, 0));
+
+        String[] speciesOptions = new String[CreatureSpecies.values().length + 1];
+        speciesOptions[0] = "All species";
+        for (int i = 0; i < CreatureSpecies.values().length; i++) {
+            speciesOptions[i + 1] = CreatureSpecies.values()[i].label;
+        }
+        JComboBox<String> speciesBox = new JComboBox<>(speciesOptions);
+        speciesBox.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        speciesBox.setForeground(Color.WHITE);
+        speciesBox.setFont(FontManager.getRunescapeSmallFont());
+        speciesBox.setPreferredSize(filterDim);
+        speciesBox.setMaximumSize(filterDim);
+        speciesBox.addActionListener(e -> {
+            int idx = speciesBox.getSelectedIndex();
+            filterSpecies = idx == 0 ? null : CreatureSpecies.values()[idx - 1];
+            rebuildGrid();
+        });
+        row2b.add(speciesBox, BorderLayout.EAST);
+
         topBar.add(row1);
         topBar.add(row2);
+        topBar.add(row2b);
         if (discardOpener != null) {
             JButton discardBtn = new JButton("Discard duplicates…");
             discardBtn.setFont(FontManager.getRunescapeSmallFont());
@@ -631,6 +664,11 @@ public class AlbumDialog extends JDialog {
                     int combat = capturesByNpc.containsKey(n) ? capturesByNpc.get(n).get(0).npcCombatLevel : 0;
                     return MonsterRoster.getDifficulty(n, combat) == filterDifficulty;
                 })
+                .filter(n -> {
+                    if (filterSpecies == null) return true;
+                    int combat = capturesByNpc.containsKey(n) ? capturesByNpc.get(n).get(0).npcCombatLevel : 0;
+                    return MonsterRoster.getSpecies(n, combat) == filterSpecies;
+                })
                 .collect(Collectors.toList());
 
         List<String> capturedNames = visible.stream()
@@ -663,7 +701,7 @@ public class AlbumDialog extends JDialog {
 
         // Favourites shortcut card — always shown when no search/filter active
         long favCount = capturesByNpc.values().stream().flatMap(List::stream).filter(c -> c.favourite).count();
-        if (searchTerm.isEmpty() && filterDifficulty == null) {
+        if (searchTerm.isEmpty() && filterDifficulty == null && filterSpecies == null) {
             gridPanel.add(buildFavouritesShortcutCard((int) favCount));
         }
 
