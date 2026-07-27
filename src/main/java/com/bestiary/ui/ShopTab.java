@@ -30,8 +30,6 @@ public class ShopTab extends JPanel {
 
     private JLabel creditsLabel;
     private JPanel upgradesPanel;
-    /** Live wrap width for the HTML description labels; updated from the viewport width. */
-    private int descWrapWidth = 165;
 
     public ShopTab(BestiaryDataService dataService, ProgressionService progressionService) {
         this.dataService        = dataService;
@@ -77,7 +75,15 @@ public class ShopTab extends JPanel {
     }
 
     private JScrollPane buildBody() {
-        upgradesPanel = new JPanel();
+        // Track the scroll viewport width so the cards (and their wrapping descriptions) fill it
+        // instead of the panel sizing to a child's preferred width and clipping.
+        upgradesPanel = new JPanel() {
+            @Override public Dimension getPreferredSize() {
+                Dimension d = super.getPreferredSize();
+                if (getParent() != null) d.width = getParent().getWidth();
+                return d;
+            }
+        };
         upgradesPanel.setOpaque(false);
         upgradesPanel.setLayout(new BoxLayout(upgradesPanel, BoxLayout.Y_AXIS));
         upgradesPanel.setBorder(new EmptyBorder(10, 4, 8, 4));
@@ -98,21 +104,6 @@ public class ShopTab extends JPanel {
         sp.getVerticalScrollBar().setUnitIncrement(16);
         // Never scroll horizontally — the panel width is fixed; content must wrap to it.
         sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        // The panel width is only known once shown; recompute the description wrap width
-        // from the live viewport so the HTML labels wrap to the real width (and re-wrap on resize).
-        sp.getViewport().addComponentListener(new java.awt.event.ComponentAdapter() {
-            @Override
-            public void componentResized(java.awt.event.ComponentEvent e) {
-                // Subtract card + panel chrome (~26px) plus a comfortable spare margin so the
-                // fixed-width HTML div never overruns the content area (Swing HTML clips rather
-                // than re-wraps if it's a hair too wide).
-                int w = sp.getViewport().getWidth() - 40;
-                if (w > 60 && Math.abs(w - descWrapWidth) > 4) {
-                    descWrapWidth = w;
-                    rebuildUpgrades();
-                }
-            }
-        });
         return sp;
     }
 
@@ -135,7 +126,13 @@ public class ShopTab extends JPanel {
         boolean maxed = owned >= u.maxTier;
         long cost  = dataService.upgradeCost(u);
 
-        JPanel card = new JPanel();
+        // Cap height to the card's *current* preferred height (recomputed live) so the parent
+        // BoxLayout can't stretch the card, while the wrapping description can still grow it.
+        JPanel card = new JPanel() {
+            @Override public Dimension getMaximumSize() {
+                return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
+            }
+        };
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
         card.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         card.setBorder(BorderFactory.createCompoundBorder(
@@ -149,14 +146,22 @@ public class ShopTab extends JPanel {
         title.setAlignmentX(LEFT_ALIGNMENT);
         card.add(title);
 
-        // Fixed-width HTML label wraps reliably and reports a real preferred height
-        // (a wrapping JTextArea inside a BoxLayout does not — it collapses the card).
-        JLabel desc = new JLabel("<html><div style='width:" + descWrapWidth + "px'>" + u.description + "</div></html>");
+        // A wrapping JTextArea in a BorderLayout wraps to the card's real width and reports a
+        // correct height (a fixed-width HTML label clips when the panel is narrower than assumed).
+        JTextArea desc = new JTextArea(u.description);
+        desc.setEditable(false);
+        desc.setFocusable(false);
+        desc.setLineWrap(true);
+        desc.setWrapStyleWord(true);
+        desc.setOpaque(false);
         desc.setFont(FontManager.getRunescapeSmallFont());
         desc.setForeground(DIM);
-        desc.setBorder(new EmptyBorder(2, 0, 4, 0));
-        desc.setAlignmentX(LEFT_ALIGNMENT);
-        card.add(desc);
+        JPanel descWrap = new JPanel(new BorderLayout());
+        descWrap.setOpaque(false);
+        descWrap.setAlignmentX(LEFT_ALIGNMENT);
+        descWrap.setBorder(new EmptyBorder(2, 0, 4, 0));
+        descWrap.add(desc, BorderLayout.CENTER);
+        card.add(descWrap);
 
         // Current effect: "+0.3% shiny chance"
         JLabel effect = new JLabel("Current bonus: +" + formatPct(u.effectFor(owned)));
@@ -201,10 +206,6 @@ public class ShopTab extends JPanel {
         }
         card.add(Box.createVerticalStrut(4));
         card.add(buy);
-
-        // Pin the card to its natural height so the parent BoxLayout can't stretch it
-        // (and, critically, can't collapse it — see the desc-label note above).
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, card.getPreferredSize().height));
         return card;
     }
 
