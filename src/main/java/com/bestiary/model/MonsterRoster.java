@@ -79,8 +79,8 @@ public class MonsterRoster {
         "Vampyre", "Vyrewatch",
         "Waterfiend",
         "Wyrm",
-        "Wyvern", "Ancient wyvern", "Skeletal wyvern", "Fossil island wyvern",
-        "Warped tortoise", "Tortoise",
+        "Ancient wyvern", "Skeletal wyvern", "Fossil island wyvern",
+        "Warped tortoise",
         "Zombie pirate",
 
         // === Dragons ===
@@ -91,7 +91,6 @@ public class MonsterRoster {
         "Brutal black dragon", "Brutal red dragon", "Brutal blue dragon", "Brutal green dragon","Abyssal Sire",
 
         // === Wilderness / other ===
-        "Dark warrior",
         "Ice warrior", "Ice spider",
 
         // === Solo bosses ===
@@ -182,70 +181,71 @@ public class MonsterRoster {
             "Bear", "Grizzly bear",
             "Dark wizard", "Minotaur",
             "Cave bug",
-            "Rock crab", "Sand crab",
+            "Rock crab", "Sand crab", "Swamp crab",
             "Barbarian", "Banshee",
-            "Baby blue dragon", "Baby green dragon"
+            "Giant spider", "Scorpion", "Wizard"
         )) { d.put(n, BEGINNER); }
 
         // Easy — early/mid F2P, basic slayer
         for (String n : Arrays.asList(
-            "Guard", "Warrior", "Wizard",
-            "Giant spider", "Scorpion",
+            "Guard", "Warrior",
             "Zombie", "Skeleton", "Ghost", "Pirate", "Rogue",
-            "Swamp crab",
             "Hobgoblin", "Chaos druid",
             "Cave crawler", "Cave slime",
             "Fever spider", "Pyrefiend", "Rockslugs",
             "Fleshcrawler", "Ice warrior", "Ice spider",
             "Hill giant", "Moss giant", "Ice giant", "Earth warrior",
             "Ankou",
-            "Basilisk", "Black knight"
+            "Basilisk", "Black knight",
+            "Baby blue dragon", "Baby green dragon",
+            "Kalphite worker", "Vampyre", "White knight"
         )) { d.put(n, EASY); }
 
         // Medium — mid-game slayer, accessible dungeon monsters
         for (String n : Arrays.asList(
             "Fire giant",
-            "Lesser demon", "White knight",
+            "Lesser demon",
             "Twisted banshee", "Bloodveld",
             "Cave horror", "Jelly", "Warped jelly",
-            "Kalphite soldier", "Kalphite worker",
+            "Kalphite soldier",
             "Turoth", "Nechryael",
-            "Blue dragon", "Red dragon", "Green dragon", "Bronze dragon", "Iron dragon",
+            "Blue dragon", "Red dragon", "Green dragon", "Bronze dragon",
             "Spiritual warrior", "Spiritual mage", "Spiritual ranger",
             "Lizardman", "Lizardman brute",
             "Mogre",
-            "Vampyre", "Vyrewatch",
+            "Vyrewatch",
             "Smoke devil", "Dust devil", "Infernal mage",
             "Zombie pirate",
-            "Tortoise", "Warped tortoise",
+            "Warped tortoise",
             "Troll", "Ice troll", "Mountain troll",
-            "Dagannoth"
+            "Dagannoth",
+            "Greater demon", "Aberrant spectre", "Wyrm"
         )) { d.put(n, MEDIUM); }
 
         // Hard — high slayer level, requires solid stats/gear
         for (String n : Arrays.asList(
-            "Greater demon", "Black demon", "Abyssal demon",
+            "Black demon", "Abyssal demon",
             "Gargoyle", "Hellhound", "Dark beast",
             "Greater nechryael", "Mutated bloodveld",
             "Kalphite guardian",
-            "Basilisk knight",
             "Kurask",
-            "Steel dragon", "Mithril dragon", "Black dragon",
-            "Wyrm", "Drake", "Wyvern", "Fossil island wyvern",
+            "Steel dragon", "Mithril dragon", "Black dragon", "Iron dragon",
+            "Drake", "Fossil island wyvern",
             "Ancient wyvern", "Skeletal wyvern",
             "Waterfiend", "Suqah",
-            "Aberrant spectre", "Deviant spectre",
+            "Deviant spectre",
             "Lizardman shaman",
             "Brutal black dragon", "Brutal red dragon",
             "Brutal blue dragon", "Brutal green dragon",
-            "Lava dragon", "Dark warrior"
+            "Lava dragon"
         )) { d.put(n, HARD); }
 
         // Elite — challenging late-game PvM (pre-boss tier)
         for (String n : Arrays.asList(
             "Adamant dragon", "Rune dragon",
             "Hydra",
-            "Kraken"
+            "Kraken",
+            "Basilisk knight"
         )) { d.put(n, ELITE); }
 
         // Boss — endgame encounters requiring preparation/skill

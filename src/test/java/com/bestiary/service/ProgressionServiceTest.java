@@ -4,6 +4,8 @@ import com.bestiary.model.Achievement;
 import com.bestiary.model.BestiaryCollection;
 import com.bestiary.model.CapturedCreature;
 import com.bestiary.model.CreatureRarity;
+import com.bestiary.model.DifficultyTier;
+import com.bestiary.model.MonsterRoster;
 import com.bestiary.util.XpTable;
 import net.runelite.api.NPC;
 import org.junit.Before;
@@ -68,19 +70,22 @@ public class ProgressionServiceTest {
     // --- Kill XP ---
 
     @Test
-    public void killXpEquatesCombatLevelTimesTen() {
-        when(npc.getCombatLevel()).thenReturn(10);
-        int levelBefore = service.getLevel();
-        service.recordKill(npc);
-        long xp = service.getTotalXp();
-        assertEquals(100L, xp); // combatLevel(10) * 10
+    public void killXpMatchesDifficultyTier() {
+        assertEquals(5L,  ProgressionService.killXp(DifficultyTier.BEGINNER));
+        assertEquals(10L, ProgressionService.killXp(DifficultyTier.EASY));
+        assertEquals(15L, ProgressionService.killXp(DifficultyTier.MEDIUM));
+        assertEquals(20L, ProgressionService.killXp(DifficultyTier.HARD));
+        assertEquals(25L, ProgressionService.killXp(DifficultyTier.ELITE));
+        assertEquals(30L, ProgressionService.killXp(DifficultyTier.BOSS));
     }
 
     @Test
-    public void killXpIsAtLeast10() {
-        when(npc.getCombatLevel()).thenReturn(0);
-        service.recordKill(npc);
-        assertEquals(10L, service.getTotalXp());
+    public void recordKillAwardsTierXp() {
+        long before = service.getTotalXp();
+        service.recordKill(npc); // "Goblin", combat level 2
+        long gained = service.getTotalXp() - before;
+        DifficultyTier tier = MonsterRoster.getDifficulty("Goblin", 2);
+        assertEquals(ProgressionService.killXp(tier), gained);
     }
 
     // --- Capture XP ---
@@ -167,9 +172,9 @@ public class ProgressionServiceTest {
     @Test
     public void levelIncreaseWhenXpThresholdCrossed() {
         long xpNeeded = XpTable.xpForLevel(2);
-        // Simulate kills until level 2
-        when(npc.getCombatLevel()).thenReturn((int)(xpNeeded / 10) + 1);
-        service.recordKill(npc);
+        long perKill  = ProgressionService.killXp(MonsterRoster.getDifficulty("Goblin", 2));
+        long kills    = xpNeeded / perKill + 1;
+        for (long i = 0; i < kills; i++) service.recordKill(npc);
         assertTrue(service.getLevel() >= 2);
     }
 }

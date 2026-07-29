@@ -162,7 +162,7 @@ public class CollectionTab extends JPanel {
         albumBtn.setBorderPainted(false);
         albumBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
         albumBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        albumBtn.setToolTipText("Open the full Bestiary Album dex grid");
+        albumBtn.setToolTipText("Open the full Bestiary Album grid");
         albumBtn.addActionListener(e -> openAlbum(
                 SwingUtilities.getWindowAncestor(CollectionTab.this),
                 viewMode == ViewMode.FAVOURITES));

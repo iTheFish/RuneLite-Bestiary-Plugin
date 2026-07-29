@@ -13,7 +13,7 @@ public enum ShopUpgrade {
     /** Flat +credits added to every capture reward (cheap, early-game). effect = flat credits/tier. */
     CREDIT_CAPTURE(
             "Hunter's Bounty",
-            "Adds flat bonus credits to every capture (helps low-tier catches too).",
+            "Adds flat bonus credits to every capture (helps low-tier catches).",
             ShopCategory.PROGRESSION, 5, new long[]{10, 20, 50, 100, 250}, 2.0),
 
     /** +credits from discarding cards (cheap, early-game). */
