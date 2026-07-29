@@ -162,6 +162,12 @@ public class ProgressTab extends JPanel {
                 new javax.swing.border.MatteBorder(0, 3, 0, 0, accent),
                 new EmptyBorder(5, 8, 5, 8)));
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
+        // Tooltip must sit on the leaf components too — Swing shows the tooltip of the
+        // component directly under the cursor, not the parent row.
+        String tip = a.creditReward > 0
+                ? "Reward: +" + a.creditReward + " credits" + (unlocked ? " (earned)" : "")
+                : null;
+        row.setToolTipText(tip);
 
         JLabel icon = new JLabel(unlocked ? "✔" : "○");
         icon.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
@@ -180,6 +186,11 @@ public class ProgressTab extends JPanel {
 
         text.add(title);
         text.add(desc);
+
+        icon.setToolTipText(tip);
+        text.setToolTipText(tip);
+        title.setToolTipText(tip);
+        desc.setToolTipText(tip);
 
         row.add(icon, BorderLayout.WEST);
         row.add(text, BorderLayout.CENTER);

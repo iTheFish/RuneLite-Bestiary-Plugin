@@ -41,6 +41,8 @@ public class BestiaryDataService {
     public BestiaryDataService(ProgressionService progressionService, BestiaryStore store) {
         this.progressionService = progressionService;
         this.store = store;
+        // Let progression grant credits for level-ups and achievement unlocks.
+        progressionService.setCreditAwarder(this::awardCredits);
     }
 
     // -------------------------------------------------------------------------

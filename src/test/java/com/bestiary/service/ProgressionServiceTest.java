@@ -177,5 +177,36 @@ public class ProgressionServiceTest {
         for (long i = 0; i < kills; i++) service.recordKill(npc);
         assertTrue(service.getLevel() >= 2);
     }
+
+    // --- Progression credits (#58) ---
+
+    @Test
+    public void achievementUnlockAwardsItsCreditReward() {
+        long[] awarded = {0};
+        service.setCreditAwarder(amount -> awarded[0] += amount);
+
+        CapturedCreature c = CapturedCreature.builder()
+                .npcId(1).npcName("Rat").npcCombatLevel(1)
+                .rarity(CreatureRarity.COMMON).build();
+        collection.addCapture(c);
+        service.recordCapture(c, false); // no XP -> only the FIRST_CATCH achievement bounty
+
+        assertEquals(Achievement.FIRST_CATCH.creditReward, awarded[0]);
+    }
+
+    @Test
+    public void levelUpAwardsPerLevelCredits() {
+        long[] awarded = {0};
+        service.setCreditAwarder(amount -> awarded[0] += amount);
+
+        long xpNeeded = XpTable.xpForLevel(2);
+        long perKill  = ProgressionService.killXp(MonsterRoster.getDifficulty("Goblin", 2));
+        long kills    = xpNeeded / perKill + 1;
+        for (long i = 0; i < kills; i++) service.recordKill(npc);
+
+        assertTrue(service.getLevel() >= 2);
+        assertTrue("level-up should grant level x 10 credits",
+                awarded[0] >= ProgressionService.levelUpCredits(2));
+    }
 }
 
