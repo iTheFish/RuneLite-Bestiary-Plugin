@@ -1061,7 +1061,7 @@ public class AlbumDialog extends JDialog {
         btn.setOpaque(true);
         btn.setContentAreaFilled(true);
         if (active) {
-            btn.setBackground(new Color(30, 80, 150));
+            btn.setBackground(new Color(52, 74, 104)); // muted steel blue
             btn.setText("<html><b><font color='#FFFFFF'>Show Locked</font></b></html>");
         } else {
             btn.setBackground(ColorScheme.DARKER_GRAY_COLOR);
@@ -1077,7 +1077,7 @@ public class AlbumDialog extends JDialog {
         btn.setOpaque(true);
         btn.setContentAreaFilled(true);
         if (active) {
-            btn.setBackground(new Color(190, 110, 20));
+            btn.setBackground(new Color(120, 88, 42)); // muted amber/bronze
             btn.setText("<html><b><font color='#FFFFFF'>Captured First</font></b></html>");
         } else {
             btn.setBackground(ColorScheme.DARKER_GRAY_COLOR);
