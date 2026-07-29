@@ -212,9 +212,11 @@ public class BestiaryPlugin extends Plugin {
         int levelBefore = progressionService.getLevel();
         com.bestiary.model.DifficultyTier killTier =
                 com.bestiary.model.MonsterRoster.getDifficulty(npcName, npc.getCombatLevel());
-        long killXp  = com.bestiary.service.ProgressionService.killXp(killTier);
+        // Base kill XP + the Hunter's Focus flat shop boost.
+        long killXp  = com.bestiary.service.ProgressionService.killXp(killTier)
+                + dataService.killXpFlatBonus();
         sessionTracker.addXp(killXp);
-        progressionService.recordKill(npc);
+        progressionService.awardXp(killXp);
 
         // Attempt capture
         int captureLevel = progressionService.getLevel();
@@ -245,10 +247,15 @@ public class BestiaryPlugin extends Plugin {
             long awardedCredits = dataService.awardCaptureCredits(baseCredits);
 
             if (config.captureXpEnabled()) {
-                sessionTracker.addXp(
-                        ProgressionService.captureXp(creature.npcCombatLevel, creature.rarity));
+                // Base capture XP + the Scholar's Insight % shop boost.
+                long capXp = Math.round(
+                        ProgressionService.captureXp(creature.npcCombatLevel, creature.rarity)
+                        * (1.0 + dataService.captureXpBonus()));
+                sessionTracker.addXp(capXp);
+                progressionService.awardXp(capXp);
             }
-            List<Achievement> newAchievements = progressionService.recordCapture(creature, config.captureXpEnabled());
+            // XP already awarded above with the shop boost; recordCapture just checks achievements.
+            List<Achievement> newAchievements = progressionService.recordCapture(creature, false);
 
             // Chat notification
             if (config.notifyOnCapture()) {

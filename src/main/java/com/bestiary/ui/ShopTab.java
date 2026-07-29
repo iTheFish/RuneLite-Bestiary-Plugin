@@ -244,11 +244,11 @@ public class ShopTab extends JPanel {
         return String.format("%.1f%%", frac * 100.0);
     }
 
-    /** Formats an upgrade's total effect at {@code tiers} — flat credits or a percentage. */
+    /** Formats an upgrade's total effect at {@code tiers} — flat credits, flat XP, or a percentage. */
     private static String formatEffect(ShopUpgrade u, int tiers) {
-        return u.isFlatCredits()
-                ? "+" + (long) u.effectFor(tiers) + " credits"
-                : "+" + formatPct(u.effectFor(tiers));
+        if (u.isFlatCredits()) return "+" + (long) u.effectFor(tiers) + " credits";
+        if (u.isFlatXp())      return "+" + (long) u.effectFor(tiers) + " XP";
+        return "+" + formatPct(u.effectFor(tiers));
     }
 
     /** A small round tier indicator. */

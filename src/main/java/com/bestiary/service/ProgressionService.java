@@ -107,6 +107,14 @@ public class ProgressionService {
         return Math.round(base * rarity.xpMultiplier);
     }
 
+    /**
+     * Awards arbitrary XP (kill or capture XP, including shop boosts already applied by the
+     * caller) and returns the new level if a level-up occurred, otherwise 0.
+     */
+    public int awardXp(long xp) {
+        return addXp(xp);
+    }
+
     /** Current Capture Level (1\u00e2\u20ac"100). */
     public int getLevel() {
         return XpTable.levelForXp(state.totalXp);

@@ -164,6 +164,18 @@ public class BestiaryDataService {
                 collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.CREDIT_CAPTURE));
     }
 
+    /** Flat bonus XP added to every kill from the Hunter's Focus upgrade (+5 per tier). */
+    public long killXpFlatBonus() {
+        return (long) com.bestiary.model.ShopUpgrade.KILL_XP.effectFor(
+                collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.KILL_XP));
+    }
+
+    /** Capture-XP percentage bonus (fraction, e.g. 0.25 = +25%) from the Scholar's Insight upgrade. */
+    public double captureXpBonus() {
+        return com.bestiary.model.ShopUpgrade.CAPTURE_XP.effectFor(
+                collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.CAPTURE_XP));
+    }
+
     /** Passive discard-credit bonus from the Salvager's Eye upgrade. */
     public double discardCreditBonus() {
         return com.bestiary.model.ShopUpgrade.CREDIT_DISCARD.effectFor(
