@@ -221,7 +221,8 @@ public class InfoTab extends JPanel {
                 "You've probably found the Favourites star and the card export by now, so copy your " +
                 "best cards and share them around. You're likely sitting on a stack of duplicates " +
                 "too: use Discard (right-click a card, or bulk-discard from the Album) to turn them " +
-                "into credits and keep your album tidy.\n\n" +
+                "into credits and keep your album tidy. Caught a shiny you don't need? Either upgrade " +
+                "that shiny Uncommon or discard it for a guaranteed +1000 credits.\n\n" +
                 "Around level 50 your catch rates are much healthier (beginners near 50%, mediums " +
                 "near 25%). How's your RNG treating you? Tap any stat box at the top to open the " +
                 "dashboards and see your rarity spread, species progress and economy at a glance."));
@@ -240,7 +241,7 @@ public class InfoTab extends JPanel {
                 "Catch rates cap out (beginner 60%, boss 8%), high-value captures are capped at the " +
                 "combat-100 XP scale, and top rarities and shinies stay genuinely rare, so the " +
                 "album's final slots and the flashiest cards are a real flex. Keep at it: 99 " +
-                "Bestiary and a full dex await."));
+                "Bestiary and a full album await."));
     }
 
     private void fillCapturing(JPanel c) {
@@ -287,7 +288,7 @@ public class InfoTab extends JPanel {
                 "separately (equal weight) so they separate the difficulty tiers: HP adds ~+13 at 80 HP " +
                 "and ~+165 at 1000 HP; combat level adds ~+21 at 124 and ~+233 at 1400. " +
                 "The rolled stats are mostly flavour — difficulty drives power."));
-        c.add(tile("Stats & class",
+        c.add(tile("Stats",
                 "Every capture rolls seven stats — Attack, Strength, Defence, Magic, Ranged, Agility " +
                 "and Prayer (Prayer and Agility roll on a smaller scale).\n\n" +
                 "Each stat is rolled from that monster's own base value for it — so a hard-hitting " +
@@ -296,7 +297,7 @@ public class InfoTab extends JPanel {
                 "anchor to the very top of the band plus a bonus. Within each band there's random " +
                 "wiggle room, and the bands overlap — so a lucky Rare can beat an unlucky Epic."));
         c.add(tile("Album",
-                "A full dex grid of every capturable species. Open it via 'Open Album' (in all " +
+                "A full album grid of every capturable species. Open it via 'Open Album' (in all " +
                 "Collection views and on this tab).\n\n" +
                 "Clicking a species card opens a detail view of all your captures of it, paginated " +
                 "(8 / 12 / 16 per page) with a sort dropdown and rarity filter. Each catalog card " +
@@ -338,7 +339,7 @@ public class InfoTab extends JPanel {
                 "breakdown — remember those odds describe a raw pull, not a rerolled card."));
         c.add(tile("Discard",
                 "Don't want a card? Right-click → 'Discard…' to trade it for credits — the refund is " +
-                "its base capture value, and shinies add a flat bonus. From the Album you can " +
+                "its base capture value, and shinies are worth a guaranteed +1000 credits. From the Album you can " +
                 "multi-select to discard several at once.\n\n" +
                 "Discarding is permanent: the card is removed from your collection."));
         c.add(tile("Shop",
