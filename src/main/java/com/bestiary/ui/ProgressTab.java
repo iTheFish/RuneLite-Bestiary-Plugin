@@ -76,7 +76,8 @@ public class ProgressTab extends JPanel {
         dashBtn.setToolTipText("Open the Progression dashboard");
         dashBtn.addActionListener(e -> { if (showDashboard != null) showDashboard.run(); });
 
-        JPanel recapRow = new JPanel(new GridLayout(1, 2, 4, 0));
+        // Two full-span rows, stacked (Session Recap above, Show Dashboard below).
+        JPanel recapRow = new JPanel(new GridLayout(2, 1, 0, 4));
         recapRow.setOpaque(false);
         recapRow.setBorder(new EmptyBorder(4, 0, 4, 0));
         recapRow.add(recapBtn);

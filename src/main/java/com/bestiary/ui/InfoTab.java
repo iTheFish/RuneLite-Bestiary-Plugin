@@ -533,6 +533,11 @@ public class InfoTab extends JPanel {
         container.add(midRow);
         container.add(Box.createVerticalStrut(4));
         container.add(recapRow);
+
+        // Force the container to span the full panel width (like the stats strip). Without an
+        // explicit max width its BoxLayout sizes to the buttons' preferred width and left-aligns,
+        // so the shortcut accents sit inset from the wider stat boxes above (#109).
+        container.setMaximumSize(new Dimension(Integer.MAX_VALUE, container.getPreferredSize().height));
         return container;
     }
 
