@@ -24,7 +24,8 @@ public class ProgressTab extends JPanel {
     private final JLabel xpLabel;
     private final JPanel achievementPanel;
 
-    public ProgressTab(ProgressionService progressionService, SessionTracker sessionTracker) {
+    public ProgressTab(ProgressionService progressionService, SessionTracker sessionTracker,
+                       Runnable showDashboard) {
         this.progressionService = progressionService;
         this.sessionTracker     = sessionTracker;
         setLayout(new BorderLayout(0, 8));
@@ -65,10 +66,21 @@ public class ProgressTab extends JPanel {
         recapBtn.addActionListener(e ->
             SessionRecapDialog.open(SwingUtilities.getWindowAncestor(this), sessionTracker));
 
-        JPanel recapRow = new JPanel(new BorderLayout());
+        // Show Dashboard button — opens the Progression dashboard (same flow as the Info tab stat boxes)
+        JButton dashBtn = new JButton("Show Dashboard");
+        dashBtn.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        dashBtn.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        dashBtn.setForeground(new Color(255, 165, 0));
+        dashBtn.setFocusPainted(false);
+        dashBtn.setBorderPainted(true);
+        dashBtn.setToolTipText("Open the Progression dashboard");
+        dashBtn.addActionListener(e -> { if (showDashboard != null) showDashboard.run(); });
+
+        JPanel recapRow = new JPanel(new GridLayout(1, 2, 4, 0));
         recapRow.setOpaque(false);
         recapRow.setBorder(new EmptyBorder(4, 0, 4, 0));
-        recapRow.add(recapBtn, BorderLayout.CENTER);
+        recapRow.add(recapBtn);
+        recapRow.add(dashBtn);
 
         // Achievements
         achievementPanel = new JPanel();
