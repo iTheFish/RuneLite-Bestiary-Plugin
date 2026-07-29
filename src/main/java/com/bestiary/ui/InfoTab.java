@@ -326,7 +326,7 @@ public class InfoTab extends JPanel {
                 "worth about 480 (960 if shiny).\n\n" +
                 "You also earn credits from progression: every Capture Level pays a bounty of " +
                 "level × 10 (Lv50 = 500), and each achievement grants a one-off reward scaled to " +
-                "its grind — from 25 for favouriting a card up to tens of thousands for the big " +
+                "its grind — from 10 for favouriting a card up to tens of thousands for the big " +
                 "milestones.\n\n" +
                 "Spend them in the Shop on the Card Reroller and passive unlocks below. Your lifetime " +
                 "earned and spent totals are tracked in the Economy dashboard."));

@@ -206,21 +206,15 @@ public class BestiaryPlugin extends Plugin {
             sendAchievementMessage(a);
         }
 
+        // Snapshot the level before ANY XP (kill or capture) so we can announce the level-up
+        // regardless of which source crossed the threshold — capture XP is often the larger
+        // source, so many level-ups happen during the capture, not the kill.
+        int levelBefore = progressionService.getLevel();
         com.bestiary.model.DifficultyTier killTier =
                 com.bestiary.model.MonsterRoster.getDifficulty(npcName, npc.getCombatLevel());
         long killXp  = com.bestiary.service.ProgressionService.killXp(killTier);
         sessionTracker.addXp(killXp);
-        int newLevel = progressionService.recordKill(npc);
-        if (newLevel > 0) {
-            if (config.notifyOnLevelUp()) {
-                sendChatMessage("Capture Level up! You are now level " + newLevel + ". (+"
-                        + ProgressionService.levelUpCredits(newLevel) + " credits)",
-                        ChatColorType.HIGHLIGHT);
-            }
-            if (config.showCaptureAnimation() || config.showOverlay()) {
-                overlay.enqueueLevelUp(newLevel);
-            }
-        }
+        progressionService.recordKill(npc);
 
         // Attempt capture
         int captureLevel = progressionService.getLevel();
@@ -277,6 +271,18 @@ public class BestiaryPlugin extends Plugin {
                 sendAchievementMessage(a);
             }
         });
+
+        // Announce a level-up from EITHER kill XP or capture XP (checked once, after both).
+        int levelAfter = progressionService.getLevel();
+        if (levelAfter > levelBefore) {
+            if (config.notifyOnLevelUp()) {
+                sendChatMessage("Capture Level up! You are now level " + levelAfter + ".",
+                        ChatColorType.HIGHLIGHT);
+            }
+            if (config.showCaptureAnimation() || config.showOverlay()) {
+                overlay.enqueueLevelUp(levelAfter);
+            }
+        }
 
         // Refresh the panel after every kill — not just on level-ups or captures — so kill XP,
         // kill counts and any newly unlocked achievements are always reflected immediately.
@@ -336,7 +342,7 @@ public class BestiaryPlugin extends Plugin {
     /** Colour used for the SHINY marker in capture chat messages. */
     private static final java.awt.Color SHINY_CHAT_COLOR = new java.awt.Color(255, 235, 120);
     /** Colour used for the "+N credits" suffix in capture / achievement chat messages. */
-    private static final java.awt.Color CREDIT_CHAT_COLOR = new java.awt.Color(220, 190, 80);
+    private static final java.awt.Color CREDIT_CHAT_COLOR = new java.awt.Color(120, 190, 255);
 
     private void notifyCapture(CapturedCreature creature, long credits) {
         int quality = creature.powerLevel();

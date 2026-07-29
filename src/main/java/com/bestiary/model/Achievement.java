@@ -13,7 +13,7 @@ import java.awt.Color;
  */
 public enum Achievement {
 
-    FIRST_CATCH        ("First Blood",           "Capture your first creature",          1,    false, new Color(255, 200, 80),   50),
+    FIRST_CATCH        ("First Blood",           "Capture your first creature",          1,    false, new Color(255, 200, 80),   10),
     TEN_CATCHES        ("Collector",             "Capture 10 creatures",                 10,   false, new Color(255, 200, 80),  100),
     FIFTY_CATCHES      ("Enthusiast",            "Capture 50 creatures",                 50,   false, new Color(255, 200, 80),  300),
     HUNDRED_CATCHES    ("Hoarder",               "Capture 100 creatures",                100,  false, new Color(255, 200, 80),  750),
@@ -28,7 +28,7 @@ public enum Achievement {
     EPIC_CATCH         ("Storm Chaser",          "Capture an Epic or better",            0,    false, new Color(100, 180, 255),  400),
     LEGENDARY_CATCH    ("Fortune's Favourite",   "Capture a Legendary",                  0,    false, new Color(255, 165, 0),  1000),
     MYTHIC_CATCH       ("Beyond Myth",           "Capture a Mythic creature",            0,    false, new Color(255, 50,  50), 3000),
-    SHINY_CATCH        ("Shiny Hunter",          "Capture a shiny creature",             0,    false, new Color(255, 240, 150),  300),
+    SHINY_CATCH        ("Shiny Hunter",          "Capture a shiny creature",             0,    false, new Color(255, 240, 150),  500),
     FIVE_HUNDRED_KILLS ("Veteran",               "Accumulate 500 kills",                 0,    false, new Color(180, 180, 180),  300),
     FIVE_K_KILLS       ("Slaughterer",           "Accumulate 5,000 kills",               0,    false, new Color(180, 180, 180), 2500),
     LEVEL_5            ("Novice Hunter",         "Reach Capture Level 5",                0,    false, new Color(255, 200, 80),  100),
@@ -65,16 +65,16 @@ public enum Achievement {
     REROLL_FIRST       ("Second Chances",         "Reroll a card for the first time",     1,      false, new Color(80,  140, 255),  50),
     REROLL_5           ("Do-Over",                "Reroll 5 cards",                       5,      false, new Color(80,  140, 255), 100),
     REROLL_10          ("Tinkerer",               "Reroll 10 cards",                      10,     false, new Color(80,  140, 255), 250),
-    REROLL_25          ("Perfectionist",          "Reroll 25 cards",                      25,     false, new Color(100, 180, 255), 600),
-    REROLL_50          ("Reroll Addict",          "Reroll 50 cards",                      50,     false, new Color(100, 180, 255),2000),
+    REROLL_25          ("Perfectionist",          "Reroll 25 cards",                      25,     false, new Color(100, 180, 255), 500),
+    REROLL_50          ("Reroll Addict",          "Reroll 50 cards",                      50,     false, new Color(100, 180, 255),1000),
     REROLL_RANK_UP     ("Against the Odds",       "Rank a card up a rarity by rerolling", 0,      false, new Color(170, 120, 235),2000),
 
     // --- Collection milestones ---
-    POWERHOUSE         ("Powerhouse",             "Own a card with Power Level 150+",     0,      false, new Color(240, 150, 45), 2000),
-    FULL_HOUSE         ("Full House",             "Catch all six rarities of one monster",0,      false, new Color(255, 165, 0), 1500),
+    POWERHOUSE         ("Powerhouse",             "Own a card with Power Level 150+",     0,      false, new Color(240, 150, 45),  150),
+    FULL_HOUSE         ("Full House",             "Catch all six rarities of one monster",0,      false, new Color(255, 165, 0), 6000),
     CHROMATIC          ("Chromatic",              "Capture 5 shiny creatures",            5,      false, new Color(255, 240, 150),1500),
     COMPLETIONIST      ("Completionist",          "Catch every monster in the album",     0,      false, new Color(255, 120, 20),25000),
-    CURATED            ("Curated",                "Favourite a card",                     1,      false, new Color(255, 215, 0),   25);
+    CURATED            ("Curated",                "Favourite a card",                     1,      false, new Color(255, 215, 0),   10);
 
     public final String title;
     public final String description;
