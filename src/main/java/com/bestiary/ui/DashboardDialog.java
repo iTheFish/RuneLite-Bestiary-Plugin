@@ -1360,8 +1360,14 @@ public class DashboardDialog extends JDialog {
         String ratio = caps > 0 ? String.format("%.1f:1", (double) kills / caps) : "—";
         Map<CreatureRarity, Long> rarityCounts = col.creatures.stream()
                 .collect(Collectors.groupingBy(c -> c.rarity, Collectors.counting()));
+        // Export only the top 16 "most impressive" achievements (by credit reward) so the card
+        // doesn't grow unbounded once a player has unlocked a lot (#115).
+        final int ACH_EXPORT_CAP = 16;
         List<Achievement> unlockedList = Arrays.stream(Achievement.values())
-                .filter(unlocked::contains).collect(Collectors.toList());
+                .filter(unlocked::contains)
+                .sorted(Comparator.comparingInt((Achievement a) -> a.creditReward).reversed())
+                .limit(ACH_EXPORT_CAP)
+                .collect(Collectors.toList());
         int achRows = (int) Math.ceil(unlockedList.size() / 2.0);
         if (unlockedList.isEmpty()) achRows = 1;
 
@@ -1509,7 +1515,9 @@ public class DashboardDialog extends JDialog {
         y += 8;
 
         // --- ACHIEVEMENTS section ---
-        y = drawCardSectionHeader(g, "ACHIEVEMENTS  —  " + unlocked.size() + " / " + Achievement.values().length, y, W, PAD);
+        String achHeader = "ACHIEVEMENTS  —  " + unlocked.size() + " / " + Achievement.values().length
+                + (unlocked.size() > unlockedList.size() ? "   (top " + unlockedList.size() + ")" : "");
+        y = drawCardSectionHeader(g, achHeader, y, W, PAD);
         y += 6;
         if (unlockedList.isEmpty()) {
             g.setFont(FontManager.getRunescapeSmallFont());
