@@ -34,10 +34,23 @@ public class ProgressionService {
     private ProgressionState state;
     private BestiaryCollection collection;
 
+    /** Grants Bestiary Credits (level-up bounties + achievement rewards). Wired by BestiaryDataService. */
+    private java.util.function.LongConsumer creditAwarder = amount -> {};
+
+    /** Credits granted per level gained: {@code level * 10} (reach Lv2 -> 20, Lv99 -> 990). */
+    public static long levelUpCredits(int level) {
+        return level * 10L;
+    }
+
     @Inject
     public ProgressionService() {
         this.state      = new ProgressionState();
         this.collection = new BestiaryCollection();
+    }
+
+    /** Sets the sink used to grant credits for level-ups and achievement unlocks. */
+    public void setCreditAwarder(java.util.function.LongConsumer awarder) {
+        this.creditAwarder = awarder != null ? awarder : amount -> {};
     }
 
     /** Called by BestiaryDataService after loading persisted data. */
@@ -130,12 +143,18 @@ public class ProgressionService {
                 continue;
             }
             if (isUnlocked(a, latestCapture, totalCaps, species, level)) {
-                state.unlockedAchievements.add(a);
-                newly.add(a);
-                log.info("Achievement unlocked: {}", a.title);
+                unlock(a, newly);
             }
         }
         return newly;
+    }
+
+    /** Marks an achievement unlocked, grants its credit reward, and records it for notification. */
+    private void unlock(Achievement a, List<Achievement> newly) {
+        state.unlockedAchievements.add(a);
+        newly.add(a);
+        if (a.creditReward > 0) creditAwarder.accept(a.creditReward);
+        log.info("Achievement unlocked: {} (+{} credits)", a.title, a.creditReward);
     }
 
     /** Check kill-count achievements after incrementing kill count. Call on client thread. */
@@ -144,12 +163,10 @@ public class ProgressionService {
         List<Achievement> newly = new ArrayList<>();
         for (Achievement a : new Achievement[]{Achievement.FIVE_HUNDRED_KILLS, Achievement.FIVE_K_KILLS}) {
             if (state.unlockedAchievements.contains(a)) continue;
-            boolean unlock = (a == Achievement.FIVE_HUNDRED_KILLS && totalKills >= 500)
+            boolean reached = (a == Achievement.FIVE_HUNDRED_KILLS && totalKills >= 500)
                           || (a == Achievement.FIVE_K_KILLS && totalKills >= 5000);
-            if (unlock) {
-                state.unlockedAchievements.add(a);
-                newly.add(a);
-                log.info("Achievement unlocked: {}", a.title);
+            if (reached) {
+                unlock(a, newly);
             }
         }
         return newly;
@@ -239,6 +256,10 @@ public class ProgressionService {
         int before       = getLevel();
         state.totalXp    = Math.min(XpTable.maxXp(), state.totalXp + xp);
         int after        = getLevel();
+        // Grant a per-level credit bounty for every level gained (handles multi-level jumps).
+        for (int lvl = before + 1; lvl <= after; lvl++) {
+            creditAwarder.accept(levelUpCredits(lvl));
+        }
         return after > before ? after : 0;
     }
 }

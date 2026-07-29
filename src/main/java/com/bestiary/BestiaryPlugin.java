@@ -211,7 +211,8 @@ public class BestiaryPlugin extends Plugin {
         int newLevel = progressionService.recordKill(npc);
         if (newLevel > 0) {
             if (config.notifyOnLevelUp()) {
-                sendChatMessage("Capture Level up! You are now level " + newLevel + ".",
+                sendChatMessage("Capture Level up! You are now level " + newLevel + ". (+"
+                        + ProgressionService.levelUpCredits(newLevel) + " credits)",
                         ChatColorType.HIGHLIGHT);
             }
             if (config.showCaptureAnimation() || config.showOverlay()) {
