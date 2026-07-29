@@ -136,8 +136,12 @@ public class BestiaryPanel extends PluginPanel {
 
         // Tabs
         collectionTab = new CollectionTab(dataService, imageService);
-        progressTab   = new ProgressTab(progressionService, sessionTracker);
-        shopTab       = new ShopTab(dataService, progressionService);
+        progressTab   = new ProgressTab(progressionService, sessionTracker,
+                () -> DashboardDialog.open(SwingUtilities.getWindowAncestor(this), dataService,
+                        progressionService, DashboardDialog.DashView.PROGRESSION));
+        shopTab       = new ShopTab(dataService, progressionService,
+                () -> DashboardDialog.open(SwingUtilities.getWindowAncestor(this), dataService,
+                        progressionService, DashboardDialog.DashView.ECONOMY));
 
         JTabbedPane tabs = new JTabbedPane();
         tabs.setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -227,6 +231,15 @@ public class BestiaryPanel extends PluginPanel {
         }
 
         panel.add(buildWipeBtn());
+
+        // Version footer
+        JLabel version = new JLabel("Bestiary v" + com.bestiary.BestiaryPlugin.VERSION);
+        version.setFont(FontManager.getRunescapeSmallFont());
+        version.setForeground(new Color(120, 120, 120));
+        version.setAlignmentX(CENTER_ALIGNMENT);
+        version.setHorizontalAlignment(SwingConstants.CENTER);
+        version.setBorder(new EmptyBorder(6, 0, 0, 0));
+        panel.add(version);
         return panel;
     }
 

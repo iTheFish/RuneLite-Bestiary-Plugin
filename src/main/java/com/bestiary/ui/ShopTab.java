@@ -32,9 +32,13 @@ public class ShopTab extends JPanel {
     private JLabel creditsLabel;
     private JPanel upgradesPanel;
 
-    public ShopTab(BestiaryDataService dataService, ProgressionService progressionService) {
+    private final Runnable showDashboard;
+
+    public ShopTab(BestiaryDataService dataService, ProgressionService progressionService,
+                   Runnable showDashboard) {
         this.dataService        = dataService;
         this.progressionService = progressionService;
+        this.showDashboard      = showDashboard;
 
         setLayout(new BorderLayout(0, 0));
         setBackground(BG);
@@ -64,14 +68,25 @@ public class ShopTab extends JPanel {
         p.add(title,        BorderLayout.WEST);
         p.add(creditsLabel, BorderLayout.EAST);
 
+        // Show Dashboard button — opens the Economy dashboard (same flow as the Info tab stat boxes)
+        JButton dashBtn = new JButton("Show Dashboard");
+        dashBtn.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        dashBtn.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        dashBtn.setForeground(ORANGE);
+        dashBtn.setFocusPainted(false);
+        dashBtn.setBorderPainted(true);
+        dashBtn.setToolTipText("Open the Economy dashboard");
+        dashBtn.addActionListener(e -> { if (showDashboard != null) showDashboard.run(); });
+
         JSeparator sep = new JSeparator();
         sep.setForeground(new Color(255, 165, 0, 60));
 
         JPanel wrapper = new JPanel(new BorderLayout(0, 4));
         wrapper.setOpaque(false);
         wrapper.setBorder(new EmptyBorder(6, 0, 0, 0));
-        wrapper.add(p,   BorderLayout.NORTH);
-        wrapper.add(sep, BorderLayout.CENTER);
+        wrapper.add(p,       BorderLayout.NORTH);
+        wrapper.add(dashBtn, BorderLayout.CENTER);
+        wrapper.add(sep,     BorderLayout.SOUTH);
         return wrapper;
     }
 

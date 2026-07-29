@@ -57,6 +57,9 @@ import java.util.concurrent.TimeUnit;
 )
 public class BestiaryPlugin extends Plugin {
 
+    /** Plugin version, shown in the panel footer. Keep in sync with build.gradle's {@code version}. */
+    public static final String VERSION = "1.0";
+
     @Inject private Client client;
     @Inject private BestiaryConfig config;
     @Inject private ClientToolbar clientToolbar;
