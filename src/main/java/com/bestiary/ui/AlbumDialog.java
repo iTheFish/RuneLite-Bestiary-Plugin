@@ -297,6 +297,14 @@ public class AlbumDialog extends JDialog {
             dRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
             dRow.setBorder(new EmptyBorder(4, 0, 0, 0));
             dRow.add(discardBtn, BorderLayout.WEST);
+            // Nudge to enable wiki images when they're off (best album experience).
+            if (imageService != null && !imageService.isEnabled()) {
+                JLabel imgHint = new JLabel("Turn on 'Fetch NPC images from the Wiki' in config for the best experience");
+                imgHint.setFont(FontManager.getRunescapeSmallFont());
+                imgHint.setForeground(new Color(220, 180, 60));
+                imgHint.setBorder(new EmptyBorder(0, 8, 0, 0));
+                dRow.add(imgHint, BorderLayout.CENTER);
+            }
             topBar.add(dRow);
         }
 
@@ -626,10 +634,11 @@ public class AlbumDialog extends JDialog {
         capturesByNpc.clear();
         capturesByNpc.putAll(grouped);
         if (detailMonsterName != null && !detailMonsterName.startsWith("★")
-                && !capturesByNpc.containsKey(detailMonsterName)) {
-            showCatalog();            // the monster we were viewing has no captures left
+                && !capturesByNpc.containsKey(detailMonsterName)
+                && killCounts.getOrDefault(detailMonsterName, 0) == 0) {
+            showCatalog();            // truly locked again — no captures and never killed
         } else {
-            rebuildGrid();
+            rebuildGrid();            // keep discovered monsters open (empty detail) even if all discarded
         }
     }
 
@@ -673,22 +682,31 @@ public class AlbumDialog extends JDialog {
 
         List<String> capturedNames = visible.stream()
                 .filter(capturesByNpc::containsKey).collect(Collectors.toList());
+        // Discovered = killed but not (yet) captured: unlocked, clickable, always shown.
+        List<String> discoveredNames = visible.stream()
+                .filter(n -> !capturesByNpc.containsKey(n) && killCounts.getOrDefault(n, 0) > 0)
+                .collect(Collectors.toList());
+        // Locked = never killed and never caught: shown only when Show Locked is on.
         List<String> lockedNames = showLocked ? visible.stream()
-                .filter(n -> !capturesByNpc.containsKey(n)).collect(Collectors.toList())
+                .filter(n -> !capturesByNpc.containsKey(n) && killCounts.getOrDefault(n, 0) == 0)
+                .collect(Collectors.toList())
                 : new ArrayList<>();
 
-        long total = showLocked ? visible.size() : capturedNames.size();
+        long total = showLocked ? visible.size() : capturedNames.size() + discoveredNames.size();
         countLabel.setText(capturedNames.size() + " / " + total
                 + (visible.size() < fullRoster.size() ? " (filtered)" : ""));
 
         sortNames(capturedNames, true);
+        sortNames(discoveredNames, false);
 
         List<String> ordered;
         if (!showLocked) {
-            ordered = capturedNames;
+            ordered = new ArrayList<>(capturedNames);
+            ordered.addAll(discoveredNames);
         } else if (capturedFirst) {
             sortNames(lockedNames, false);
             ordered = new ArrayList<>(capturedNames);
+            ordered.addAll(discoveredNames);
             ordered.addAll(lockedNames);
         } else {
             ordered = new ArrayList<>(visible);
@@ -711,9 +729,13 @@ public class AlbumDialog extends JDialog {
                 AlbumCard card = new AlbumCard(dexNum, name, capturesByNpc.get(name), collection, imageService);
                 card.setClickOverride(() -> showDetail(name));
                 gridPanel.add(card);
+            } else if (killCounts.getOrDefault(name, 0) > 0) {
+                // Discovered (killed, uncaught): unlocked + clickable into an empty detail view.
+                AlbumCard card = new AlbumCard(dexNum, name, killCounts.get(name), true, imageService);
+                card.setClickOverride(() -> showDetail(name));
+                gridPanel.add(card);
             } else if (showLocked) {
-                int kills = killCounts.getOrDefault(name, 0);
-                gridPanel.add(new AlbumCard(dexNum, name, kills, imageService));
+                gridPanel.add(new AlbumCard(dexNum, name, 0, false, imageService));
             }
         }
 
@@ -794,7 +816,7 @@ public class AlbumDialog extends JDialog {
             detailExportCap = null;
             detailExportBtn.setText("Export Page");
         }
-        detailExportBtn.setVisible(true);
+        detailExportBtn.setVisible(total > 0);
 
         // Use BorderLayout for gridPanel so filter row sits above the card grid
         gridPanel.setLayout(new BorderLayout());
@@ -802,6 +824,21 @@ public class AlbumDialog extends JDialog {
 
         JPanel filterRow = buildDetailFilterRow(allCaps);
         if (filterRow != null) gridPanel.add(filterRow, BorderLayout.NORTH);
+
+        // Discovered-but-uncaught monster: nothing to show yet.
+        if (filtered.isEmpty()) {
+            detailCurrentPage = Collections.emptyList();
+            JLabel empty = new JLabel("<html><div style='text-align:center;'>"
+                    + "You've discovered this monster but haven't caught one yet.<br>Keep hunting!"
+                    + "</div></html>", SwingConstants.CENTER);
+            empty.setFont(FontManager.getRunescapeFont());
+            empty.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+            empty.setBorder(new EmptyBorder(50, 20, 20, 20));
+            gridPanel.add(empty, BorderLayout.CENTER);
+            gridPanel.revalidate();
+            gridPanel.repaint();
+            return;
+        }
 
         int viewW = gridPanel.getParent() != null ? gridPanel.getParent().getWidth() : DEFAULT_W - SIDE_PAD * 2;
         if (viewW <= 0) viewW = DEFAULT_W - SIDE_PAD * 2;
@@ -848,6 +885,9 @@ public class AlbumDialog extends JDialog {
 
     /** Filter row shown above the card grid in detail mode. Returns null if not needed. */
     private JPanel buildDetailFilterRow(List<CapturedCreature> allCaps) {
+        // Nothing to filter for a discovered-but-uncaught monster.
+        if (allCaps.isEmpty()) return null;
+
         // Individual capture filter — show "Show all N" link
         if (detailFilterCapture != null) {
             JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
