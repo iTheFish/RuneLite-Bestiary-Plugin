@@ -100,6 +100,8 @@ public class AlbumCard extends JPanel {
     private float shimmerPhase = 0f;
     private javax.swing.Timer shimmerTimer;
     private final boolean locked;
+    /** Killed-but-uncaught: unlocked + clickable, shows the image/placeholder (never the padlock). */
+    private final boolean discovered;
 
     private static final java.util.List<AlbumCard> SHIMMER_CARDS = new java.util.ArrayList<>();
     private static javax.swing.Timer GLOBAL_SHIMMER_TIMER;
@@ -195,6 +197,7 @@ public class AlbumCard extends JPanel {
         this.collection   = collection;
         this.imageService = imageService;
         this.locked       = false;
+        this.discovered   = false;
         this.killCount    = 0;
 
         // Card appearance is driven by the player-chosen album cover if one is set;
@@ -246,8 +249,12 @@ public class AlbumCard extends JPanel {
         init(imageService, true);
     }
 
-    /** Locked (uncaptured) card. */
-    public AlbumCard(int dexNumber, String npcName, int killCount,
+    /**
+     * Uncaptured card. {@code discovered} = the monster has been killed (unlocked): the card is
+     * clickable and shows the wiki image / placeholder. {@code !discovered} = never killed
+     * (locked): shows a padlock and is not clickable.
+     */
+    public AlbumCard(int dexNumber, String npcName, int killCount, boolean discovered,
                      @Nullable WikiImageService imageService) {
         this.dexNumber    = dexNumber;
         this.npcName      = npcName;
@@ -255,6 +262,7 @@ public class AlbumCard extends JPanel {
         this.collection   = null;
         this.imageService = imageService;
         this.locked       = true;
+        this.discovered   = discovered;
         this.killCount    = killCount;
         this.combatLevel  = 0;
         this.rarest       = null;
@@ -268,7 +276,8 @@ public class AlbumCard extends JPanel {
         this.overallQuality = 0;
         this.prayerValue    = MonsterRoster.getPrayer(npcName);
         this.hitpoints      = MonsterRoster.getHitpoints(npcName);
-        init(imageService, imageService != null);
+        // Only fetch art for discovered (unlocked) cards — locked slots show a padlock, never the creature.
+        init(imageService, discovered && imageService != null);
     }
 
     private static final java.time.format.DateTimeFormatter TIP_DATE =
@@ -294,7 +303,7 @@ public class AlbumCard extends JPanel {
         setPreferredSize(new Dimension(CARD_W, CARD_H));
         setMinimumSize(new Dimension(CARD_W, CARD_H));
         setMaximumSize(new Dimension(CARD_W, CARD_H));
-        if (!locked) setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        if (!locked || discovered) setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         if (fetchImage && imgService != null) {
             imgService.requestImage(npcName, this::repaint);
@@ -501,6 +510,31 @@ public class AlbumCard extends JPanel {
         dlg.setVisible(true);
     }
 
+    /** Draws a padlock in the image area for locked (never-killed) slots — hides the creature. */
+    private static void drawLockedPlaceholder(Graphics2D g2, int imgX, int imgW) {
+        g2.setColor(new Color(38, 38, 38));
+        g2.setStroke(new BasicStroke(1f));
+        g2.drawRoundRect(imgX, IMAGE_Y, imgW, IMAGE_H, 6, 6);
+
+        int cx = imgX + imgW / 2;
+        int cy = IMAGE_Y + IMAGE_H / 2;
+        int bodyW = 34, bodyH = 26;
+        int bodyX = cx - bodyW / 2, bodyY = cy - 2;
+        // Shackle
+        g2.setColor(new Color(70, 70, 70));
+        g2.setStroke(new BasicStroke(4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g2.drawArc(cx - 11, bodyY - 20, 22, 26, 0, 180);
+        // Body
+        g2.setColor(new Color(60, 60, 60));
+        g2.fillRoundRect(bodyX, bodyY, bodyW, bodyH, 5, 5);
+        g2.setColor(new Color(90, 90, 90));
+        g2.drawRoundRect(bodyX, bodyY, bodyW, bodyH, 5, 5);
+        // Keyhole
+        g2.setColor(new Color(30, 30, 30));
+        g2.fillOval(cx - 3, bodyY + 7, 6, 6);
+        g2.fillRect(cx - 1, bodyY + 11, 3, 7);
+    }
+
     @Override
     public void removeNotify() {
         super.removeNotify();
@@ -623,23 +657,15 @@ public class AlbumCard extends JPanel {
             Shape clip = g2.getClip();
             g2.setClip(imgX, IMAGE_Y, imgW, IMAGE_H);
             g2.drawImage(npcImage, dx, dy, dw, dh, null);
-            if (locked) {
-                // ~65% black overlay for the "greyed out" look
+            if (locked && !discovered) {
+                // ~65% black overlay for the "greyed out" look (never-killed locked slots only)
                 g2.setColor(new Color(0, 0, 0, 165));
                 g2.fillRect(imgX, IMAGE_Y, imgW, IMAGE_H);
             }
             g2.setClip(clip);
-        } else if (locked) {
-            // "?" placeholder for locked with no image yet
-            g2.setColor(new Color(38, 38, 38));
-            g2.setStroke(new BasicStroke(1f));
-            g2.drawRoundRect(imgX, IMAGE_Y, imgW, IMAGE_H, 6, 6);
-            g2.setFont(boldFont.deriveFont(Font.BOLD, 28f));
-            FontMetrics qfm = g2.getFontMetrics();
-            g2.setColor(new Color(55, 55, 55));
-            String q = "?";
-            g2.drawString(q, imgX + (imgW - qfm.stringWidth(q)) / 2,
-                    IMAGE_Y + (IMAGE_H + qfm.getAscent() - qfm.getDescent()) / 2);
+        } else if (locked && !discovered) {
+            // Never killed: a padlock placeholder (the creature stays hidden until you earn it).
+            drawLockedPlaceholder(g2, imgX, imgW);
         } else {
             // Captured card placeholder while loading
             g2.setColor(new Color(45, 45, 45));

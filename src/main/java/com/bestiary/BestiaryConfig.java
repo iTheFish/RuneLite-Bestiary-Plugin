@@ -139,11 +139,11 @@ public interface BestiaryConfig extends Config {
                         + "(oldschool.runescape.wiki) to show on cards and in the album.<br>"
                         + "Only the monster's name is requested — no account or personal<br>"
                         + "data is sent — and images are cached to disk.<br>"
-                        + "Turn this off to make no network requests at all.</html>",
+                        + "<b>Off by default</b> — turn it on for the best album experience.</html>",
             position = 16
     )
     default boolean wikiImages() {
-        return true;
+        return false;
     }
 
 }

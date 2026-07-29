@@ -196,7 +196,14 @@ public class WikiImageService {
      * Asynchronously fetches a single NPC image. Checks memory cache, then disk
      * cache, then network. {@code onLoad} is called via invokeLater when ready.
      */
+    /** Whether wiki images are enabled by config. When false, cards fall back to placeholders. */
+    public boolean isEnabled() {
+        return config.wikiImages();
+    }
+
     public void requestImage(String npcName, Runnable onLoad) {
+        // Respect the user's wiki-fetch toggle — no disk or network work at all when disabled.
+        if (!config.wikiImages()) return;
         if (cache.containsKey(npcName)) {
             onLoad.run();
             return;
@@ -210,9 +217,6 @@ public class WikiImageService {
             onLoad.run();
             return;
         }
-
-        // Respect the user's wiki-fetch toggle — no network when disabled.
-        if (!config.wikiImages()) return;
 
         if (!pending.add(npcName)) {
             pendingCallbacks.computeIfAbsent(npcName, k -> Collections.synchronizedList(new ArrayList<>())).add(onLoad);
@@ -240,6 +244,9 @@ public class WikiImageService {
 
     @Nullable
     public BufferedImage getImage(String npcName) {
+        // Hide wiki art entirely when disabled, even if previously cached to disk/memory —
+        // the album should fall back to placeholders until the user opts in.
+        if (!config.wikiImages()) return null;
         return cache.get(npcName);
     }
 
