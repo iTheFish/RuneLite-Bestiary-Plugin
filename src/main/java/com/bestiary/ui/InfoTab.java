@@ -10,6 +10,7 @@ import net.runelite.client.ui.FontManager;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
+import javax.swing.plaf.basic.BasicButtonUI;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -549,9 +550,15 @@ public class InfoTab extends JPanel {
     /** Header-style shortcut button; {@code bothAccent} adds an orange bar on both sides like the stat boxes. */
     private static JButton blockBtn(String text, Color fg, Runnable action, boolean bothAccent) {
         JButton btn = new JButton(text);
+        // Strip the RuneLite L&F button chrome so the button renders like the plain JPanel stat
+        // boxes above — otherwise the L&F insets the painted area and the orange accents look
+        // shifted a couple of px relative to the stat strip (#109).
+        btn.setUI(new BasicButtonUI());
         btn.setFont(FontManager.getRunescapeSmallFont());
         btn.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         btn.setForeground(fg);
+        btn.setOpaque(true);
+        btn.setContentAreaFilled(true);
         btn.setFocusPainted(false);
         btn.setBorder(BorderFactory.createCompoundBorder(
                 new MatteBorder(0, 3, 0, bothAccent ? 3 : 0, ORANGE),
