@@ -18,8 +18,21 @@ public class BestiaryCollection {
     /** npcName -> total kills (keyed by name so variants like "Goblin" all count together). */
     public Map<String, Integer> killCounts = new HashMap<>();
 
-    /** npcName -> total successful captures. */
+    /** npcName -> cards currently held of that species (drops on discard/transfer). */
     public Map<String, Integer> captureCountByNpc = new HashMap<>();
+
+    /**
+     * Lifetime captures this account personally made — the "Caught" achievement number. Incremented
+     * on every successful capture and NEVER decremented by discard or transfer, so it reflects your
+     * hunting, not your current holdings. Received (traded-in) cards do NOT count toward this.
+     */
+    public long lifetimeCaptures = 0;
+
+    /** Per-species lifetime captures (npcName -> count), same monotonic semantics as {@link #lifetimeCaptures}. */
+    public Map<String, Integer> lifetimeCapturesByNpc = new HashMap<>();
+
+    /** Total cards this account has sent away via transfer (for the sent/received dashboard line). */
+    public long lifetimeCardsSent = 0;
 
     /** Bestiary Credits — earned on capture, spent in the Shop. */
     public long credits = 0;
@@ -135,8 +148,36 @@ public class BestiaryCollection {
         return captureCountByNpc.getOrDefault(npcName, 0);
     }
 
+    /** Cards currently held (album contents). Moves with discards and transfers. */
     public int totalCaptures() {
         return creatures.size();
+    }
+
+    /** Records one genuine capture toward the lifetime (monotonic) counters. */
+    public void recordLifetimeCapture(String npcName) {
+        lifetimeCaptures++;
+        lifetimeCapturesByNpc.merge(npcName, 1, Integer::sum);
+    }
+
+    /** Lifetime captures of one species (0 if none). */
+    public int lifetimeCaptureCount(String npcName) {
+        return lifetimeCapturesByNpc.getOrDefault(npcName, 0);
+    }
+
+    /** True if this held card was traded in (its original catcher differs from its current owner). */
+    public static boolean isTradedIn(CapturedCreature c) {
+        return c.originalOwner != null && !c.originalOwner.isEmpty()
+                && c.currentOwner != null && !c.originalOwner.equals(c.currentOwner);
+    }
+
+    /** Number of currently-held cards that were traded in from another account. */
+    public long tradedInCount() {
+        return creatures.stream().filter(BestiaryCollection::isTradedIn).count();
+    }
+
+    /** Held cards this account actually caught (not traded in) — the migration baseline for lifetime. */
+    public long ownCaughtHeldCount() {
+        return creatures.stream().filter(c -> !isTradedIn(c)).count();
     }
 
     public long uniqueSpeciesCount() {

@@ -65,6 +65,12 @@ public class BestiaryStore {
         public long credits;
         public long lifetimeCreditsEarned;
         public long lifetimeCreditsSpent;
+        /** Lifetime captures this account personally made — never decremented by discard/transfer. */
+        public long lifetimeCaptures;
+        /** Per-species lifetime captures (npcName -> count), same monotonic semantics. */
+        public Map<String, Integer> lifetimeCapturesByNpc = new LinkedHashMap<>();
+        /** Total cards this account has sent away via transfer. */
+        public long lifetimeCardsSent;
         public long totalXp;
         public List<String> achievements = new ArrayList<>();
         public Map<String, Integer> shopUpgrades = new LinkedHashMap<>();
@@ -160,6 +166,7 @@ public class BestiaryStore {
         if (d.killCounts == null)  d.killCounts = new LinkedHashMap<>();
         if (d.achievements == null) d.achievements = new ArrayList<>();
         if (d.shopUpgrades == null) d.shopUpgrades = new LinkedHashMap<>();
+        if (d.lifetimeCapturesByNpc == null) d.lifetimeCapturesByNpc = new LinkedHashMap<>();
         return d;
     }
 
@@ -259,6 +266,7 @@ public class BestiaryStore {
         if (d.killCounts == null)   d.killCounts = new LinkedHashMap<>();
         if (d.achievements == null) d.achievements = new ArrayList<>();
         if (d.shopUpgrades == null) d.shopUpgrades = new LinkedHashMap<>();
+        if (d.lifetimeCapturesByNpc == null) d.lifetimeCapturesByNpc = new LinkedHashMap<>();
         return d;
     }
 

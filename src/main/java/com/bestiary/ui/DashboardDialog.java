@@ -273,18 +273,23 @@ public class DashboardDialog extends JDialog {
     }
 
     private JPanel buildOverviewGrid(BestiaryCollection col) {
-        JPanel grid = new JPanel(new GridLayout(1, 4, 6, 0));
+        JPanel grid = new JPanel(new GridLayout(1, 5, 6, 0));
         grid.setOpaque(false);
         grid.setBorder(new EmptyBorder(0, 12, 0, 12));
         grid.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
 
-        int kills = col.totalKills(), caps = col.totalCaptures();
-        String ratio = caps > 0 ? String.format("%.1f:1", (double) kills / caps) : "—";
+        // "Caught" = lifetime captures (your hunting); "Cards" = currently held (album contents).
+        // K:C uses lifetime so transfers/discards and traded-in cards don't distort it.
+        long caught = col.lifetimeCaptures;
+        int  held   = col.totalCaptures();
+        int  kills  = col.totalKills();
+        String ratio = caught > 0 ? String.format("%.1f:1", (double) kills / caught) : "—";
 
-        grid.add(miniCard("Species",  String.valueOf(col.uniqueSpeciesCount())));
-        grid.add(miniCard("Captured", FMT.format(caps)));
-        grid.add(miniCard("Kills",    FMT.format(kills)));
-        grid.add(miniCard("K : C",    ratio, true));
+        grid.add(miniCard("Species", String.valueOf(col.uniqueSpeciesCount())));
+        grid.add(miniCard("Caught",  FMT.format(caught)));
+        grid.add(miniCard("Cards",   FMT.format(held)));
+        grid.add(miniCard("Kills",   FMT.format(kills)));
+        grid.add(miniCard("K : C",   ratio, true));
         return grid;
     }
 
@@ -566,10 +571,12 @@ public class DashboardDialog extends JDialog {
     private JPanel buildCaughtView() {
         JPanel root = col();
         BestiaryCollection col = dataService.getCollection();
-        int total = col.totalCaptures();
 
-        root.add(heroStat(FMT.format(total), "TOTAL CAPTURES", ORANGE));
-        root.add(gap(10));
+        // Headline = lifetime captures (your hunting). The analytics below are over held cards.
+        root.add(heroStat(FMT.format(col.lifetimeCaptures), "CREATURES CAUGHT", ORANGE));
+        root.add(gap(2));
+        root.add(sectionHeader(FMT.format(col.totalCaptures()) + " CARDS HELD"));
+        root.add(gap(8));
         root.add(sectionHeader("AVERAGE POWER BY RARITY"));
 
         JPanel avgPanel = col();
@@ -1356,8 +1363,9 @@ public class DashboardDialog extends JDialog {
         final int PAD = 24;
 
         // Pre-measure section heights to set total card height
-        int kills = col.totalKills(), caps = col.totalCaptures();
-        String ratio = caps > 0 ? String.format("%.1f:1", (double) kills / caps) : "—";
+        int kills = col.totalKills(), held = col.totalCaptures();
+        long caught = col.lifetimeCaptures;
+        String ratio = caught > 0 ? String.format("%.1f:1", (double) kills / caught) : "—";
         Map<CreatureRarity, Long> rarityCounts = col.creatures.stream()
                 .collect(Collectors.groupingBy(c -> c.rarity, Collectors.counting()));
         // Export only the top 16 "most impressive" achievements (by credit reward) so the card
@@ -1469,14 +1477,16 @@ public class DashboardDialog extends JDialog {
         // --- OVERVIEW section ---
         y = drawCardSectionHeader(g, "OVERVIEW", y, W, PAD);
         y += 6;
-        int boxW  = (W - PAD * 2 - 12) / 4, boxH = 48, boxGap = 4;
+        int boxGap = 4;
+        int boxW  = (W - PAD * 2 - boxGap * 4) / 5, boxH = 48;
         String[][] stats = {
-            {"Level",   String.valueOf(level)},
-            {"Kills",   FMT.format(kills)},
-            {"Caught",  FMT.format(caps)},
-            {"K : C",   ratio}
+            {"Level",  String.valueOf(level)},
+            {"Kills",  FMT.format(kills)},
+            {"Caught", FMT.format(caught)},
+            {"Cards",  FMT.format(held)},
+            {"K : C",  ratio}
         };
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 5; i++) {
             int bx = PAD + i * (boxW + boxGap);
             g.setPaint(new GradientPaint(bx, y, new Color(38, 38, 38), bx, y + boxH, new Color(26, 26, 26)));
             g.fillRoundRect(bx, y, boxW, boxH, 6, 6);
@@ -1863,7 +1873,7 @@ public class DashboardDialog extends JDialog {
         Graphics2D g = cardGraphics(img);
 
         int y = drawCardBase(g, W, H, account, "CAUGHT", date, PAD);
-        y = drawHeroStat(g, FMT.format(col.totalCaptures()), "TOTAL CAPTURES", ORANGE, y, W, PAD);
+        y = drawHeroStat(g, FMT.format(col.lifetimeCaptures), "CREATURES CAUGHT", ORANGE, y, W, PAD);
         y += 12;
 
         CreatureRarity[] rarOrder = {CreatureRarity.MYTHIC, CreatureRarity.LEGENDARY,

@@ -37,6 +37,7 @@ public class CardTransferTest {
             ds.addCapture(keep);
             ds.addCapture(send);
             assertEquals(2, ds.getCollection().totalCaptures());
+            assertEquals("both catches count toward lifetime", 2L, ds.getCollection().lifetimeCaptures);
 
             // Alt is the only other known account.
             List<BestiaryStore.AccountRef> others = ds.listOtherAccounts();
@@ -51,6 +52,9 @@ public class CardTransferTest {
             assertEquals(1, ds.getCollection().totalCaptures());
             assertTrue(ds.getCollection().creatures.contains(keep));
             assertFalse(ds.getCollection().creatures.contains(send));
+            // …but "Caught" (lifetime) is unchanged — sending a card away isn't un-catching it.
+            assertEquals(2L, ds.getCollection().lifetimeCaptures);
+            assertEquals(1L, ds.getCollection().lifetimeCardsSent);
 
             // …ownership moved but provenance kept…
             assertEquals("AltRSN",  send.currentOwner);
@@ -63,9 +67,11 @@ public class CardTransferTest {
             assertEquals("AltRSN",  alt.captures.get(0).currentOwner);
             assertEquals("MainRSN", alt.captures.get(0).originalOwner);
 
-            // Switching to Alt loads the received card.
+            // Switching to Alt loads the received card — held, tagged traded-in, but NOT "caught".
             ds.switchAccount(222L, "AltRSN");
             assertEquals(1, ds.getCollection().totalCaptures());
+            assertEquals("received cards don't count as caught", 0L, ds.getCollection().lifetimeCaptures);
+            assertEquals(1L, ds.getCollection().tradedInCount());
 
             // Can't send to the account you're on.
             assertEquals(0, ds.transferCards(
