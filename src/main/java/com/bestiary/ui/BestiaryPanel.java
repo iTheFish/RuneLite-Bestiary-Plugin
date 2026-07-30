@@ -49,11 +49,10 @@ public class BestiaryPanel extends PluginPanel {
     private InfoTab infoTab;
     private ShopTab shopTab;
 
-    /** Swaps the tabbed collection view for a "log in" placeholder while no account is active. */
-    private CardLayout centerLayout;
-    private JPanel centerCards;
-    private static final String CARD_TABS = "tabs";
-    private static final String CARD_LOCKED = "locked";
+    /** The top-level tab pane. When logged out, only the Info tab is kept and a welcome banner shows. */
+    private JTabbedPane tabs;
+    /** "Log in to view your collection" banner shown above the tabs while no account is active. */
+    private JPanel welcomeBanner;
 
     @Inject
     public BestiaryPanel(BestiaryDataService dataService, ProgressionService progressionService,
@@ -149,14 +148,14 @@ public class BestiaryPanel extends PluginPanel {
                 () -> DashboardDialog.open(SwingUtilities.getWindowAncestor(this), dataService,
                         progressionService, DashboardDialog.DashView.ECONOMY));
 
-        JTabbedPane tabs = new JTabbedPane();
+        tabs = new JTabbedPane();
         tabs.setBackground(ColorScheme.DARK_GRAY_COLOR);
         tabs.setForeground(Color.WHITE);
         tabs.setFont(FontManager.getRunescapeSmallFont());
 
         infoTab = new InfoTab(dataService, progressionService,
                 () -> collectionTab.openAlbum(SwingUtilities.getWindowAncestor(this)),
-                () -> { tabs.setSelectedIndex(1); collectionTab.showFavourites(); },
+                () -> { if (tabs.getTabCount() > 1) { tabs.setSelectedIndex(1); collectionTab.showFavourites(); } },
                 () -> SessionRecapDialog.open(SwingUtilities.getWindowAncestor(this), sessionTracker),
                 () -> CaptureRateDialog.open(SwingUtilities.getWindowAncestor(this), progressionService,
                         dataService.bonusShinyChance()),
@@ -168,31 +167,49 @@ public class BestiaryPanel extends PluginPanel {
         tabs.addTab("Shop",     shopTab);
         tabs.addTab("Progress", progressTab);
 
-        centerLayout = new CardLayout();
-        centerCards  = new JPanel(centerLayout);
-        centerCards.setOpaque(false);
-        centerCards.add(tabs,              CARD_TABS);
-        centerCards.add(buildLockedPanel(), CARD_LOCKED);
+        welcomeBanner = buildWelcomeBanner();
+
+        JPanel centerWrap = new JPanel(new BorderLayout(0, 6));
+        centerWrap.setOpaque(false);
+        centerWrap.add(welcomeBanner, BorderLayout.NORTH);
+        centerWrap.add(tabs,          BorderLayout.CENTER);
 
         add(header,            BorderLayout.NORTH);
-        add(centerCards,       BorderLayout.CENTER);
+        add(centerWrap,        BorderLayout.CENTER);
         add(buildSouthPanel(), BorderLayout.SOUTH);
 
-        // Start locked — a character login swaps in the tabs (see refresh()).
-        centerLayout.show(centerCards, CARD_LOCKED);
+        // Start locked — the Info/Guide tab stays browsable; a character login adds the rest.
+        applyLockedState(true);
     }
 
-    /** Placeholder shown before any character has logged in (no account's data is loaded yet). */
-    private JComponent buildLockedPanel() {
-        JPanel p = new JPanel(new GridBagLayout());
-        p.setOpaque(false);
-        JLabel msg = new JLabel("<html><div style='text-align:center;'>"
-                + "Log in to load<br>your collection</div></html>");
-        msg.setFont(FontManager.getRunescapeFont());
-        msg.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-        msg.setHorizontalAlignment(SwingConstants.CENTER);
-        p.add(msg);
+    /** Friendly banner shown above the tabs while logged out, inviting the player to log in. */
+    private JPanel buildWelcomeBanner() {
+        JPanel p = new JPanel(new BorderLayout());
+        p.setBackground(new Color(45, 38, 20));
+        p.setBorder(BorderFactory.createCompoundBorder(
+                new javax.swing.border.LineBorder(new Color(255, 165, 0, 90), 1, true),
+                new EmptyBorder(7, 10, 7, 10)));
+        JLabel msg = new JLabel("<html><b style='color:#FFA500;'>Welcome to Bestiary</b><br>"
+                + "<span style='color:#C8C8C8;'>Log in to view and grow your collection.</span></html>");
+        msg.setFont(FontManager.getRunescapeSmallFont());
+        p.add(msg, BorderLayout.CENTER);
         return p;
+    }
+
+    /**
+     * Locked (logged-out) = welcome banner + only the Info/Guide tab (which needs no account data).
+     * Unlocked = banner hidden, all tabs present. Toggling tabs is cheap and only runs on login/logout.
+     */
+    private void applyLockedState(boolean locked) {
+        welcomeBanner.setVisible(locked);
+        if (locked) {
+            while (tabs.getTabCount() > 1) tabs.remove(1);
+            if (tabs.getTabCount() > 0) tabs.setSelectedIndex(0);
+        } else if (tabs.getTabCount() == 1) {
+            tabs.addTab("Cards",    collectionTab);
+            tabs.addTab("Shop",     shopTab);
+            tabs.addTab("Progress", progressTab);
+        }
     }
 
     private JPanel buildSouthPanel() {
@@ -359,13 +376,15 @@ public class BestiaryPanel extends PluginPanel {
      * (use {@code SwingUtilities.invokeLater(panel::refresh)} from game thread).
      */
     public void refresh() {
-        // Before login, show the placeholder and leave the tabs untouched (no account loaded).
+        // Before login: welcome banner + Info tab only. The collection is empty while logged out,
+        // so the Info tab reads zeroes rather than the previous account's data.
         if (!dataService.hasActiveAccount()) {
-            centerLayout.show(centerCards, CARD_LOCKED);
+            applyLockedState(true);
             statsLabel.setText("Not logged in");
+            infoTab.refresh();
             return;
         }
-        centerLayout.show(centerCards, CARD_TABS);
+        applyLockedState(false);
 
         int species  = (int) dataService.getCollection().uniqueSpeciesCount();
         int captures = dataService.getCollection().totalCaptures();

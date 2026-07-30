@@ -80,6 +80,22 @@ public class BestiaryDataService {
         return true;
     }
 
+    /**
+     * Handles logout (return to the login screen): flushes the active account to disk, deactivates
+     * the store, and clears the in-memory collection/progression so no account's data lingers in the
+     * (logged-out) UI. The next login reloads that account's data fresh from disk.
+     */
+    public void handleLogout() {
+        if (activeAccountHash == null) return;
+        persistNow();                 // flush the active account to its own file first
+        store.clearActiveAccount();
+        activeAccountHash = null;
+        activeAccountName = "";
+        collection       = new BestiaryCollection();
+        progressionState = new ProgressionService.ProgressionState();
+        progressionService.init(progressionState, collection);
+    }
+
     /** True once a character has logged in and its collection is loaded. */
     public boolean hasActiveAccount() {
         return activeAccountHash != null;

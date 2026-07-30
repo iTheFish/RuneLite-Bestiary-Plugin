@@ -166,6 +166,11 @@ public class BestiaryPlugin extends Plugin {
         killTracker.onGameStateChanged(event);
         if (event.getGameState() == GameState.LOGGED_IN) {
             sessionTracker.clear();
+        } else if (event.getGameState() == GameState.LOGIN_SCREEN) {
+            // Logged out — flush + lock down: the panel returns to the "log in" view and no
+            // account's data is shown or writable until the next login.
+            dataService.handleLogout();
+            SwingUtilities.invokeLater(panel::refresh);
         }
     }
 

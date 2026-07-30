@@ -131,6 +131,18 @@ public class BestiaryStore {
         return activeHash != null;
     }
 
+    /**
+     * Deactivates the current account on logout: flushes any buffered write to its file, then stops
+     * targeting any file so subsequent saves are dropped until the next login. Prevents a logged-out
+     * client from ever writing to (or being loaded from) an account's file.
+     */
+    public void clearActiveAccount() {
+        flushPending();
+        this.activeHash = null;
+        this.file = null;
+        this.backup = null;
+    }
+
     // -------------------------------------------------------------------------
     // Load
     // -------------------------------------------------------------------------
