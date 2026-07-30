@@ -49,6 +49,12 @@ public class BestiaryPanel extends PluginPanel {
     private InfoTab infoTab;
     private ShopTab shopTab;
 
+    /** Swaps the tabbed collection view for a "log in" placeholder while no account is active. */
+    private CardLayout centerLayout;
+    private JPanel centerCards;
+    private static final String CARD_TABS = "tabs";
+    private static final String CARD_LOCKED = "locked";
+
     @Inject
     public BestiaryPanel(BestiaryDataService dataService, ProgressionService progressionService,
                          WikiImageService imageService, BestiaryConfig config,
@@ -162,9 +168,31 @@ public class BestiaryPanel extends PluginPanel {
         tabs.addTab("Shop",     shopTab);
         tabs.addTab("Progress", progressTab);
 
-        add(header,          BorderLayout.NORTH);
-        add(tabs,            BorderLayout.CENTER);
+        centerLayout = new CardLayout();
+        centerCards  = new JPanel(centerLayout);
+        centerCards.setOpaque(false);
+        centerCards.add(tabs,              CARD_TABS);
+        centerCards.add(buildLockedPanel(), CARD_LOCKED);
+
+        add(header,            BorderLayout.NORTH);
+        add(centerCards,       BorderLayout.CENTER);
         add(buildSouthPanel(), BorderLayout.SOUTH);
+
+        // Start locked — a character login swaps in the tabs (see refresh()).
+        centerLayout.show(centerCards, CARD_LOCKED);
+    }
+
+    /** Placeholder shown before any character has logged in (no account's data is loaded yet). */
+    private JComponent buildLockedPanel() {
+        JPanel p = new JPanel(new GridBagLayout());
+        p.setOpaque(false);
+        JLabel msg = new JLabel("<html><div style='text-align:center;'>"
+                + "Log in to load<br>your collection</div></html>");
+        msg.setFont(FontManager.getRunescapeFont());
+        msg.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+        msg.setHorizontalAlignment(SwingConstants.CENTER);
+        p.add(msg);
+        return p;
     }
 
     private JPanel buildSouthPanel() {
@@ -331,6 +359,14 @@ public class BestiaryPanel extends PluginPanel {
      * (use {@code SwingUtilities.invokeLater(panel::refresh)} from game thread).
      */
     public void refresh() {
+        // Before login, show the placeholder and leave the tabs untouched (no account loaded).
+        if (!dataService.hasActiveAccount()) {
+            centerLayout.show(centerCards, CARD_LOCKED);
+            statsLabel.setText("Not logged in");
+            return;
+        }
+        centerLayout.show(centerCards, CARD_TABS);
+
         int species  = (int) dataService.getCollection().uniqueSpeciesCount();
         int captures = dataService.getCollection().totalCaptures();
         statsLabel.setText(species + " species  |  " + captures + " captures");

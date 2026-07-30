@@ -89,7 +89,8 @@ public class BestiaryPlugin extends Plugin {
 
     @Override
     protected void startUp() {
-        dataService.load();
+        // No collection is loaded until a character logs in — see onGameStateChanged(LOGGED_IN).
+        // The panel shows a "log in to load your collection" placeholder until then.
 
         // Achievements unlocked by non-capture actions (rerolls, favourites, purchases) are detected
         // on panel refresh; announce them in chat just like capture achievements.
@@ -164,19 +165,13 @@ public class BestiaryPlugin extends Plugin {
     public void onGameStateChanged(GameStateChanged event) {
         killTracker.onGameStateChanged(event);
         if (event.getGameState() == GameState.LOGGED_IN && client.getLocalPlayer() != null) {
+            // Load (or switch to) this account's own collection, keyed by the stable accountHash.
+            // Data is locked down per account, so one character's captures never show under another.
+            long accountHash = client.getAccountHash();
             String name = client.getLocalPlayer().getName();
-            if (name != null && !name.isEmpty()) {
-                boolean anyBackfilled = false;
-                for (com.bestiary.model.CapturedCreature c
-                        : dataService.getCollection().creatures) {
-                    if (c.playerName == null || c.playerName.isEmpty()) {
-                        c.playerName = name;
-                        anyBackfilled = true;
-                    }
-                }
-                if (anyBackfilled) {
-                    dataService.saveNow();
-                }
+            if (accountHash != -1L && name != null && !name.isEmpty()) {
+                dataService.switchAccount(accountHash, name);
+                SwingUtilities.invokeLater(panel::refresh);
             }
             sessionTracker.clear();
         }

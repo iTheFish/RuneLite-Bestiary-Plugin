@@ -38,7 +38,7 @@ public class CapturedCreature {
     /** The player's Capture Level at the moment this creature was caught. */
     public final int captureLevel;
 
-    /** RuneScape username of the player who captured this creature. Mutable so LOGGED_IN can backfill pre-fix saves. */
+    /** RuneScape username of the player who captured this creature (the "Captured by" label on cards). */
     public String playerName;
 
     /** Optional user-assigned nickname for this individual capture. Null = not set. */

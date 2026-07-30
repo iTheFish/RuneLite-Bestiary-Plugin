@@ -37,19 +37,54 @@ public class BestiaryDataService {
     private BestiaryCollection collection = new BestiaryCollection();
     private ProgressionService.ProgressionState progressionState = new ProgressionService.ProgressionState();
 
+    /** The active account (RuneLite accountHash), or null while logged out. */
+    private Long activeAccountHash;
+    /** Display name (RSN) of the active account, for dialog headers. */
+    private String activeAccountName = "";
+
     @Inject
     public BestiaryDataService(ProgressionService progressionService, BestiaryStore store) {
         this.progressionService = progressionService;
         this.store = store;
         // Let progression grant credits for level-ups and achievement unlocks.
         progressionService.setCreditAwarder(this::awardCredits);
+        // Wire progression to the (empty) logged-out state so nothing NPEs before an account loads.
+        progressionService.init(progressionState, collection);
     }
 
     // -------------------------------------------------------------------------
     // Lifecycle
     // -------------------------------------------------------------------------
 
-    /** Must be called from the client thread during plugin startUp. */
+    /**
+     * Switches to {@code accountHash}'s collection: flushes the current account, repoints the store,
+     * and loads that account's data (or an empty collection for a first-seen account). Called on
+     * {@code LOGGED_IN} from the client thread. No-ops on a repeated hash (e.g. world hops) so an
+     * in-progress session's unsaved state isn't reloaded away.
+     */
+    public void switchAccount(long accountHash, String rsn) {
+        if (activeAccountHash != null && activeAccountHash == accountHash) {
+            if (rsn != null && !rsn.isEmpty()) activeAccountName = rsn;
+            return;
+        }
+        if (activeAccountHash != null) persistNow();   // flush the previously active account
+        activeAccountHash = accountHash;
+        activeAccountName = rsn != null ? rsn : "";
+        store.setActiveAccount(accountHash, activeAccountName);
+        load();
+    }
+
+    /** True once a character has logged in and its collection is loaded. */
+    public boolean hasActiveAccount() {
+        return activeAccountHash != null;
+    }
+
+    /** RSN of the active account (empty while logged out). */
+    public String getActiveAccountName() {
+        return activeAccountName;
+    }
+
+    /** Loads the active account's data into memory. Must be called from the client thread. */
     public void load() {
         BestiaryStore.StoreData d = store.load();
         collection = new BestiaryCollection();
