@@ -221,22 +221,78 @@ public class BestiaryStore {
 
     private synchronized void write(StoreData d) {
         if (file == null) return;
+        writeTo(file, backup, d);
+    }
+
+    /** Crash-safe write of {@code d} to {@code target} (temp file → back up previous → atomic rename). */
+    private synchronized boolean writeTo(File target, File bak, StoreData d) {
         try {
             Files.createDirectories(accountsDir.toPath());
-            Path tmp = file.toPath().resolveSibling(file.getName() + ".tmp");
+            Path tmp = target.toPath().resolveSibling(target.getName() + ".tmp");
             Files.write(tmp, gson.toJson(d).getBytes(StandardCharsets.UTF_8));
-            if (file.exists()) {
-                Files.copy(file.toPath(), backup.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            if (target.exists()) {
+                Files.copy(target.toPath(), bak.toPath(), StandardCopyOption.REPLACE_EXISTING);
             }
             try {
-                Files.move(tmp, file.toPath(),
+                Files.move(tmp, target.toPath(),
                         StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
             } catch (IOException atomicUnsupported) {
-                Files.move(tmp, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                Files.move(tmp, target.toPath(), StandardCopyOption.REPLACE_EXISTING);
             }
+            return true;
         } catch (IOException e) {
-            log.error("Failed to write bestiary store {}", file, e);
+            log.error("Failed to write bestiary store {}", target, e);
+            return false;
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Arbitrary-account access (for card transfer, #50)
+    // -------------------------------------------------------------------------
+
+    /** Reads another account's collection read-only (never the active file's in-memory state). */
+    public StoreData readAccount(long accountHash) {
+        StoreData d = tryRead(new File(accountsDir, accountHash + ".json"));
+        if (d == null) d = tryRead(new File(accountsDir, accountHash + ".json.bak"));
+        if (d == null) return new StoreData();
+        if (d.captures == null)     d.captures = new ArrayList<>();
+        if (d.killCounts == null)   d.killCounts = new LinkedHashMap<>();
+        if (d.achievements == null) d.achievements = new ArrayList<>();
+        if (d.shopUpgrades == null) d.shopUpgrades = new LinkedHashMap<>();
+        return d;
+    }
+
+    /**
+     * Synchronously writes a specific account's file (used to deposit transferred cards, #50). Must
+     * only be used for a NON-active account so it can't race the debounced writer for the active file.
+     */
+    public boolean writeAccountNow(long accountHash, StoreData data) {
+        return writeTo(new File(accountsDir, accountHash + ".json"),
+                new File(accountsDir, accountHash + ".json.bak"), data);
+    }
+
+    /** A known account from the registry — accountHash + last-known RSN + last-active epoch. */
+    public static final class AccountRef {
+        public final long   hash;
+        public final String rsn;
+        public final long   lastActive;
+        AccountRef(long hash, String rsn, long lastActive) {
+            this.hash = hash; this.rsn = rsn; this.lastActive = lastActive;
+        }
+    }
+
+    /** All accounts recorded in the registry (index.json), most-recently-active first. */
+    public List<AccountRef> listAccounts() {
+        List<AccountRef> out = new ArrayList<>();
+        for (Map.Entry<String, AccountEntry> e : readIndex().entrySet()) {
+            try {
+                long h = Long.parseLong(e.getKey());
+                AccountEntry v = e.getValue();
+                out.add(new AccountRef(h, v != null ? v.rsn : null, v != null ? v.lastActive : 0));
+            } catch (NumberFormatException ignored) { /* skip malformed key */ }
+        }
+        out.sort((a, b) -> Long.compare(b.lastActive, a.lastActive));
+        return out;
     }
 
     /** Flush any pending write and stop the writer thread. Call from plugin shutDown. */

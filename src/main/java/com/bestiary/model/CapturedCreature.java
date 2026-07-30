@@ -41,6 +41,19 @@ public class CapturedCreature {
     /** RuneScape username of the player who captured this creature (the "Captured by" label on cards). */
     public String playerName;
 
+    /**
+     * Account (RSN) that originally captured this card. Set once at capture and never changed — even
+     * after the card is traded (#50), so provenance ("Originally caught by …") survives. Mutable only
+     * so legacy saves can be back-filled from {@link #playerName} on load.
+     */
+    public String originalOwner;
+
+    /**
+     * Account (RSN) that currently owns this card. Equal to {@link #originalOwner} until the card is
+     * transferred to another of the player's accounts (#50), which updates this to the new holder.
+     */
+    public String currentOwner;
+
     /** Optional user-assigned nickname for this individual capture. Null = not set. */
     public String nickname;
 
@@ -120,6 +133,9 @@ public class CapturedCreature {
         this.captureLevel      = b.captureLevel;
         this.killsBeforeCapture = b.killsBeforeCapture;
         this.playerName        = b.playerName != null ? b.playerName : "";
+        // Owners default to the capturer unless explicitly set (e.g. carried across a reroll).
+        this.originalOwner     = firstNonEmpty(b.originalOwner, this.playerName);
+        this.currentOwner      = firstNonEmpty(b.currentOwner, this.playerName);
         this.shiny             = b.shiny;
         this.prayer            = b.prayer >= 0 ? b.prayer : MonsterRoster.getPrayer(b.npcName);
         this.observedHp        = b.observedHp;
@@ -128,6 +144,10 @@ public class CapturedCreature {
         this.rerollHistory     = b.rerollHistory != null
                 ? Collections.unmodifiableList(new ArrayList<>(b.rerollHistory))
                 : Collections.emptyList();
+    }
+
+    private static String firstNonEmpty(String a, String b) {
+        return a != null && !a.isEmpty() ? a : (b != null ? b : "");
     }
 
     public static Builder builder() {
@@ -146,6 +166,8 @@ public class CapturedCreature {
         private int captureLevel = 1;
         private int killsBeforeCapture = 0;
         private String playerName = "";
+        private String originalOwner = "";
+        private String currentOwner = "";
         private boolean shiny = false;
         private int prayer = -1;   // -1 = unset → defaults to the monster's base prayer
         private int observedHp = 0;
@@ -164,6 +186,8 @@ public class CapturedCreature {
         public Builder captureLevel(int v)       { this.captureLevel = v; return this; }
         public Builder killsBeforeCapture(int v) { this.killsBeforeCapture = v; return this; }
         public Builder playerName(String v)       { this.playerName = v; return this; }
+        public Builder originalOwner(String v)     { this.originalOwner = v; return this; }
+        public Builder currentOwner(String v)      { this.currentOwner = v; return this; }
         public Builder shiny(boolean v)           { this.shiny = v; return this; }
         public Builder prayer(int v)              { this.prayer = v; return this; }
         public Builder observedHp(int v)          { this.observedHp = v; return this; }
@@ -182,6 +206,16 @@ public class CapturedCreature {
     /** True when this capture won the independent shiny roll at capture time. */
     public boolean isShiny() {
         return shiny;
+    }
+
+    /**
+     * Transfers this card to another of the player's accounts (#50): updates {@link #currentOwner}
+     * while leaving {@link #originalOwner} untouched, preserving provenance. No-op for a blank name.
+     */
+    public void transferTo(String newOwner) {
+        if (newOwner != null && !newOwner.isEmpty()) {
+            this.currentOwner = newOwner;
+        }
     }
 
     /** How many times this card has been rerolled (0 = a raw pull). */

@@ -74,6 +74,21 @@ public class StoreSerializationTest {
         assertEquals("Zezima", back.rerollHistory.get(0).rerolledBy);
         assertEquals(CreatureRarity.EPIC, back.rerollHistory.get(0).rarity);
         assertEquals(c.powerLevel(), back.powerLevel());
+        // Owners default to the capturer and survive the round-trip.
+        assertEquals("Zezima", back.originalOwner);
+        assertEquals("Zezima", back.currentOwner);
+    }
+
+    @Test
+    public void transferUpdatesCurrentOwnerNotOriginal() {
+        CapturedCreature c = CapturedCreature.builder()
+                .npcName("Goblin").playerName("MainRSN").build();
+        assertEquals("MainRSN", c.originalOwner);
+        assertEquals("MainRSN", c.currentOwner);
+
+        c.transferTo("AltRSN");
+        assertEquals("original owner is immutable across a transfer", "MainRSN", c.originalOwner);
+        assertEquals("current owner follows the transfer", "AltRSN", c.currentOwner);
     }
 
     @Test

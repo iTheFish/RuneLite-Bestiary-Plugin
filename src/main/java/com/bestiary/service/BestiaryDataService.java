@@ -101,6 +101,51 @@ public class BestiaryDataService {
         return activeAccountHash != null;
     }
 
+    // -------------------------------------------------------------------------
+    // Intra-profile card transfer (#50)
+    // -------------------------------------------------------------------------
+
+    /** Known accounts other than the active one — candidate targets for a card transfer. */
+    public java.util.List<BestiaryStore.AccountRef> listOtherAccounts() {
+        java.util.List<BestiaryStore.AccountRef> all = store.listAccounts();
+        all.removeIf(a -> activeAccountHash != null && a.hash == activeAccountHash);
+        return all;
+    }
+
+    /**
+     * Moves {@code cards} from the active account to another of the player's accounts (#50). Writes
+     * the target file FIRST (append), then removes the cards from the active collection and persists,
+     * so a failed target write can never lose a card. Updates {@code currentOwner} (originalOwner is
+     * preserved). Returns the number actually transferred.
+     */
+    public int transferCards(java.util.Collection<CapturedCreature> cards, long targetHash, String targetRsn) {
+        if (activeAccountHash != null && targetHash == activeAccountHash) return 0;  // can't send to self
+        java.util.List<CapturedCreature> moving = new ArrayList<>();
+        for (CapturedCreature c : cards) {
+            if (collection.creatures.contains(c)) moving.add(c);
+        }
+        if (moving.isEmpty()) return 0;
+
+        // Update owners and append to the target file first; roll back the owner change if it fails.
+        java.util.Map<CapturedCreature, String> priorOwner = new HashMap<>();
+        BestiaryStore.StoreData target = store.readAccount(targetHash);
+        for (CapturedCreature c : moving) {
+            priorOwner.put(c, c.currentOwner);
+            c.transferTo(targetRsn);
+            target.captures.add(c);
+        }
+        if (!store.writeAccountNow(targetHash, target)) {
+            for (CapturedCreature c : moving) c.currentOwner = priorOwner.get(c);
+            log.warn("Card transfer aborted — could not write target account {}", targetHash);
+            return 0;
+        }
+
+        for (CapturedCreature c : moving) collection.removeCapture(c);
+        persistNow();
+        log.info("Transferred {} card(s) to {}", moving.size(), targetRsn);
+        return moving.size();
+    }
+
     /** RSN of the active account (empty while logged out). */
     public String getActiveAccountName() {
         return activeAccountName;
@@ -111,6 +156,12 @@ public class BestiaryDataService {
         BestiaryStore.StoreData d = store.load();
         collection = new BestiaryCollection();
         for (CapturedCreature c : d.captures) {
+            // Migration: pre-#49 saves have no owner fields — seed them from the capturer.
+            if (c.originalOwner == null || c.originalOwner.isEmpty()) c.originalOwner = c.playerName;
+            if (c.currentOwner == null || c.currentOwner.isEmpty()) {
+                c.currentOwner = c.originalOwner != null && !c.originalOwner.isEmpty()
+                        ? c.originalOwner : c.playerName;
+            }
             collection.creatures.add(c);
             collection.captureCountByNpc.merge(c.npcName, 1, Integer::sum);
         }
@@ -399,7 +450,11 @@ public class BestiaryDataService {
                 com.bestiary.util.RarityRoller.generateQuality(cls, rarity, bases, rerollRng, shiny);
         int prayer = com.bestiary.util.RarityRoller.rollPrayer(
                 com.bestiary.model.MonsterRoster.getPrayer(c.npcName), rarity, rerollRng, shiny);
-        String reroller = c.playerName != null && !c.playerName.isEmpty() ? c.playerName : "Player";
+        // The reroller is the account performing the reroll now (the active/current owner), NOT the
+        // card's original capturer — otherwise a traded-in card credits its reroll to the wrong account.
+        String reroller = activeAccountName != null && !activeAccountName.isEmpty() ? activeAccountName
+                : (c.currentOwner != null && !c.currentOwner.isEmpty() ? c.currentOwner
+                : (c.playerName != null && !c.playerName.isEmpty() ? c.playerName : "Player"));
         // Log the card's pre-reroll state, then carry the whole history forward onto the new card.
         java.util.List<CapturedCreature.RerollState> history = new java.util.ArrayList<>(c.rerollHistory);
         history.add(new CapturedCreature.RerollState(
@@ -409,7 +464,8 @@ public class BestiaryDataService {
                 .rarity(rarity).quality(q).captureTime(c.captureTime).regionName(c.regionName)
                 .captureLevel(currentLevel)   // reroll happened now → odds reflect the current level
                 .killsBeforeCapture(c.killsBeforeCapture)
-                .playerName(c.playerName).shiny(shiny).prayer(prayer).observedHp(c.observedHp)
+                .playerName(c.playerName).originalOwner(c.originalOwner).currentOwner(c.currentOwner)
+                .shiny(shiny).prayer(prayer).observedHp(c.observedHp)
                 .shinyBonus(bonusRerollShinyChance())   // reroll re-rolled shiny with the current reroll bonus
                 .rerolledBy(reroller)
                 .rerollHistory(history)
