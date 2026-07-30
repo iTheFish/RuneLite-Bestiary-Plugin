@@ -92,6 +92,12 @@ public class BestiaryPanel extends PluginPanel {
         AlbumDialog.setDiscardOpener(win -> DiscardDialog.open(win, dataService, () -> {
             refresh();
             AlbumDialog.refreshOpenAlbum();
+            TransferDialog.refreshOpen();
+        }));
+        AlbumDialog.setTransferOpener(win -> TransferDialog.open(win, dataService, () -> {
+            refresh();
+            AlbumDialog.refreshOpenAlbum();
+            DiscardDialog.refreshOpen();
         }));
         AlbumCard.setRerollHandler((owner, cap) -> {
             Window win = SwingUtilities.getWindowAncestor(owner);

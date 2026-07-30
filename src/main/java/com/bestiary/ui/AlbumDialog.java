@@ -50,6 +50,10 @@ public class AlbumDialog extends JDialog {
     private static java.util.function.Consumer<Window> discardOpener;
     public static void setDiscardOpener(java.util.function.Consumer<Window> c) { discardOpener = c; }
 
+    /** Opens the bulk card-transfer screen (owner window supplied). Wired by BestiaryPanel. */
+    private static java.util.function.Consumer<Window> transferOpener;
+    public static void setTransferOpener(java.util.function.Consumer<Window> c) { transferOpener = c; }
+
     // Pending filter state — set before calling the callback, consumed in focusDetail
     private static CreatureRarity          pendingFilterRarity  = null;
     private static java.time.Instant       pendingFilterCapture = null;
@@ -306,6 +310,21 @@ public class AlbumDialog extends JDialog {
                 dRow.add(imgHint, BorderLayout.CENTER);
             }
             topBar.add(dRow);
+        }
+        if (transferOpener != null) {
+            JButton transferBtn = new JButton("Transfer cards…");
+            transferBtn.setFont(FontManager.getRunescapeSmallFont());
+            transferBtn.setBackground(new Color(55, 90, 120));
+            transferBtn.setForeground(Color.WHITE);
+            transferBtn.setFocusPainted(false);
+            transferBtn.setToolTipText("Send cards to another of your accounts");
+            transferBtn.addActionListener(e -> transferOpener.accept(AlbumDialog.this));
+            JPanel tRow = new JPanel(new BorderLayout());
+            tRow.setOpaque(false);
+            tRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
+            tRow.setBorder(new EmptyBorder(4, 0, 0, 0));
+            tRow.add(transferBtn, BorderLayout.WEST);
+            topBar.add(tRow);
         }
 
         // -------------------------------------------------------------------------

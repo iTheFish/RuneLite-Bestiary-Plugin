@@ -1,7 +1,8 @@
 # Multi-account: account viewing (#48) + card transfer (#50) — design draft
 
-Status: **draft for review.** The #49 ownership model in this branch is built + tested; #48 and
-#50 below are proposals with open questions for you to steer. Nothing in #48/#50 is coded yet.
+Status: **#49 ownership + #50 intra-profile transfer BUILT + tested** (Mockup B, local-only).
+**#48 view-any-account is design-only** — proposal with open questions below, not yet coded.
+Cross-player trading is split out to **#121** (needs a backend; parked for a dev chat).
 
 ---
 
@@ -101,9 +102,17 @@ economy totals, level number) with far less blast radius.
 
 ---
 
-## #50 — Transfer cards between your accounts
+## #50 — Transfer cards between your accounts  — BUILT (Mockup B)
 
-Depends on #48 (to name a target account) + #49 (owner fields, done).
+Implemented local-only, DiscardDialog-style: a **"Transfer cards…"** button in the album opens a
+MODELESS `TransferDialog` (owned by the album, so it auto-disposes when the album closes). Tick cards
++ pick a target account (from the `index.json` registry, excluding the active one) → confirm → the
+cards leave the active collection and are appended to the target account's file (`writeAccountNow`,
+target-first for safety), with `currentOwner` updated and `originalOwner` preserved. Refreshes the
+panel + album (and the discard dialog) on completion. Needs the target to have logged in on this
+machine at least once. The original mockups + rationale are kept below for reference.
+
+Depended on #49 (owner fields, done). Did NOT need #48 — the target picker reads the registry directly.
 
 ### Flow
 Right-click a card → **"Send to ▸ \<account\>"** (submenu of your other known accounts) → confirm →

@@ -101,6 +101,51 @@ public class BestiaryDataService {
         return activeAccountHash != null;
     }
 
+    // -------------------------------------------------------------------------
+    // Intra-profile card transfer (#50)
+    // -------------------------------------------------------------------------
+
+    /** Known accounts other than the active one — candidate targets for a card transfer. */
+    public java.util.List<BestiaryStore.AccountRef> listOtherAccounts() {
+        java.util.List<BestiaryStore.AccountRef> all = store.listAccounts();
+        all.removeIf(a -> activeAccountHash != null && a.hash == activeAccountHash);
+        return all;
+    }
+
+    /**
+     * Moves {@code cards} from the active account to another of the player's accounts (#50). Writes
+     * the target file FIRST (append), then removes the cards from the active collection and persists,
+     * so a failed target write can never lose a card. Updates {@code currentOwner} (originalOwner is
+     * preserved). Returns the number actually transferred.
+     */
+    public int transferCards(java.util.Collection<CapturedCreature> cards, long targetHash, String targetRsn) {
+        if (activeAccountHash != null && targetHash == activeAccountHash) return 0;  // can't send to self
+        java.util.List<CapturedCreature> moving = new ArrayList<>();
+        for (CapturedCreature c : cards) {
+            if (collection.creatures.contains(c)) moving.add(c);
+        }
+        if (moving.isEmpty()) return 0;
+
+        // Update owners and append to the target file first; roll back the owner change if it fails.
+        java.util.Map<CapturedCreature, String> priorOwner = new HashMap<>();
+        BestiaryStore.StoreData target = store.readAccount(targetHash);
+        for (CapturedCreature c : moving) {
+            priorOwner.put(c, c.currentOwner);
+            c.transferTo(targetRsn);
+            target.captures.add(c);
+        }
+        if (!store.writeAccountNow(targetHash, target)) {
+            for (CapturedCreature c : moving) c.currentOwner = priorOwner.get(c);
+            log.warn("Card transfer aborted — could not write target account {}", targetHash);
+            return 0;
+        }
+
+        for (CapturedCreature c : moving) collection.removeCapture(c);
+        persistNow();
+        log.info("Transferred {} card(s) to {}", moving.size(), targetRsn);
+        return moving.size();
+    }
+
     /** RSN of the active account (empty while logged out). */
     public String getActiveAccountName() {
         return activeAccountName;
