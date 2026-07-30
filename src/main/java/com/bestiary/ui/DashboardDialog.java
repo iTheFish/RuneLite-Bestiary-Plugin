@@ -373,14 +373,18 @@ public class DashboardDialog extends JDialog {
 
         root.add(sectionHeader("REROLLS"));
         long cardsRerolled = col.creatures.stream().filter(c -> c.rerollCount() > 0).count();
-        JPanel rgrid = new JPanel(new GridLayout(1, 3, 6, 0));
+        java.util.Set<String> rerollers = new java.util.HashSet<>();
+        for (CapturedCreature c : col.creatures) rerollers.addAll(c.uniqueRerollers());
+        // A clean overview row (matching the Progression tab) instead of one cramped combined cell.
+        JPanel rgrid = new JPanel(new GridLayout(1, 5, 6, 0));
         rgrid.setOpaque(false);
         rgrid.setBorder(new EmptyBorder(0, 12, 0, 12));
         rgrid.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
-        rgrid.add(miniCard("Rerolls",  FMT.format(col.totalRerolls())));
-        rgrid.add(miniCard("Cards",    FMT.format(cardsRerolled)));
-        rgrid.add(miniCard("Rank-ups / Shiny+",
-                countRankUps(col) + " / " + countShinyGained(col), true));
+        rgrid.add(miniCard("Rerolls",   FMT.format(col.totalRerolls())));
+        rgrid.add(miniCard("Cards",     FMT.format(cardsRerolled)));
+        rgrid.add(miniCard("Rank-ups",  FMT.format(countRankUps(col))));
+        rgrid.add(miniCard("Shiny+",    FMT.format(countShinyGained(col))));
+        rgrid.add(miniCard("Rerollers", FMT.format(rerollers.size()), true));
         root.add(rgrid);
         root.add(gap(10));
 
@@ -590,13 +594,17 @@ public class DashboardDialog extends JDialog {
                 Collectors.groupingBy(c -> c.rarity,
                         Collectors.averagingInt(c -> c.powerLevel())));
 
+        // Scale bars to the strongest rarity's average (Power Level can exceed 100, so a flat 100
+        // scale overflows and barely differentiates). Relative bars make the spread readable.
+        int scaleMax = 1;
+        for (Double v : avg.values()) scaleMax = Math.max(scaleMax, (int) Math.round(v));
         boolean any = false;
         for (CreatureRarity r : new CreatureRarity[]{
                 CreatureRarity.MYTHIC, CreatureRarity.LEGENDARY, CreatureRarity.EPIC,
                 CreatureRarity.RARE,   CreatureRarity.UNCOMMON,  CreatureRarity.COMMON}) {
             if (!avg.containsKey(r)) continue;
             int a = (int) Math.round(avg.get(r));
-            avgPanel.add(barRow(r.label, r.displayColor, a, 100, String.valueOf(a), ""));
+            avgPanel.add(barRow(r.label, r.displayColor, a, scaleMax, String.valueOf(a), ""));
             avgPanel.add(gap(4));
             any = true;
         }
@@ -624,7 +632,7 @@ public class DashboardDialog extends JDialog {
                         new MatteBorder(0, 3, 0, 0, c.rarity.displayColor),
                         new EmptyBorder(6, 8, 6, 8)));
 
-                JPanel left = new JPanel(new GridLayout(3, 1, 0, 1));
+                JPanel left = new JPanel(new GridLayout(0, 1, 0, 1));
                 left.setOpaque(false);
                 JLabel nl = new JLabel((i + 1) + ".  " + c.npcName);
                 nl.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
@@ -637,6 +645,18 @@ public class DashboardDialog extends JDialog {
                 cl.setFont(FontManager.getRunescapeSmallFont());
                 cl.setForeground(new Color(210, 210, 210));
                 left.add(nl); left.add(rl); left.add(cl);
+
+                // Provenance / reroll tags
+                java.util.List<String> tags = new java.util.ArrayList<>();
+                if (c.originalOwner != null && !c.originalOwner.isEmpty()) tags.add("by " + c.originalOwner);
+                if (c.rerollCount() > 0) tags.add("rerolled " + c.rerollCount() + "×");
+                if (BestiaryCollection.isTradedIn(c)) tags.add("traded in");
+                if (!tags.isEmpty()) {
+                    JLabel tl = new JLabel("◈ " + String.join("  ·  ", tags));
+                    tl.setFont(FontManager.getRunescapeSmallFont());
+                    tl.setForeground(new Color(150, 170, 200));
+                    left.add(tl);
+                }
 
                 JLabel ql = new JLabel("PWR:" + c.powerLevel());
                 ql.setFont(FontManager.getRunescapeFont().deriveFont(Font.BOLD));
@@ -986,9 +1006,9 @@ public class DashboardDialog extends JDialog {
                 g2.setColor(new Color(42, 42, 42));
                 g2.fillRoundRect(barX, barY, barW, barH, 4, 4);
 
-                // Fill
+                // Fill (clamped to the track so a value > max can never spill out of bounds)
                 if (max > 0 && value > 0) {
-                    int fill = Math.max(4, (int)((long) barW * value / max));
+                    int fill = Math.min(barW, Math.max(4, (int)((long) barW * value / max)));
                     g2.setPaint(new GradientPaint(barX, 0,
                             new Color(color.getRed()/2, color.getGreen()/2, color.getBlue()/2),
                             barX + fill, 0, color));
@@ -1613,7 +1633,7 @@ public class DashboardDialog extends JDialog {
         g.setColor(new Color(36, 36, 36));
         g.fillRoundRect(barX, barY, barW, barH, 4, 4);
         if (max > 0 && value > 0) {
-            int fill = Math.max(4, (int)((long) barW * value / max));
+            int fill = Math.min(barW, Math.max(4, (int)((long) barW * value / max)));
             g.setPaint(new GradientPaint(barX, barY,
                     new Color(color.getRed() / 2, color.getGreen() / 2, color.getBlue() / 2),
                     barX + fill, barY, color));
@@ -1886,12 +1906,15 @@ public class DashboardDialog extends JDialog {
 
         y = drawCardSectionHeader(g, "AVERAGE POWER BY RARITY", y, W, PAD);
         y += 6;
+        // Scale to the strongest rarity's average so bars compare (Power Level can exceed 100).
+        int avgScaleMax = 1;
+        for (Double v : avgQuality.values()) avgScaleMax = Math.max(avgScaleMax, (int) Math.round(v));
         for (CreatureRarity r : rarOrder) {
             if (!avgQuality.containsKey(r)) {
-                y = drawCardBarRow(g, r.label, r.displayColor, 0, 100, "—", "", y, PAD, W);
+                y = drawCardBarRow(g, r.label, r.displayColor, 0, avgScaleMax, "—", "", y, PAD, W);
             } else {
                 int avg = (int) Math.round(avgQuality.get(r));
-                y = drawCardBarRow(g, r.label, r.displayColor, avg, 100, String.valueOf(avg), "", y, PAD, W);
+                y = drawCardBarRow(g, r.label, r.displayColor, avg, avgScaleMax, String.valueOf(avg), "", y, PAD, W);
             }
         }
         y += 8;
