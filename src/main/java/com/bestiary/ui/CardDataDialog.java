@@ -262,8 +262,13 @@ public class CardDataDialog extends JDialog {
         p.add(kv("Bestiary level", String.valueOf(c.captureLevel), Color.WHITE));
         p.add(kv("Kills before catch", String.valueOf(c.killsBeforeCapture), Color.WHITE));
         p.add(kv("Combat level", c.npcCombatLevel >= 0 ? String.valueOf(c.npcCombatLevel) : "—", Color.WHITE));
-        p.add(kv("Captured by", c.playerName != null && !c.playerName.isEmpty() ? c.playerName : "Unknown",
+        p.add(kv("Caught by", c.originalOwner != null && !c.originalOwner.isEmpty() ? c.originalOwner
+                : (c.playerName != null && !c.playerName.isEmpty() ? c.playerName : "Unknown"),
                 new Color(200, 155, 50)));
+        if (com.bestiary.model.BestiaryCollection.isTradedIn(c)) {
+            // Card was traded in from another of the player's accounts (#50).
+            p.add(kv("Traded in — held by", c.currentOwner, new Color(120, 190, 255)));
+        }
         if (c.rerollCount() > 0) {
             p.add(kv("Rerolled", c.rerollCount() + (c.rerollCount() == 1 ? " time" : " times"),
                     new Color(180, 150, 230)));

@@ -576,6 +576,11 @@ public class DashboardDialog extends JDialog {
         root.add(heroStat(FMT.format(col.lifetimeCaptures), "CREATURES CAUGHT", ORANGE));
         root.add(gap(2));
         root.add(sectionHeader(FMT.format(col.totalCaptures()) + " CARDS HELD"));
+        long sent = col.lifetimeCardsSent, received = col.tradedInCount();
+        if (sent > 0 || received > 0) {
+            root.add(gap(2));
+            root.add(sectionHeader(FMT.format(sent) + " SENT  ·  " + FMT.format(received) + " RECEIVED"));
+        }
         root.add(gap(8));
         root.add(sectionHeader("AVERAGE POWER BY RARITY"));
 
