@@ -351,11 +351,13 @@ public class InfoTab extends JPanel {
                 "card) and the passive unlocks below, grouped into Progression and Rerolls " +
                 "categories; more tools are on the way."));
         c.add(tile("Passive unlocks",
-                "The Shop tab sells permanent passive upgrades in two categories, each with 5 tiers " +
-                "(cost rises per tier):\n\n" +
+                "The Shop tab sells permanent passive upgrades in two categories (cost rises per " +
+                "tier):\n\n" +
                 "Progression:\n" +
                 "• Hunter's Bounty — +2 credits per tier (up to +10) added to every capture reward.\n" +
                 "• Salvager's Eye — +2% per tier to credits earned from discarding cards.\n" +
+                "• Hunter's Focus — +5 XP per tier (up to +25) added to every kill's XP.\n" +
+                "• Scholar's Insight — +5% per tier (up to +25%) to the XP from every capture.\n" +
                 "• Shiny Charm — +0.1% per tier (up to +0.5%) to your capture shiny chance.\n\n" +
                 "Rerolls:\n" +
                 "• Reroll Shine — +0.1% per tier to the shiny chance when you reroll a card.\n" +

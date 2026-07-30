@@ -31,6 +31,7 @@ public class ShopTab extends JPanel {
 
     private JLabel creditsLabel;
     private JPanel upgradesPanel;
+    private JScrollPane scrollPane;
 
     private final Runnable showDashboard;
 
@@ -111,8 +112,13 @@ public class ShopTab extends JPanel {
         sp.setOpaque(false);
         sp.getViewport().setOpaque(false);
         sp.getVerticalScrollBar().setUnitIncrement(16);
+        // Hidden vertical scrollbar (zero-width, no space taken) — mouse wheel still scrolls.
+        // Always-on policy + zero width keeps the content width fixed so it can't reflow.
+        sp.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        sp.getVerticalScrollBar().setPreferredSize(new Dimension(0, 0));
         // Never scroll horizontally — the panel width is fixed; content must wrap to it.
         sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane = sp;
         return sp;
     }
 
@@ -244,11 +250,11 @@ public class ShopTab extends JPanel {
         return String.format("%.1f%%", frac * 100.0);
     }
 
-    /** Formats an upgrade's total effect at {@code tiers} — flat credits or a percentage. */
+    /** Formats an upgrade's total effect at {@code tiers} — flat credits, flat XP, or a percentage. */
     private static String formatEffect(ShopUpgrade u, int tiers) {
-        return u.isFlatCredits()
-                ? "+" + (long) u.effectFor(tiers) + " credits"
-                : "+" + formatPct(u.effectFor(tiers));
+        if (u.isFlatCredits()) return "+" + (long) u.effectFor(tiers) + " credits";
+        if (u.isFlatXp())      return "+" + (long) u.effectFor(tiers) + " XP";
+        return "+" + formatPct(u.effectFor(tiers));
     }
 
     /** A small round tier indicator. */
@@ -275,7 +281,13 @@ public class ShopTab extends JPanel {
     public void refresh() {
         creditsLabel.setText(dataService.getCredits() + " credits");
         if (upgradesPanel != null) {
+            // Preserve the scroll position so buying a tier (which rebuilds the cards) doesn't
+            // jump the shop up or down.
+            final Point pos = scrollPane != null ? scrollPane.getViewport().getViewPosition() : null;
             rebuildUpgrades();
+            if (pos != null) {
+                SwingUtilities.invokeLater(() -> scrollPane.getViewport().setViewPosition(pos));
+            }
         }
     }
 }
