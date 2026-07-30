@@ -89,7 +89,8 @@ public class BestiaryPlugin extends Plugin {
 
     @Override
     protected void startUp() {
-        dataService.load();
+        // No collection is loaded until a character logs in — see onGameStateChanged(LOGGED_IN).
+        // The panel shows a "log in to load your collection" placeholder until then.
 
         // Achievements unlocked by non-capture actions (rerolls, favourites, purchases) are detected
         // on panel refresh; announce them in chat just like capture achievements.
@@ -163,22 +164,28 @@ public class BestiaryPlugin extends Plugin {
     @Subscribe
     public void onGameStateChanged(GameStateChanged event) {
         killTracker.onGameStateChanged(event);
-        if (event.getGameState() == GameState.LOGGED_IN && client.getLocalPlayer() != null) {
-            String name = client.getLocalPlayer().getName();
-            if (name != null && !name.isEmpty()) {
-                boolean anyBackfilled = false;
-                for (com.bestiary.model.CapturedCreature c
-                        : dataService.getCollection().creatures) {
-                    if (c.playerName == null || c.playerName.isEmpty()) {
-                        c.playerName = name;
-                        anyBackfilled = true;
-                    }
-                }
-                if (anyBackfilled) {
-                    dataService.saveNow();
-                }
-            }
+        if (event.getGameState() == GameState.LOGGED_IN) {
             sessionTracker.clear();
+        } else if (event.getGameState() == GameState.LOGIN_SCREEN) {
+            // Logged out — flush + lock down: close any open Bestiary windows, clear the data, and
+            // return the panel to the "log in" view. No data is shown or writable until next login.
+            dataService.handleLogout();
+            SwingUtilities.invokeLater(panel::onLoggedOut);
+        }
+    }
+
+    @Subscribe
+    public void onGameTick(net.runelite.api.events.GameTick event) {
+        // Load (or switch to) this account's own collection, keyed by the stable accountHash.
+        // Done on a tick — not on LOGGED_IN — because the accountHash (and RSN) aren't reliably
+        // populated the instant the LOGGED_IN state fires. switchAccount no-ops on the same
+        // account, so this is cheap to run every tick; it only reloads when the account changes.
+        if (client.getGameState() != GameState.LOGGED_IN) return;
+        long accountHash = client.getAccountHash();
+        if (accountHash == -1L) return;
+        String name = client.getLocalPlayer() != null ? client.getLocalPlayer().getName() : "";
+        if (dataService.switchAccount(accountHash, name)) {
+            SwingUtilities.invokeLater(panel::refresh);
         }
     }
 

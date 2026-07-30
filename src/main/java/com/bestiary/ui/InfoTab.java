@@ -46,6 +46,12 @@ public class InfoTab extends JPanel {
     private final JPanel contentCards = new JPanel(new CardLayout());
     private final List<JToggleButton> catButtons = new ArrayList<>();
 
+    // Header controls that act on the collection — disabled while logged out (the category
+    // sub-tabs stay live so the guide/reference is always browsable).
+    private JPanel statsStrip;
+    private JPanel shortcutRow;
+    private boolean interactiveEnabled = true;
+
     public InfoTab(BestiaryDataService dataService, ProgressionService progressionService,
                    Runnable openAlbum, Runnable openFavourites, Runnable openRecap,
                    Runnable openCatchRates,
@@ -64,9 +70,11 @@ public class InfoTab extends JPanel {
         header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
         header.setBackground(ColorScheme.DARK_GRAY_COLOR);
         header.setBorder(new EmptyBorder(6, 6, 4, 6));
-        header.add(buildStatsStrip());
+        statsStrip  = buildStatsStrip();
+        shortcutRow = buildShortcutRow(openAlbum, openFavourites, openRecap, openCatchRates);
+        header.add(statsStrip);
         header.add(Box.createVerticalStrut(6));
-        header.add(buildShortcutRow(openAlbum, openFavourites, openRecap, openCatchRates));
+        header.add(shortcutRow);
         header.add(Box.createVerticalStrut(8));
         header.add(headerDivider());
         header.add(Box.createVerticalStrut(6));
@@ -93,6 +101,31 @@ public class InfoTab extends JPanel {
         capturesVal.setText(FMT.format(col.totalCaptures()));
         levelVal.setText(String.valueOf(progressionService.getLevel()));
         killsVal.setText(FMT.format(col.totalKills()));
+    }
+
+    /**
+     * Enables/disables the header controls that act on the collection (the clickable stat boxes and
+     * the shortcut buttons). The category sub-tabs are left alone so the guide/reference stays
+     * browsable while logged out.
+     */
+    public void setInteractiveEnabled(boolean enabled) {
+        interactiveEnabled = enabled;
+        setButtonsEnabled(shortcutRow, enabled);
+        for (Component c : statsStrip.getComponents()) {
+            c.setEnabled(enabled);
+            c.setCursor(Cursor.getPredefinedCursor(enabled ? Cursor.HAND_CURSOR : Cursor.DEFAULT_CURSOR));
+        }
+    }
+
+    /** Recursively enables/disables every button under {@code root} (leaves other components alone). */
+    private static void setButtonsEnabled(Container root, boolean enabled) {
+        for (Component c : root.getComponents()) {
+            if (c instanceof AbstractButton) {
+                c.setEnabled(enabled);
+            } else if (c instanceof Container) {
+                setButtonsEnabled((Container) c, enabled);
+            }
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -443,6 +476,7 @@ public class InfoTab extends JPanel {
         panel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         panel.addMouseListener(new MouseAdapter() {
             @Override public void mouseClicked(MouseEvent e) {
+                if (!interactiveEnabled) return;   // inert while logged out
                 if (e.getButton() == MouseEvent.BUTTON1) {
                     if (openDashboard != null) openDashboard.accept(view);
                 } else if (e.getButton() == MouseEvent.BUTTON3) {

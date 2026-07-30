@@ -1253,9 +1253,9 @@ public class DashboardDialog extends JDialog {
     // ---- shared card base ----
 
     private static String resolveAccount(BestiaryDataService ds) {
-        return ds.getCollection().creatures.stream()
-                .filter(c -> c.playerName != null && !c.playerName.isEmpty())
-                .findFirst().map(c -> c.playerName).orElse("Unknown");
+        // The active account name — data is scoped per account, so this is the collection's owner.
+        String name = ds.getActiveAccountName();
+        return name != null && !name.isEmpty() ? name : "Unknown";
     }
 
     private static String todayStr() {

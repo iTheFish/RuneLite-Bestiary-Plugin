@@ -7,6 +7,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
+import com.google.gson.reflect.TypeToken;
 import lombok.extern.slf4j.Slf4j;
 import com.bestiary.model.CapturedCreature;
 
@@ -20,6 +21,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -32,12 +35,18 @@ import java.util.concurrent.TimeUnit;
 /**
  * Pure-Java JSON persistence for the bestiary (no native dependencies — Plugin Hub safe).
  *
- * The whole collection lives in memory in {@link BestiaryDataService}; this store just
- * loads and saves a single JSON snapshot. Writes are debounced onto a background thread
- * (bursts of kills/credits coalesce into one write ~1s later) and are crash-safe: each
- * write goes to a temp file, the previous good file is copied to a {@code .bak}, then the
- * temp is atomically renamed into place. Load falls back to the backup if the main file
- * is missing or corrupt.
+ * <p>Collections are keyed <b>per account</b> (#47): each account has its own file at
+ * {@code ~/.runelite/bestiary/accounts/<accountHash>.json} (+ a {@code .bak}), keyed by
+ * RuneLite's stable {@code accountHash} (survives name changes). No account is active until
+ * {@link #setActiveAccount} is called on login — before that, loads return empty and saves
+ * are dropped, so no account's data is ever touched while logged out.
+ *
+ * <p>The whole collection lives in memory in {@link BestiaryDataService}; this store just
+ * loads and saves a single JSON snapshot for the active account. Writes are debounced onto a
+ * background thread (bursts of kills/credits coalesce into one write ~1s later) and are
+ * crash-safe: each write goes to a temp file, the previous good file is copied to a
+ * {@code .bak}, then the temp is atomically renamed into place. Load falls back to the backup
+ * if the main file is missing or corrupt.
  */
 @Slf4j
 @Singleton
@@ -61,9 +70,21 @@ public class BestiaryStore {
         public Map<String, Integer> shopUpgrades = new LinkedHashMap<>();
     }
 
-    private final File file;
-    private final File backup;
+    /** One row of the account registry ({@code index.json}) — drives the future account switcher (#48). */
+    static class AccountEntry {
+        public String rsn;
+        public long lastActive;
+    }
+
+    private final File dir;
+    private final File accountsDir;
+    private final File indexFile;
     private final Gson gson;
+
+    /** Active account's target files — null until {@link #setActiveAccount} is called on login. */
+    private volatile File file;
+    private volatile File backup;
+    private volatile Long activeHash;
 
     private final ScheduledExecutorService writer = Executors.newSingleThreadScheduledExecutor(r -> {
         Thread t = new Thread(r, "bestiary-store-writer");
@@ -76,23 +97,59 @@ public class BestiaryStore {
 
     @Inject
     public BestiaryStore(Gson gson) {
-        File dir = new File(System.getProperty("user.home"),
+        this.dir         = new File(System.getProperty("user.home"),
                 ".runelite" + File.separator + "bestiary");
-        this.file   = new File(dir, "bestiary.json");
-        this.backup = new File(dir, "bestiary.json.bak");
+        this.accountsDir = new File(dir, "accounts");
+        this.indexFile   = new File(accountsDir, "index.json");
         // Reuse RuneLite's Gson config, adding an Instant<->epoch-second adapter.
         this.gson = gson.newBuilder()
                 .registerTypeAdapter(Instant.class, new InstantEpochAdapter())
                 .setPrettyPrinting()
                 .create();
+        archiveLegacyGlobalFile();
+    }
+
+    // -------------------------------------------------------------------------
+    // Account selection
+    // -------------------------------------------------------------------------
+
+    /**
+     * Points the store at {@code accountHash}'s file for all subsequent loads/saves. Flushes any
+     * pending write for the previously active account to its own file first, so a switch can never
+     * spill one account's buffered data into another's file. Records the account in the registry.
+     */
+    public void setActiveAccount(long accountHash, String rsn) {
+        flushPending();                 // write buffered data to the OLD file before repointing
+        this.activeHash = accountHash;
+        this.file   = new File(accountsDir, accountHash + ".json");
+        this.backup = new File(accountsDir, accountHash + ".json.bak");
+        recordAccount(accountHash, rsn);
+    }
+
+    /** True once an account has been selected (i.e. the player has logged in this session). */
+    public boolean hasActiveAccount() {
+        return activeHash != null;
+    }
+
+    /**
+     * Deactivates the current account on logout: flushes any buffered write to its file, then stops
+     * targeting any file so subsequent saves are dropped until the next login. Prevents a logged-out
+     * client from ever writing to (or being loaded from) an account's file.
+     */
+    public void clearActiveAccount() {
+        flushPending();
+        this.activeHash = null;
+        this.file = null;
+        this.backup = null;
     }
 
     // -------------------------------------------------------------------------
     // Load
     // -------------------------------------------------------------------------
 
-    /** Reads the collection, preferring the main file then the backup; empty if neither is usable. */
+    /** Reads the active account's collection (main file then backup); empty if none active/usable. */
     public StoreData load() {
+        if (file == null) return new StoreData();
         StoreData d = tryRead(file);
         if (d == null) {
             d = tryRead(backup);
@@ -123,6 +180,7 @@ public class BestiaryStore {
 
     /** Debounced save — coalesces bursts and writes ~1s after the last change on a background thread. */
     public void save(StoreData data) {
+        if (file == null) return;   // no active account — nothing to persist
         synchronized (lock) {
             pending = data;
             if (scheduled == null || scheduled.isDone()) {
@@ -133,6 +191,7 @@ public class BestiaryStore {
 
     /** Immediate synchronous save (shutdown / wipe / user-initiated). Cancels any pending debounce. */
     public void saveNow(StoreData data) {
+        if (file == null) return;   // no active account — nothing to persist
         synchronized (lock) {
             if (scheduled != null) scheduled.cancel(false);
             pending = null;
@@ -149,11 +208,22 @@ public class BestiaryStore {
         if (d != null) write(d);
     }
 
+    /** Writes any debounced-but-unwritten snapshot to the CURRENT active file, synchronously. */
+    private void flushPending() {
+        StoreData d;
+        synchronized (lock) {
+            if (scheduled != null) scheduled.cancel(false);
+            d = pending;
+            pending = null;
+        }
+        if (d != null) write(d);
+    }
+
     private synchronized void write(StoreData d) {
+        if (file == null) return;
         try {
-            Path dir = file.toPath().getParent();
-            if (dir != null) Files.createDirectories(dir);
-            Path tmp = file.toPath().resolveSibling("bestiary.json.tmp");
+            Files.createDirectories(accountsDir.toPath());
+            Path tmp = file.toPath().resolveSibling(file.getName() + ".tmp");
             Files.write(tmp, gson.toJson(d).getBytes(StandardCharsets.UTF_8));
             if (file.exists()) {
                 Files.copy(file.toPath(), backup.toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -177,6 +247,64 @@ public class BestiaryStore {
             writer.awaitTermination(2, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Migration + registry
+    // -------------------------------------------------------------------------
+
+    /**
+     * One-time clean-slate migration: the pre-#47 build kept a single global {@code bestiary.json}
+     * shared by every account. Rename it (and its backup) to a dated {@code bestiary.legacy-*} file
+     * so it is never loaded again but stays recoverable. Because we move it, this runs only once.
+     */
+    private void archiveLegacyGlobalFile() {
+        File legacy = new File(dir, "bestiary.json");
+        if (!legacy.exists()) return;
+        try {
+            String stamp = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+            File archived = new File(dir, "bestiary.legacy-" + stamp + ".json");
+            for (int n = 1; archived.exists(); n++) {
+                archived = new File(dir, "bestiary.legacy-" + stamp + "-" + n + ".json");
+            }
+            Files.move(legacy.toPath(), archived.toPath());
+            File legacyBak = new File(dir, "bestiary.json.bak");
+            if (legacyBak.exists()) {
+                Files.move(legacyBak.toPath(), new File(dir, archived.getName() + ".bak").toPath(),
+                        StandardCopyOption.REPLACE_EXISTING);
+            }
+            log.info("Archived legacy global collection to {} (per-account storage is now active)",
+                    archived.getName());
+        } catch (IOException e) {
+            log.error("Failed to archive legacy global bestiary file", e);
+        }
+    }
+
+    /** Upserts an account into the registry with a fresh {@code lastActive} timestamp. */
+    private synchronized void recordAccount(long accountHash, String rsn) {
+        try {
+            Files.createDirectories(accountsDir.toPath());
+            Map<String, AccountEntry> index = readIndex();
+            AccountEntry e = index.computeIfAbsent(String.valueOf(accountHash), k -> new AccountEntry());
+            if (rsn != null && !rsn.isEmpty()) e.rsn = rsn;
+            e.lastActive = Instant.now().getEpochSecond();
+            Files.write(indexFile.toPath(), gson.toJson(index).getBytes(StandardCharsets.UTF_8));
+        } catch (Exception ex) {
+            log.warn("Failed to update account registry", ex);
+        }
+    }
+
+    private Map<String, AccountEntry> readIndex() {
+        if (!indexFile.exists()) return new LinkedHashMap<>();
+        try {
+            String json = new String(Files.readAllBytes(indexFile.toPath()), StandardCharsets.UTF_8);
+            Type t = new TypeToken<LinkedHashMap<String, AccountEntry>>() {}.getType();
+            Map<String, AccountEntry> m = gson.fromJson(json, t);
+            return m != null ? m : new LinkedHashMap<>();
+        } catch (Exception e) {
+            log.warn("Failed to read account registry — starting fresh", e);
+            return new LinkedHashMap<>();
         }
     }
 

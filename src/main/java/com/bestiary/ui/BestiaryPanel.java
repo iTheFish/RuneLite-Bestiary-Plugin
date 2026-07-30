@@ -49,6 +49,13 @@ public class BestiaryPanel extends PluginPanel {
     private InfoTab infoTab;
     private ShopTab shopTab;
 
+    /** The top-level tab pane. When logged out, only the Info tab is kept and a welcome banner shows. */
+    private JTabbedPane tabs;
+    /** "Log in to view your collection" banner shown above the tabs while no account is active. */
+    private JPanel welcomeBanner;
+    /** Bottom button strip (Reset + dev tools) — disabled while logged out. */
+    private JPanel southPanel;
+
     @Inject
     public BestiaryPanel(BestiaryDataService dataService, ProgressionService progressionService,
                          WikiImageService imageService, BestiaryConfig config,
@@ -143,14 +150,14 @@ public class BestiaryPanel extends PluginPanel {
                 () -> DashboardDialog.open(SwingUtilities.getWindowAncestor(this), dataService,
                         progressionService, DashboardDialog.DashView.ECONOMY));
 
-        JTabbedPane tabs = new JTabbedPane();
+        tabs = new JTabbedPane();
         tabs.setBackground(ColorScheme.DARK_GRAY_COLOR);
         tabs.setForeground(Color.WHITE);
         tabs.setFont(FontManager.getRunescapeSmallFont());
 
         infoTab = new InfoTab(dataService, progressionService,
                 () -> collectionTab.openAlbum(SwingUtilities.getWindowAncestor(this)),
-                () -> { tabs.setSelectedIndex(1); collectionTab.showFavourites(); },
+                () -> { if (tabs.getTabCount() > 1) { tabs.setSelectedIndex(1); collectionTab.showFavourites(); } },
                 () -> SessionRecapDialog.open(SwingUtilities.getWindowAncestor(this), sessionTracker),
                 () -> CaptureRateDialog.open(SwingUtilities.getWindowAncestor(this), progressionService,
                         dataService.bonusShinyChance()),
@@ -162,9 +169,76 @@ public class BestiaryPanel extends PluginPanel {
         tabs.addTab("Shop",     shopTab);
         tabs.addTab("Progress", progressTab);
 
-        add(header,          BorderLayout.NORTH);
-        add(tabs,            BorderLayout.CENTER);
-        add(buildSouthPanel(), BorderLayout.SOUTH);
+        welcomeBanner = buildWelcomeBanner();
+
+        JPanel centerWrap = new JPanel(new BorderLayout(0, 6));
+        centerWrap.setOpaque(false);
+        centerWrap.add(welcomeBanner, BorderLayout.NORTH);
+        centerWrap.add(tabs,          BorderLayout.CENTER);
+
+        southPanel = buildSouthPanel();
+
+        add(header,      BorderLayout.NORTH);
+        add(centerWrap,  BorderLayout.CENTER);
+        add(southPanel,  BorderLayout.SOUTH);
+
+        // Start locked — the Info/Guide tab stays browsable; a character login adds the rest.
+        applyLockedState(true);
+    }
+
+    /** Friendly banner shown above the tabs while logged out, inviting the player to log in. */
+    private JPanel buildWelcomeBanner() {
+        JPanel p = new JPanel(new BorderLayout());
+        p.setBackground(new Color(45, 38, 20));
+        p.setBorder(BorderFactory.createCompoundBorder(
+                new javax.swing.border.LineBorder(new Color(255, 165, 0, 90), 1, true),
+                new EmptyBorder(7, 10, 7, 10)));
+        JLabel msg = new JLabel("<html><b style='color:#FFA500;'>Welcome to Bestiary</b><br>"
+                + "<span style='color:#C8C8C8;'>Log in to view and grow your collection.</span></html>");
+        msg.setFont(FontManager.getRunescapeSmallFont());
+        p.add(msg, BorderLayout.CENTER);
+        return p;
+    }
+
+    /**
+     * Locked (logged-out) = welcome banner + only the Info/Guide tab (which needs no account data).
+     * Unlocked = banner hidden, all tabs present. Toggling tabs is cheap and only runs on login/logout.
+     */
+    private void applyLockedState(boolean locked) {
+        welcomeBanner.setVisible(locked);
+        if (locked) {
+            while (tabs.getTabCount() > 1) tabs.remove(1);
+            if (tabs.getTabCount() > 0) tabs.setSelectedIndex(0);
+        } else if (tabs.getTabCount() == 1) {
+            tabs.addTab("Cards",    collectionTab);
+            tabs.addTab("Shop",     shopTab);
+            tabs.addTab("Progress", progressTab);
+        }
+        // Everything that acts on a collection is inert while logged out — only the Info/Guide
+        // sub-tabs stay usable. (The Info tab keeps its own sub-tabs live.)
+        infoTab.setInteractiveEnabled(!locked);
+        if (southPanel != null) setControlsEnabled(southPanel, !locked);
+    }
+
+    /** Recursively enables/disables buttons and combo boxes under {@code root}. */
+    private static void setControlsEnabled(Container root, boolean enabled) {
+        for (Component c : root.getComponents()) {
+            if (c instanceof AbstractButton || c instanceof JComboBox) {
+                c.setEnabled(enabled);
+            }
+            if (c instanceof Container) {
+                setControlsEnabled((Container) c, enabled);
+            }
+        }
+    }
+
+    /**
+     * Called on logout: dispose every open Bestiary dialog (album, dashboards, card views, etc.) so
+     * none linger showing the now-cleared collection, then re-lock the panel.
+     */
+    public void onLoggedOut() {
+        closeAllBestiaryWindows();
+        refresh();
     }
 
     private JPanel buildSouthPanel() {
@@ -331,6 +405,16 @@ public class BestiaryPanel extends PluginPanel {
      * (use {@code SwingUtilities.invokeLater(panel::refresh)} from game thread).
      */
     public void refresh() {
+        // Before login: welcome banner + Info tab only. The collection is empty while logged out,
+        // so the Info tab reads zeroes rather than the previous account's data.
+        if (!dataService.hasActiveAccount()) {
+            applyLockedState(true);
+            statsLabel.setText("Not logged in");
+            infoTab.refresh();
+            return;
+        }
+        applyLockedState(false);
+
         int species  = (int) dataService.getCollection().uniqueSpeciesCount();
         int captures = dataService.getCollection().totalCaptures();
         statsLabel.setText(species + " species  |  " + captures + " captures");
