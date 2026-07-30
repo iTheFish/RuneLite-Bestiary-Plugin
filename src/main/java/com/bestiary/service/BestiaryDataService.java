@@ -450,7 +450,11 @@ public class BestiaryDataService {
                 com.bestiary.util.RarityRoller.generateQuality(cls, rarity, bases, rerollRng, shiny);
         int prayer = com.bestiary.util.RarityRoller.rollPrayer(
                 com.bestiary.model.MonsterRoster.getPrayer(c.npcName), rarity, rerollRng, shiny);
-        String reroller = c.playerName != null && !c.playerName.isEmpty() ? c.playerName : "Player";
+        // The reroller is the account performing the reroll now (the active/current owner), NOT the
+        // card's original capturer — otherwise a traded-in card credits its reroll to the wrong account.
+        String reroller = activeAccountName != null && !activeAccountName.isEmpty() ? activeAccountName
+                : (c.currentOwner != null && !c.currentOwner.isEmpty() ? c.currentOwner
+                : (c.playerName != null && !c.playerName.isEmpty() ? c.playerName : "Player"));
         // Log the card's pre-reroll state, then carry the whole history forward onto the new card.
         java.util.List<CapturedCreature.RerollState> history = new java.util.ArrayList<>(c.rerollHistory);
         history.add(new CapturedCreature.RerollState(
