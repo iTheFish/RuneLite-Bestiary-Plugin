@@ -373,18 +373,14 @@ public class DashboardDialog extends JDialog {
 
         root.add(sectionHeader("REROLLS"));
         long cardsRerolled = col.creatures.stream().filter(c -> c.rerollCount() > 0).count();
-        java.util.Set<String> rerollers = new java.util.HashSet<>();
-        for (CapturedCreature c : col.creatures) rerollers.addAll(c.uniqueRerollers());
-        // A clean overview row (matching the Progression tab) instead of one cramped combined cell.
-        JPanel rgrid = new JPanel(new GridLayout(1, 5, 6, 0));
+        JPanel rgrid = new JPanel(new GridLayout(1, 3, 6, 0));
         rgrid.setOpaque(false);
         rgrid.setBorder(new EmptyBorder(0, 12, 0, 12));
         rgrid.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
-        rgrid.add(miniCard("Rerolls",   FMT.format(col.totalRerolls())));
-        rgrid.add(miniCard("Cards",     FMT.format(cardsRerolled)));
-        rgrid.add(miniCard("Rank-ups",  FMT.format(countRankUps(col))));
-        rgrid.add(miniCard("Shiny+",    FMT.format(countShinyGained(col))));
-        rgrid.add(miniCard("Rerollers", FMT.format(rerollers.size()), true));
+        rgrid.add(miniCard("Rerolls",  FMT.format(col.totalRerolls())));
+        rgrid.add(miniCard("Cards",    FMT.format(cardsRerolled)));
+        rgrid.add(miniCard("Rank-ups / Shiny+",
+                countRankUps(col) + " / " + countShinyGained(col), true));
         root.add(rgrid);
         root.add(gap(10));
 
@@ -646,11 +642,10 @@ public class DashboardDialog extends JDialog {
                 cl.setForeground(new Color(210, 210, 210));
                 left.add(nl); left.add(rl); left.add(cl);
 
-                // Provenance / reroll tags
+                // Provenance / reroll tags (original owner is enough reference; no traded-in tag)
                 java.util.List<String> tags = new java.util.ArrayList<>();
                 if (c.originalOwner != null && !c.originalOwner.isEmpty()) tags.add("by " + c.originalOwner);
                 if (c.rerollCount() > 0) tags.add("rerolled " + c.rerollCount() + "×");
-                if (BestiaryCollection.isTradedIn(c)) tags.add("traded in");
                 if (!tags.isEmpty()) {
                     JLabel tl = new JLabel("◈ " + String.join("  ·  ", tags));
                     tl.setFont(FontManager.getRunescapeSmallFont());
@@ -1672,8 +1667,8 @@ public class DashboardDialog extends JDialog {
         final int W = 480, PAD = 24;
         int upRows = ups.length;
         int H = 4 + PAD + 60 + 12 + 70 + 12
-                + 22 + 6 + 3 * 20 + 8           // credits (3 rows)
-                + 22 + 6 + 3 * 20 + 8           // rerolls (3 rows)
+                + 22 + 6 + 48 + 8               // credits (mini-card row)
+                + 22 + 6 + 48 + 8               // rerolls (mini-card row)
                 + 22 + 6 + upRows * 20 + 8      // shop upgrade pip rows
                 + 36 + PAD;
 
@@ -1686,17 +1681,20 @@ public class DashboardDialog extends JDialog {
 
         y = drawCardSectionHeader(g, "CREDITS", y, W, PAD);
         y += 6;
-        y = drawCardKV(g, "Earned",  FMT.format(col.lifetimeCreditsEarned), GOLD, y, PAD, W);
-        y = drawCardKV(g, "Spent",   FMT.format(col.lifetimeCreditsSpent),  new Color(224, 150, 120), y, PAD, W);
-        y = drawCardKV(g, "Balance", FMT.format(col.credits),               TEXT, y, PAD, W);
+        y = drawStatBoxRow(g, new String[][]{
+                {"Earned",  FMT.format(col.lifetimeCreditsEarned)},
+                {"Spent",   FMT.format(col.lifetimeCreditsSpent)},
+                {"Balance", FMT.format(col.credits)}
+        }, y, PAD, W);
         y += 8;
 
         y = drawCardSectionHeader(g, "REROLLS", y, W, PAD);
         y += 6;
-        y = drawCardKV(g, "Total rerolls",  FMT.format(col.totalRerolls()), TEXT, y, PAD, W);
-        y = drawCardKV(g, "Cards rerolled", FMT.format(cardsRerolled),      TEXT, y, PAD, W);
-        y = drawCardKV(g, "Rank-ups / Shiny+",
-                countRankUps(col) + " / " + countShinyGained(col), new Color(170, 120, 235), y, PAD, W);
+        y = drawStatBoxRow(g, new String[][]{
+                {"Rerolls", FMT.format(col.totalRerolls())},
+                {"Cards",   FMT.format(cardsRerolled)},
+                {"Rank-ups / Shiny+", countRankUps(col) + " / " + countShinyGained(col)}
+        }, y, PAD, W);
         y += 8;
 
         y = drawCardSectionHeader(g, "SHOP UPGRADES", y, W, PAD);
@@ -1711,15 +1709,33 @@ public class DashboardDialog extends JDialog {
         return img;
     }
 
-    /** Draws a "label ......... value" row (label left, value right-aligned). Returns the new y. */
-    private static int drawCardKV(Graphics2D g, String label, String value, Color valColor, int y, int PAD, int W) {
-        g.setFont(FontManager.getRunescapeSmallFont());
-        FontMetrics fm = g.getFontMetrics();
-        g.setColor(new Color(210, 210, 210));
-        g.drawString(label, PAD + 4, y + fm.getAscent());
-        g.setColor(valColor);
-        g.drawString(value, W - PAD - fm.stringWidth(value), y + fm.getAscent());
-        return y + 20;
+    /**
+     * Draws a row of evenly-sized "value over label" mini-card boxes (the same look as the live
+     * dashboard's stat cards), so export cards match the on-screen view. Returns the y below the row.
+     */
+    private static int drawStatBoxRow(Graphics2D g, String[][] stats, int y, int PAD, int W) {
+        int n = stats.length, boxGap = 4, boxH = 48;
+        int boxW = (W - PAD * 2 - boxGap * (n - 1)) / n;
+        for (int i = 0; i < n; i++) {
+            int bx = PAD + i * (boxW + boxGap);
+            g.setPaint(new GradientPaint(bx, y, new Color(38, 38, 38), bx, y + boxH, new Color(26, 26, 26)));
+            g.fillRoundRect(bx, y, boxW, boxH, 6, 6);
+            g.setColor(ORANGE);
+            g.fillRect(bx, y, 3, boxH);
+
+            g.setFont(FontManager.getRunescapeBoldFont().deriveFont(17f));
+            FontMetrics bfm = g.getFontMetrics();
+            String val = stats[i][1];
+            g.setColor(ORANGE);
+            g.drawString(val, bx + (boxW - bfm.stringWidth(val)) / 2, y + 24);
+
+            g.setFont(FontManager.getRunescapeSmallFont());
+            FontMetrics sfm = g.getFontMetrics();
+            g.setColor(TEXT);
+            String lbl = stats[i][0];
+            g.drawString(lbl, bx + (boxW - sfm.stringWidth(lbl)) / 2, y + 40);
+        }
+        return y + boxH;
     }
 
     /** Draws a "label ....... ●●●○○" row with filled gold pips for owned tiers. Returns the new y. */
@@ -1891,15 +1907,26 @@ public class DashboardDialog extends JDialog {
 
         final int W = 480, PAD = 24;
         int avgRows = 6, topRows = Math.max(1, top10.size());
-        int H = 4 + PAD + 60 + 12 + 70 + 12 + 22 + 6 + avgRows * 24 + 8
-                + 22 + 6 + topRows * 34 + 8 + 36 + PAD;
+        int heldH = 20;   // held / sent / received subtitle under the hero
+        int H = 4 + PAD + 60 + 12 + 70 + heldH + 12 + 22 + 6 + avgRows * 24 + 8
+                + 22 + 6 + topRows * 48 + 8 + 36 + PAD;
 
         BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = cardGraphics(img);
 
         int y = drawCardBase(g, W, H, account, "CAUGHT", date, PAD);
         y = drawHeroStat(g, FMT.format(col.lifetimeCaptures), "CREATURES CAUGHT", ORANGE, y, W, PAD);
-        y += 12;
+        // Held / sent / received subtitle, centered under the hero.
+        g.setFont(FontManager.getRunescapeSmallFont());
+        FontMetrics hfm = g.getFontMetrics();
+        String heldLine = FMT.format(col.totalCaptures()) + " cards held";
+        long sentN = col.lifetimeCardsSent, recvN = col.tradedInCount();
+        if (sentN > 0 || recvN > 0) {
+            heldLine += "    ·    " + FMT.format(sentN) + " sent    ·    " + FMT.format(recvN) + " received";
+        }
+        g.setColor(new Color(185, 185, 185));
+        g.drawString(heldLine, (W - hfm.stringWidth(heldLine)) / 2, y + hfm.getAscent());
+        y += heldH + 12;
 
         CreatureRarity[] rarOrder = {CreatureRarity.MYTHIC, CreatureRarity.LEGENDARY,
                 CreatureRarity.EPIC, CreatureRarity.RARE, CreatureRarity.UNCOMMON, CreatureRarity.COMMON};
@@ -1943,7 +1970,13 @@ public class DashboardDialog extends JDialog {
                 g.setColor(new Color(210, 210, 210));
                 String ctx = c.rarity.label + "  ·  Kill #" + c.killsBeforeCapture + "  ·  Lv." + c.captureLevel;
                 g.drawString(ctx, PAD + 4, y + fm.getAscent());
-                y += 19;
+                y += 15;
+                // Provenance line — captured by + reroll count
+                g.setColor(new Color(150, 170, 200));
+                String owner = c.originalOwner != null && !c.originalOwner.isEmpty() ? c.originalOwner : account;
+                String prov = "by " + owner + (c.rerollCount() > 0 ? "    ·    rerolled " + c.rerollCount() + "×" : "");
+                g.drawString(prov, PAD + 4, y + fm.getAscent());
+                y += 18;
             }
         }
         y += 8;
