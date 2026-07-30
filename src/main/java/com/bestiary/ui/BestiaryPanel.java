@@ -53,6 +53,8 @@ public class BestiaryPanel extends PluginPanel {
     private JTabbedPane tabs;
     /** "Log in to view your collection" banner shown above the tabs while no account is active. */
     private JPanel welcomeBanner;
+    /** Bottom button strip (Reset + dev tools) — disabled while logged out. */
+    private JPanel southPanel;
 
     @Inject
     public BestiaryPanel(BestiaryDataService dataService, ProgressionService progressionService,
@@ -174,9 +176,11 @@ public class BestiaryPanel extends PluginPanel {
         centerWrap.add(welcomeBanner, BorderLayout.NORTH);
         centerWrap.add(tabs,          BorderLayout.CENTER);
 
-        add(header,            BorderLayout.NORTH);
-        add(centerWrap,        BorderLayout.CENTER);
-        add(buildSouthPanel(), BorderLayout.SOUTH);
+        southPanel = buildSouthPanel();
+
+        add(header,      BorderLayout.NORTH);
+        add(centerWrap,  BorderLayout.CENTER);
+        add(southPanel,  BorderLayout.SOUTH);
 
         // Start locked — the Info/Guide tab stays browsable; a character login adds the rest.
         applyLockedState(true);
@@ -210,6 +214,31 @@ public class BestiaryPanel extends PluginPanel {
             tabs.addTab("Shop",     shopTab);
             tabs.addTab("Progress", progressTab);
         }
+        // Everything that acts on a collection is inert while logged out — only the Info/Guide
+        // sub-tabs stay usable. (The Info tab keeps its own sub-tabs live.)
+        infoTab.setInteractiveEnabled(!locked);
+        if (southPanel != null) setControlsEnabled(southPanel, !locked);
+    }
+
+    /** Recursively enables/disables buttons and combo boxes under {@code root}. */
+    private static void setControlsEnabled(Container root, boolean enabled) {
+        for (Component c : root.getComponents()) {
+            if (c instanceof AbstractButton || c instanceof JComboBox) {
+                c.setEnabled(enabled);
+            }
+            if (c instanceof Container) {
+                setControlsEnabled((Container) c, enabled);
+            }
+        }
+    }
+
+    /**
+     * Called on logout: dispose every open Bestiary dialog (album, dashboards, card views, etc.) so
+     * none linger showing the now-cleared collection, then re-lock the panel.
+     */
+    public void onLoggedOut() {
+        closeAllBestiaryWindows();
+        refresh();
     }
 
     private JPanel buildSouthPanel() {

@@ -167,10 +167,10 @@ public class BestiaryPlugin extends Plugin {
         if (event.getGameState() == GameState.LOGGED_IN) {
             sessionTracker.clear();
         } else if (event.getGameState() == GameState.LOGIN_SCREEN) {
-            // Logged out — flush + lock down: the panel returns to the "log in" view and no
-            // account's data is shown or writable until the next login.
+            // Logged out — flush + lock down: close any open Bestiary windows, clear the data, and
+            // return the panel to the "log in" view. No data is shown or writable until next login.
             dataService.handleLogout();
-            SwingUtilities.invokeLater(panel::refresh);
+            SwingUtilities.invokeLater(panel::onLoggedOut);
         }
     }
 
