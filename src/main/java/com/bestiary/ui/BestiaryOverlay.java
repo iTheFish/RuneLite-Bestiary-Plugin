@@ -7,7 +7,6 @@ import net.runelite.api.Client;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
-import net.runelite.client.ui.overlay.OverlayPriority;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -63,7 +62,7 @@ public class BestiaryOverlay extends Overlay {
 
     @Inject
     public BestiaryOverlay(Client client, BestiaryConfig config) {
-        setPriority(OverlayPriority.LOW);
+        setPriority(Overlay.PRIORITY_LOW);
         setLayer(OverlayLayer.ABOVE_WIDGETS);
         applyConfig(config);
     }
