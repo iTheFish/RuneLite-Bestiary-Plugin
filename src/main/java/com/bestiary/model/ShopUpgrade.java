@@ -26,13 +26,13 @@ public enum ShopUpgrade {
     KILL_XP(
             "Hunter's Focus",
             "Adds flat bonus XP to every kill, on top of the base kill XP.",
-            ShopCategory.PROGRESSION, 6, new long[]{500, 1500, 4000, 12000, 40000, 120000}, 5.0),
+            ShopCategory.PROGRESSION, 5, new long[]{500, 1000, 2000, 4000, 8000}, 5.0),
 
     /** +% to the XP earned on every capture (+5%..+25%). */
     CAPTURE_XP(
             "Scholar's Insight",
             "Increases the XP earned from every successful capture.",
-            ShopCategory.PROGRESSION, 5, new long[]{100, 600, 2500, 8000, 20000}, 0.05),
+            ShopCategory.PROGRESSION, 5, new long[]{500, 1000, 2500, 5000, 10000}, 0.05),
 
     /** Adds to the passive shiny chance on every capture. */
     SHINY_CHANCE(

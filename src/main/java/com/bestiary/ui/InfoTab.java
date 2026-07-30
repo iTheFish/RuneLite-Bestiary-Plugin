@@ -356,7 +356,7 @@ public class InfoTab extends JPanel {
                 "Progression:\n" +
                 "• Hunter's Bounty — +2 credits per tier (up to +10) added to every capture reward.\n" +
                 "• Salvager's Eye — +2% per tier to credits earned from discarding cards.\n" +
-                "• Hunter's Focus — +5 XP per tier (up to +30) added to every kill's XP.\n" +
+                "• Hunter's Focus — +5 XP per tier (up to +25) added to every kill's XP.\n" +
                 "• Scholar's Insight — +5% per tier (up to +25%) to the XP from every capture.\n" +
                 "• Shiny Charm — +0.1% per tier (up to +0.5%) to your capture shiny chance.\n\n" +
                 "Rerolls:\n" +
