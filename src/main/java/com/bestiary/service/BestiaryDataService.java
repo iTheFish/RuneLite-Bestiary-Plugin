@@ -111,6 +111,12 @@ public class BestiaryDataService {
         BestiaryStore.StoreData d = store.load();
         collection = new BestiaryCollection();
         for (CapturedCreature c : d.captures) {
+            // Migration: pre-#49 saves have no owner fields — seed them from the capturer.
+            if (c.originalOwner == null || c.originalOwner.isEmpty()) c.originalOwner = c.playerName;
+            if (c.currentOwner == null || c.currentOwner.isEmpty()) {
+                c.currentOwner = c.originalOwner != null && !c.originalOwner.isEmpty()
+                        ? c.originalOwner : c.playerName;
+            }
             collection.creatures.add(c);
             collection.captureCountByNpc.merge(c.npcName, 1, Integer::sum);
         }
@@ -409,7 +415,8 @@ public class BestiaryDataService {
                 .rarity(rarity).quality(q).captureTime(c.captureTime).regionName(c.regionName)
                 .captureLevel(currentLevel)   // reroll happened now → odds reflect the current level
                 .killsBeforeCapture(c.killsBeforeCapture)
-                .playerName(c.playerName).shiny(shiny).prayer(prayer).observedHp(c.observedHp)
+                .playerName(c.playerName).originalOwner(c.originalOwner).currentOwner(c.currentOwner)
+                .shiny(shiny).prayer(prayer).observedHp(c.observedHp)
                 .shinyBonus(bonusRerollShinyChance())   // reroll re-rolled shiny with the current reroll bonus
                 .rerolledBy(reroller)
                 .rerollHistory(history)
