@@ -164,16 +164,23 @@ public class BestiaryPlugin extends Plugin {
     @Subscribe
     public void onGameStateChanged(GameStateChanged event) {
         killTracker.onGameStateChanged(event);
-        if (event.getGameState() == GameState.LOGGED_IN && client.getLocalPlayer() != null) {
-            // Load (or switch to) this account's own collection, keyed by the stable accountHash.
-            // Data is locked down per account, so one character's captures never show under another.
-            long accountHash = client.getAccountHash();
-            String name = client.getLocalPlayer().getName();
-            if (accountHash != -1L && name != null && !name.isEmpty()) {
-                dataService.switchAccount(accountHash, name);
-                SwingUtilities.invokeLater(panel::refresh);
-            }
+        if (event.getGameState() == GameState.LOGGED_IN) {
             sessionTracker.clear();
+        }
+    }
+
+    @Subscribe
+    public void onGameTick(net.runelite.api.events.GameTick event) {
+        // Load (or switch to) this account's own collection, keyed by the stable accountHash.
+        // Done on a tick — not on LOGGED_IN — because the accountHash (and RSN) aren't reliably
+        // populated the instant the LOGGED_IN state fires. switchAccount no-ops on the same
+        // account, so this is cheap to run every tick; it only reloads when the account changes.
+        if (client.getGameState() != GameState.LOGGED_IN) return;
+        long accountHash = client.getAccountHash();
+        if (accountHash == -1L) return;
+        String name = client.getLocalPlayer() != null ? client.getLocalPlayer().getName() : "";
+        if (dataService.switchAccount(accountHash, name)) {
+            SwingUtilities.invokeLater(panel::refresh);
         }
     }
 

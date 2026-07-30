@@ -62,16 +62,22 @@ public class BestiaryDataService {
      * {@code LOGGED_IN} from the client thread. No-ops on a repeated hash (e.g. world hops) so an
      * in-progress session's unsaved state isn't reloaded away.
      */
-    public void switchAccount(long accountHash, String rsn) {
+    public boolean switchAccount(long accountHash, String rsn) {
         if (activeAccountHash != null && activeAccountHash == accountHash) {
-            if (rsn != null && !rsn.isEmpty()) activeAccountName = rsn;
-            return;
+            // Same account (e.g. a later tick once the RSN is available, or a world hop): just
+            // fill in / refresh the display name and registry entry. No reload.
+            if (rsn != null && !rsn.isEmpty() && !rsn.equals(activeAccountName)) {
+                activeAccountName = rsn;
+                store.setActiveAccount(accountHash, rsn);
+            }
+            return false;
         }
         if (activeAccountHash != null) persistNow();   // flush the previously active account
         activeAccountHash = accountHash;
         activeAccountName = rsn != null ? rsn : "";
         store.setActiveAccount(accountHash, activeAccountName);
         load();
+        return true;
     }
 
     /** True once a character has logged in and its collection is loaded. */
