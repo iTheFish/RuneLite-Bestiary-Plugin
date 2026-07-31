@@ -162,7 +162,15 @@ public class MonsterRoster {
         "Tumeken's Warden", "Elidinis' Warden",
 
         // === Abyssal Sire ===
-        "Abyssal Sire"
+        "Abyssal Sire",
+
+        // === New monsters (monster-candidates-review.csv, 2026-07-31) ===
+        // NOTE: "Vasa Nistirio" is the exact in-game/wiki NPC name (the CSV shorthand was "Vassa").
+        "Yama", "Brutus", "Vasa Nistirio",
+        "Tormented Demon", "Kalphite Queen", "Skotizo",
+        "Crystalline Hunllef", "Corrupted Hunllef", "Ice demon",
+        "Revenant maledictus",
+        "Blood Moon", "Blue Moon", "Eclipse Moon"
     );
 
     // -------------------------------------------------------------------------
@@ -278,7 +286,12 @@ public class MonsterRoster {
             "Maiden of Sugadinti", "Pestilent Bloat", "Sotetseg",
             "Xarpus", "Verzik Vitur",
             "Akkha", "Ba-Ba", "Kephri", "Zebak",
-            "Tumeken's Warden", "Elidinis' Warden"
+            "Tumeken's Warden", "Elidinis' Warden",
+            "Yama", "Brutus", "Vasa Nistirio",
+            "Tormented Demon", "Kalphite Queen", "Skotizo",
+            "Crystalline Hunllef", "Corrupted Hunllef", "Ice demon",
+            "Revenant maledictus",
+            "Blood Moon", "Blue Moon", "Eclipse Moon"
         )) { d.put(n, BOSS); }
 
         DIFFICULTY = Collections.unmodifiableMap(d);
@@ -355,7 +368,7 @@ public class MonsterRoster {
         // OCCULTIST - magic + ranged
         for (String n : Arrays.asList(
             "Hespori","Thermonuclear smoke devil","Alchemical Hydra","Zulrah","The Whisperer",
-            "Kree'arra","Maiden of Sugadinti","Kephri","Hydra","Waterfiend"
+            "Kree'arra","Maiden of Sugadinti","Kephri","Hydra","Waterfiend","Vasa Nistirio"
         )) { a.put(n, OCCULTIST); }
 
         // APEX - tribrid (all styles)
@@ -365,8 +378,21 @@ public class MonsterRoster {
             "Phosani's Nightmare","Pestilent Bloat","Sotetseg","Verzik Vitur","Akkha","Zebak",
             "Tumeken's Warden","Elidinis' Warden","Great Olm","Lizardman shaman","Wyvern",
             "Ancient wyvern","Skeletal wyvern","Fossil island wyvern","Mithril dragon",
-            "Adamant dragon","Rune dragon"
+            "Adamant dragon","Rune dragon","Yama"
         )) { a.put(n, APEX); }
+
+        // New monsters (monster-candidates-review.csv, 2026-07-31).
+        a.put("Brutus", MEATSHIELD);            // passive/tanky lump; low offence
+        a.put("Tormented Demon", APEX);         // all 3 styles
+        a.put("Kalphite Queen", APEX);          // tribrid
+        a.put("Skotizo", BATTLEMAGE);           // stab + magic
+        a.put("Crystalline Hunllef", OCCULTIST);// magic + ranged, no melee
+        a.put("Corrupted Hunllef", OCCULTIST);
+        a.put("Ice demon", OCCULTIST);          // ranged + magic, melee-immune
+        a.put("Revenant maledictus", OCCULTIST);
+        a.put("Blood Moon", WARRIOR);           // Moons of Peril — all melee mid-bosses
+        a.put("Blue Moon", WARRIOR);
+        a.put("Eclipse Moon", WARRIOR);
 
         COMBAT_CLASSES = Collections.unmodifiableMap(a);
     }
@@ -577,7 +603,22 @@ public class MonsterRoster {
         b.put("Tumeken's Warden", new int[]{80, 85, 48, 77, 75, 15});
         b.put("Elidinis' Warden", new int[]{80, 85, 48, 77, 75, 15});
         b.put("Abyssal Sire", new int[]{55, 45, 65, 60, 1, 15});
-        
+        // New monsters (monster-candidates-review.csv, 2026-07-31). Order: {ATK,STR,DEF,MAG,RNG,AGI}
+        b.put("Yama",                new int[]{83, 85, 85, 80, 62, 60});
+        b.put("Brutus",              new int[]{10, 20,  7,  5,  2, 15});
+        b.put("Vasa Nistirio",       new int[]{20, 20, 75, 80, 45, 50});
+        b.put("Tormented Demon",     new int[]{70, 70, 57, 70, 70, 45});
+        b.put("Kalphite Queen",      new int[]{68, 68, 72, 60, 55, 45});
+        b.put("Skotizo",             new int[]{60, 62, 55, 70, 20, 12});
+        b.put("Crystalline Hunllef", new int[]{40, 45, 65, 70, 70, 65});
+        b.put("Corrupted Hunllef",   new int[]{45, 50, 75, 80, 80, 65});
+        b.put("Ice demon",           new int[]{ 1,  1, 60, 85, 80, 10});
+        b.put("Revenant maledictus", new int[]{45, 55, 55, 75, 75, 40});
+        // Moons of Peril — melee mid-bosses; all share RNG 40 / MAG 60, Blood is the beefier one.
+        b.put("Blood Moon",          new int[]{60, 65, 55, 60, 40, 30});
+        b.put("Blue Moon",           new int[]{55, 60, 50, 60, 40, 30});
+        b.put("Eclipse Moon",        new int[]{55, 60, 50, 60, 40, 35});
+
         STAT_BASES = Collections.unmodifiableMap(b);
     }
 
@@ -792,6 +833,20 @@ public class MonsterRoster {
         h.put("Tumeken's Warden",    880);
         h.put("Elidinis' Warden",    880);
         h.put("Abyssal Sire",        400);
+        // New monsters (monster-candidates-review.csv, 2026-07-31)
+        h.put("Yama",               2500);   // CSV "confirmed"; user flagged as low — pending review
+        h.put("Brutus",               58);   // VERIFY — multiple "Brutus" NPCs exist
+        h.put("Vasa Nistirio",       300);
+        h.put("Tormented Demon",     600);
+        h.put("Kalphite Queen",      255);
+        h.put("Skotizo",             450);
+        h.put("Crystalline Hunllef", 600);
+        h.put("Corrupted Hunllef",  1000);
+        h.put("Ice demon",           140);
+        h.put("Revenant maledictus",1250);
+        h.put("Blood Moon",          500);
+        h.put("Blue Moon",           500);
+        h.put("Eclipse Moon",        500);
         HITPOINTS = Collections.unmodifiableMap(h);
     }
 
@@ -895,6 +950,18 @@ public class MonsterRoster {
             "Wyrm", "Drake", "Hydra", "Alchemical Hydra",
             "Wyvern", "Ancient wyvern", "Skeletal wyvern", "Fossil island wyvern"
         )) { s.put(n, WYRM); }
+
+        // New monsters (monster-candidates-review.csv, 2026-07-31).
+        // Vasa Nistirio + the three Moons kept as OTHER (CSV "Not sure" / spectral) via fallback.
+        s.put("Yama",                DEMON);
+        s.put("Brutus",              ANIMAL);
+        s.put("Tormented Demon",     DEMON);
+        s.put("Kalphite Queen",      KALPHITE);
+        s.put("Skotizo",             DEMON);
+        s.put("Crystalline Hunllef", ANIMAL);
+        s.put("Corrupted Hunllef",   ANIMAL);
+        s.put("Ice demon",           DEMON);
+        s.put("Revenant maledictus", UNDEAD);
 
         // All unlisted monsters fall back to OTHER via getSpecies()
         SPECIES = Collections.unmodifiableMap(s);
@@ -1027,11 +1094,13 @@ public class MonsterRoster {
         "Ahrim the Blighted", "Dharok the Wretched", "Guthan the Infested",
         "Karil the Tainted", "Torag the Corrupted", "Verac the Defiled",
         "Dusk", "Dawn",
-        "Amoxliatl", "Chaos Elemental", "Hueycoatl", "King Black Dragon"
+        "Amoxliatl", "Chaos Elemental", "Hueycoatl", "King Black Dragon",
+        "Brutus", "Tormented Demon", "Skotizo"
     ));
 
     private static final java.util.Set<String> ENDGAME_BOSSES = new java.util.HashSet<>(Arrays.asList(
         "TzTok-Jad", "TzKal-Zuk", "Nex",
+        "Yama", "Vasa Nistirio", "Corrupted Hunllef",
         "Duke Sucellus", "The Leviathan", "Vardorvis", "The Whisperer",
         "Sol Heredit",
         "Tekton", "Great Olm", "Vespula",
@@ -1183,7 +1252,21 @@ public class MonsterRoster {
         p.put("Tumeken's Warden", 80);
         p.put("Elidinis' Warden", 80);
         p.put("Abyssal Sire", 40);
-        
+        // New monsters (monster-candidates-review.csv, 2026-07-31)
+        p.put("Yama", 77);
+        p.put("Brutus", 5);
+        p.put("Vasa Nistirio", 50);
+        p.put("Tormented Demon", 80);
+        p.put("Kalphite Queen", 75);
+        p.put("Skotizo", 32);
+        p.put("Crystalline Hunllef", 55);
+        p.put("Corrupted Hunllef", 65);
+        p.put("Ice demon", 10);
+        p.put("Revenant maledictus", 55);
+        p.put("Blood Moon", 55);
+        p.put("Blue Moon", 45);
+        p.put("Eclipse Moon", 50);
+
         PRAYER = Collections.unmodifiableMap(p);
     }
 
