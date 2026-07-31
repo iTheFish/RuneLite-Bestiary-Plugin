@@ -245,8 +245,7 @@ public class MonsterRoster {
             "Lizardman shaman",
             "Brutal black dragon", "Brutal red dragon",
             "Brutal blue dragon", "Brutal green dragon",
-            "Lava dragon",
-            "Blood Moon", "Blue Moon"
+            "Lava dragon"
         )) { d.put(n, HARD); }
 
         // Elite — challenging late-game PvM (pre-boss tier)
@@ -254,8 +253,7 @@ public class MonsterRoster {
             "Adamant dragon", "Rune dragon",
             "Hydra",
             "Kraken",
-            "Basilisk knight",
-            "Eclipse Moon"
+            "Basilisk knight"
         )) { d.put(n, ELITE); }
 
         // Boss — endgame encounters requiring preparation/skill
@@ -292,7 +290,8 @@ public class MonsterRoster {
             "Yama", "Brutus", "Vasa Nistirio",
             "Tormented Demon", "Kalphite Queen", "Skotizo",
             "Crystalline Hunllef", "Corrupted Hunllef", "Ice demon",
-            "Revenant maledictus"
+            "Revenant maledictus",
+            "Blood Moon", "Blue Moon", "Eclipse Moon"
         )) { d.put(n, BOSS); }
 
         DIFFICULTY = Collections.unmodifiableMap(d);
@@ -391,9 +390,9 @@ public class MonsterRoster {
         a.put("Corrupted Hunllef", OCCULTIST);
         a.put("Ice demon", OCCULTIST);          // ranged + magic, melee-immune
         a.put("Revenant maledictus", OCCULTIST);
-        a.put("Blood Moon", WARRIOR);           // typeless melee
-        a.put("Blue Moon", MAGE);
-        a.put("Eclipse Moon", MARKSMAN);
+        a.put("Blood Moon", WARRIOR);           // Moons of Peril — all melee mid-bosses
+        a.put("Blue Moon", WARRIOR);
+        a.put("Eclipse Moon", WARRIOR);
 
         COMBAT_CLASSES = Collections.unmodifiableMap(a);
     }
@@ -615,9 +614,10 @@ public class MonsterRoster {
         b.put("Corrupted Hunllef",   new int[]{45, 50, 75, 80, 80, 65});
         b.put("Ice demon",           new int[]{ 1,  1, 60, 85, 80, 10});
         b.put("Revenant maledictus", new int[]{45, 55, 55, 75, 75, 40});
-        b.put("Blood Moon",          new int[]{65, 55, 45, 45, 40, 30});
-        b.put("Blue Moon",           new int[]{55, 55, 50, 60, 45, 30});
-        b.put("Eclipse Moon",        new int[]{55, 55, 50, 45, 65, 35});
+        // Moons of Peril — melee mid-bosses; all share RNG 40 / MAG 60, Blood is the beefier one.
+        b.put("Blood Moon",          new int[]{60, 65, 55, 60, 40, 30});
+        b.put("Blue Moon",           new int[]{55, 60, 50, 60, 40, 30});
+        b.put("Eclipse Moon",        new int[]{55, 60, 50, 60, 40, 35});
 
         STAT_BASES = Collections.unmodifiableMap(b);
     }
