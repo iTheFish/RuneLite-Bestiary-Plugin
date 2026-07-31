@@ -872,7 +872,7 @@ public class MonsterRoster {
         // DEMON — creatures of demonic or infernal origin
         for (String n : Arrays.asList(
             "Imp", "Lesser demon", "Greater demon", "Black demon", "Abyssal demon",
-            "Bloodveld", "Mutated bloodveld", "Pyrefiend", "Waterfiend",
+            "Bloodveld", "Mutated bloodveld", "Pyrefiend",
             "Hellhound", "Nechryael", "Greater nechryael",
             "Cerberus", "Abyssal Sire", "K'ril Tsutsaroth",
             "Duke Sucellus"
@@ -942,10 +942,9 @@ public class MonsterRoster {
             "Vampyre", "Vyrewatch",
             "Spiritual warrior", "Spiritual mage", "Spiritual ranger",
             "Vet'ion", "Calvar'ion",
-            "Ahrim the Blighted", "Dharok the Wretched", "Guthan the Infested",
-            "Karil the Tainted", "Torag the Corrupted", "Verac the Defiled",
             "Verzik Vitur", "Xarpus", "Pestilent Bloat"
         )) { s.put(n, UNDEAD); }
+        // Barrows brothers are NOT undead (common misconception) → left unlisted, fall back to OTHER.
 
         // WYRM — reptilian magical creatures (hydras, wyverns, wyrms)
         for (String n : Arrays.asList(
