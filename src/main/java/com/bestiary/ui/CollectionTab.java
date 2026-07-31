@@ -255,10 +255,26 @@ public class CollectionTab extends JPanel {
         add(northPanel, BorderLayout.NORTH);
         add(scroll,     BorderLayout.CENTER);
 
+        // Rebuild lazily: if the Cards tab isn't the one on screen, defer until it is actually shown.
+        // Building/tearing down a big collection's cards is only cheap when the tab is never rendered
+        // off-screen (avoids AWT's heavyweight shape-mixing cost, #48) and skips wasted work entirely.
+        addHierarchyListener(e -> {
+            if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0
+                    && isShowing() && dirty) {
+                rebuildCards();
+            }
+        });
+
         rebuildCards();
     }
 
+    /** True when a refresh was requested while the tab was off-screen; drives the lazy rebuild. */
+    private boolean dirty = false;
+
     public void refresh() {
+        // Only the visible tab needs live cards. If we're not on screen, mark dirty and rebuild once
+        // the Cards tab is actually shown — so switching profiles (which lands on Info) is instant.
+        if (!isShowing()) { dirty = true; return; }
         rebuildCards();
     }
 
@@ -289,6 +305,7 @@ public class CollectionTab extends JPanel {
     }
 
     private void rebuildCards() {
+        dirty = false;
         cardContainer.removeAll();
 
         String query          = searchBar.getText().trim().toLowerCase();

@@ -437,12 +437,10 @@ public class BestiaryPanel extends PluginPanel {
             tabs.addTab("Shop",     shopTab);
             tabs.addTab("Progress", progressTab);
         }
-        // Entering view mode: jump to Cards so the viewed collection is front-and-centre; otherwise Info.
-        if (state == PanelState.VIEWING && tabs.getTabCount() > 1) {
-            tabs.setSelectedIndex(1);
-        } else {
-            tabs.setSelectedIndex(0);
-        }
+        // Always land on Info after a state change (login / view / return). This keeps profile changes
+        // instant: the (potentially huge) Cards tab isn't rendered until the user actually opens it, so
+        // there's nothing heavy to build or tear down on the switch (#48).
+        tabs.setSelectedIndex(0);
     }
 
     /** Recursively enables/disables buttons and combo boxes under {@code root}. */
