@@ -162,7 +162,11 @@ public class MonsterRoster {
         "Tumeken's Warden", "Elidinis' Warden",
 
         // === Abyssal Sire ===
-        "Abyssal Sire"
+        "Abyssal Sire",
+
+        // === New bosses (monster-candidates-review.csv, 2026-07-31) ===
+        // NOTE: "Vasa Nistirio" is the exact in-game/wiki NPC name (the CSV shorthand was "Vassa").
+        "Yama", "Brutus", "Vasa Nistirio"
     );
 
     // -------------------------------------------------------------------------
@@ -278,7 +282,8 @@ public class MonsterRoster {
             "Maiden of Sugadinti", "Pestilent Bloat", "Sotetseg",
             "Xarpus", "Verzik Vitur",
             "Akkha", "Ba-Ba", "Kephri", "Zebak",
-            "Tumeken's Warden", "Elidinis' Warden"
+            "Tumeken's Warden", "Elidinis' Warden",
+            "Yama", "Brutus", "Vasa Nistirio"
         )) { d.put(n, BOSS); }
 
         DIFFICULTY = Collections.unmodifiableMap(d);
@@ -355,7 +360,7 @@ public class MonsterRoster {
         // OCCULTIST - magic + ranged
         for (String n : Arrays.asList(
             "Hespori","Thermonuclear smoke devil","Alchemical Hydra","Zulrah","The Whisperer",
-            "Kree'arra","Maiden of Sugadinti","Kephri","Hydra","Waterfiend"
+            "Kree'arra","Maiden of Sugadinti","Kephri","Hydra","Waterfiend","Vasa Nistirio"
         )) { a.put(n, OCCULTIST); }
 
         // APEX - tribrid (all styles)
@@ -365,8 +370,11 @@ public class MonsterRoster {
             "Phosani's Nightmare","Pestilent Bloat","Sotetseg","Verzik Vitur","Akkha","Zebak",
             "Tumeken's Warden","Elidinis' Warden","Great Olm","Lizardman shaman","Wyvern",
             "Ancient wyvern","Skeletal wyvern","Fossil island wyvern","Mithril dragon",
-            "Adamant dragon","Rune dragon"
+            "Adamant dragon","Rune dragon","Yama"
         )) { a.put(n, APEX); }
+
+        // Brutus — passive/tanky lump (Meatshield); low offence, sits and soaks.
+        a.put("Brutus", MEATSHIELD);
 
         COMBAT_CLASSES = Collections.unmodifiableMap(a);
     }
@@ -577,7 +585,11 @@ public class MonsterRoster {
         b.put("Tumeken's Warden", new int[]{80, 85, 48, 77, 75, 15});
         b.put("Elidinis' Warden", new int[]{80, 85, 48, 77, 75, 15});
         b.put("Abyssal Sire", new int[]{55, 45, 65, 60, 1, 15});
-        
+        // New bosses (monster-candidates-review.csv, 2026-07-31). Order: {ATK,STR,DEF,MAG,RNG,AGI}
+        b.put("Yama",          new int[]{83, 85, 85, 80, 62, 60});
+        b.put("Brutus",        new int[]{10, 20,  7,  5,  2, 15});
+        b.put("Vasa Nistirio", new int[]{20, 20, 75, 80, 45, 50});
+
         STAT_BASES = Collections.unmodifiableMap(b);
     }
 
@@ -792,6 +804,10 @@ public class MonsterRoster {
         h.put("Tumeken's Warden",    880);
         h.put("Elidinis' Warden",    880);
         h.put("Abyssal Sire",        400);
+        // New bosses (monster-candidates-review.csv, 2026-07-31)
+        h.put("Yama",               2500);
+        h.put("Brutus",               58);   // VERIFY — multiple "Brutus" NPCs exist
+        h.put("Vasa Nistirio",       300);
         HITPOINTS = Collections.unmodifiableMap(h);
     }
 
@@ -895,6 +911,11 @@ public class MonsterRoster {
             "Wyrm", "Drake", "Hydra", "Alchemical Hydra",
             "Wyvern", "Ancient wyvern", "Skeletal wyvern", "Fossil island wyvern"
         )) { s.put(n, WYRM); }
+
+        // New bosses (monster-candidates-review.csv, 2026-07-31).
+        // Vasa Nistirio kept as OTHER — CSV species was "Not sure".
+        s.put("Yama",   DEMON);
+        s.put("Brutus", ANIMAL);
 
         // All unlisted monsters fall back to OTHER via getSpecies()
         SPECIES = Collections.unmodifiableMap(s);
@@ -1027,11 +1048,13 @@ public class MonsterRoster {
         "Ahrim the Blighted", "Dharok the Wretched", "Guthan the Infested",
         "Karil the Tainted", "Torag the Corrupted", "Verac the Defiled",
         "Dusk", "Dawn",
-        "Amoxliatl", "Chaos Elemental", "Hueycoatl", "King Black Dragon"
+        "Amoxliatl", "Chaos Elemental", "Hueycoatl", "King Black Dragon",
+        "Brutus"
     ));
 
     private static final java.util.Set<String> ENDGAME_BOSSES = new java.util.HashSet<>(Arrays.asList(
         "TzTok-Jad", "TzKal-Zuk", "Nex",
+        "Yama", "Vasa Nistirio",
         "Duke Sucellus", "The Leviathan", "Vardorvis", "The Whisperer",
         "Sol Heredit",
         "Tekton", "Great Olm", "Vespula",
@@ -1183,7 +1206,11 @@ public class MonsterRoster {
         p.put("Tumeken's Warden", 80);
         p.put("Elidinis' Warden", 80);
         p.put("Abyssal Sire", 40);
-        
+        // New bosses (monster-candidates-review.csv, 2026-07-31)
+        p.put("Yama", 77);
+        p.put("Brutus", 5);
+        p.put("Vasa Nistirio", 50);
+
         PRAYER = Collections.unmodifiableMap(p);
     }
 
