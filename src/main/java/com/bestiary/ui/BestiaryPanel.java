@@ -429,7 +429,9 @@ public class BestiaryPanel extends PluginPanel {
 
     /** Rebuilds the tab set to match {@code state}. Only called on transitions (see {@link #applyState}). */
     private void applyTabs(PanelState state) {
-        while (tabs.getTabCount() > 1) tabs.remove(1);   // keep Info (index 0)
+        // Keep Info (index 0); drop the rest. Hard cap the iterations so a pathological
+        // tab-count state can never spin the EDT (defensive — normally 3 removals max).
+        for (int guard = 0; tabs.getTabCount() > 1 && guard < 8; guard++) tabs.remove(1);
         if (state != PanelState.LOCKED) tabs.addTab("Cards", collectionTab);
         if (state == PanelState.NORMAL) {
             tabs.addTab("Shop",     shopTab);
