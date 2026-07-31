@@ -75,8 +75,12 @@ public class BestiaryPlugin extends Plugin {
 
     @Inject private BestiaryPanel panel;
     @Inject private BestiaryOverlay overlay;
+    @Inject @javax.inject.Named("developerMode") private boolean developerMode;
 
     private NavigationButton navButton;
+
+    /** Dev-only EDT-hang detector (#48 debugging): dumps the AWT stack to the log if the UI freezes. */
+    private ScheduledFuture<?> edtWatchdog;
 
     // BATCHED mode: 5-second accumulation per npcName+rarity key (executor thread only)
     private final Map<String, Integer>            batchCounts       = new HashMap<>();
@@ -115,11 +119,44 @@ public class BestiaryPlugin extends Plugin {
         });
 
         SwingUtilities.invokeLater(panel::refresh);
+        if (developerMode) startEdtWatchdog();
         log.info("Bestiary plugin started");
+    }
+
+    /**
+     * Dev-only: pings the EDT every 2s; if a ping goes unanswered for &gt;5s the UI is frozen
+     * (e.g. an infinite layout/paint loop, which never throws so nothing hits the log). Dumps the
+     * AWT-EventQueue stack to the log ONCE per freeze so the exact stuck line can be identified.
+     * Never runs for live users (developer mode only).
+     */
+    private void startEdtWatchdog() {
+        final java.util.concurrent.atomic.AtomicLong pingSent = new java.util.concurrent.atomic.AtomicLong(0);
+        final java.util.concurrent.atomic.AtomicLong pongSeen = new java.util.concurrent.atomic.AtomicLong(0);
+        final java.util.concurrent.atomic.AtomicBoolean reported = new java.util.concurrent.atomic.AtomicBoolean(false);
+        edtWatchdog = executor.scheduleAtFixedRate(() -> {
+            if (pingSent.get() != pongSeen.get()) {
+                long waited = System.currentTimeMillis() - pingSent.get();
+                if (waited > 5000 && reported.compareAndSet(false, true)) {
+                    log.error("Bestiary EDT watchdog: UI unresponsive for ~{}ms — dumping AWT stack", waited);
+                    for (Map.Entry<Thread, StackTraceElement[]> e : Thread.getAllStackTraces().entrySet()) {
+                        if (!e.getKey().getName().startsWith("AWT-EventQueue")) continue;
+                        StringBuilder sb = new StringBuilder("FROZEN ").append(e.getKey().getName()).append(":\n");
+                        for (StackTraceElement f : e.getValue()) sb.append("\tat ").append(f).append('\n');
+                        log.error(sb.toString());
+                    }
+                }
+                return;   // don't queue another ping while one is outstanding
+            }
+            reported.set(false);
+            long now = System.currentTimeMillis();
+            pingSent.set(now);
+            SwingUtilities.invokeLater(() -> pongSeen.set(now));
+        }, 2, 2, TimeUnit.SECONDS);
     }
 
     @Override
     protected void shutDown() {
+        if (edtWatchdog != null) { edtWatchdog.cancel(false); edtWatchdog = null; }
         dataService.shutdown();
         overlayManager.remove(overlay);
         clientToolbar.removeNavigation(navButton);
@@ -227,7 +264,9 @@ public class BestiaryPlugin extends Plugin {
 
         // Attempt capture
         int captureLevel = progressionService.getLevel();
-        int killCount    = dataService.getCollection().getKillCount(npcName);
+        // Use the PLAYED collection's kill count for the label — the on-screen view may be another
+        // account (#48), but this kill belongs to the logged-in character.
+        int killCount    = dataService.getPlayedCollection().getKillCount(npcName);
         String region    = resolveRegionName(location);
 
         String playerName = client.getLocalPlayer() != null ? client.getLocalPlayer().getName() : "";

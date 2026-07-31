@@ -94,7 +94,7 @@ public class CaptureRow extends JPanel {
         addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseReleased(java.awt.event.MouseEvent e) {
-                if (e.isPopupTrigger()) {
+                if (e.isPopupTrigger() && !BestiaryPanel.isReadOnly()) {
                     JPopupMenu menu = new JPopupMenu();
 
                     JMenuItem favItem = new JMenuItem(capture.favourite ? "✩ Remove Favourite" : "★ Favourite");

@@ -25,8 +25,13 @@ public class CaptureRateDialog extends JDialog {
     private static CaptureRateDialog current;
 
     public static void open(Window owner, ProgressionService ps, double shinyBonus) {
+        open(owner, ps.getLevel(), shinyBonus);
+    }
+
+    /** Opens for a specific bestiary level — used so a viewed account shows ITS rates, not yours (#48). */
+    public static void open(Window owner, int level, double shinyBonus) {
         if (current != null) current.dispose();
-        current = new CaptureRateDialog(owner, ps.getLevel(), shinyBonus);
+        current = new CaptureRateDialog(owner, level, shinyBonus);
     }
 
     private CaptureRateDialog(Window owner, int level, double shinyBonus) {

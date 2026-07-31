@@ -6,7 +6,6 @@ import com.bestiary.model.CapturedCreature;
 import com.bestiary.model.CreatureQuality;
 import com.bestiary.model.CreatureRarity;
 import com.bestiary.model.MonsterRoster;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Inject;
@@ -33,7 +32,7 @@ public class BestiaryDataService {
     private final ProgressionService progressionService;
     private final BestiaryStore store;
 
-    @Getter
+    /** The "played" collection — the logged-in character. All mutators write here. */
     private BestiaryCollection collection = new BestiaryCollection();
     private ProgressionService.ProgressionState progressionState = new ProgressionService.ProgressionState();
 
@@ -41,6 +40,18 @@ public class BestiaryDataService {
     private Long activeAccountHash;
     /** Display name (RSN) of the active account, for dialog headers. */
     private String activeAccountName = "";
+
+    // --- View-any-account (#48): a read-only overlay of another account's collection. ---
+    /** Non-null while viewing another account; the UI reads this instead of the played collection. */
+    private BestiaryCollection viewedCollection;
+    /** RSN of the account being viewed (for the read-only banner + dialog headers). */
+    private String viewedAccountName = "";
+    /** accountHash of the account being viewed (so the dropdown can mark the selection). */
+    private Long viewedAccountHash;
+    /** The viewed account's stored lifetime XP, so its level can be shown without touching progression. */
+    private long viewedTotalXp;
+    /** The viewed account's unlocked achievements, for read-only dashboards while viewing. */
+    private EnumSet<Achievement> viewedAchievements;
 
     @Inject
     public BestiaryDataService(ProgressionService progressionService, BestiaryStore store) {
@@ -72,6 +83,7 @@ public class BestiaryDataService {
             }
             return false;
         }
+        clearView();                                   // a real account change drops any read-only view
         if (activeAccountHash != null) persistNow();   // flush the previously active account
         activeAccountHash = accountHash;
         activeAccountName = rsn != null ? rsn : "";
@@ -86,6 +98,7 @@ public class BestiaryDataService {
      * (logged-out) UI. The next login reloads that account's data fresh from disk.
      */
     public void handleLogout() {
+        clearView();                  // drop any read-only view — nothing is browsable while logged out
         if (activeAccountHash == null) return;
         persistNow();                 // flush the active account to its own file first
         store.clearActiveAccount();
@@ -99,6 +112,150 @@ public class BestiaryDataService {
     /** True once a character has logged in and its collection is loaded. */
     public boolean hasActiveAccount() {
         return activeAccountHash != null;
+    }
+
+    /** Builds an in-memory collection from a stored snapshot (shared by played load + viewed load). */
+    private static BestiaryCollection hydrateCollection(BestiaryStore.StoreData d) {
+        BestiaryCollection col = new BestiaryCollection();
+        for (CapturedCreature c : d.captures) {
+            // Migration: pre-#49 saves have no owner fields — seed them from the capturer.
+            if (c.originalOwner == null || c.originalOwner.isEmpty()) c.originalOwner = c.playerName;
+            if (c.currentOwner == null || c.currentOwner.isEmpty()) {
+                c.currentOwner = c.originalOwner != null && !c.originalOwner.isEmpty()
+                        ? c.originalOwner : c.playerName;
+            }
+            col.creatures.add(c);
+            col.captureCountByNpc.merge(c.npcName, 1, Integer::sum);
+        }
+        col.killCounts   = new HashMap<>(d.killCounts);
+        col.credits      = d.credits;
+        col.lifetimeCreditsEarned = d.lifetimeCreditsEarned;
+        col.lifetimeCreditsSpent  = d.lifetimeCreditsSpent;
+        // Legacy saves predate lifetime tracking — baseline "earned" from the current balance
+        // so the economy dashboard/achievements aren't zeroed for existing players.
+        if (col.lifetimeCreditsEarned == 0 && col.credits > 0) {
+            col.lifetimeCreditsEarned = col.credits;
+        }
+        col.shopUpgrades = new HashMap<>(d.shopUpgrades);
+        col.lifetimeCardsSent = d.lifetimeCardsSent;
+
+        // Lifetime captures: prefer the stored counter, but baseline it from the cards this account
+        // actually caught (not traded-in) so pre-#N accounts don't read 0. Because own-caught-held can
+        // never exceed true lifetime captures, the max() is a safe one-time floor, self-correcting once
+        // the counter is tracked live (received cards are excluded, so they never inflate "Caught").
+        col.lifetimeCaptures = Math.max(d.lifetimeCaptures, col.ownCaughtHeldCount());
+        col.lifetimeCapturesByNpc = new HashMap<>(d.lifetimeCapturesByNpc);
+        // Per-species baseline = max(stored, own-caught-held for that species).
+        java.util.Map<String, Integer> ownHeldByNpc = new HashMap<>();
+        for (CapturedCreature c : col.creatures) {
+            if (!BestiaryCollection.isTradedIn(c)) ownHeldByNpc.merge(c.npcName, 1, Integer::sum);
+        }
+        for (java.util.Map.Entry<String, Integer> e : ownHeldByNpc.entrySet()) {
+            col.lifetimeCapturesByNpc.merge(e.getKey(), e.getValue(), Math::max);
+        }
+        return col;
+    }
+
+    // -------------------------------------------------------------------------
+    // View any account (read-only, #48)
+    // -------------------------------------------------------------------------
+
+    /**
+     * The collection the UI should display: the read-only viewed account if one is selected (#48),
+     * otherwise the played account. Every panel/dialog reads through here, so switching the view
+     * updates the whole UI. Mutators deliberately do NOT go through this — they write the played
+     * collection directly, so captures always land on the logged-in character even while viewing.
+     */
+    public BestiaryCollection getCollection() {
+        return viewedCollection != null ? viewedCollection : collection;
+    }
+
+    /** The played (logged-in) collection, regardless of any active view. */
+    public BestiaryCollection getPlayedCollection() {
+        return collection;
+    }
+
+    /** True while a read-only view of another account is active. */
+    public boolean isViewing() {
+        return viewedCollection != null;
+    }
+
+    /** RSN of the account currently being viewed (empty when not viewing). */
+    public String getViewedAccountName() {
+        return viewedAccountName;
+    }
+
+    /** accountHash of the account currently being viewed, or null when not viewing. */
+    public Long getViewedAccountHash() {
+        return viewedAccountHash;
+    }
+
+    /**
+     * Loads {@code accountHash}'s collection read-only for display (#48). Never writes it back.
+     * No-ops (and clears any view) if the target is the played account. Returns true if a view
+     * is now active.
+     */
+    public boolean viewAccount(long accountHash, String rsn) {
+        if (activeAccountHash != null && activeAccountHash == accountHash) {
+            clearView();   // "viewing" your own account just means the normal played view
+            return false;
+        }
+        BestiaryStore.StoreData d = store.readAccount(accountHash);
+        viewedCollection    = hydrateCollection(d);
+        viewedTotalXp       = d.totalXp;
+        viewedAchievements  = parseAchievements(d.achievements);
+        viewedAccountHash   = accountHash;
+        viewedAccountName   = rsn != null ? rsn : "";
+        return true;
+    }
+
+    /** Drops the read-only view and returns the UI to the played account. */
+    public void clearView() {
+        viewedCollection    = null;
+        viewedAchievements  = null;
+        viewedAccountHash   = null;
+        viewedAccountName   = "";
+        viewedTotalXp       = 0;
+    }
+
+    /** All known accounts from the registry (for the switcher dropdown), most-recently-active first. */
+    public java.util.List<BestiaryStore.AccountRef> listAllAccounts() {
+        return store.listAccounts();
+    }
+
+    /** accountHash of the played (logged-in) account, or null while logged out. */
+    public Long getActiveAccountHash() {
+        return activeAccountHash;
+    }
+
+    /**
+     * Bestiary level to DISPLAY: the viewed account's level (from its stored XP via {@link XpTable})
+     * when viewing, else the live played level. Keeps view mode collection-only (no dual progression).
+     */
+    public int getDisplayLevel() {
+        return viewedCollection != null
+                ? com.bestiary.util.XpTable.levelForXp(viewedTotalXp)
+                : progressionService.getLevel();
+    }
+
+    /** Lifetime XP to DISPLAY — the viewed account's stored XP when viewing, else the played total. */
+    public long getDisplayTotalXp() {
+        return viewedCollection != null ? viewedTotalXp : progressionState.totalXp;
+    }
+
+    /** XP remaining to the next level for the DISPLAYED account (viewed or played). */
+    public long getDisplayXpToNextLevel() {
+        if (viewedCollection == null) return progressionService.getXpToNextLevel();
+        int lvl = com.bestiary.util.XpTable.levelForXp(viewedTotalXp);
+        long nextStart = com.bestiary.util.XpTable.xpForLevel(
+                Math.min(lvl + 1, com.bestiary.util.XpTable.MAX_VIRTUAL_LEVEL));
+        return Math.max(0, nextStart - viewedTotalXp);
+    }
+
+    /** Unlocked achievements to DISPLAY — the viewed account's set when viewing, else the played set. */
+    public java.util.Set<Achievement> getDisplayAchievements() {
+        return viewedCollection != null && viewedAchievements != null
+                ? viewedAchievements : progressionState.unlockedAchievements;
     }
 
     // -------------------------------------------------------------------------
@@ -119,6 +276,7 @@ public class BestiaryDataService {
      * preserved). Returns the number actually transferred.
      */
     public int transferCards(java.util.Collection<CapturedCreature> cards, long targetHash, String targetRsn) {
+        if (isViewing()) return 0;   // read-only while viewing another account
         if (activeAccountHash != null && targetHash == activeAccountHash) return 0;  // can't send to self
         java.util.List<CapturedCreature> moving = new ArrayList<>();
         for (CapturedCreature c : cards) {
@@ -155,43 +313,7 @@ public class BestiaryDataService {
     /** Loads the active account's data into memory. Must be called from the client thread. */
     public void load() {
         BestiaryStore.StoreData d = store.load();
-        collection = new BestiaryCollection();
-        for (CapturedCreature c : d.captures) {
-            // Migration: pre-#49 saves have no owner fields — seed them from the capturer.
-            if (c.originalOwner == null || c.originalOwner.isEmpty()) c.originalOwner = c.playerName;
-            if (c.currentOwner == null || c.currentOwner.isEmpty()) {
-                c.currentOwner = c.originalOwner != null && !c.originalOwner.isEmpty()
-                        ? c.originalOwner : c.playerName;
-            }
-            collection.creatures.add(c);
-            collection.captureCountByNpc.merge(c.npcName, 1, Integer::sum);
-        }
-        collection.killCounts   = new HashMap<>(d.killCounts);
-        collection.credits      = d.credits;
-        collection.lifetimeCreditsEarned = d.lifetimeCreditsEarned;
-        collection.lifetimeCreditsSpent  = d.lifetimeCreditsSpent;
-        // Legacy saves predate lifetime tracking — baseline "earned" from the current balance
-        // so the economy dashboard/achievements aren't zeroed for existing players.
-        if (collection.lifetimeCreditsEarned == 0 && collection.credits > 0) {
-            collection.lifetimeCreditsEarned = collection.credits;
-        }
-        collection.shopUpgrades = new HashMap<>(d.shopUpgrades);
-        collection.lifetimeCardsSent = d.lifetimeCardsSent;
-
-        // Lifetime captures: prefer the stored counter, but baseline it from the cards this account
-        // actually caught (not traded-in) so pre-#N accounts don't read 0. Because own-caught-held can
-        // never exceed true lifetime captures, the max() is a safe one-time floor, self-correcting once
-        // the counter is tracked live (received cards are excluded, so they never inflate "Caught").
-        collection.lifetimeCaptures = Math.max(d.lifetimeCaptures, collection.ownCaughtHeldCount());
-        collection.lifetimeCapturesByNpc = new HashMap<>(d.lifetimeCapturesByNpc);
-        // Per-species baseline = max(stored, own-caught-held for that species).
-        java.util.Map<String, Integer> ownHeldByNpc = new HashMap<>();
-        for (CapturedCreature c : collection.creatures) {
-            if (!BestiaryCollection.isTradedIn(c)) ownHeldByNpc.merge(c.npcName, 1, Integer::sum);
-        }
-        for (java.util.Map.Entry<String, Integer> e : ownHeldByNpc.entrySet()) {
-            collection.lifetimeCapturesByNpc.merge(e.getKey(), e.getValue(), Math::max);
-        }
+        collection = hydrateCollection(d);
 
         progressionState = new ProgressionService.ProgressionState();
         progressionState.totalXp = d.totalXp;
@@ -213,6 +335,7 @@ public class BestiaryDataService {
 
     /** Permanently deletes all data and resets in-memory state. */
     public void wipeCollection() {
+        clearView();     // reset acts on the played account — leave any view behind
         collection       = new BestiaryCollection();
         progressionState = new ProgressionService.ProgressionState();
         progressionService.init(progressionState, collection);
@@ -321,6 +444,7 @@ public class BestiaryDataService {
      * awarded, or 0 if the card was already gone (guards against double-discard exploits).
      */
     public long discardCapture(CapturedCreature c) {
+        if (isViewing()) return 0;                    // read-only while viewing another account
         if (!collection.removeCapture(c)) return 0;   // already discarded — award nothing
         long credits = discardValue(c);
         addCredits(credits);
@@ -330,6 +454,7 @@ public class BestiaryDataService {
 
     /** Discards several cards at once. Returns total credits awarded (only for cards present). */
     public long discardCaptures(java.util.Collection<CapturedCreature> cards) {
+        if (isViewing()) return 0;   // read-only while viewing another account
         long total = 0;
         for (CapturedCreature c : cards) {
             if (!collection.removeCapture(c)) continue;
@@ -392,6 +517,7 @@ public class BestiaryDataService {
 
     /** Deducts credits if affordable; persists. Returns false if too poor. */
     public boolean spendCredits(long amount) {
+        if (isViewing()) return false;   // read-only while viewing another account
         if (collection.credits < amount) return false;
         subtractCredits(amount);
         persist();
@@ -416,6 +542,7 @@ public class BestiaryDataService {
      * Returns true on success. Persists immediately (a purchase is rare + valuable).
      */
     public boolean purchaseUpgrade(com.bestiary.model.ShopUpgrade u) {
+        if (isViewing()) return false;   // read-only while viewing another account
         int owned = collection.getUpgradeTier(u);
         if (owned >= u.maxTier) return false;
         long cost = u.costForNextTier(owned);
@@ -451,6 +578,7 @@ public class BestiaryDataService {
      * card, or null if the player can't afford it.
      */
     public CapturedCreature rerollCard(CapturedCreature c, int currentLevel) {
+        if (isViewing()) return null;   // read-only while viewing another account
         if (!spendCredits(rerollCost(c))) return null;
         // Non-Mythic cards get a small chance to move up a rarity (raised by the Reroll Fortune shop upgrade).
         CreatureRarity rarity = c.rarity;
