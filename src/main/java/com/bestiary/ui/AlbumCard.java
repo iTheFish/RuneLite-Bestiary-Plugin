@@ -725,20 +725,6 @@ public class AlbumCard extends JPanel {
         int pillY = COMBAT_Y + (COMBAT_H - pillH) / 2;
         int pillBase = pillY + (pillH + sfm.getAscent() - sfm.getDescent()) / 2;
 
-        // Species badge — right-aligned, always shown
-        String speciesLabel = species.label;
-        int spW = sfm.stringWidth(speciesLabel) + pillPad * 2;
-        int spX = w - PAD - spW;
-        if (!locked) {
-            g2.setColor(new Color(species.displayColor.getRed(), species.displayColor.getGreen(),
-                    species.displayColor.getBlue(), 160));
-        } else {
-            g2.setColor(new Color(50, 50, 50));
-        }
-        g2.fillRoundRect(spX, pillY, spW, pillH, 4, 4);
-        g2.setColor(locked ? new Color(75, 75, 75) : Color.WHITE);
-        g2.drawString(speciesLabel, spX + pillPad, pillBase);
-
         if (!locked) {
             // Level pill — dark/black background, white text
             String lvlLabel = combatLevel > 0 ? "Lvl " + combatLevel : "Non-combat";
@@ -749,32 +735,54 @@ public class AlbumCard extends JPanel {
             g2.setColor(Color.WHITE);
             g2.drawString(lvlLabel, lvlX + pillPad, pillBase);
 
-            // Class pill — amber. Shrink the font (not truncate) so long classes like
-            // JUGGERNAUT still show in full without overlapping the species pill.
-            int clsX = lvlX + lvlW + 4;
-            int maxClsW = spX - 4 - clsX;                 // room before the species pill
-            int maxTextW = maxClsW - pillPad * 2;
+            // Class + species pills share the row's remaining width. Pick the largest common
+            // font (<= small) at which BOTH fit side by side, so a long class like JUGGERNAUT
+            // stays legible instead of shrinking to a sliver while species keeps full size.
+            int clsX  = lvlX + lvlW + 4;
+            int gap   = 4;
+            int avail = (w - PAD) - clsX;
             String clsLabel = combatClass.label;
-            Font clsFont = smallFont;
-            FontMetrics cfm = sfm;
+            String spLabel  = species.label;
             float fs = smallFont.getSize2D();
-            while (cfm.stringWidth(clsLabel) > maxTextW && fs > 7f) {
+            Font  pillFont = smallFont;
+            FontMetrics pfm = sfm;
+            while (fs > 8f
+                    && pfm.stringWidth(clsLabel) + pfm.stringWidth(spLabel) + pillPad * 4 + gap > avail) {
                 fs -= 0.5f;
-                clsFont = smallFont.deriveFont(fs);
-                cfm = g2.getFontMetrics(clsFont);
+                pillFont = smallFont.deriveFont(fs);
+                pfm = g2.getFontMetrics(pillFont);
             }
-            int clsW = Math.min(cfm.stringWidth(clsLabel) + pillPad * 2, maxClsW);
-            if (maxTextW > 6) {
+            int pillBase2 = pillY + (pillH + pfm.getAscent() - pfm.getDescent()) / 2;
+            g2.setFont(pillFont);
+
+            // Species — right-aligned
+            int spW = pfm.stringWidth(spLabel) + pillPad * 2;
+            int spX = (w - PAD) - spW;
+            g2.setColor(new Color(species.displayColor.getRed(), species.displayColor.getGreen(),
+                    species.displayColor.getBlue(), 160));
+            g2.fillRoundRect(spX, pillY, spW, pillH, 4, 4);
+            g2.setColor(Color.WHITE);
+            g2.drawString(spLabel, spX + pillPad, pillBase2);
+
+            // Class — amber, after the level pill; capped so it can't reach the species pill
+            int clsW = Math.min(pfm.stringWidth(clsLabel) + pillPad * 2, spX - gap - clsX);
+            if (clsW > 6) {
                 g2.setColor(new Color(160, 110, 30, 180));
                 g2.fillRoundRect(clsX, pillY, clsW, pillH, 4, 4);
-                g2.setFont(clsFont);
                 g2.setColor(Color.WHITE);
-                g2.drawString(clsLabel, clsX + pillPad,
-                        pillY + (pillH + cfm.getAscent() - cfm.getDescent()) / 2);
-                g2.setFont(smallFont);
+                g2.drawString(clsLabel, clsX + pillPad, pillBase2);
             }
+            g2.setFont(smallFont);
         } else {
-            // Locked: plain kill count text
+            // Locked: grey species badge (right-aligned) + plain kill count text
+            String spLabel = species.label;
+            int spW = sfm.stringWidth(spLabel) + pillPad * 2;
+            int spX = w - PAD - spW;
+            g2.setColor(new Color(50, 50, 50));
+            g2.fillRoundRect(spX, pillY, spW, pillH, 4, 4);
+            g2.setColor(new Color(75, 75, 75));
+            g2.drawString(spLabel, spX + pillPad, pillBase);
+
             g2.setColor(new Color(65, 65, 65));
             String killStr = killCount > 0 ? killCount + " kills" : "Not encountered";
             g2.drawString(killStr, imgX + 2, subBaseline);

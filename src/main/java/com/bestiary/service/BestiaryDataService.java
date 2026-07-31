@@ -526,9 +526,13 @@ public class BestiaryDataService {
 
     // --- Passive shop upgrades (#39) ---
 
-    /** Tiers currently owned of a passive upgrade. */
+    /**
+     * Tiers currently owned of a passive upgrade — for DISPLAY (dashboard/export). Reflects the
+     * viewed account while browsing another profile (#48); shop purchase/bonus logic reads
+     * {@code collection} directly so it always acts on the played account.
+     */
     public int getUpgradeTier(com.bestiary.model.ShopUpgrade u) {
-        return collection.getUpgradeTier(u);
+        return getCollection().getUpgradeTier(u);
     }
 
     /** Cost of the next tier, or -1 if the upgrade is already maxed. */
@@ -557,6 +561,16 @@ public class BestiaryDataService {
     public double bonusShinyChance() {
         return com.bestiary.model.ShopUpgrade.SHINY_CHANCE.effectFor(
                 collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.SHINY_CHANCE));
+    }
+
+    /**
+     * Shiny-chance bonus for DISPLAY (the Catch Rates screen) — reflects the viewed account while
+     * browsing another profile (#48). The live capture flow uses {@link #bonusShinyChance()} so a
+     * kill on the played account always applies that account's own bonus.
+     */
+    public double displayBonusShinyChance() {
+        return com.bestiary.model.ShopUpgrade.SHINY_CHANCE.effectFor(
+                getCollection().getUpgradeTier(com.bestiary.model.ShopUpgrade.SHINY_CHANCE));
     }
 
     /** Shiny-chance bonus applied when rerolling a card, from the Reroll Shine upgrade. */

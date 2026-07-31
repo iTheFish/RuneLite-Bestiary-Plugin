@@ -866,17 +866,16 @@ public class MonsterRoster {
             "Rock crab", "Sand crab", "Swamp crab", "Gemstone crab",
             "Warped tortoise", "Tortoise",
             "Giant Mole", "Callisto", "Artio", "Scurrius", "Kraken",
-            "Ba-Ba", "Zebak", "Amoxliatl"
+            "Ba-Ba", "Zebak"
         )) { s.put(n, ANIMAL); }
 
         // DEMON — creatures of demonic or infernal origin
         for (String n : Arrays.asList(
             "Imp", "Lesser demon", "Greater demon", "Black demon", "Abyssal demon",
-            "Bloodveld", "Mutated bloodveld", "Pyrefiend", "Waterfiend",
-            "Dust devil", "Smoke devil", "Thermonuclear smoke devil",
+            "Bloodveld", "Mutated bloodveld", "Pyrefiend",
             "Hellhound", "Nechryael", "Greater nechryael",
             "Cerberus", "Abyssal Sire", "K'ril Tsutsaroth",
-            "Infernal mage", "Duke Sucellus", "Sotetseg"
+            "Duke Sucellus"
         )) { s.put(n, DEMON); }
 
         // DRAGON — true dragons and dragon-kind
@@ -892,7 +891,7 @@ public class MonsterRoster {
         // GIANT — giants and giant-kin
         for (String n : Arrays.asList(
             "Hill giant", "Moss giant", "Fire giant", "Ice giant",
-            "Obor", "Tekton", "General Graardor"
+            "Obor", "Bryophyta", "Tekton", "General Graardor"
         )) { s.put(n, GIANT); }
 
         // GOBLINOID — goblins and goblin-like creatures
@@ -907,19 +906,23 @@ public class MonsterRoster {
             "Black knight", "White knight",
             "Pirate", "Rogue",
             "Chaos druid", "Dark warrior",
-            "Ice warrior",
+            "Ice warrior", "Earth warrior", "Infernal mage",
             "Crazy Archaeologist", "Deranged Archaeologist", "Chaos Fanatic",
-            "Sol Heredit"
+            "Sol Heredit", "Maiden of Sugadinti"
         )) { s.put(n, HUMAN); }
 
-        // INSECT — insects, spiders, scorpions, and arthropod-type creatures
+        // INSECT — true insects (six-legged / bug-type creatures)
         for (String n : Arrays.asList(
-            "Spider", "Giant spider", "Ice spider", "Fever spider",
             "Cave bug", "Cave crawler", "Cave slime", "Fleshcrawler",
-            "Scorpion", "Scorpia",
-            "Araxxor", "Venenatis", "Spindel", "Sarachnis",
             "Vespula", "Kephri"
         )) { s.put(n, INSECT); }
+
+        // ARACHNID — spiders and scorpions
+        for (String n : Arrays.asList(
+            "Spider", "Giant spider", "Ice spider", "Fever spider",
+            "Scorpion", "Scorpia",
+            "Araxxor", "Venenatis", "Spindel", "Sarachnis"
+        )) { s.put(n, ARACHNID); }
 
         // KALPHITE — kalphite species
         for (String n : Arrays.asList(
@@ -939,17 +942,29 @@ public class MonsterRoster {
             "Vampyre", "Vyrewatch",
             "Spiritual warrior", "Spiritual mage", "Spiritual ranger",
             "Vet'ion", "Calvar'ion",
-            "Ahrim the Blighted", "Dharok the Wretched", "Guthan the Infested",
-            "Karil the Tainted", "Torag the Corrupted", "Verac the Defiled",
-            "Maiden of Sugadinti", "Verzik Vitur", "Xarpus",
-            "Akkha", "Vardorvis"
+            "Verzik Vitur", "Xarpus", "Pestilent Bloat"
         )) { s.put(n, UNDEAD); }
+        // Barrows brothers are NOT undead (common misconception) → left unlisted, fall back to OTHER.
 
         // WYRM — reptilian magical creatures (hydras, wyverns, wyrms)
         for (String n : Arrays.asList(
             "Wyrm", "Drake", "Hydra", "Alchemical Hydra",
             "Wyvern", "Ancient wyvern", "Skeletal wyvern", "Fossil island wyvern"
         )) { s.put(n, WYRM); }
+
+        // PLANT — plant-based creatures
+        for (String n : Arrays.asList("Hespori")) { s.put(n, PLANT); }
+
+        // SNAKE — serpents
+        for (String n : Arrays.asList("Zulrah")) { s.put(n, SNAKE); }
+
+        // TZHAAR — TzHaar-kin and their champions
+        for (String n : Arrays.asList("TzTok-Jad", "TzKal-Zuk")) { s.put(n, TZHAAR); }
+
+        // DAGANNOTH — dagannoth-kin
+        for (String n : Arrays.asList(
+            "Dagannoth", "Dagannoth Rex", "Dagannoth Prime", "Dagannoth Supreme"
+        )) { s.put(n, DAGANNOTH); }
 
         // New monsters (monster-candidates-review.csv, 2026-07-31).
         // Vasa Nistirio + the three Moons kept as OTHER (CSV "Not sure" / spectral) via fallback.
