@@ -352,8 +352,8 @@ public class AlbumCard extends JPanel {
 
             @Override
             public void mouseReleased(MouseEvent e) {
-                if (e.isPopupTrigger() && !locked && captures != null && !BestiaryPanel.isReadOnly()) {
-                    showExportMenu(e);
+                if (e.isPopupTrigger() && !locked && captures != null) {
+                    showExportMenu(e);   // read-only view shows only Copy + Card info/export (#48)
                 }
             }
 
@@ -373,6 +373,9 @@ public class AlbumCard extends JPanel {
             }
 
             private void showExportMenu(MouseEvent e) {
+                // Viewing another account is look-only: only Copy + Card info/export are offered;
+                // favourite/album-cover/nickname/reroll/discard are hidden (#48).
+                boolean readOnly = BestiaryPanel.isReadOnly();
                 JPopupMenu menu = new JPopupMenu();
                 if (copyCallback != null) {
                     JMenuItem copyItem = new JMenuItem("Copy Card");
@@ -380,7 +383,7 @@ public class AlbumCard extends JPanel {
                     menu.add(copyItem);
                     menu.addSeparator();
                 }
-                if (favToggleCallback != null) {
+                if (!readOnly && favToggleCallback != null) {
                     boolean isFav = favStateSupplier != null && Boolean.TRUE.equals(favStateSupplier.get());
                     JMenuItem favItem = new JMenuItem(isFav ? "✩ Remove Favourite" : "★ Favourite");
                     favItem.addActionListener(ev -> favToggleCallback.run());
@@ -393,7 +396,7 @@ public class AlbumCard extends JPanel {
                         menu.add(coverItem);
                     }
                     menu.addSeparator();
-                } else if (unfavouriteCallback != null) {
+                } else if (!readOnly && unfavouriteCallback != null) {
                     JMenuItem unfavItem = new JMenuItem("✩ Remove Favourite");
                     unfavItem.addActionListener(ev -> unfavouriteCallback.run());
                     menu.add(unfavItem);
@@ -429,7 +432,7 @@ public class AlbumCard extends JPanel {
                     }
                     menu.add(oddsSub);
                 }
-                if (!locked && captures != null && captures.size() == 1) {
+                if (!readOnly && !locked && captures != null && captures.size() == 1) {
                     CapturedCreature nickCap = captures.get(0);
                     String nickLabel = (nickCap.nickname != null && !nickCap.nickname.isEmpty()) ? "Rename…" : "Name capture…";
                     JMenuItem nickItem = new JMenuItem(nickLabel);
@@ -439,7 +442,7 @@ public class AlbumCard extends JPanel {
                     }));
                     menu.add(nickItem);
                 }
-                if (!locked && captures != null && captures.size() == 1
+                if (!readOnly && !locked && captures != null && captures.size() == 1
                         && (discardHandler != null || rerollHandler != null)) {
                     menu.addSeparator();
                     if (rerollHandler != null) {

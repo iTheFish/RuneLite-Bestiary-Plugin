@@ -210,8 +210,8 @@ public class BestiaryPanel extends PluginPanel {
                 () -> collectionTab.openAlbum(SwingUtilities.getWindowAncestor(this)),
                 () -> { if (tabs.getTabCount() > 1) { tabs.setSelectedIndex(1); collectionTab.showFavourites(); } },
                 () -> SessionRecapDialog.open(SwingUtilities.getWindowAncestor(this), sessionTracker),
-                () -> CaptureRateDialog.open(SwingUtilities.getWindowAncestor(this), progressionService,
-                        dataService.bonusShinyChance()),
+                () -> CaptureRateDialog.open(SwingUtilities.getWindowAncestor(this),
+                        dataService.getDisplayLevel(), dataService.bonusShinyChance()),
                 view -> DashboardDialog.open(SwingUtilities.getWindowAncestor(this), dataService, progressionService, view),
                 view -> DashboardDialog.copyViewToClipboard(dataService, progressionService, view));
 
@@ -425,6 +425,8 @@ public class BestiaryPanel extends PluginPanel {
         if (southPanel != null) setControlsEnabled(southPanel, state == PanelState.NORMAL);
         // Info header shortcuts/stat boxes browse the current collection (played or viewed) read-only.
         infoTab.setInteractiveEnabled(state != PanelState.LOCKED);
+        // While viewing another account, disable the "your play" shortcuts (Session Recap, Favourites).
+        infoTab.setViewingAnotherAccount(state == PanelState.VIEWING);
     }
 
     /** Rebuilds the tab set to match {@code state}. Only called on transitions (see {@link #applyState}). */

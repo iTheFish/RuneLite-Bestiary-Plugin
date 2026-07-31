@@ -118,6 +118,16 @@ public class InfoTab extends JPanel {
         }
     }
 
+    /**
+     * View-mode gating (#48): while browsing another account, Album / Catch Rates / stat-box dashboards
+     * stay usable (they reflect the viewed account), but Session Recap and Favourites are disabled —
+     * they're about YOUR play/collection, not the viewed one. Call after {@link #setInteractiveEnabled}.
+     */
+    public void setViewingAnotherAccount(boolean viewing) {
+        if (favouritesBtn != null) favouritesBtn.setEnabled(!viewing);
+        if (recapBtn != null)      recapBtn.setEnabled(!viewing);
+    }
+
     /** Recursively enables/disables every button under {@code root} (leaves other components alone). */
     private static void setButtonsEnabled(Container root, boolean enabled) {
         for (Component c : root.getComponents()) {
@@ -521,7 +531,11 @@ public class InfoTab extends JPanel {
         return l;
     }
 
-    private static JPanel buildShortcutRow(Runnable openAlbum, Runnable openFavourites,
+    /** Shortcuts disabled while viewing another account (about YOUR play, not the viewed collection). */
+    private JButton favouritesBtn;
+    private JButton recapBtn;
+
+    private JPanel buildShortcutRow(Runnable openAlbum, Runnable openFavourites,
                                             Runnable openRecap, Runnable openCatchRates) {
         JPanel container = new JPanel();
         container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
@@ -539,7 +553,8 @@ public class InfoTab extends JPanel {
         midRow.setOpaque(false);
         midRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
         midRow.setAlignmentX(LEFT_ALIGNMENT);
-        midRow.add(blockBtn("★ Favourites", new Color(220, 180, 60), openFavourites));
+        favouritesBtn = blockBtn("★ Favourites", new Color(220, 180, 60), openFavourites);
+        midRow.add(favouritesBtn);
         JButton catchBtn = blockBtn(" Catch Rates", new Color(100, 180, 220), openCatchRates, true);
         final int iD = 13;
         catchBtn.setIcon(new Icon() {
@@ -567,7 +582,8 @@ public class InfoTab extends JPanel {
         recapRow.setOpaque(false);
         recapRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
         recapRow.setAlignmentX(LEFT_ALIGNMENT);
-        recapRow.add(blockBtn("Session Recap", new Color(120, 200, 120), openRecap, true));
+        recapBtn = blockBtn("Session Recap", new Color(120, 200, 120), openRecap, true);
+        recapRow.add(recapBtn);
 
         container.add(albumRow);
         container.add(Box.createVerticalStrut(4));

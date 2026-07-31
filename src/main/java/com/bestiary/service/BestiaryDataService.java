@@ -50,6 +50,8 @@ public class BestiaryDataService {
     private Long viewedAccountHash;
     /** The viewed account's stored lifetime XP, so its level can be shown without touching progression. */
     private long viewedTotalXp;
+    /** The viewed account's unlocked achievements, for read-only dashboards while viewing. */
+    private EnumSet<Achievement> viewedAchievements;
 
     @Inject
     public BestiaryDataService(ProgressionService progressionService, BestiaryStore store) {
@@ -199,19 +201,21 @@ public class BestiaryDataService {
             return false;
         }
         BestiaryStore.StoreData d = store.readAccount(accountHash);
-        viewedCollection  = hydrateCollection(d);
-        viewedTotalXp     = d.totalXp;
-        viewedAccountHash = accountHash;
-        viewedAccountName = rsn != null ? rsn : "";
+        viewedCollection    = hydrateCollection(d);
+        viewedTotalXp       = d.totalXp;
+        viewedAchievements  = parseAchievements(d.achievements);
+        viewedAccountHash   = accountHash;
+        viewedAccountName   = rsn != null ? rsn : "";
         return true;
     }
 
     /** Drops the read-only view and returns the UI to the played account. */
     public void clearView() {
-        viewedCollection  = null;
-        viewedAccountHash = null;
-        viewedAccountName = "";
-        viewedTotalXp     = 0;
+        viewedCollection    = null;
+        viewedAchievements  = null;
+        viewedAccountHash   = null;
+        viewedAccountName   = "";
+        viewedTotalXp       = 0;
     }
 
     /** All known accounts from the registry (for the switcher dropdown), most-recently-active first. */
@@ -232,6 +236,26 @@ public class BestiaryDataService {
         return viewedCollection != null
                 ? com.bestiary.util.XpTable.levelForXp(viewedTotalXp)
                 : progressionService.getLevel();
+    }
+
+    /** Lifetime XP to DISPLAY — the viewed account's stored XP when viewing, else the played total. */
+    public long getDisplayTotalXp() {
+        return viewedCollection != null ? viewedTotalXp : progressionState.totalXp;
+    }
+
+    /** XP remaining to the next level for the DISPLAYED account (viewed or played). */
+    public long getDisplayXpToNextLevel() {
+        if (viewedCollection == null) return progressionService.getXpToNextLevel();
+        int lvl = com.bestiary.util.XpTable.levelForXp(viewedTotalXp);
+        long nextStart = com.bestiary.util.XpTable.xpForLevel(
+                Math.min(lvl + 1, com.bestiary.util.XpTable.MAX_VIRTUAL_LEVEL));
+        return Math.max(0, nextStart - viewedTotalXp);
+    }
+
+    /** Unlocked achievements to DISPLAY — the viewed account's set when viewing, else the played set. */
+    public java.util.Set<Achievement> getDisplayAchievements() {
+        return viewedCollection != null && viewedAchievements != null
+                ? viewedAchievements : progressionState.unlockedAchievements;
     }
 
     // -------------------------------------------------------------------------

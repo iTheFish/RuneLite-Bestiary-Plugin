@@ -163,15 +163,16 @@ public class DashboardDialog extends JDialog {
     private JPanel buildProgressionView() {
         JPanel root = col();
 
+        // Display values (viewed account when browsing another profile, else the played account, #48).
         BestiaryCollection col    = dataService.getCollection();
-        int    level              = progressionService.getLevel();
-        long   totalXp            = progressionService.getTotalXp();
+        int    level              = dataService.getDisplayLevel();
+        long   totalXp            = dataService.getDisplayTotalXp();
         long   levelStart         = XpTable.xpForLevel(level);
         long   levelEnd           = XpTable.xpForLevel(Math.min(level + 1, XpTable.MAX_VIRTUAL_LEVEL));
         long   xpInLevel          = totalXp - levelStart;
         long   xpSpan             = Math.max(1, levelEnd - levelStart);
-        long   xpLeft             = progressionService.getXpToNextLevel();
-        Set<Achievement> unlocked = progressionService.getState().unlockedAchievements;
+        long   xpLeft             = dataService.getDisplayXpToNextLevel();
+        Set<Achievement> unlocked = dataService.getDisplayAchievements();
 
         root.add(buildXpHero(level, totalXp, xpInLevel, xpSpan, xpLeft));
         root.add(gap(10));
@@ -1367,14 +1368,14 @@ public class DashboardDialog extends JDialog {
 
     private static BufferedImage renderProgressionCard(BestiaryDataService ds, ProgressionService ps) {
         BestiaryCollection col    = ds.getCollection();
-        int    level              = ps.getLevel();
-        long   totalXp            = ps.getTotalXp();
+        int    level              = ds.getDisplayLevel();
+        long   totalXp            = ds.getDisplayTotalXp();
         long   levelStart         = XpTable.xpForLevel(level);
         long   levelEnd           = XpTable.xpForLevel(Math.min(level + 1, XpTable.MAX_VIRTUAL_LEVEL));
         long   xpInLevel          = totalXp - levelStart;
         long   xpSpan             = Math.max(1, levelEnd - levelStart);
-        long   xpLeft             = ps.getXpToNextLevel();
-        Set<Achievement> unlocked = ps.getState().unlockedAchievements;
+        long   xpLeft             = ds.getDisplayXpToNextLevel();
+        Set<Achievement> unlocked = ds.getDisplayAchievements();
 
         String account = resolveAccount(ds);
         String date    = todayStr();
