@@ -124,8 +124,11 @@ public class InfoTab extends JPanel {
      * they're about YOUR play/collection, not the viewed one. Call after {@link #setInteractiveEnabled}.
      */
     public void setViewingAnotherAccount(boolean viewing) {
-        if (favouritesBtn != null) favouritesBtn.setEnabled(!viewing);
-        if (recapBtn != null)      recapBtn.setEnabled(!viewing);
+        // "Your play" shortcuts are live only when playing your own account: not while logged out
+        // (interactiveEnabled false) and not while viewing someone else's collection.
+        boolean enabled = interactiveEnabled && !viewing;
+        if (favouritesBtn != null) favouritesBtn.setEnabled(enabled);
+        if (recapBtn != null)      recapBtn.setEnabled(enabled);
     }
 
     /** Recursively enables/disables every button under {@code root} (leaves other components alone). */
