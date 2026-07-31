@@ -180,7 +180,7 @@ public class MonsterRoster {
 
     private static final Map<String, DifficultyTier> DIFFICULTY;
     static {
-        Map<String, DifficultyTier> d = new HashMap<>();
+        Map<String, DifficultyTier> d = new java.util.TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
         // Beginner — trivially easy, basically AFK
         for (String n : Arrays.asList(
@@ -304,7 +304,7 @@ public class MonsterRoster {
 
     private static final Map<String, CombatClass> COMBAT_CLASSES;
     static {
-        Map<String, CombatClass> a = new HashMap<>();
+        Map<String, CombatClass> a = new java.util.TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
         // Attack-style x weight taxonomy (#70). AGI/Prayer are per-monster (STAT_BASES / PRAYER).
 
@@ -406,7 +406,7 @@ public class MonsterRoster {
 
     private static final Map<String, int[]> STAT_BASES;
     static {
-        Map<String, int[]> b = new HashMap<>();
+        Map<String, int[]> b = new java.util.TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
         // Per-monster stat floors — reviewed/tuned by user (2026-07-25).
 
@@ -634,7 +634,7 @@ public class MonsterRoster {
     public static final int DEFAULT_HP = 8;
     private static final Map<String, Integer> HITPOINTS;
     static {
-        Map<String, Integer> h = new HashMap<>();
+        Map<String, Integer> h = new java.util.TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         // F2P / Early game
         h.put("Chicken",             3);
         h.put("Cow",                 8);
@@ -857,7 +857,7 @@ public class MonsterRoster {
 
     private static final Map<String, CreatureSpecies> SPECIES;
     static {
-        Map<String, CreatureSpecies> s = new HashMap<>();
+        Map<String, CreatureSpecies> s = new java.util.TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
         // ANIMAL — real-world creature analogues
         for (String n : Arrays.asList(
@@ -1088,7 +1088,14 @@ public class MonsterRoster {
     // harder monsters so high-tier bosses always feel impressive.
     // -------------------------------------------------------------------------
 
-    private static final java.util.Set<String> ACCESSIBLE_BOSSES = new java.util.HashSet<>(Arrays.asList(
+    /** Builds a case-insensitive set so boss-tier membership tests ignore in-game casing. */
+    private static java.util.Set<String> ciSet(String... names) {
+        java.util.Set<String> set = new java.util.TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        set.addAll(Arrays.asList(names));
+        return set;
+    }
+
+    private static final java.util.Set<String> ACCESSIBLE_BOSSES = ciSet(
         "Obor", "Bryophyta", "Giant Mole", "Hespori", "Scurrius", "Sarachnis", "Gemstone crab",
         "Chaos Fanatic", "Crazy Archaeologist", "Deranged Archaeologist", "Scorpia",
         "Ahrim the Blighted", "Dharok the Wretched", "Guthan the Infested",
@@ -1096,9 +1103,9 @@ public class MonsterRoster {
         "Dusk", "Dawn",
         "Amoxliatl", "Chaos Elemental", "Hueycoatl", "King Black Dragon",
         "Brutus", "Tormented Demon", "Skotizo"
-    ));
+    );
 
-    private static final java.util.Set<String> ENDGAME_BOSSES = new java.util.HashSet<>(Arrays.asList(
+    private static final java.util.Set<String> ENDGAME_BOSSES = ciSet(
         "TzTok-Jad", "TzKal-Zuk", "Nex",
         "Yama", "Vasa Nistirio", "Corrupted Hunllef",
         "Duke Sucellus", "The Leviathan", "Vardorvis", "The Whisperer",
@@ -1106,7 +1113,7 @@ public class MonsterRoster {
         "Tekton", "Great Olm", "Vespula",
         "Maiden of Sugadinti", "Pestilent Bloat", "Sotetseg", "Xarpus", "Verzik Vitur",
         "Akkha", "Ba-Ba", "Kephri", "Zebak", "Tumeken's Warden", "Elidinis' Warden"
-    ));
+    );
 
     /**
      * Returns the stat floor used by RarityRoller when generating quality stats.
@@ -1157,7 +1164,7 @@ public class MonsterRoster {
 
     private static final Map<String, Integer> PRAYER;
     static {
-        Map<String, Integer> p = new HashMap<>();
+        Map<String, Integer> p = new java.util.TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
         // Per-monster base Prayer (reviewed). Unlisted monsters default to 1.
 
@@ -1287,7 +1294,7 @@ public class MonsterRoster {
 
     private static final Map<String, Integer> COMBAT_LEVELS;
     static {
-        Map<String, Integer> c = new HashMap<>();
+        Map<String, Integer> c = new java.util.TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         // F2P / Early game
         c.put("Chicken",             1);
         c.put("Cow",                 2);
