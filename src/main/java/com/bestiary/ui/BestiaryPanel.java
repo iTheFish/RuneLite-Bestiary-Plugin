@@ -432,15 +432,15 @@ public class BestiaryPanel extends PluginPanel {
         // Keep Info (index 0); drop the rest. Hard cap the iterations so a pathological
         // tab-count state can never spin the EDT (defensive — normally 3 removals max).
         for (int guard = 0; tabs.getTabCount() > 1 && guard < 8; guard++) tabs.remove(1);
-        if (state != PanelState.LOCKED) tabs.addTab("Cards", collectionTab);
+        // Only the played account gets the full tab set. VIEWING another account is Info-only: its
+        // cards live in the Album and dashboards, so we never build/tear down the heavy Cards tab on a
+        // profile switch (that teardown is what froze the client on large collections, #48).
         if (state == PanelState.NORMAL) {
+            tabs.addTab("Cards",    collectionTab);
             tabs.addTab("Shop",     shopTab);
             tabs.addTab("Progress", progressTab);
         }
-        // Always land on Info after a state change (login / view / return). This keeps profile changes
-        // instant: the (potentially huge) Cards tab isn't rendered until the user actually opens it, so
-        // there's nothing heavy to build or tear down on the switch (#48).
-        tabs.setSelectedIndex(0);
+        tabs.setSelectedIndex(0);   // always land on Info after a state change
     }
 
     /** Recursively enables/disables buttons and combo boxes under {@code root}. */
@@ -680,8 +680,9 @@ public class BestiaryPanel extends PluginPanel {
             checkAndNotifyAchievements();
         }
 
-        collectionTab.refresh();
-        if (!viewing) {   // Shop/Progress are hidden while viewing — no need to refresh them
+        // Cards/Shop/Progress only exist for the played account; skip them entirely while viewing.
+        if (!viewing) {
+            collectionTab.refresh();
             shopTab.refresh();
             progressTab.refresh();
         }
