@@ -627,14 +627,26 @@ public class BestiaryPanel extends PluginPanel {
      * Refreshes all visible data.  Must be called from the EDT
      * (use {@code SwingUtilities.invokeLater(panel::refresh)} from game thread).
      */
+    /** Guards against a re-entrant refresh (a refresh triggering another refresh) freezing the EDT. */
+    private boolean refreshing;
+
     public void refresh() {
-        // A panel refresh (from a game tick, login/logout, or a switcher click) must never throw to
-        // the EDT and take the client down — log the stack and keep going. If the account-switch /
-        // Return-from-lobby edge case ever recurs, this captures it in client.log for a precise fix.
+        // Circuit-breaker: if a refresh is already running on this stack (e.g. a Swing model change
+        // during refresh re-fires a listener that calls refresh again), skip the nested call and log
+        // WHERE it came from, rather than looping forever and locking the client (unclickable UI, #48).
+        if (refreshing) {
+            log.warn("Skipped re-entrant Bestiary panel refresh", new Throwable("re-entrant refresh call site"));
+            return;
+        }
+        refreshing = true;
+        // A panel refresh (game tick, login/logout, switcher click) must never throw to the EDT and
+        // take the client down — log the stack and keep going.
         try {
             refreshInternal();
         } catch (Exception ex) {
             log.warn("Bestiary panel refresh failed", ex);
+        } finally {
+            refreshing = false;
         }
     }
 
