@@ -277,7 +277,16 @@ public class BestiaryPanel extends PluginPanel {
             // A dropdown action must never wedge the client — guard the whole handler.
             try {
                 AccountItem sel = (AccountItem) accountSwitcher.getSelectedItem();
-                if (sel == null || sel.hash == null) return;   // placeholder / nothing → no-op
+                if (sel == null) return;
+                if (sel.hash == null) {
+                    // "— Not logged in —" placeholder: stop viewing if we were (matches the Return button).
+                    if (dataService.isViewing()) {
+                        dataService.clearView();
+                        closeAllBestiaryWindows();
+                        refresh();
+                    }
+                    return;
+                }
                 Long viewed = dataService.getViewedAccountHash();
                 // Selecting the account already shown changes nothing — skip the rebuild + window churn.
                 boolean already = sel.played
@@ -380,9 +389,13 @@ public class BestiaryPanel extends PluginPanel {
         ret.setBorderPainted(false);
         ret.setToolTipText("Stop viewing and return to your own collection");
         ret.addActionListener(e -> {
-            dataService.clearView();
-            closeAllBestiaryWindows();
-            refresh();
+            try {
+                dataService.clearView();
+                closeAllBestiaryWindows();
+                refresh();
+            } catch (Exception ex) {
+                log.warn("Return-to-collection failed", ex);
+            }
         });
         p.add(viewingBannerLabel, BorderLayout.CENTER);
         p.add(ret,                BorderLayout.EAST);
@@ -615,6 +628,17 @@ public class BestiaryPanel extends PluginPanel {
      * (use {@code SwingUtilities.invokeLater(panel::refresh)} from game thread).
      */
     public void refresh() {
+        // A panel refresh (from a game tick, login/logout, or a switcher click) must never throw to
+        // the EDT and take the client down — log the stack and keep going. If the account-switch /
+        // Return-from-lobby edge case ever recurs, this captures it in client.log for a precise fix.
+        try {
+            refreshInternal();
+        } catch (Exception ex) {
+            log.warn("Bestiary panel refresh failed", ex);
+        }
+    }
+
+    private void refreshInternal() {
         refreshAccountSwitcher();
 
         boolean viewing = dataService.isViewing();
