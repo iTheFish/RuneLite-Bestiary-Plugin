@@ -52,6 +52,15 @@ public class CollectionTab extends JPanel {
         "Power (high)", "Power (low)"
     };
 
+    /**
+     * Max cards/rows rendered in the side panel at once. A large collection (esp. an account viewed
+     * read-only, #48) would otherwise put thousands of Swing components in one tab — and tearing that
+     * subtree down (tab switch, account switch, login, filter change) triggers AWT's O(n²)
+     * lightweight/heavyweight shape-mixing against RuneLite's game canvas, freezing the client for
+     * seconds. Capping keeps every rebuild + teardown fast; the Album is the full, paginated view.
+     */
+    private static final int MAX_CARDS = 250;
+
     public CollectionTab(BestiaryDataService dataService, WikiImageService imageService) {
         this.dataService  = dataService;
         this.imageService = imageService;
@@ -330,6 +339,9 @@ public class CollectionTab extends JPanel {
         List<Map.Entry<String, List<CapturedCreature>>> entries = new ArrayList<>(byNpcRarity.entrySet());
         sortEntries(entries, selectedSort);
 
+        int totalGroups = entries.size();
+        if (entries.size() > MAX_CARDS) entries = new ArrayList<>(entries.subList(0, MAX_CARDS));
+
         // Iterate from rarest to most common, emit headers + cards per rarity section
         CreatureRarity[] raritiesDesc = {
             CreatureRarity.MYTHIC, CreatureRarity.LEGENDARY, CreatureRarity.EPIC,
@@ -353,6 +365,19 @@ public class CollectionTab extends JPanel {
 
             cardContainer.add(Box.createVerticalStrut(4));
         }
+        addOverflowNote(entries.size(), totalGroups);
+    }
+
+    /** Appends a "showing N of M" note when a view was capped at {@link #MAX_CARDS} (perf, #48). */
+    private void addOverflowNote(int shown, int total) {
+        if (shown >= total) return;
+        JLabel note = new JLabel("<html><center>Showing " + shown + " of " + total
+                + " — refine your search,<br>or open the Album for the full list.</center></html>");
+        note.setForeground(new Color(150, 150, 150));
+        note.setFont(FontManager.getRunescapeSmallFont());
+        note.setAlignmentX(Component.CENTER_ALIGNMENT);
+        note.setBorder(new EmptyBorder(12, 8, 12, 8));
+        cardContainer.add(note);
     }
 
     private JPanel buildRarityHeader(CreatureRarity rarity, int count) {
@@ -443,11 +468,15 @@ public class CollectionTab extends JPanel {
                 sorted.sort(Comparator.comparing((CapturedCreature c) -> c.captureTime).reversed());
         }
 
+        int total = sorted.size();
+        if (sorted.size() > MAX_CARDS) sorted = sorted.subList(0, MAX_CARDS);
+
         Runnable onFav = () -> { dataService.saveNow(); rebuildCards(); };
         for (CapturedCreature capture : sorted) {
             cardContainer.add(new CaptureRow(capture, dataService.getCollection(), onFav));
             cardContainer.add(Box.createVerticalStrut(2));
         }
+        addOverflowNote(sorted.size(), total);
     }
 
     // -------------------------------------------------------------------------
@@ -558,11 +587,15 @@ public class CollectionTab extends JPanel {
                 entries.sort(Comparator.comparing(Map.Entry::getKey));
         }
 
+        int total = entries.size();
+        if (entries.size() > MAX_CARDS) entries = entries.subList(0, MAX_CARDS);
+
         for (Map.Entry<String, List<CapturedCreature>> e : entries) {
             cardContainer.add(new MonsterSummaryCard(
                     e.getKey(), e.getValue(), dataService.getCollection()));
             cardContainer.add(Box.createVerticalStrut(3));
         }
+        addOverflowNote(entries.size(), total);
     }
 
     private static CreatureRarity maxRarity(List<CapturedCreature> captures) {
