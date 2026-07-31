@@ -219,6 +219,10 @@ public class BestiaryPanel extends PluginPanel {
         tabs.addTab("Cards",    collectionTab);
         tabs.addTab("Shop",     shopTab);
         tabs.addTab("Progress", progressTab);
+        // Block account switching while the Cards tab is open: switching removes that tab, and tearing
+        // down a large rendered collection (e.g. a dev-seeded account) while it's the on-screen tab
+        // triggers AWT's slow shape-mixing → a long freeze. Leaving Cards first makes the switch fast.
+        tabs.addChangeListener(e -> updateSwitcherEnabled());
 
         welcomeBanner = buildWelcomeBanner();
         viewingBanner = buildViewingBanner();
@@ -356,6 +360,21 @@ public class BestiaryPanel extends PluginPanel {
         // Show when there's a real choice (2+ accounts), while viewing, or while logged out with any
         // known account to browse (so the "not logged in" default + browsable accounts are visible).
         accountRow.setVisible(accounts.size() >= 2 || viewing || (!loggedIn && !accounts.isEmpty()));
+        updateSwitcherEnabled();
+    }
+
+    /**
+     * Disables the account switcher while the Cards tab is the one on screen. Switching account removes
+     * that tab, and tearing down a large rendered collection while it's showing is what triggers AWT's
+     * O(n²) shape-mixing freeze (#48). Leaving Cards first (Info/Shop/Progress) makes the switch fast.
+     */
+    private void updateSwitcherEnabled() {
+        if (accountSwitcher == null) return;
+        boolean onCards = tabs.getSelectedComponent() == collectionTab;
+        accountSwitcher.setEnabled(!onCards);
+        accountSwitcher.setToolTipText(onCards
+                ? "Leave the Cards tab to switch account"
+                : "Switch which account's collection you're viewing (read-only for other accounts)");
     }
 
     /** Friendly banner shown above the tabs while logged out, inviting the player to log in. */
