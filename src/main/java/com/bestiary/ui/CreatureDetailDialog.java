@@ -376,7 +376,7 @@ public class CreatureDetailDialog extends JDialog {
         row.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseReleased(MouseEvent e) {
-                if (e.isPopupTrigger()) showRowMenu(e);
+                if (e.isPopupTrigger() && !BestiaryPanel.isReadOnly()) showRowMenu(e);
             }
             private void showRowMenu(MouseEvent e) {
                 JPopupMenu menu = new JPopupMenu();

@@ -93,7 +93,7 @@ public class CardExportPanel extends JPanel {
             @Override public void mousePressed(java.awt.event.MouseEvent e)  { popup(e); }
             @Override public void mouseReleased(java.awt.event.MouseEvent e) { popup(e); }
             private void popup(java.awt.event.MouseEvent e) {
-                if (!e.isPopupTrigger()) return;
+                if (!e.isPopupTrigger() || BestiaryPanel.isReadOnly()) return;   // look-only while viewing (#48)
                 BestiaryCollection live = collectionSupplier.get();
                 Runnable onMutate = CardExportDialog.onMutate();
                 JPopupMenu menu = new JPopupMenu();

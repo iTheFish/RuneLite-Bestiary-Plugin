@@ -352,7 +352,7 @@ public class AlbumCard extends JPanel {
 
             @Override
             public void mouseReleased(MouseEvent e) {
-                if (e.isPopupTrigger() && !locked && captures != null) {
+                if (e.isPopupTrigger() && !locked && captures != null && !BestiaryPanel.isReadOnly()) {
                     showExportMenu(e);
                 }
             }

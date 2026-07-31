@@ -9,6 +9,7 @@ import com.bestiary.ui.SessionRecapDialog;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -20,6 +21,7 @@ import java.awt.*;
  * Root PluginPanel.  Contains a stats header and a tabbed pane with the
  * Collection and Progress tabs.
  */
+@Slf4j
 @Singleton
 public class BestiaryPanel extends PluginPanel {
 
@@ -34,6 +36,17 @@ public class BestiaryPanel extends PluginPanel {
     public static void setAchievementNotifier(
             java.util.function.Consumer<java.util.List<com.bestiary.model.Achievement>> n) {
         achievementNotifier = n;
+    }
+
+    /**
+     * Read-only gate for card right-click menus (#48). While viewing another account, cards are
+     * look-only: no favourite/nickname/album-cover/discard/reroll/transfer/export-copy. Left-click
+     * (open a card to view it) still works. Static so the various card/row classes can query it
+     * without each holding a dataService reference.
+     */
+    private static java.util.function.BooleanSupplier readOnlyGate = () -> false;
+    public static boolean isReadOnly() {
+        return readOnlyGate != null && readOnlyGate.getAsBoolean();
     }
 
     /** The live singleton, so non-capture actions elsewhere can trigger an achievement re-check. */
@@ -78,6 +91,7 @@ public class BestiaryPanel extends PluginPanel {
                          com.bestiary.service.DevOptions devOptions) {
         super(false); // false = don't auto-wrap in scroll pane
         instance = this;
+        readOnlyGate = dataService::isViewing;   // cards become look-only while viewing another account
         this.dataService        = dataService;
         this.progressionService = progressionService;
         this.sessionTracker     = sessionTracker;
@@ -236,15 +250,16 @@ public class BestiaryPanel extends PluginPanel {
     // Account switcher (#48)
     // -------------------------------------------------------------------------
 
-    /** One entry in the account-switcher dropdown: the played account or a viewable known account. */
+    /** One entry in the account-switcher dropdown: a placeholder, the played account, or a viewable one. */
     private static final class AccountItem {
-        final Long hash;        // null only for the "not logged in" placeholder
+        final Long hash;        // null = the "not logged in" placeholder (selecting it does nothing)
         final String rsn;
         final boolean played;   // true = the logged-in character (selecting it clears any view)
         AccountItem(Long hash, String rsn, boolean played) {
             this.hash = hash; this.rsn = rsn; this.played = played;
         }
         @Override public String toString() {
+            if (hash == null) return "— Not logged in —";
             String name = rsn != null && !rsn.isEmpty() ? rsn : "Unknown";
             return played ? "★ " + name + " (you)" : "👁 " + name;
         }
@@ -259,16 +274,27 @@ public class BestiaryPanel extends PluginPanel {
         accountSwitcher.setToolTipText("Switch which account's collection you're viewing (read-only for other accounts)");
         accountSwitcher.addActionListener(e -> {
             if (switcherUpdating) return;
-            AccountItem sel = (AccountItem) accountSwitcher.getSelectedItem();
-            if (sel == null || sel.hash == null) return;
-            if (sel.played) {
-                dataService.clearView();
-            } else {
-                dataService.viewAccount(sel.hash, sel.rsn);
+            // A dropdown action must never wedge the client — guard the whole handler.
+            try {
+                AccountItem sel = (AccountItem) accountSwitcher.getSelectedItem();
+                if (sel == null || sel.hash == null) return;   // placeholder / nothing → no-op
+                Long viewed = dataService.getViewedAccountHash();
+                // Selecting the account already shown changes nothing — skip the rebuild + window churn.
+                boolean already = sel.played
+                        ? (!dataService.isViewing())
+                        : (viewed != null && sel.hash.equals(viewed));
+                if (already) return;
+                if (sel.played) {
+                    dataService.clearView();
+                } else {
+                    dataService.viewAccount(sel.hash, sel.rsn);
+                }
+                // Open albums/dashboards/card views hold the old collection — drop them, then rebuild.
+                closeAllBestiaryWindows();
+                refresh();
+            } catch (Exception ex) {
+                log.warn("Account switcher action failed", ex);
             }
-            // Open albums/dashboards/card views hold the old collection — drop them, then rebuild.
-            closeAllBestiaryWindows();
-            refresh();
         });
 
         JPanel row = new JPanel(new BorderLayout(0, 0));
@@ -286,29 +312,41 @@ public class BestiaryPanel extends PluginPanel {
     private void refreshAccountSwitcher() {
         java.util.List<com.bestiary.service.BestiaryStore.AccountRef> accounts = dataService.listAllAccounts();
         Long activeHash = dataService.getActiveAccountHash();
+        Long viewedHash = dataService.getViewedAccountHash();
         boolean viewing = dataService.isViewing();
+        boolean loggedIn = activeHash != null;
 
         switcherUpdating = true;
         try {
             accountSwitcher.removeAllItems();
             AccountItem toSelect = null;
+
+            // Logged-out default: a non-account placeholder, so nothing is "viewed" until picked.
+            AccountItem placeholder = null;
+            if (!loggedIn) {
+                placeholder = new AccountItem(null, null, false);
+                accountSwitcher.addItem(placeholder);
+            }
+
             for (com.bestiary.service.BestiaryStore.AccountRef a : accounts) {
-                boolean isPlayed = activeHash != null && a.hash == activeHash;
+                boolean isPlayed = loggedIn && a.hash == activeHash;
                 AccountItem item = new AccountItem(a.hash, a.rsn, isPlayed);
                 accountSwitcher.addItem(item);
                 if (viewing) {
-                    Long vh = dataService.getViewedAccountHash();
-                    if (vh != null && a.hash == vh) toSelect = item;
+                    if (viewedHash != null && a.hash == viewedHash) toSelect = item;
                 } else if (isPlayed) {
                     toSelect = item;
                 }
             }
+            // Logged out and not viewing → show the placeholder ("— Not logged in —").
+            if (toSelect == null && placeholder != null) toSelect = placeholder;
             if (toSelect != null) accountSwitcher.setSelectedItem(toSelect);
         } finally {
             switcherUpdating = false;
         }
-        // Only worth showing when there's an actual choice (2+ accounts) or a view is active.
-        accountRow.setVisible(accounts.size() >= 2 || viewing);
+        // Show when there's a real choice (2+ accounts), while viewing, or while logged out with any
+        // known account to browse (so the "not logged in" default + browsable accounts are visible).
+        accountRow.setVisible(accounts.size() >= 2 || viewing || (!loggedIn && !accounts.isEmpty()));
     }
 
     /** Friendly banner shown above the tabs while logged out, inviting the player to log in. */
