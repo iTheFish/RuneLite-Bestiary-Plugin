@@ -100,7 +100,7 @@ public class InfoTab extends JPanel {
         speciesVal.setText(String.valueOf(col.uniqueSpeciesCount()));
         // "Caught" = lifetime captures (never drops on discard/transfer); held cards show in the header.
         capturesVal.setText(FMT.format(col.lifetimeCaptures));
-        levelVal.setText(String.valueOf(progressionService.getLevel()));
+        levelVal.setText(String.valueOf(dataService.getDisplayLevel()));
         killsVal.setText(FMT.format(col.totalKills()));
     }
 

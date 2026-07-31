@@ -227,7 +227,9 @@ public class BestiaryPlugin extends Plugin {
 
         // Attempt capture
         int captureLevel = progressionService.getLevel();
-        int killCount    = dataService.getCollection().getKillCount(npcName);
+        // Use the PLAYED collection's kill count for the label — the on-screen view may be another
+        // account (#48), but this kill belongs to the logged-in character.
+        int killCount    = dataService.getPlayedCollection().getKillCount(npcName);
         String region    = resolveRegionName(location);
 
         String playerName = client.getLocalPlayer() != null ? client.getLocalPlayer().getName() : "";

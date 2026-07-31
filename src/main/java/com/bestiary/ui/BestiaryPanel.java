@@ -53,8 +53,21 @@ public class BestiaryPanel extends PluginPanel {
     private JTabbedPane tabs;
     /** "Log in to view your collection" banner shown above the tabs while no account is active. */
     private JPanel welcomeBanner;
+    /** "Viewing AltRSN (read-only)" banner shown above the tabs while viewing another account (#48). */
+    private JPanel viewingBanner;
+    private JLabel viewingBannerLabel;
     /** Bottom button strip (Reset + dev tools) — disabled while logged out. */
     private JPanel southPanel;
+
+    /** Account switcher (#48): pick the played account or view any known account read-only. */
+    private JComboBox<AccountItem> accountSwitcher;
+    private JPanel accountRow;
+    /** Guards the switcher listener while its model is rebuilt programmatically in {@link #refresh}. */
+    private boolean switcherUpdating;
+
+    /** Panel display state — drives which tabs/banners show and what's interactive. */
+    private enum PanelState { LOCKED, VIEWING, NORMAL }
+    private PanelState panelState;
 
     @Inject
     public BestiaryPanel(BestiaryDataService dataService, ProgressionService progressionService,
@@ -77,6 +90,7 @@ public class BestiaryPanel extends PluginPanel {
         AlbumCard.setConfig(config);
         AlbumCard.setSkillIconManager(skillIconManager);
         AlbumCard.setDiscardHandler((owner, cap) -> {
+            if (dataService.isViewing()) return;   // read-only view of another account (#48)
             long value = dataService.discardValue(cap);
             String label = (cap.isShiny() ? "✦ " : "") + cap.rarity.label + " " + cap.npcName;
             int choice = JOptionPane.showConfirmDialog(owner,
@@ -89,17 +103,24 @@ public class BestiaryPanel extends PluginPanel {
                 DiscardDialog.refreshOpen();
             }
         });
-        AlbumDialog.setDiscardOpener(win -> DiscardDialog.open(win, dataService, () -> {
-            refresh();
-            AlbumDialog.refreshOpenAlbum();
-            TransferDialog.refreshOpen();
-        }));
-        AlbumDialog.setTransferOpener(win -> TransferDialog.open(win, dataService, () -> {
-            refresh();
-            AlbumDialog.refreshOpenAlbum();
-            DiscardDialog.refreshOpen();
-        }));
+        AlbumDialog.setDiscardOpener(win -> {
+            if (dataService.isViewing()) return;   // read-only view of another account (#48)
+            DiscardDialog.open(win, dataService, () -> {
+                refresh();
+                AlbumDialog.refreshOpenAlbum();
+                TransferDialog.refreshOpen();
+            });
+        });
+        AlbumDialog.setTransferOpener(win -> {
+            if (dataService.isViewing()) return;   // read-only view of another account (#48)
+            TransferDialog.open(win, dataService, () -> {
+                refresh();
+                AlbumDialog.refreshOpenAlbum();
+                DiscardDialog.refreshOpen();
+            });
+        });
         AlbumCard.setRerollHandler((owner, cap) -> {
+            if (dataService.isViewing()) return;   // read-only view of another account (#48)
             Window win = SwingUtilities.getWindowAncestor(owner);
             long cost = com.bestiary.service.BestiaryDataService.rerollCost(cap);
             if (dataService.getCredits() < cost) {
@@ -144,8 +165,18 @@ public class BestiaryPanel extends PluginPanel {
         titleRow.add(title,      BorderLayout.WEST);
         titleRow.add(statsLabel, BorderLayout.EAST);
 
-        header.add(titleRow, BorderLayout.NORTH);
-        header.add(sep,      BorderLayout.CENTER);
+        accountRow = buildAccountRow();
+
+        JPanel headerTop = new JPanel();
+        headerTop.setOpaque(false);
+        headerTop.setLayout(new BoxLayout(headerTop, BoxLayout.Y_AXIS));
+        titleRow.setAlignmentX(LEFT_ALIGNMENT);
+        accountRow.setAlignmentX(LEFT_ALIGNMENT);
+        headerTop.add(titleRow);
+        headerTop.add(accountRow);
+
+        header.add(headerTop, BorderLayout.NORTH);
+        header.add(sep,       BorderLayout.CENTER);
 
         // Tabs
         collectionTab = new CollectionTab(dataService, imageService);
@@ -176,11 +207,20 @@ public class BestiaryPanel extends PluginPanel {
         tabs.addTab("Progress", progressTab);
 
         welcomeBanner = buildWelcomeBanner();
+        viewingBanner = buildViewingBanner();
+
+        JPanel bannerStack = new JPanel();
+        bannerStack.setOpaque(false);
+        bannerStack.setLayout(new BoxLayout(bannerStack, BoxLayout.Y_AXIS));
+        welcomeBanner.setAlignmentX(LEFT_ALIGNMENT);
+        viewingBanner.setAlignmentX(LEFT_ALIGNMENT);
+        bannerStack.add(welcomeBanner);
+        bannerStack.add(viewingBanner);
 
         JPanel centerWrap = new JPanel(new BorderLayout(0, 6));
         centerWrap.setOpaque(false);
-        centerWrap.add(welcomeBanner, BorderLayout.NORTH);
-        centerWrap.add(tabs,          BorderLayout.CENTER);
+        centerWrap.add(bannerStack, BorderLayout.NORTH);
+        centerWrap.add(tabs,        BorderLayout.CENTER);
 
         southPanel = buildSouthPanel();
 
@@ -189,7 +229,86 @@ public class BestiaryPanel extends PluginPanel {
         add(southPanel,  BorderLayout.SOUTH);
 
         // Start locked — the Info/Guide tab stays browsable; a character login adds the rest.
-        applyLockedState(true);
+        applyState(PanelState.LOCKED);
+    }
+
+    // -------------------------------------------------------------------------
+    // Account switcher (#48)
+    // -------------------------------------------------------------------------
+
+    /** One entry in the account-switcher dropdown: the played account or a viewable known account. */
+    private static final class AccountItem {
+        final Long hash;        // null only for the "not logged in" placeholder
+        final String rsn;
+        final boolean played;   // true = the logged-in character (selecting it clears any view)
+        AccountItem(Long hash, String rsn, boolean played) {
+            this.hash = hash; this.rsn = rsn; this.played = played;
+        }
+        @Override public String toString() {
+            String name = rsn != null && !rsn.isEmpty() ? rsn : "Unknown";
+            return played ? "★ " + name + " (you)" : "👁 " + name;
+        }
+    }
+
+    /** Builds the switcher row (hidden until 2+ accounts are known, or a view is active). */
+    private JPanel buildAccountRow() {
+        accountSwitcher = new JComboBox<>();
+        accountSwitcher.setFont(FontManager.getRunescapeSmallFont());
+        accountSwitcher.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        accountSwitcher.setForeground(Color.WHITE);
+        accountSwitcher.setToolTipText("Switch which account's collection you're viewing (read-only for other accounts)");
+        accountSwitcher.addActionListener(e -> {
+            if (switcherUpdating) return;
+            AccountItem sel = (AccountItem) accountSwitcher.getSelectedItem();
+            if (sel == null || sel.hash == null) return;
+            if (sel.played) {
+                dataService.clearView();
+            } else {
+                dataService.viewAccount(sel.hash, sel.rsn);
+            }
+            // Open albums/dashboards/card views hold the old collection — drop them, then rebuild.
+            closeAllBestiaryWindows();
+            refresh();
+        });
+
+        JPanel row = new JPanel(new BorderLayout(0, 0));
+        row.setOpaque(false);
+        row.setBorder(new EmptyBorder(4, 0, 0, 0));
+        row.add(accountSwitcher, BorderLayout.CENTER);
+        return row;
+    }
+
+    /**
+     * Rebuilds the switcher's model from the known-accounts registry and selects the current
+     * (played or viewed) account. Hidden unless there's a real choice to make (2+ accounts) or a
+     * view is currently active. Runs under {@link #switcherUpdating} so it never fires the listener.
+     */
+    private void refreshAccountSwitcher() {
+        java.util.List<com.bestiary.service.BestiaryStore.AccountRef> accounts = dataService.listAllAccounts();
+        Long activeHash = dataService.getActiveAccountHash();
+        boolean viewing = dataService.isViewing();
+
+        switcherUpdating = true;
+        try {
+            accountSwitcher.removeAllItems();
+            AccountItem toSelect = null;
+            for (com.bestiary.service.BestiaryStore.AccountRef a : accounts) {
+                boolean isPlayed = activeHash != null && a.hash == activeHash;
+                AccountItem item = new AccountItem(a.hash, a.rsn, isPlayed);
+                accountSwitcher.addItem(item);
+                if (viewing) {
+                    Long vh = dataService.getViewedAccountHash();
+                    if (vh != null && a.hash == vh) toSelect = item;
+                } else if (isPlayed) {
+                    toSelect = item;
+                }
+            }
+            if (toSelect != null) accountSwitcher.setSelectedItem(toSelect);
+        } finally {
+            switcherUpdating = false;
+        }
+        // Only worth showing when there's an actual choice (2+ accounts) or a view is active.
+        accountRow.setVisible(accounts.size() >= 2 || viewing);
     }
 
     /** Friendly banner shown above the tabs while logged out, inviting the player to log in. */
@@ -206,24 +325,71 @@ public class BestiaryPanel extends PluginPanel {
         return p;
     }
 
+    /** Blue "read-only view" banner shown while viewing another account (#48), with a Return button. */
+    private JPanel buildViewingBanner() {
+        JPanel p = new JPanel(new BorderLayout(6, 0));
+        p.setBackground(new Color(20, 40, 55));
+        p.setBorder(BorderFactory.createCompoundBorder(
+                new javax.swing.border.LineBorder(new Color(90, 160, 220, 120), 1, true),
+                new EmptyBorder(6, 10, 6, 8)));
+        viewingBannerLabel = new JLabel();
+        viewingBannerLabel.setFont(FontManager.getRunescapeSmallFont());
+        JButton ret = new JButton("Return");
+        ret.setFont(FontManager.getRunescapeSmallFont());
+        ret.setBackground(new Color(35, 60, 80));
+        ret.setForeground(new Color(150, 200, 240));
+        ret.setFocusPainted(false);
+        ret.setBorderPainted(false);
+        ret.setToolTipText("Stop viewing and return to your own collection");
+        ret.addActionListener(e -> {
+            dataService.clearView();
+            closeAllBestiaryWindows();
+            refresh();
+        });
+        p.add(viewingBannerLabel, BorderLayout.CENTER);
+        p.add(ret,                BorderLayout.EAST);
+        return p;
+    }
+
     /**
-     * Locked (logged-out) = welcome banner + only the Info/Guide tab (which needs no account data).
-     * Unlocked = banner hidden, all tabs present. Toggling tabs is cheap and only runs on login/logout.
+     * Applies a display state (#48):
+     * <ul>
+     *   <li>LOCKED (logged out, no view) — welcome banner + Info/Guide tab only; everything inert.</li>
+     *   <li>VIEWING — read-only banner + Info + Cards for the viewed account; Shop/Progress hidden;
+     *       reset/dev controls disabled (they act on the played account).</li>
+     *   <li>NORMAL — no banners; all four tabs; everything interactive.</li>
+     * </ul>
+     * Tabs are only rebuilt on a state change (cheap; keeps the selected tab stable during refreshes).
      */
-    private void applyLockedState(boolean locked) {
-        welcomeBanner.setVisible(locked);
-        if (locked) {
-            while (tabs.getTabCount() > 1) tabs.remove(1);
-            if (tabs.getTabCount() > 0) tabs.setSelectedIndex(0);
-        } else if (tabs.getTabCount() == 1) {
-            tabs.addTab("Cards",    collectionTab);
+    private void applyState(PanelState state) {
+        boolean changed = state != panelState;
+        panelState = state;
+
+        welcomeBanner.setVisible(state == PanelState.LOCKED);
+        viewingBanner.setVisible(state == PanelState.VIEWING);
+
+        if (changed) applyTabs(state);
+
+        // Reset/dev controls act on the PLAYED account — only enable them when actually playing.
+        if (southPanel != null) setControlsEnabled(southPanel, state == PanelState.NORMAL);
+        // Info header shortcuts/stat boxes browse the current collection (played or viewed) read-only.
+        infoTab.setInteractiveEnabled(state != PanelState.LOCKED);
+    }
+
+    /** Rebuilds the tab set to match {@code state}. Only called on transitions (see {@link #applyState}). */
+    private void applyTabs(PanelState state) {
+        while (tabs.getTabCount() > 1) tabs.remove(1);   // keep Info (index 0)
+        if (state != PanelState.LOCKED) tabs.addTab("Cards", collectionTab);
+        if (state == PanelState.NORMAL) {
             tabs.addTab("Shop",     shopTab);
             tabs.addTab("Progress", progressTab);
         }
-        // Everything that acts on a collection is inert while logged out — only the Info/Guide
-        // sub-tabs stay usable. (The Info tab keeps its own sub-tabs live.)
-        infoTab.setInteractiveEnabled(!locked);
-        if (southPanel != null) setControlsEnabled(southPanel, !locked);
+        // Entering view mode: jump to Cards so the viewed collection is front-and-centre; otherwise Info.
+        if (state == PanelState.VIEWING && tabs.getTabCount() > 1) {
+            tabs.setSelectedIndex(1);
+        } else {
+            tabs.setSelectedIndex(0);
+        }
     }
 
     /** Recursively enables/disables buttons and combo boxes under {@code root}. */
@@ -411,25 +577,40 @@ public class BestiaryPanel extends PluginPanel {
      * (use {@code SwingUtilities.invokeLater(panel::refresh)} from game thread).
      */
     public void refresh() {
-        // Before login: welcome banner + Info tab only. The collection is empty while logged out,
-        // so the Info tab reads zeroes rather than the previous account's data.
-        if (!dataService.hasActiveAccount()) {
-            applyLockedState(true);
+        refreshAccountSwitcher();
+
+        boolean viewing = dataService.isViewing();
+        // Show a collection when logged in OR when browsing another account read-only (#48).
+        if (!dataService.hasActiveAccount() && !viewing) {
+            // Before login: welcome banner + Info tab only. The collection is empty while logged out,
+            // so the Info tab reads zeroes rather than the previous account's data.
+            applyState(PanelState.LOCKED);
             statsLabel.setText("Not logged in");
             infoTab.refresh();
             return;
         }
-        applyLockedState(false);
+        applyState(viewing ? PanelState.VIEWING : PanelState.NORMAL);
 
-        int species  = (int) dataService.getCollection().uniqueSpeciesCount();
-        int heldCards = dataService.getCollection().totalCaptures();
+        com.bestiary.model.BestiaryCollection col = dataService.getCollection();
+        int species   = (int) col.uniqueSpeciesCount();
+        int heldCards = col.totalCaptures();
         statsLabel.setText(species + " species  |  " + heldCards + " cards");
 
-        checkAndNotifyAchievements();
+        if (viewing) {
+            String who = dataService.getViewedAccountName();
+            viewingBannerLabel.setText("<html><span style='color:#7FB8E6;'>👁 Viewing "
+                    + "<b>" + (who == null || who.isEmpty() ? "another account" : who)
+                    + "</b> — read-only</span></html>");
+        } else {
+            // Achievements only fire for the played account (never while browsing someone else's cards).
+            checkAndNotifyAchievements();
+        }
 
         collectionTab.refresh();
-        shopTab.refresh();
-        progressTab.refresh();
+        if (!viewing) {   // Shop/Progress are hidden while viewing — no need to refresh them
+            shopTab.refresh();
+            progressTab.refresh();
+        }
         infoTab.refresh();
     }
 
