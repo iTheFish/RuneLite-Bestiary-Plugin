@@ -98,7 +98,8 @@ public class InfoTab extends JPanel {
     public void refresh() {
         BestiaryCollection col = dataService.getCollection();
         speciesVal.setText(String.valueOf(col.uniqueSpeciesCount()));
-        capturesVal.setText(FMT.format(col.totalCaptures()));
+        // "Caught" = lifetime captures (never drops on discard/transfer); held cards show in the header.
+        capturesVal.setText(FMT.format(col.lifetimeCaptures));
         levelVal.setText(String.valueOf(progressionService.getLevel()));
         killsVal.setText(FMT.format(col.totalKills()));
     }

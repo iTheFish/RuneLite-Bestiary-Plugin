@@ -30,8 +30,14 @@ public class ShopTab extends JPanel {
     private static final Color PIP_OFF = new Color(70, 70, 70);
 
     private JLabel creditsLabel;
-    private JPanel upgradesPanel;
-    private JScrollPane scrollPane;
+    private CardLayout contentLayout;
+    private JPanel contentCards;
+    private final java.util.List<JToggleButton> catButtons = new java.util.ArrayList<>();
+    private final java.util.Map<ShopCategory, JPanel> categoryPanels =
+            new java.util.EnumMap<>(ShopCategory.class);
+    private final java.util.Map<ShopCategory, JScrollPane> categoryScrolls =
+            new java.util.EnumMap<>(ShopCategory.class);
+    private int selectedCat = 0;
 
     private final Runnable showDashboard;
 
@@ -91,66 +97,108 @@ public class ShopTab extends JPanel {
         return wrapper;
     }
 
-    private JScrollPane buildBody() {
-        // Track the scroll viewport width so the cards (and their wrapping descriptions) fill it
-        // instead of the panel sizing to a child's preferred width and clipping.
-        upgradesPanel = new JPanel() {
-            @Override public Dimension getPreferredSize() {
-                Dimension d = super.getPreferredSize();
-                if (getParent() != null) d.width = getParent().getWidth();
-                return d;
-            }
-        };
-        upgradesPanel.setOpaque(false);
-        upgradesPanel.setLayout(new BoxLayout(upgradesPanel, BoxLayout.Y_AXIS));
-        upgradesPanel.setBorder(new EmptyBorder(10, 4, 8, 4));
+    /** Category sub-tabs (styled like the Info tab) over a scrollable card per category. */
+    private JComponent buildBody() {
+        contentLayout = new CardLayout();
+        contentCards  = new JPanel(contentLayout);
+        contentCards.setOpaque(false);
+
+        for (ShopCategory cat : ShopCategory.values()) {
+            // Track the viewport width so cards (and their wrapping descriptions) fill it, not clip.
+            JPanel inner = new JPanel() {
+                @Override public Dimension getPreferredSize() {
+                    Dimension d = super.getPreferredSize();
+                    if (getParent() != null) d.width = getParent().getWidth();
+                    return d;
+                }
+            };
+            inner.setOpaque(false);
+            inner.setLayout(new BoxLayout(inner, BoxLayout.Y_AXIS));
+            inner.setBorder(new EmptyBorder(10, 4, 8, 4));
+            categoryPanels.put(cat, inner);
+
+            JScrollPane sp = new JScrollPane(inner);
+            sp.setBorder(null);
+            sp.setOpaque(false);
+            sp.getViewport().setOpaque(false);
+            sp.getVerticalScrollBar().setUnitIncrement(16);
+            // Hidden zero-width scrollbar (always-on so content width can't reflow); wheel still works.
+            sp.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+            sp.getVerticalScrollBar().setPreferredSize(new Dimension(0, 0));
+            sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+            categoryScrolls.put(cat, sp);
+            contentCards.add(sp, cat.name());
+        }
+
+        JPanel body = new JPanel(new BorderLayout(0, 6));
+        body.setOpaque(false);
+        body.add(buildTabBar(), BorderLayout.NORTH);
+        body.add(contentCards, BorderLayout.CENTER);
 
         rebuildUpgrades();
-
-        JScrollPane sp = new JScrollPane(upgradesPanel);
-        sp.setBorder(null);
-        sp.setOpaque(false);
-        sp.getViewport().setOpaque(false);
-        sp.getVerticalScrollBar().setUnitIncrement(16);
-        // Hidden vertical scrollbar (zero-width, no space taken) — mouse wheel still scrolls.
-        // Always-on policy + zero width keeps the content width fixed so it can't reflow.
-        sp.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        sp.getVerticalScrollBar().setPreferredSize(new Dimension(0, 0));
-        // Never scroll horizontally — the panel width is fixed; content must wrap to it.
-        sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollPane = sp;
-        return sp;
+        selectCategory(0);
+        return body;
     }
 
-    /** Rebuilds the upgrade cards from current state, grouped under category headings. */
+    /** Info-tab-style toggle-button bar, one per shop category. */
+    private JPanel buildTabBar() {
+        ShopCategory[] cats = ShopCategory.values();
+        JPanel bar = new JPanel(new GridLayout(1, cats.length, 4, 0));
+        bar.setOpaque(false);
+        bar.setBorder(new EmptyBorder(2, 4, 4, 4));
+        for (int i = 0; i < cats.length; i++) {
+            final int idx = i;
+            JToggleButton b = new JToggleButton(cats[i].label);
+            b.setFont(FontManager.getRunescapeSmallFont());
+            b.setFocusPainted(false);
+            b.setBorderPainted(false);
+            b.setMargin(new Insets(2, 2, 2, 2));
+            b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            b.addActionListener(e -> selectCategory(idx));
+            styleTab(b, i == 0);
+            catButtons.add(b);
+            bar.add(b);
+        }
+        return bar;
+    }
+
+    private void selectCategory(int idx) {
+        selectedCat = idx;
+        contentLayout.show(contentCards, ShopCategory.values()[idx].name());
+        for (int i = 0; i < catButtons.size(); i++) {
+            styleTab(catButtons.get(i), i == idx);
+            catButtons.get(i).setSelected(i == idx);
+        }
+    }
+
+    private static void styleTab(JToggleButton b, boolean active) {
+        b.setOpaque(true);
+        b.setBackground(active ? ORANGE : ColorScheme.DARKER_GRAY_COLOR);
+        b.setForeground(active ? new Color(30, 30, 30) : ColorScheme.LIGHT_GRAY_COLOR);
+    }
+
+    /** Rebuilds each category's upgrade cards from current state (the tab is the category label). */
     private void rebuildUpgrades() {
-        upgradesPanel.removeAll();
-        boolean firstCategory = true;
         for (ShopCategory cat : ShopCategory.values()) {
+            JPanel inner = categoryPanels.get(cat);
+            inner.removeAll();
             boolean any = false;
             for (ShopUpgrade u : ShopUpgrade.values()) {
                 if (u.category != cat) continue;
-                if (!any) {
-                    if (!firstCategory) upgradesPanel.add(Box.createVerticalStrut(12));
-                    upgradesPanel.add(categoryHeading(cat.label.toUpperCase()));
-                    upgradesPanel.add(Box.createVerticalStrut(6));
-                    any = true;
-                    firstCategory = false;
-                }
-                upgradesPanel.add(upgradeCard(u));
-                upgradesPanel.add(Box.createVerticalStrut(8));
+                inner.add(upgradeCard(u));
+                inner.add(Box.createVerticalStrut(8));
+                any = true;
             }
+            if (!any) {
+                JLabel none = new JLabel("Nothing here yet.");
+                none.setFont(FontManager.getRunescapeSmallFont());
+                none.setForeground(DIM);
+                none.setAlignmentX(LEFT_ALIGNMENT);
+                inner.add(none);
+            }
+            inner.revalidate();
+            inner.repaint();
         }
-        upgradesPanel.revalidate();
-        upgradesPanel.repaint();
-    }
-
-    private JLabel categoryHeading(String text) {
-        JLabel heading = new JLabel(text);
-        heading.setFont(FontManager.getRunescapeSmallFont());
-        heading.setForeground(DIM);
-        heading.setAlignmentX(LEFT_ALIGNMENT);
-        return heading;
     }
 
     private JPanel upgradeCard(ShopUpgrade u) {
@@ -280,13 +328,14 @@ public class ShopTab extends JPanel {
 
     public void refresh() {
         creditsLabel.setText(dataService.getCredits() + " credits");
-        if (upgradesPanel != null) {
-            // Preserve the scroll position so buying a tier (which rebuilds the cards) doesn't
-            // jump the shop up or down.
-            final Point pos = scrollPane != null ? scrollPane.getViewport().getViewPosition() : null;
+        if (contentCards != null) {
+            // Preserve the active tab's scroll position so buying a tier (which rebuilds the cards)
+            // doesn't jump the shop up or down.
+            final JScrollPane active = categoryScrolls.get(ShopCategory.values()[selectedCat]);
+            final Point pos = active != null ? active.getViewport().getViewPosition() : null;
             rebuildUpgrades();
-            if (pos != null) {
-                SwingUtilities.invokeLater(() -> scrollPane.getViewport().setViewPosition(pos));
+            if (active != null && pos != null) {
+                SwingUtilities.invokeLater(() -> active.getViewport().setViewPosition(pos));
             }
         }
     }

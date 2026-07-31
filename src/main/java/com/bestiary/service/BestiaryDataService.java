@@ -141,6 +141,7 @@ public class BestiaryDataService {
         }
 
         for (CapturedCreature c : moving) collection.removeCapture(c);
+        collection.lifetimeCardsSent += moving.size();   // lifetime "sent" tally (not a capture change)
         persistNow();
         log.info("Transferred {} card(s) to {}", moving.size(), targetRsn);
         return moving.size();
@@ -175,6 +176,22 @@ public class BestiaryDataService {
             collection.lifetimeCreditsEarned = collection.credits;
         }
         collection.shopUpgrades = new HashMap<>(d.shopUpgrades);
+        collection.lifetimeCardsSent = d.lifetimeCardsSent;
+
+        // Lifetime captures: prefer the stored counter, but baseline it from the cards this account
+        // actually caught (not traded-in) so pre-#N accounts don't read 0. Because own-caught-held can
+        // never exceed true lifetime captures, the max() is a safe one-time floor, self-correcting once
+        // the counter is tracked live (received cards are excluded, so they never inflate "Caught").
+        collection.lifetimeCaptures = Math.max(d.lifetimeCaptures, collection.ownCaughtHeldCount());
+        collection.lifetimeCapturesByNpc = new HashMap<>(d.lifetimeCapturesByNpc);
+        // Per-species baseline = max(stored, own-caught-held for that species).
+        java.util.Map<String, Integer> ownHeldByNpc = new HashMap<>();
+        for (CapturedCreature c : collection.creatures) {
+            if (!BestiaryCollection.isTradedIn(c)) ownHeldByNpc.merge(c.npcName, 1, Integer::sum);
+        }
+        for (java.util.Map.Entry<String, Integer> e : ownHeldByNpc.entrySet()) {
+            collection.lifetimeCapturesByNpc.merge(e.getKey(), e.getValue(), Math::max);
+        }
 
         progressionState = new ProgressionService.ProgressionState();
         progressionState.totalXp = d.totalXp;
@@ -215,6 +232,7 @@ public class BestiaryDataService {
 
     public void addCapture(CapturedCreature c) {
         collection.addCapture(c);
+        collection.recordLifetimeCapture(c.npcName);   // genuine capture — bump the lifetime counters
         persistNow();   // a capture is rare + valuable — write immediately
     }
 
@@ -533,6 +551,7 @@ public class BestiaryDataService {
                     .build();
 
                 collection.addCapture(c);
+                collection.recordLifetimeCapture(name);
                 idx++;
             }
             rng.setSeed(name.hashCode());
@@ -586,6 +605,9 @@ public class BestiaryDataService {
         d.credits     = collection.credits;
         d.lifetimeCreditsEarned = collection.lifetimeCreditsEarned;
         d.lifetimeCreditsSpent  = collection.lifetimeCreditsSpent;
+        d.lifetimeCaptures      = collection.lifetimeCaptures;
+        d.lifetimeCapturesByNpc = new LinkedHashMap<>(collection.lifetimeCapturesByNpc);
+        d.lifetimeCardsSent     = collection.lifetimeCardsSent;
         d.shopUpgrades = new LinkedHashMap<>(collection.shopUpgrades);
         d.totalXp     = progressionState.totalXp;
         d.achievements = progressionState.unlockedAchievements.stream()

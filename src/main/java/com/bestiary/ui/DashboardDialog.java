@@ -273,18 +273,23 @@ public class DashboardDialog extends JDialog {
     }
 
     private JPanel buildOverviewGrid(BestiaryCollection col) {
-        JPanel grid = new JPanel(new GridLayout(1, 4, 6, 0));
+        JPanel grid = new JPanel(new GridLayout(1, 5, 6, 0));
         grid.setOpaque(false);
         grid.setBorder(new EmptyBorder(0, 12, 0, 12));
         grid.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
 
-        int kills = col.totalKills(), caps = col.totalCaptures();
-        String ratio = caps > 0 ? String.format("%.1f:1", (double) kills / caps) : "—";
+        // "Caught" = lifetime captures (your hunting); "Cards" = currently held (album contents).
+        // K:C uses lifetime so transfers/discards and traded-in cards don't distort it.
+        long caught = col.lifetimeCaptures;
+        int  held   = col.totalCaptures();
+        int  kills  = col.totalKills();
+        String ratio = caught > 0 ? String.format("%.1f:1", (double) kills / caught) : "—";
 
-        grid.add(miniCard("Species",  String.valueOf(col.uniqueSpeciesCount())));
-        grid.add(miniCard("Captured", FMT.format(caps)));
-        grid.add(miniCard("Kills",    FMT.format(kills)));
-        grid.add(miniCard("K : C",    ratio, true));
+        grid.add(miniCard("Species", String.valueOf(col.uniqueSpeciesCount())));
+        grid.add(miniCard("Caught",  FMT.format(caught)));
+        grid.add(miniCard("Cards",   FMT.format(held)));
+        grid.add(miniCard("Kills",   FMT.format(kills)));
+        grid.add(miniCard("K : C",   ratio, true));
         return grid;
     }
 
@@ -566,10 +571,17 @@ public class DashboardDialog extends JDialog {
     private JPanel buildCaughtView() {
         JPanel root = col();
         BestiaryCollection col = dataService.getCollection();
-        int total = col.totalCaptures();
 
-        root.add(heroStat(FMT.format(total), "TOTAL CAPTURES", ORANGE));
-        root.add(gap(10));
+        // Headline = lifetime captures (your hunting). The analytics below are over held cards.
+        root.add(heroStat(FMT.format(col.lifetimeCaptures), "CREATURES CAUGHT", ORANGE));
+        root.add(gap(2));
+        root.add(sectionHeader(FMT.format(col.totalCaptures()) + " CARDS HELD"));
+        long sent = col.lifetimeCardsSent, received = col.tradedInCount();
+        if (sent > 0 || received > 0) {
+            root.add(gap(2));
+            root.add(sectionHeader(FMT.format(sent) + " SENT  ·  " + FMT.format(received) + " RECEIVED"));
+        }
+        root.add(gap(8));
         root.add(sectionHeader("AVERAGE POWER BY RARITY"));
 
         JPanel avgPanel = col();
@@ -578,13 +590,17 @@ public class DashboardDialog extends JDialog {
                 Collectors.groupingBy(c -> c.rarity,
                         Collectors.averagingInt(c -> c.powerLevel())));
 
+        // Scale bars to the strongest rarity's average (Power Level can exceed 100, so a flat 100
+        // scale overflows and barely differentiates). Relative bars make the spread readable.
+        int scaleMax = 1;
+        for (Double v : avg.values()) scaleMax = Math.max(scaleMax, (int) Math.round(v));
         boolean any = false;
         for (CreatureRarity r : new CreatureRarity[]{
                 CreatureRarity.MYTHIC, CreatureRarity.LEGENDARY, CreatureRarity.EPIC,
                 CreatureRarity.RARE,   CreatureRarity.UNCOMMON,  CreatureRarity.COMMON}) {
             if (!avg.containsKey(r)) continue;
             int a = (int) Math.round(avg.get(r));
-            avgPanel.add(barRow(r.label, r.displayColor, a, 100, String.valueOf(a), ""));
+            avgPanel.add(barRow(r.label, r.displayColor, a, scaleMax, String.valueOf(a), ""));
             avgPanel.add(gap(4));
             any = true;
         }
@@ -612,7 +628,7 @@ public class DashboardDialog extends JDialog {
                         new MatteBorder(0, 3, 0, 0, c.rarity.displayColor),
                         new EmptyBorder(6, 8, 6, 8)));
 
-                JPanel left = new JPanel(new GridLayout(3, 1, 0, 1));
+                JPanel left = new JPanel(new GridLayout(0, 1, 0, 1));
                 left.setOpaque(false);
                 JLabel nl = new JLabel((i + 1) + ".  " + c.npcName);
                 nl.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
@@ -625,6 +641,17 @@ public class DashboardDialog extends JDialog {
                 cl.setFont(FontManager.getRunescapeSmallFont());
                 cl.setForeground(new Color(210, 210, 210));
                 left.add(nl); left.add(rl); left.add(cl);
+
+                // Provenance / reroll tags (original owner is enough reference; no traded-in tag)
+                java.util.List<String> tags = new java.util.ArrayList<>();
+                if (c.originalOwner != null && !c.originalOwner.isEmpty()) tags.add("by " + c.originalOwner);
+                if (c.rerollCount() > 0) tags.add("rerolled " + c.rerollCount() + "×");
+                if (!tags.isEmpty()) {
+                    JLabel tl = new JLabel("◈ " + String.join("  ·  ", tags));
+                    tl.setFont(FontManager.getRunescapeSmallFont());
+                    tl.setForeground(new Color(150, 170, 200));
+                    left.add(tl);
+                }
 
                 JLabel ql = new JLabel("PWR:" + c.powerLevel());
                 ql.setFont(FontManager.getRunescapeFont().deriveFont(Font.BOLD));
@@ -974,9 +1001,9 @@ public class DashboardDialog extends JDialog {
                 g2.setColor(new Color(42, 42, 42));
                 g2.fillRoundRect(barX, barY, barW, barH, 4, 4);
 
-                // Fill
+                // Fill (clamped to the track so a value > max can never spill out of bounds)
                 if (max > 0 && value > 0) {
-                    int fill = Math.max(4, (int)((long) barW * value / max));
+                    int fill = Math.min(barW, Math.max(4, (int)((long) barW * value / max)));
                     g2.setPaint(new GradientPaint(barX, 0,
                             new Color(color.getRed()/2, color.getGreen()/2, color.getBlue()/2),
                             barX + fill, 0, color));
@@ -1356,8 +1383,9 @@ public class DashboardDialog extends JDialog {
         final int PAD = 24;
 
         // Pre-measure section heights to set total card height
-        int kills = col.totalKills(), caps = col.totalCaptures();
-        String ratio = caps > 0 ? String.format("%.1f:1", (double) kills / caps) : "—";
+        int kills = col.totalKills(), held = col.totalCaptures();
+        long caught = col.lifetimeCaptures;
+        String ratio = caught > 0 ? String.format("%.1f:1", (double) kills / caught) : "—";
         Map<CreatureRarity, Long> rarityCounts = col.creatures.stream()
                 .collect(Collectors.groupingBy(c -> c.rarity, Collectors.counting()));
         // Export only the top 16 "most impressive" achievements (by credit reward) so the card
@@ -1469,14 +1497,16 @@ public class DashboardDialog extends JDialog {
         // --- OVERVIEW section ---
         y = drawCardSectionHeader(g, "OVERVIEW", y, W, PAD);
         y += 6;
-        int boxW  = (W - PAD * 2 - 12) / 4, boxH = 48, boxGap = 4;
+        int boxGap = 4;
+        int boxW  = (W - PAD * 2 - boxGap * 4) / 5, boxH = 48;
         String[][] stats = {
-            {"Level",   String.valueOf(level)},
-            {"Kills",   FMT.format(kills)},
-            {"Caught",  FMT.format(caps)},
-            {"K : C",   ratio}
+            {"Level",  String.valueOf(level)},
+            {"Kills",  FMT.format(kills)},
+            {"Caught", FMT.format(caught)},
+            {"Cards",  FMT.format(held)},
+            {"K : C",  ratio}
         };
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 5; i++) {
             int bx = PAD + i * (boxW + boxGap);
             g.setPaint(new GradientPaint(bx, y, new Color(38, 38, 38), bx, y + boxH, new Color(26, 26, 26)));
             g.fillRoundRect(bx, y, boxW, boxH, 6, 6);
@@ -1598,7 +1628,7 @@ public class DashboardDialog extends JDialog {
         g.setColor(new Color(36, 36, 36));
         g.fillRoundRect(barX, barY, barW, barH, 4, 4);
         if (max > 0 && value > 0) {
-            int fill = Math.max(4, (int)((long) barW * value / max));
+            int fill = Math.min(barW, Math.max(4, (int)((long) barW * value / max)));
             g.setPaint(new GradientPaint(barX, barY,
                     new Color(color.getRed() / 2, color.getGreen() / 2, color.getBlue() / 2),
                     barX + fill, barY, color));
@@ -1637,8 +1667,8 @@ public class DashboardDialog extends JDialog {
         final int W = 480, PAD = 24;
         int upRows = ups.length;
         int H = 4 + PAD + 60 + 12 + 70 + 12
-                + 22 + 6 + 3 * 20 + 8           // credits (3 rows)
-                + 22 + 6 + 3 * 20 + 8           // rerolls (3 rows)
+                + 22 + 6 + 48 + 8               // credits (mini-card row)
+                + 22 + 6 + 48 + 8               // rerolls (mini-card row)
                 + 22 + 6 + upRows * 20 + 8      // shop upgrade pip rows
                 + 36 + PAD;
 
@@ -1651,17 +1681,20 @@ public class DashboardDialog extends JDialog {
 
         y = drawCardSectionHeader(g, "CREDITS", y, W, PAD);
         y += 6;
-        y = drawCardKV(g, "Earned",  FMT.format(col.lifetimeCreditsEarned), GOLD, y, PAD, W);
-        y = drawCardKV(g, "Spent",   FMT.format(col.lifetimeCreditsSpent),  new Color(224, 150, 120), y, PAD, W);
-        y = drawCardKV(g, "Balance", FMT.format(col.credits),               TEXT, y, PAD, W);
+        y = drawStatBoxRow(g, new String[][]{
+                {"Earned",  FMT.format(col.lifetimeCreditsEarned)},
+                {"Spent",   FMT.format(col.lifetimeCreditsSpent)},
+                {"Balance", FMT.format(col.credits)}
+        }, y, PAD, W);
         y += 8;
 
         y = drawCardSectionHeader(g, "REROLLS", y, W, PAD);
         y += 6;
-        y = drawCardKV(g, "Total rerolls",  FMT.format(col.totalRerolls()), TEXT, y, PAD, W);
-        y = drawCardKV(g, "Cards rerolled", FMT.format(cardsRerolled),      TEXT, y, PAD, W);
-        y = drawCardKV(g, "Rank-ups / Shiny+",
-                countRankUps(col) + " / " + countShinyGained(col), new Color(170, 120, 235), y, PAD, W);
+        y = drawStatBoxRow(g, new String[][]{
+                {"Rerolls", FMT.format(col.totalRerolls())},
+                {"Cards",   FMT.format(cardsRerolled)},
+                {"Rank-ups / Shiny+", countRankUps(col) + " / " + countShinyGained(col)}
+        }, y, PAD, W);
         y += 8;
 
         y = drawCardSectionHeader(g, "SHOP UPGRADES", y, W, PAD);
@@ -1676,15 +1709,33 @@ public class DashboardDialog extends JDialog {
         return img;
     }
 
-    /** Draws a "label ......... value" row (label left, value right-aligned). Returns the new y. */
-    private static int drawCardKV(Graphics2D g, String label, String value, Color valColor, int y, int PAD, int W) {
-        g.setFont(FontManager.getRunescapeSmallFont());
-        FontMetrics fm = g.getFontMetrics();
-        g.setColor(new Color(210, 210, 210));
-        g.drawString(label, PAD + 4, y + fm.getAscent());
-        g.setColor(valColor);
-        g.drawString(value, W - PAD - fm.stringWidth(value), y + fm.getAscent());
-        return y + 20;
+    /**
+     * Draws a row of evenly-sized "value over label" mini-card boxes (the same look as the live
+     * dashboard's stat cards), so export cards match the on-screen view. Returns the y below the row.
+     */
+    private static int drawStatBoxRow(Graphics2D g, String[][] stats, int y, int PAD, int W) {
+        int n = stats.length, boxGap = 4, boxH = 48;
+        int boxW = (W - PAD * 2 - boxGap * (n - 1)) / n;
+        for (int i = 0; i < n; i++) {
+            int bx = PAD + i * (boxW + boxGap);
+            g.setPaint(new GradientPaint(bx, y, new Color(38, 38, 38), bx, y + boxH, new Color(26, 26, 26)));
+            g.fillRoundRect(bx, y, boxW, boxH, 6, 6);
+            g.setColor(ORANGE);
+            g.fillRect(bx, y, 3, boxH);
+
+            g.setFont(FontManager.getRunescapeBoldFont().deriveFont(17f));
+            FontMetrics bfm = g.getFontMetrics();
+            String val = stats[i][1];
+            g.setColor(ORANGE);
+            g.drawString(val, bx + (boxW - bfm.stringWidth(val)) / 2, y + 24);
+
+            g.setFont(FontManager.getRunescapeSmallFont());
+            FontMetrics sfm = g.getFontMetrics();
+            g.setColor(TEXT);
+            String lbl = stats[i][0];
+            g.drawString(lbl, bx + (boxW - sfm.stringWidth(lbl)) / 2, y + 40);
+        }
+        return y + boxH;
     }
 
     /** Draws a "label ....... ●●●○○" row with filled gold pips for owned tiers. Returns the new y. */
@@ -1856,27 +1907,41 @@ public class DashboardDialog extends JDialog {
 
         final int W = 480, PAD = 24;
         int avgRows = 6, topRows = Math.max(1, top10.size());
-        int H = 4 + PAD + 60 + 12 + 70 + 12 + 22 + 6 + avgRows * 24 + 8
-                + 22 + 6 + topRows * 34 + 8 + 36 + PAD;
+        int heldH = 20;   // held / sent / received subtitle under the hero
+        int H = 4 + PAD + 60 + 12 + 70 + heldH + 12 + 22 + 6 + avgRows * 24 + 8
+                + 22 + 6 + topRows * 48 + 8 + 36 + PAD;
 
         BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = cardGraphics(img);
 
         int y = drawCardBase(g, W, H, account, "CAUGHT", date, PAD);
-        y = drawHeroStat(g, FMT.format(col.totalCaptures()), "TOTAL CAPTURES", ORANGE, y, W, PAD);
-        y += 12;
+        y = drawHeroStat(g, FMT.format(col.lifetimeCaptures), "CREATURES CAUGHT", ORANGE, y, W, PAD);
+        // Held / sent / received subtitle, centered under the hero.
+        g.setFont(FontManager.getRunescapeSmallFont());
+        FontMetrics hfm = g.getFontMetrics();
+        String heldLine = FMT.format(col.totalCaptures()) + " cards held";
+        long sentN = col.lifetimeCardsSent, recvN = col.tradedInCount();
+        if (sentN > 0 || recvN > 0) {
+            heldLine += "    ·    " + FMT.format(sentN) + " sent    ·    " + FMT.format(recvN) + " received";
+        }
+        g.setColor(new Color(185, 185, 185));
+        g.drawString(heldLine, (W - hfm.stringWidth(heldLine)) / 2, y + hfm.getAscent());
+        y += heldH + 12;
 
         CreatureRarity[] rarOrder = {CreatureRarity.MYTHIC, CreatureRarity.LEGENDARY,
                 CreatureRarity.EPIC, CreatureRarity.RARE, CreatureRarity.UNCOMMON, CreatureRarity.COMMON};
 
         y = drawCardSectionHeader(g, "AVERAGE POWER BY RARITY", y, W, PAD);
         y += 6;
+        // Scale to the strongest rarity's average so bars compare (Power Level can exceed 100).
+        int avgScaleMax = 1;
+        for (Double v : avgQuality.values()) avgScaleMax = Math.max(avgScaleMax, (int) Math.round(v));
         for (CreatureRarity r : rarOrder) {
             if (!avgQuality.containsKey(r)) {
-                y = drawCardBarRow(g, r.label, r.displayColor, 0, 100, "—", "", y, PAD, W);
+                y = drawCardBarRow(g, r.label, r.displayColor, 0, avgScaleMax, "—", "", y, PAD, W);
             } else {
                 int avg = (int) Math.round(avgQuality.get(r));
-                y = drawCardBarRow(g, r.label, r.displayColor, avg, 100, String.valueOf(avg), "", y, PAD, W);
+                y = drawCardBarRow(g, r.label, r.displayColor, avg, avgScaleMax, String.valueOf(avg), "", y, PAD, W);
             }
         }
         y += 8;
@@ -1905,7 +1970,13 @@ public class DashboardDialog extends JDialog {
                 g.setColor(new Color(210, 210, 210));
                 String ctx = c.rarity.label + "  ·  Kill #" + c.killsBeforeCapture + "  ·  Lv." + c.captureLevel;
                 g.drawString(ctx, PAD + 4, y + fm.getAscent());
-                y += 19;
+                y += 15;
+                // Provenance line — captured by + reroll count
+                g.setColor(new Color(150, 170, 200));
+                String owner = c.originalOwner != null && !c.originalOwner.isEmpty() ? c.originalOwner : account;
+                String prov = "by " + owner + (c.rerollCount() > 0 ? "    ·    rerolled " + c.rerollCount() + "×" : "");
+                g.drawString(prov, PAD + 4, y + fm.getAscent());
+                y += 18;
             }
         }
         y += 8;

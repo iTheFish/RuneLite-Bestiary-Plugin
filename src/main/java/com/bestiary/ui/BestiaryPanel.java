@@ -422,8 +422,8 @@ public class BestiaryPanel extends PluginPanel {
         applyLockedState(false);
 
         int species  = (int) dataService.getCollection().uniqueSpeciesCount();
-        int captures = dataService.getCollection().totalCaptures();
-        statsLabel.setText(species + " species  |  " + captures + " captures");
+        int heldCards = dataService.getCollection().totalCaptures();
+        statsLabel.setText(species + " species  |  " + heldCards + " cards");
 
         checkAndNotifyAchievements();
 
