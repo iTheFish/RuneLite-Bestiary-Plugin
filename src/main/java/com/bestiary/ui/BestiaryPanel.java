@@ -201,7 +201,8 @@ public class BestiaryPanel extends PluginPanel {
         collectionTab = new CollectionTab(dataService, imageService);
         progressTab   = new ProgressTab(progressionService, sessionTracker,
                 () -> DashboardDialog.open(SwingUtilities.getWindowAncestor(this), dataService,
-                        progressionService, DashboardDialog.DashView.PROGRESSION));
+                        progressionService, DashboardDialog.DashView.PROGRESSION),
+                this::confirmWipe);
         shopTab       = new ShopTab(dataService, progressionService,
                 () -> DashboardDialog.open(SwingUtilities.getWindowAncestor(this), dataService,
                         progressionService, DashboardDialog.DashView.ECONOMY));
@@ -561,28 +562,35 @@ public class BestiaryPanel extends PluginPanel {
             panel.add(Box.createVerticalStrut(6));
         }
 
-        panel.add(buildWipeBtn());
-
-        // Version footer — click to open the About / version-log dialog.
-        JLabel version = new JLabel("Bestiary v" + com.bestiary.BestiaryPlugin.VERSION);
-        version.setFont(FontManager.getRunescapeSmallFont());
-        version.setForeground(new Color(150, 150, 150));
+        // Version footer — a clickable box (whole area opens the About / version-log dialog).
+        final Color idleFg = new Color(200, 200, 200), hotFg = new Color(255, 165, 0);
+        final Color idleBg = ColorScheme.DARKER_GRAY_COLOR, hotBg = new Color(52, 45, 28);
+        final Color idleBorder = new Color(90, 70, 25), hotBorder = new Color(255, 165, 0);
+        JLabel version = new JLabel("Bestiary v" + com.bestiary.BestiaryPlugin.VERSION, SwingConstants.CENTER);
+        version.setFont(FontManager.getRunescapeBoldFont().deriveFont(16f));
+        version.setForeground(idleFg);
+        version.setOpaque(true);
+        version.setBackground(idleBg);
         version.setAlignmentX(CENTER_ALIGNMENT);
-        version.setHorizontalAlignment(SwingConstants.CENTER);
-        version.setBorder(new EmptyBorder(6, 0, 0, 0));
+        version.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
         version.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         version.setToolTipText("What's new — version log");
+        java.util.function.Consumer<Boolean> style = hot -> {
+            version.setForeground(hot ? hotFg : idleFg);
+            version.setBackground(hot ? hotBg : idleBg);
+            version.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(hot ? hotBorder : idleBorder),
+                    new EmptyBorder(7, 10, 7, 10)));
+        };
+        style.accept(false);
         version.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override public void mouseClicked(java.awt.event.MouseEvent e) {
                 AboutDialog.open(SwingUtilities.getWindowAncestor(BestiaryPanel.this));
             }
-            @Override public void mouseEntered(java.awt.event.MouseEvent e) {
-                version.setForeground(new Color(255, 165, 0));
-            }
-            @Override public void mouseExited(java.awt.event.MouseEvent e) {
-                version.setForeground(new Color(150, 150, 150));
-            }
+            @Override public void mouseEntered(java.awt.event.MouseEvent e) { style.accept(true); }
+            @Override public void mouseExited(java.awt.event.MouseEvent e)  { style.accept(false); }
         });
+        panel.add(Box.createVerticalStrut(6));
         panel.add(version);
         return panel;
     }
@@ -611,18 +619,6 @@ public class BestiaryPanel extends PluginPanel {
         return row;
     }
 
-    private JButton buildWipeBtn() {
-        JButton btn = new JButton("Reset Collection");
-        btn.setFont(FontManager.getRunescapeSmallFont());
-        btn.setBackground(new Color(80, 20, 20));
-        btn.setForeground(new Color(220, 100, 100));
-        btn.setBorderPainted(false);
-        btn.setFocusPainted(false);
-        btn.setToolTipText("Permanently delete all captures and progression");
-        btn.addActionListener(e -> confirmWipe());
-        return fullWidth(btn);
-    }
-
     /** Makes a button span the full panel width (consistent bottom-row buttons). */
     private static JButton fullWidth(JButton btn) {
         btn.setAlignmentX(CENTER_ALIGNMENT);
@@ -630,7 +626,8 @@ public class BestiaryPanel extends PluginPanel {
         return btn;
     }
 
-    private void confirmWipe() {
+    /** Confirms (twice) and permanently wipes the played collection. Triggered from the Progress tab. */
+    void confirmWipe() {
         int first = JOptionPane.showConfirmDialog(
                 this,
                 "This will permanently delete ALL capture history, kill counts,\n"

@@ -138,6 +138,7 @@ public class BestiaryDataService {
         }
         col.shopUpgrades = new HashMap<>(d.shopUpgrades);
         col.lifetimeCardsSent = d.lifetimeCardsSent;
+        col.lifetimeCardsDiscarded = d.lifetimeCardsDiscarded;
 
         // Lifetime captures: prefer the stored counter, but baseline it from the cards this account
         // actually caught (not traded-in) so pre-#N accounts don't read 0. Because own-caught-held can
@@ -459,6 +460,7 @@ public class BestiaryDataService {
         if (!collection.removeCapture(c)) return 0;   // already discarded — award nothing
         long credits = discardValue(c);
         addCredits(credits);
+        collection.lifetimeCardsDiscarded++;
         persistNow();
         return credits;
     }
@@ -470,6 +472,7 @@ public class BestiaryDataService {
         for (CapturedCreature c : cards) {
             if (!collection.removeCapture(c)) continue;
             total += discardValue(c);
+            collection.lifetimeCardsDiscarded++;
         }
         addCredits(total);
         persistNow();
@@ -767,6 +770,7 @@ public class BestiaryDataService {
         d.lifetimeCaptures      = collection.lifetimeCaptures;
         d.lifetimeCapturesByNpc = new LinkedHashMap<>(collection.lifetimeCapturesByNpc);
         d.lifetimeCardsSent     = collection.lifetimeCardsSent;
+        d.lifetimeCardsDiscarded = collection.lifetimeCardsDiscarded;
         d.shopUpgrades = new LinkedHashMap<>(collection.shopUpgrades);
         d.totalXp     = progressionState.totalXp;
         d.achievements = progressionState.unlockedAchievements.stream()

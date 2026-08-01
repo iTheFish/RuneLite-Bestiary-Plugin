@@ -71,6 +71,9 @@ public class BestiaryStore {
         public Map<String, Integer> lifetimeCapturesByNpc = new LinkedHashMap<>();
         /** Total cards this account has sent away via transfer. */
         public long lifetimeCardsSent;
+
+        /** Total cards this account has discarded for credits. */
+        public long lifetimeCardsDiscarded;
         public long totalXp;
         public List<String> achievements = new ArrayList<>();
         public Map<String, Integer> shopUpgrades = new LinkedHashMap<>();
