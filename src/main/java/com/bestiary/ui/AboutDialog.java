@@ -40,7 +40,7 @@ public class AboutDialog extends JDialog {
         new Release("v1.0", "First release", new String[][]{
             {"Capturing", "Every kill rolls a catch chance (by difficulty tier and your Capture Level), "
                 + "then a weighted rarity from Common to Mythic — plus an independent shiny roll."},
-            {"Cards & Power Level", "Each capture is a card with six rolled stats, Prayer, the monster's "
+            {"Cards & Power Level", "Each capture is a card with 7 rolled stats and the monster's "
                 + "real Hitpoints, combat class and species. Its headline Power Level blends the stats "
                 + "with HP and combat level, so bosses outclass trash mobs."},
             {"Album", "A searchable, filterable catalogue of 200+ monsters with per-monster detail pages, "
@@ -153,7 +153,7 @@ public class AboutDialog extends JDialog {
         footer.setBorder(new EmptyBorder(10, 14, 12, 14));
 
         JTextArea thanks = new JTextArea("Thank you for installing Bestiary — I hope it makes every "
-                + "kill a little more exciting. Happy hunting!");
+                + "kill a little more exciting. Happy hunting! - Fish");
         thanks.setEditable(false);
         thanks.setLineWrap(true);
         thanks.setWrapStyleWord(true);
