@@ -37,6 +37,15 @@ public class CardDataDialog extends JDialog {
 
     public static final int TAB_EXPORT = 0, TAB_OVERVIEW = 1, TAB_ODDS = 2, TAB_GRAPH = 3, TAB_REROLLS = 4;
 
+    /** Supplies the played account's current Hunter's Bounty flat capture-credit bonus (0 = none). */
+    private static java.util.function.LongSupplier captureCreditBonus = () -> 0L;
+    public static void setCaptureCreditBonus(java.util.function.LongSupplier s) {
+        if (s != null) captureCreditBonus = s;
+    }
+
+    /** Colour for shop-upgrade bonus amounts shown in brackets. */
+    private static final String BONUS_HEX = "#78d278";
+
     public static void open(Window owner, CapturedCreature capture) {
         open(owner, capture, TAB_EXPORT);
     }
@@ -246,8 +255,15 @@ public class CardDataDialog extends JDialog {
         p.add(title);
         p.add(Box.createVerticalStrut(8));
 
+        com.bestiary.model.DifficultyTier diff =
+                MonsterRoster.getDifficulty(c.npcName, c.npcCombatLevel);
+        com.bestiary.model.CreatureSpecies species =
+                MonsterRoster.getSpecies(c.npcName, c.npcCombatLevel);
+
         p.add(sectionHeader("Card"));
         p.add(kv("Rarity", c.rarity.label, c.rarity.displayColor));
+        p.add(kv("Species", species.label, species.displayColor));
+        p.add(kv("Difficulty", diff.label, diff.displayColor));
         p.add(kv("Power Level", String.valueOf(c.powerLevel()), Color.WHITE));
         p.add(kv("Hitpoints", String.valueOf(c.hitpoints())
                 + (c.observedHp > 0 ? "  (observed)" : ""), new Color(120, 200, 120)));
@@ -262,6 +278,16 @@ public class CardDataDialog extends JDialog {
         p.add(kv("Bestiary level", String.valueOf(c.captureLevel), Color.WHITE));
         p.add(kv("Kills before catch", String.valueOf(c.killsBeforeCapture), Color.WHITE));
         p.add(kv("Combat level", c.npcCombatLevel >= 0 ? String.valueOf(c.npcCombatLevel) : "—", Color.WHITE));
+
+        long baseCredits = com.bestiary.util.CreditCalculator.forCapture(diff, c.rarity, c.isShiny());
+        long bounty      = captureCreditBonus.getAsLong();
+        String creditVal = bounty > 0
+                ? "<html>" + baseCredits + " <font color='" + BONUS_HEX + "'>(+" + bounty + ")</font> cr</html>"
+                : baseCredits + " cr";
+        p.add(kv("Capture reward", creditVal, new Color(120, 190, 255)));
+        p.add(kv("Capture XP", com.bestiary.service.ProgressionService.captureXp(
+                c.npcCombatLevel, c.rarity) + " xp", new Color(170, 210, 120)));
+
         p.add(kv("Caught by", c.originalOwner != null && !c.originalOwner.isEmpty() ? c.originalOwner
                 : (c.playerName != null && !c.playerName.isEmpty() ? c.playerName : "Unknown"),
                 new Color(200, 155, 50)));

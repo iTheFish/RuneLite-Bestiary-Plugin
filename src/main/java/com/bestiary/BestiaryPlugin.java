@@ -87,6 +87,7 @@ public class BestiaryPlugin extends Plugin {
     private final Map<String, CapturedCreature>   batchLastCreature = new HashMap<>();
     private final Map<String, List<Integer>>      batchQualities    = new HashMap<>();
     private final Map<String, Long>               batchCredits      = new HashMap<>();
+    private final Map<String, Long>               batchCreditsBonus = new HashMap<>();
     private final Map<String, ScheduledFuture<?>> batchFutures      = new HashMap<>();
 
     // --- Lifecycle ---
@@ -169,6 +170,7 @@ public class BestiaryPlugin extends Plugin {
             batchLastCreature.clear();
             batchQualities.clear();
             batchCredits.clear();
+            batchCreditsBonus.clear();
         });
 
         log.info("Bestiary plugin stopped");
@@ -293,6 +295,7 @@ public class BestiaryPlugin extends Plugin {
                             creature.npcName, creature.npcCombatLevel),
                     creature.rarity, creature.isShiny());
             long awardedCredits = dataService.awardCaptureCredits(baseCredits);
+            long bonusCredits   = awardedCredits - baseCredits;   // Hunter's Bounty flat boost
 
             if (config.captureXpEnabled()) {
                 // Base capture XP + the Scholar's Insight % shop boost.
@@ -313,11 +316,11 @@ public class BestiaryPlugin extends Plugin {
                 if (shouldNotify) {
                     if (config.chatNotifyMode() == ChatNotifyMode.BATCHED && !creature.isShiny()) {
                         // Submit to executor so batch maps are only touched on one thread
-                        executor.execute(() -> accumulateBatch(creature, awardedCredits));
+                        executor.execute(() -> accumulateBatch(creature, baseCredits, bonusCredits));
                     } else {
                         // Verbose (and always for shinies): include quality so identical
                         // captures produce unique messages, and a shiny is never buried in a batch
-                        notifyCapture(creature, awardedCredits);
+                        notifyCapture(creature, baseCredits, bonusCredits);
                     }
                 }
             }
@@ -349,12 +352,13 @@ public class BestiaryPlugin extends Plugin {
      * then posts a single "Nx Rarity Name captured!" message.  Timer resets on each kill.
      * Called on executor thread.
      */
-    private void accumulateBatch(CapturedCreature creature, long credits) {
+    private void accumulateBatch(CapturedCreature creature, long baseCredits, long bonusCredits) {
         String key = creature.npcName + ":" + creature.rarity.label;
         batchCounts.merge(key, 1, Integer::sum);
         batchLastCreature.put(key, creature);
         batchQualities.computeIfAbsent(key, k -> new ArrayList<>()).add(creature.powerLevel());
-        batchCredits.merge(key, credits, Long::sum);
+        batchCredits.merge(key, baseCredits, Long::sum);
+        batchCreditsBonus.merge(key, bonusCredits, Long::sum);
 
         ScheduledFuture<?> existing = batchFutures.remove(key);
         if (existing != null) existing.cancel(false);
@@ -367,6 +371,7 @@ public class BestiaryPlugin extends Plugin {
         CapturedCreature last = batchLastCreature.remove(key);
         List<Integer> qualities = batchQualities.remove(key);
         Long credits      = batchCredits.remove(key);
+        Long bonus        = batchCreditsBonus.remove(key);
         batchFutures.remove(key);
         if (count == null || last == null) return;
 
@@ -386,6 +391,9 @@ public class BestiaryPlugin extends Plugin {
                .append("  Kill #" + last.killsBeforeCapture + qualStr);
         if (credits != null && credits > 0) {
             builder.append(CREDIT_CHAT_COLOR, "  +" + credits + " credits");
+            if (bonus != null && bonus > 0) {
+                builder.append(BOUNTY_CHAT_COLOR, " (+" + bonus + ")");
+            }
         }
 
         chatMessageManager.queue(QueuedMessage.builder()
@@ -398,8 +406,10 @@ public class BestiaryPlugin extends Plugin {
     private static final java.awt.Color SHINY_CHAT_COLOR = new java.awt.Color(255, 235, 120);
     /** Colour used for the "+N credits" suffix in capture / achievement chat messages. */
     private static final java.awt.Color CREDIT_CHAT_COLOR = new java.awt.Color(120, 190, 255);
+    /** Colour used for the "(+N)" Hunter's Bounty shop bonus shown after the base credits. */
+    private static final java.awt.Color BOUNTY_CHAT_COLOR = new java.awt.Color(120, 210, 120);
 
-    private void notifyCapture(CapturedCreature creature, long credits) {
+    private void notifyCapture(CapturedCreature creature, long credits, long bonus) {
         int quality = creature.powerLevel();
         int killNum = creature.killsBeforeCapture; // already includes current kill
         // kill# and quality together ensure no two consecutive messages are identical
@@ -415,6 +425,9 @@ public class BestiaryPlugin extends Plugin {
                 .append("  Kill #" + killNum + "  PWR:" + quality);
         if (credits > 0) {
             builder.append(CREDIT_CHAT_COLOR, "  +" + credits + " credits");
+            if (bonus > 0) {
+                builder.append(BOUNTY_CHAT_COLOR, " (+" + bonus + ")");
+            }
         }
         String message = builder.build();
         chatMessageManager.queue(QueuedMessage.builder()

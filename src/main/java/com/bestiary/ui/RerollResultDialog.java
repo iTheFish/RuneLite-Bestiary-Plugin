@@ -114,6 +114,13 @@ public class RerollResultDialog extends JDialog {
         }
         root.add(t);
 
+        // Benchmark the rerolled Power Level against the average and average-shiny roll for this
+        // rarity (same figures as the Card Info → Odds tab), so the player can judge the roll.
+        com.bestiary.util.OddsCalculator.Result odds3 = com.bestiary.util.OddsCalculator.compute(a);
+        root.add(Box.createVerticalStrut(8));
+        root.add(benchmark("Average " + a.rarity.label + " roll", odds3.avgPowerLevel));
+        root.add(benchmark("Average " + a.rarity.label + " shiny roll", odds3.avgShinyPowerLevel));
+
         root.add(Box.createVerticalStrut(10));
         JButton odds = new JButton("Card Info…");
         odds.setFont(FontManager.getRunescapeSmallFont());
@@ -136,6 +143,15 @@ public class RerollResultDialog extends JDialog {
         setContentPane(root);
         pack();
         setLocationRelativeTo(owner);
+    }
+
+    /** A "label ....... value" benchmark row (dim label, white value), left-aligned. */
+    private JLabel benchmark(String label, int value) {
+        JLabel l = new JLabel(label + ":  " + value);
+        l.setFont(FontManager.getRunescapeSmallFont());
+        l.setForeground(new Color(176, 176, 176));
+        l.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return l;
     }
 
     private JLabel cell(String text, boolean bold, Color colour) {

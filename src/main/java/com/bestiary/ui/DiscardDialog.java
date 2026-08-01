@@ -190,7 +190,7 @@ public class DiscardDialog extends JDialog {
             rowP.setMaximumSize(new Dimension(Integer.MAX_VALUE, 22));
             rowP.setBorder(new EmptyBorder(1, 2, 1, 2));
             String main = g.npc + "  ·  " + g.rarity.label + "  — discard " + g.discard.size()
-                    + "  (+" + credits + "cr)";
+                    + "  (+" + base + "cr)";
             String html = "<html><span style='color:" + hex(g.rarity.displayColor) + "'>" + main + "</span>"
                     + (bonus > 0 ? "<span style='color:" + hex(BONUS_COLOR) + "'> (+" + bonus + ")</span>" : "")
                     + "</html>";
@@ -230,7 +230,7 @@ public class DiscardDialog extends JDialog {
 
         String totalMain = cards + " duplicate card" + (cards == 1 ? "" : "s")
                 + " across " + groups.size() + " group" + (groups.size() == 1 ? "" : "s")
-                + "  →  " + total + " credits";
+                + "  →  " + (total - totalBonus) + " credits";
         totalLabel.setText("<html><span style='color:#ffffff'>" + totalMain + "</span>"
                 + (totalBonus > 0 ? "<span style='color:" + hex(BONUS_COLOR)
                         + "'> (+" + totalBonus + " from upgrades)</span>" : "")

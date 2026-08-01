@@ -100,15 +100,16 @@ public class BestiaryPanel extends PluginPanel {
         CreatureDetailDialog.setConfig(config);
         CreatureDetailDialog.setSaveCallback(dataService::saveNow);
         CardExportDialog.setShared(imageService, dataService::getCollection);
+        CardDataDialog.setCaptureCreditBonus(dataService::captureCreditFlatBonus);
         CardExportDialog.setOnMutate(() -> { dataService.saveNow(); refresh(); });
         AlbumCard.setConfig(config);
         AlbumCard.setSkillIconManager(skillIconManager);
         AlbumCard.setDiscardHandler((owner, cap) -> {
             if (dataService.isViewing()) return;   // read-only view of another account (#48)
-            long value = dataService.discardValue(cap);
-            long bonus = value - dataService.discardValueBase(cap);   // extra from Salvager's Eye
+            long base  = dataService.discardValueBase(cap);
+            long bonus = dataService.discardValue(cap) - base;   // extra from Salvager's Eye
             String label = (cap.isShiny() ? "✦ " : "") + cap.rarity.label + " " + cap.npcName;
-            String msg = "<html>Discard " + label + " for " + value + " credits"
+            String msg = "<html>Discard " + label + " for " + base + " credits"
                     + (bonus > 0 ? " <font color='#78d278'>(+" + bonus + ")</font>" : "") + "?</html>";
             int choice = JOptionPane.showConfirmDialog(owner, msg,
                     "Discard card", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
