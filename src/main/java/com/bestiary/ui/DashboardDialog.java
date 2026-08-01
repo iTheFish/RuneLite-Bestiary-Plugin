@@ -1513,7 +1513,7 @@ public class DashboardDialog extends JDialog {
             g.fillRoundRect(bx, y, boxW, boxH, 6, 6);
             g.setColor(ORANGE);
             g.fillRect(bx, y, 3, boxH);
-            if (i == 3) g.fillRect(bx + boxW - 3, y, 3, boxH);
+            if (i == 4) g.fillRect(bx + boxW - 3, y, 3, boxH);   // closing accent on the last box (K:C)
 
             g.setFont(FontManager.getRunescapeBoldFont().deriveFont(17f));
             FontMetrics bfm = g.getFontMetrics();
@@ -1789,7 +1789,6 @@ public class DashboardDialog extends JDialog {
         List<CreatureSpecies> sortedSpTypes = Arrays.stream(CreatureSpecies.values())
                 .filter(sp -> rosterBySp.getOrDefault(sp, 0) > 0)
                 .sorted(Comparator.comparingInt((CreatureSpecies sp) -> capBySp.get(sp).size()).reversed())
-                .limit(5)
                 .collect(Collectors.toList());
 
         // Top 5 species by capture count
@@ -1825,7 +1824,7 @@ public class DashboardDialog extends JDialog {
         }
         y += 8;
 
-        // Completion by creature type (top 5 by captured count)
+        // Completion by creature type (all types with roster entries, sorted by captured count)
         y = drawCardSectionHeader(g, "COMPLETION BY CREATURE TYPE", y, W, PAD);
         y += 6;
         for (CreatureSpecies sp : sortedSpTypes) {
