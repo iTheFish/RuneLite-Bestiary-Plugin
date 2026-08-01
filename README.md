@@ -1,28 +1,101 @@
 # Bestiary
 
-A card-collection layer for Old School RuneScape. Every monster you kill has a chance to be
-**captured** as a collectible card with a rarity, rolled stats, and the monster's real
+**A card-collection layer for Old School RuneScape.** Every monster you kill has a chance to be
+**captured** as a collectible card — with a rarity, rolled stats, and the monster's real
 Hitpoints — building a personal bestiary you can browse, showcase, reroll and export.
 
-## Features
+<p align="center">
+  <img src="docs/images/capture-animation.gif" alt="A capture and a level-up playing over the game screen" width="420"><br>
+  <em>Kill a monster → roll to capture it → rank up your Capture Level. It all plays out on screen.</em>
+</p>
 
-- **Capture cards on kill** — each kill rolls a catch chance (by monster difficulty tier and your
-  Capture Level) and, on success, a weighted **rarity** (Common → Mythic) plus an independent
-  **shiny** roll.
-- **Power Level** — a card's headline number: the average of its seven rolled stats plus the
-  monster's factual Hitpoints (at a reduced weight), so bosses tower over trash mobs.
-- **Album / Dex** — a grid of every catalogued monster, with search, difficulty filter, per-monster
-  detail pages, and paginated capture views.
+---
+
+## The panel
+
+A sidebar panel is your home base: live stats (Level, Kills, Species, Caught), quick links to the
+Album, Favourites and Catch Rates, and tabs for your Cards, the Shop and your Progress.
+
+<p align="center">
+  <img src="docs/images/BestiarySidePanel.png" alt="The Bestiary sidebar panel" width="250">
+</p>
+
+## Cards
+
+Each capture is a card. A weighted **rarity** (Common → Mythic) and an independent **shiny** roll
+decide how good it is: higher rarities lift every stat toward 99, and a card's headline **Power
+Level** blends its seven rolled stats with the monster's factual Hitpoints and combat level, so
+bosses tower over trash mobs. Same monster, wildly different cards:
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/images/common_bestiary_chicken.png" width="250"><br><em>Common — Power 8</em></td>
+    <td align="center"><img src="docs/images/mythic_bestiary_chicken.png" width="250"><br><em>Mythic — Power 56</em></td>
+  </tr>
+</table>
+
+Every card carries its full stat spread, HP, Prayer, combat class and species, a unique ID and an
+owner stamp — and can be exported as an image to copy or share.
+
+## Album
+
+The Album is a dex of every catalogued monster (200+). Search it, filter by difficulty tier or
+species, sort it, and open any monster for its detail page and all your captures of it. Duplicates
+can be discarded for credits, and cards transferred between your own accounts.
+
+<p align="center">
+  <img src="docs/images/Bestiary_Album.png" alt="The Album / Dex grid" width="760">
+</p>
+
+## Progression, dashboards & economy
+
+A **Capture Level** (1–99, with virtual levels beyond) grows from kill and capture XP, unlocking
+achievements along the way. Captures also earn **Bestiary Credits** you spend in the **Shop** on
+passive upgrades and the **Card Reroller**. Shareable dashboards break down your progression,
+economy, species completion and best captures.
+
+<p align="center">
+  <img src="docs/images/AllDashboardExport.png" alt="Progression, Economy, Species and Caught dashboards" width="760">
+</p>
+
+<p align="center">
+  <img src="docs/images/ShopUnlocks.png" alt="The Shop with passive upgrades" width="250">
+</p>
+
+## Capture rates
+
+Catch chance depends on the monster's difficulty tier and your Capture Level; rarity is a separate
+roll that also improves as you level. The Info tab spells it all out, and it climbs steeply as you
+grow — a level 1 hunter versus a level 99 one:
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/images/BestiaryLevel1CatchRates.png" width="330"><br><em>Level 1</em></td>
+    <td align="center"><img src="docs/images/BestiaryLevel99CatchRates.png" width="330"><br><em>Level 99</em></td>
+  </tr>
+</table>
+
+## Features at a glance
+
+- **Capture cards on kill** — a catch roll by difficulty tier and Capture Level, then a weighted
+  rarity plus an independent shiny roll.
+- **Power Level** — a card's headline number: its seven rolled stats plus the monster's factual
+  Hitpoints and combat level (at reduced weight), so bosses outclass trash mobs.
+- **Album / Dex** — a searchable, filterable grid of every catalogued monster, with per-monster
+  detail pages and paginated capture views.
 - **Collection views** — grouped by rarity or monster, or a flat individual list; favourites; and
   rich detail dialogs with per-stat bands and personal bests.
 - **Progression** — a Capture Level (1–99, with virtual levels), XP from kills and captures, and
   achievements.
-- **Shop (in progress)** — earn Bestiary Credits per capture and spend them on the **Card Reroller**
-  (re-roll a card's stats/shiny), or **discard** cards for credits.
-- **Dashboards & Session Recap** — breakdowns of kills, species, and top captures, plus a
+- **Shop & economy** — earn Bestiary Credits per capture and spend them on passive upgrades, the
+  **Card Reroller** (re-roll a card's stats/shiny), or **discard** cards for credits.
+- **Multiple accounts** — each account keeps its own collection; browse any known account read-only,
+  and transfer cards between your own accounts.
+- **Dashboards & Session Recap** — breakdowns of kills, species, economy and top captures, plus a
   shareable per-session summary.
 - **Card export** — save or copy any card as an image, with a unique ID and owner stamp.
-- **Overlay & chat notifications** — an on-screen capture animation and configurable chat messages.
+- **Overlay & chat notifications** — an on-screen capture animation, level-up banners, and
+  configurable chat messages.
 
 ## Data & privacy
 
