@@ -28,6 +28,7 @@ public class TransferDialog extends JDialog {
     private final JComboBox<BestiaryStore.AccountRef> targetCombo = new JComboBox<>();
     private final JPanel cardsPanel = new JPanel();
     private final List<CardRow> rows = new ArrayList<>();
+    private JTextField searchField;
     private JLabel emptyNote;
     private JButton sendBtn;
 
@@ -103,6 +104,21 @@ public class TransferDialog extends JDialog {
         selRow.add(smallBtn("None", () -> setAllChecked(false)));
         cardHdr.add(selRow, BorderLayout.EAST);
         root.add(cardHdr);
+
+        // Search filter — the card list can get very long late game.
+        searchField = new JTextField();
+        searchField.setFont(FontManager.getRunescapeSmallFont());
+        searchField.setAlignmentX(Component.LEFT_ALIGNMENT);
+        searchField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 22));
+        searchField.setToolTipText("Filter cards by monster name");
+        searchField.putClientProperty("JTextField.placeholderText", "Search cards…");
+        searchField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override public void insertUpdate(javax.swing.event.DocumentEvent e)  { applyFilter(); }
+            @Override public void removeUpdate(javax.swing.event.DocumentEvent e)  { applyFilter(); }
+            @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { applyFilter(); }
+        });
+        root.add(searchField);
+        root.add(Box.createVerticalStrut(4));
 
         cardsPanel.setLayout(new BoxLayout(cardsPanel, BoxLayout.Y_AXIS));
         cardsPanel.setOpaque(false);
@@ -193,13 +209,26 @@ public class TransferDialog extends JDialog {
             none.setBorder(new EmptyBorder(6, 4, 0, 0));
             cardsPanel.add(none);
         }
+        applyFilter();
         cardsPanel.revalidate();
         cardsPanel.repaint();
         updateSendButton();
     }
 
+    /** Shows only card rows whose monster name matches the search box (case-insensitive). */
+    private void applyFilter() {
+        String q = searchField == null ? "" : searchField.getText().trim().toLowerCase(java.util.Locale.ROOT);
+        for (CardRow r : rows) {
+            boolean match = q.isEmpty() || r.card.npcName.toLowerCase(java.util.Locale.ROOT).contains(q);
+            r.box.setVisible(match);
+        }
+        cardsPanel.revalidate();
+        cardsPanel.repaint();
+    }
+
     private void setAllChecked(boolean checked) {
-        for (CardRow r : rows) r.box.setSelected(checked);
+        // Only affects the currently-visible (filtered) rows.
+        for (CardRow r : rows) if (r.box.isVisible()) r.box.setSelected(checked);
         updateSendButton();
     }
 

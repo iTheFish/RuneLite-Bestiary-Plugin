@@ -34,6 +34,9 @@ public class BestiaryCollection {
     /** Total cards this account has sent away via transfer (for the sent/received dashboard line). */
     public long lifetimeCardsSent = 0;
 
+    /** Total cards this account has discarded for credits (for the Caught dashboard line). */
+    public long lifetimeCardsDiscarded = 0;
+
     /** Bestiary Credits — earned on capture, spent in the Shop. */
     public long credits = 0;
 
