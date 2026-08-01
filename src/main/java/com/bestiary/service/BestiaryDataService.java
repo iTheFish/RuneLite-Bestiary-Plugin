@@ -431,6 +431,13 @@ public class BestiaryDataService {
                 collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.CREDIT_DISCARD));
     }
 
+    /** Base credits a card is worth if discarded, BEFORE the Salvager's Eye passive boost. */
+    public long discardValueBase(CapturedCreature c) {
+        return Math.max(1L, com.bestiary.util.CreditCalculator.forDiscard(
+                com.bestiary.model.MonsterRoster.getDifficulty(c.npcName, c.npcCombatLevel),
+                c.rarity, c.isShiny()));
+    }
+
     /** Credits a card is worth if discarded, including the Salvager's Eye passive boost. */
     public long discardValue(CapturedCreature c) {
         long base = com.bestiary.util.CreditCalculator.forDiscard(
