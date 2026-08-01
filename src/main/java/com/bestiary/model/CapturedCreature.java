@@ -124,6 +124,13 @@ public class CapturedCreature {
     public long creditsEarned;
 
     /**
+     * Capture XP actually awarded at capture (base capture XP + the Scholar's Insight % boost owned
+     * then). Persisted for accurate as-at-capture Card Info; 0 for legacy captures or if capture XP
+     * was disabled. Carried across rerolls (a reroll doesn't re-award capture XP).
+     */
+    public long xpEarned;
+
+    /**
      * How many kills of this species the player had accumulated before this
      * capture succeeded (useful for showing "lucky" catches).
      */

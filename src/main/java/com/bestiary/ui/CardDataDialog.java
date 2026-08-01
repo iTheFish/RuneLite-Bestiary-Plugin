@@ -43,6 +43,18 @@ public class CardDataDialog extends JDialog {
         if (s != null) captureCreditBonus = s;
     }
 
+    /** Current Scholar's Insight capture-XP bonus fraction (e.g. 0.25 = +25%; 0 = none). */
+    private static java.util.function.DoubleSupplier captureXpBonus = () -> 0.0;
+    public static void setCaptureXpBonus(java.util.function.DoubleSupplier s) {
+        if (s != null) captureXpBonus = s;
+    }
+
+    /** Current Hunter's Focus flat kill-XP bonus (0 = none). */
+    private static java.util.function.LongSupplier killXpFlatBonus = () -> 0L;
+    public static void setKillXpFlatBonus(java.util.function.LongSupplier s) {
+        if (s != null) killXpFlatBonus = s;
+    }
+
     /** Colour for shop-upgrade bonus amounts shown in brackets. */
     private static final String BONUS_HEX = "#78d278";
 
@@ -292,12 +304,20 @@ public class CardDataDialog extends JDialog {
         } else {                         // legacy: best-effort using the current Hunter's Bounty tier
             bounty = captureCreditBonus.getAsLong();
         }
-        String creditVal = bounty > 0
-                ? "<html>" + baseCredits + " <font color='" + BONUS_HEX + "'>(+" + bounty + ")</font></html>"
-                : String.valueOf(baseCredits);
-        p.add(kv("Credits Earned", creditVal, new Color(120, 190, 255)));
-        p.add(kv("Capture XP", String.valueOf(com.bestiary.service.ProgressionService.captureXp(
-                c.npcCombatLevel, capRarity)), new Color(170, 210, 120)));
+        p.add(kv("Credits Earned", amountHtml(baseCredits, bounty), new Color(120, 190, 255)));
+
+        // Kill XP: awarded on every kill of this monster (difficulty-tiered) + the Hunter's Focus
+        // flat shop bonus. Not card-specific, so it reflects the current shop tier.
+        long killXpBase  = com.bestiary.service.ProgressionService.killXp(diff);
+        p.add(kv("Kill XP", amountHtml(killXpBase, killXpFlatBonus.getAsLong()), new Color(170, 210, 120)));
+
+        // Capture XP: base (from the ORIGINAL rarity) + the Scholar's Insight % boost. Uses the true
+        // awarded value when recorded (as-at-capture); legacy cards fall back to the current bonus.
+        long capXpBase  = com.bestiary.service.ProgressionService.captureXp(c.npcCombatLevel, capRarity);
+        long capXpBonus = c.xpEarned > 0
+                ? Math.max(0, c.xpEarned - capXpBase)
+                : Math.round(capXpBase * captureXpBonus.getAsDouble());
+        p.add(kv("Capture XP", amountHtml(capXpBase, capXpBonus), new Color(170, 210, 120)));
 
         p.add(kv("Caught by", c.originalOwner != null && !c.originalOwner.isEmpty() ? c.originalOwner
                 : (c.playerName != null && !c.playerName.isEmpty() ? c.playerName : "Unknown"),
@@ -468,6 +488,13 @@ public class CardDataDialog extends JDialog {
         return l;
     }
 
+    /** Renders "base" or "base <green>(+bonus)</green>" (green = a shop-upgrade bonus) as an HTML value. */
+    private static String amountHtml(long base, long bonus) {
+        return bonus > 0
+                ? "<html>" + base + " <font color='" + BONUS_HEX + "'>(+" + bonus + ")</font></html>"
+                : String.valueOf(base);
+    }
+
     private Box kv(String left, String right, Color rightColor) {
         Box row = Box.createHorizontalBox();
         row.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -478,6 +505,9 @@ public class CardDataDialog extends JDialog {
         JLabel rr = new JLabel(right);
         rr.setFont(body);
         rr.setForeground(rightColor);
+        // HTML labels report an unbounded max width, so the glue can't push them flush right —
+        // pin the max to the preferred size so they stay compact like plain-text values.
+        rr.setMaximumSize(rr.getPreferredSize());
         row.add(l);
         row.add(Box.createHorizontalStrut(14));
         row.add(Box.createHorizontalGlue());

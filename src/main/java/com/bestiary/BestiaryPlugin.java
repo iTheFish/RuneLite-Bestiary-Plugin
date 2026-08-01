@@ -298,13 +298,16 @@ public class BestiaryPlugin extends Plugin {
             // Record the true award now so Card Info stays accurate as-at-capture (set before the
             // capture is persisted via addCapture, so the value is written to disk with the card).
             creature.creditsEarned = awardedCredits;
+
+            // Base capture XP + the Scholar's Insight % shop boost. Computed before addCapture so the
+            // awarded value is persisted with the card for accurate as-at-capture Card Info.
+            long capXp = config.captureXpEnabled() ? Math.round(
+                    ProgressionService.captureXp(creature.npcCombatLevel, creature.rarity)
+                    * (1.0 + dataService.captureXpBonus())) : 0L;
+            creature.xpEarned = capXp;
             dataService.addCapture(creature);
 
-            if (config.captureXpEnabled()) {
-                // Base capture XP + the Scholar's Insight % shop boost.
-                long capXp = Math.round(
-                        ProgressionService.captureXp(creature.npcCombatLevel, creature.rarity)
-                        * (1.0 + dataService.captureXpBonus()));
+            if (capXp > 0) {
                 sessionTracker.addXp(capXp);
                 progressionService.awardXp(capXp);
             }

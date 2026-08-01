@@ -101,6 +101,8 @@ public class BestiaryPanel extends PluginPanel {
         CreatureDetailDialog.setSaveCallback(dataService::saveNow);
         CardExportDialog.setShared(imageService, dataService::getCollection);
         CardDataDialog.setCaptureCreditBonus(dataService::captureCreditFlatBonus);
+        CardDataDialog.setCaptureXpBonus(dataService::captureXpBonus);
+        CardDataDialog.setKillXpFlatBonus(dataService::killXpFlatBonus);
         CardExportDialog.setOnMutate(() -> { dataService.saveNow(); refresh(); });
         AlbumCard.setConfig(config);
         AlbumCard.setSkillIconManager(skillIconManager);

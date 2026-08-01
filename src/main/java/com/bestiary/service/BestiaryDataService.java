@@ -648,6 +648,7 @@ public class BestiaryDataService {
         nc.nickname      = c.nickname;
         nc.albumCover    = c.albumCover;
         nc.creditsEarned = c.creditsEarned;   // a reroll doesn't re-award capture credits — carry the original
+        nc.xpEarned      = c.xpEarned;        // nor capture XP — carry the original
         // Replace in place (by id) so it can't leave a stale/duplicate copy behind.
         if (!collection.replaceCapture(nc)) collection.addCapture(nc);
         persistNow();
