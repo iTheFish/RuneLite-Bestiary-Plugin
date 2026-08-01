@@ -103,7 +103,7 @@ public class ProgressTab extends JPanel {
         achievementHeader.setAlignmentX(LEFT_ALIGNMENT);
 
         // Reset Collection — moved here from the panel footer (was too close to the version link).
-        JButton resetBtn = new JButton("Reset Collection");
+        JButton resetBtn = new JButton("Reset Progress & Collection?");
         resetBtn.setFont(FontManager.getRunescapeSmallFont());
         resetBtn.setBackground(new Color(80, 20, 20));
         resetBtn.setForeground(new Color(220, 100, 100));
