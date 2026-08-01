@@ -526,8 +526,8 @@ public class BestiaryPlugin extends Plugin {
     }
 
     /**
-     * Sidebar icon: a Mythic medallion (red disc + gold ring) with a white "B" and a shiny sparkle.
-     * Drawn at high resolution and filling the canvas so RuneLite scales it down crisply.
+     * Sidebar icon: a Mythic-shiny collection jar (red essence, grey stopper, shiny sparkle) with a
+     * white "B". Drawn at high resolution and filling the canvas so RuneLite scales it down crisply.
      */
     private static BufferedImage buildPanelIcon() {
         final int S = 128;   // high-res source; the toolbar scales it to its button size
@@ -537,27 +537,46 @@ public class BestiaryPlugin extends Plugin {
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 
-        // Mythic disc + thin gold ring, nearly edge-to-edge
-        float ring = S * 0.05f, o = ring * 0.6f, d = S - o * 2;
-        java.awt.geom.Ellipse2D disc = new java.awt.geom.Ellipse2D.Float(o, o, d, d);
-        g.setPaint(new GradientPaint(0, o, new Color(225, 55, 65), 0, o + d, new Color(115, 14, 30)));
-        g.fill(disc);
-        g.setColor(new Color(255, 205, 70));
-        g.setStroke(new BasicStroke(ring));
-        g.draw(disc);
+        // Stopper / lid
+        float sw = S * 0.44f, sh = S * 0.15f, sx = (S - sw) / 2f, sy = S * 0.05f;
+        java.awt.geom.RoundRectangle2D stop =
+                new java.awt.geom.RoundRectangle2D.Float(sx, sy, sw, sh, S * 0.05f, S * 0.05f);
+        g.setColor(new Color(120, 120, 128));
+        g.fill(stop);
+        g.setColor(new Color(80, 80, 88));
+        g.setStroke(new BasicStroke(S * 0.02f));
+        g.draw(stop);
 
-        // Letter B — large, white, soft shadow
-        g.setFont(new Font("SansSerif", Font.BOLD, Math.round(S * 0.70f)));
+        // Jar body (glass) with Mythic-red essence filling most of it
+        float bx = S * 0.13f, bw = S * 0.74f, by = S * 0.19f, bh = S * 0.76f, arc = S * 0.16f;
+        java.awt.geom.RoundRectangle2D body =
+                new java.awt.geom.RoundRectangle2D.Float(bx, by, bw, bh, arc, arc);
+        Shape oldClip = g.getClip();
+        g.setClip(body);
+        float essTop = by + bh * 0.16f;
+        g.setPaint(new GradientPaint(0, essTop, new Color(225, 55, 60), 0, by + bh, new Color(150, 16, 32)));
+        g.fill(new java.awt.geom.Rectangle2D.Float(bx, essTop, bw, bh));
+        g.setClip(oldClip);
+        g.setColor(new Color(210, 230, 250, 32));   // glass sheen
+        g.fill(body);
+        g.setColor(new Color(200, 215, 235));
+        g.setStroke(new BasicStroke(S * 0.05f));
+        g.draw(body);
+
+        // Letter B — large, white, soft shadow; top sits just under the liquid line
+        float fontSize = bw * 0.95f;
+        g.setFont(new Font("SansSerif", Font.BOLD, Math.round(fontSize)));
         FontMetrics fm = g.getFontMetrics();
-        float tx = (S - fm.stringWidth("B")) / 2f;
-        float ty = (S + fm.getAscent() - fm.getDescent()) / 2f;
+        float cx = bx + bw / 2f, cy = by + bh * 0.51f;
+        float tx = cx - fm.stringWidth("B") / 2f;
+        float ty = cy + (fm.getAscent() - fm.getDescent()) / 2f;
         g.setColor(new Color(0, 0, 0, 140));
-        g.drawString("B", tx + S * 0.03f, ty + S * 0.03f);
+        g.drawString("B", tx + fontSize * 0.045f, ty + fontSize * 0.045f);
         g.setColor(new Color(252, 252, 252));
         g.drawString("B", tx, ty);
 
         // Shiny sparkle
-        drawSparkle(g, S * 0.75f, S * 0.26f, S * 0.13f, new Color(255, 255, 238));
+        drawSparkle(g, S * 0.82f, S * 0.31f, S * 0.10f, new Color(255, 255, 238));
 
         g.dispose();
         return icon;

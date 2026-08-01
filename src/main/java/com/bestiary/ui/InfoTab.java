@@ -237,7 +237,7 @@ public class InfoTab extends JPanel {
     // -------------------------------------------------------------------------
 
     private void fillGuide(JPanel c) {
-        c.add(sectionTitle("Your guide to the Bestiary"));
+        c.add(sectionTitle("Your guide to Bestiary"));
         c.add(tile("The short version",
                 "Bestiary turns your everyday kills into a collectible card game. Every monster you " +
                 "fight is a chance to 'capture' it as a card, rolled with its own stats, a rarity, " +
