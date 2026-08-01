@@ -120,28 +120,28 @@ public class CaptureService {
     }
 
     /**
-     * Catch rate by difficulty tier and capture level.
-     *
-     * Each tier has a base rate (level 1), a per-level bonus, and a cap (level 99+):
-     *   BEGINNER: 20% base, +0.50%/level, 60% cap
-     *   EASY:     15% base, +0.40%/level, 50% cap
-     *   MEDIUM:   10% base, +0.30%/level, 40% cap
-     *   HARD:      6% base, +0.22%/level, 28% cap
-     *   ELITE:     3% base, +0.13%/level, 15% cap
-     *   BOSS:    1.5% base, +0.07%/level,  8% cap
+     * Catch rate by difficulty tier and capture level. Scales linearly from the level-1 base to the
+     * level-99 max (base → max):
+     *   BEGINNER: 25% → 70%
+     *   EASY:     20% → 65%
+     *   MEDIUM:   15% → 55%
+     *   HARD:     10% → 50%
+     *   ELITE:     5% → 35%
+     *   BOSS:      3% → 25%
      */
     public static double calculateCatchRate(int captureLevel, DifficultyTier difficulty) {
-        double base, perLevel, cap;
+        double base, max;
         switch (difficulty) {
-            case BEGINNER: base = 0.20; perLevel = 0.0050; cap = 0.60; break;
-            case EASY:     base = 0.15; perLevel = 0.0040; cap = 0.50; break;
-            case MEDIUM:   base = 0.10; perLevel = 0.0030; cap = 0.40; break;
-            case HARD:     base = 0.06; perLevel = 0.0022; cap = 0.28; break;
-            case ELITE:    base = 0.03; perLevel = 0.0013; cap = 0.15; break;
-            case BOSS:     base = 0.015; perLevel = 0.0007; cap = 0.08; break;
-            default:       base = 0.10; perLevel = 0.0030; cap = 0.40; break;
+            case BEGINNER: base = 0.25; max = 0.70; break;
+            case EASY:     base = 0.20; max = 0.65; break;
+            case MEDIUM:   base = 0.15; max = 0.55; break;
+            case HARD:     base = 0.10; max = 0.50; break;
+            case ELITE:    base = 0.05; max = 0.35; break;
+            case BOSS:     base = 0.03; max = 0.25; break;
+            default:       base = 0.15; max = 0.55; break;
         }
-        return Math.min(base + (captureLevel - 1) * perLevel, cap);
+        double perLevel = (max - base) / 98.0;   // reaches the max exactly at level 99
+        return Math.min(base + (captureLevel - 1) * perLevel, max);
     }
 
     /**
