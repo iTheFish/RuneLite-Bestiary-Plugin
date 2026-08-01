@@ -269,7 +269,7 @@ public class InfoTab extends JPanel {
                 "best cards and share them around. You're likely sitting on a stack of duplicates " +
                 "too: use Discard (right-click a card, or bulk-discard from the Album) to turn them " +
                 "into credits and keep your album tidy. Caught a shiny you don't need? Either upgrade " +
-                "that shiny Uncommon or discard it for a guaranteed +1000 credits.\n\n" +
+                "that shiny Uncommon or discard it for a guaranteed +500 credits.\n\n" +
                 "Around level 50 your catch rates are much healthier (beginners near 50%, mediums " +
                 "near 25%). How's your RNG treating you? Tap any stat box at the top to open the " +
                 "dashboards and see your rarity spread, species progress and economy at a glance."));
@@ -390,7 +390,7 @@ public class InfoTab extends JPanel {
                 "breakdown — remember those odds describe a raw pull, not a rerolled card."));
         c.add(tile("Discard",
                 "Don't want a card? Right-click → 'Discard…' to trade it for credits — the refund is " +
-                "its base capture value, and shinies are worth a guaranteed +1000 credits. From the Album you can " +
+                "its base capture value, and shinies are worth a guaranteed +500 credits. From the Album you can " +
                 "multi-select to discard several at once.\n\n" +
                 "Discarding is permanent: the card is removed from your collection."));
         c.add(tile("Shop",

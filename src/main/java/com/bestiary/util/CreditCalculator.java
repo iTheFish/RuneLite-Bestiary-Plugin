@@ -52,7 +52,7 @@ public final class CreditCalculator {
     }
 
     /** Flat credit bonus a shiny adds when discarded. */
-    public static final long SHINY_DISCARD_BONUS = 1000L;
+    public static final long SHINY_DISCARD_BONUS = 500L;
 
     /**
      * Credits refunded for discarding a card = its base (non-shiny) capture value,
