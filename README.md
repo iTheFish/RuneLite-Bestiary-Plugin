@@ -29,8 +29,9 @@ bosses tower over trash mobs. Same monster, wildly different cards:
 
 <table>
   <tr>
-    <td align="center"><img src="docs/images/common_bestiary_chicken.png" width="250"><br><em>Common — Power 8</em></td>
-    <td align="center"><img src="docs/images/mythic_bestiary_chicken.png" width="250"><br><em>Mythic — Power 56</em></td>
+    <td align="center"><img src="docs/images/common_bestiary_chicken.png" width="230"><br><em>Common — Power 8</em></td>
+    <td align="center"><img src="docs/images/epic_bestiary_chicken.png" width="230"><br><em>Epic — Power 14</em></td>
+    <td align="center"><img src="docs/images/mythic_bestiary_chicken.png" width="230"><br><em>Mythic — Power 56</em></td>
   </tr>
 </table>
 
@@ -39,39 +40,42 @@ owner stamp — and can be exported as an image to copy or share.
 
 ## Album
 
-The Album is a dex of every catalogued monster (200+). Search it, filter by difficulty tier or
+The Album is a catalogue of every known monster (200+). Search it, filter by difficulty tier or
 species, sort it, and open any monster for its detail page and all your captures of it. Duplicates
 can be discarded for credits, and cards transferred between your own accounts.
 
 <p align="center">
-  <img src="docs/images/Bestiary_Album.png" alt="The Album / Dex grid" width="760">
+  <img src="docs/images/Bestiary_Album.png" alt="The Album grid" width="760">
 </p>
 
 ## Progression, dashboards & economy
 
 A **Capture Level** (1–99, with virtual levels beyond) grows from kill and capture XP, unlocking
-achievements along the way. Captures also earn **Bestiary Credits** you spend in the **Shop** on
-passive upgrades and the **Card Reroller**. Shareable dashboards break down your progression,
-economy, species completion and best captures.
+achievements along the way — all shown on the **Progress** tab. Captures also earn **Bestiary
+Credits** you spend in the **Shop** on passive upgrades and the **Card Reroller**. Shareable
+dashboards break down your progression, economy, species completion and best captures.
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/images/ProgressionTab.png" width="250"><br><em>Progress tab</em></td>
+    <td align="center"><img src="docs/images/ShopUnlocks.png" width="250"><br><em>Shop</em></td>
+  </tr>
+</table>
 
 <p align="center">
   <img src="docs/images/AllDashboardExport.png" alt="Progression, Economy, Species and Caught dashboards" width="760">
 </p>
 
-<p align="center">
-  <img src="docs/images/ShopUnlocks.png" alt="The Shop with passive upgrades" width="250">
-</p>
-
 ## Capture rates
 
 Catch chance depends on the monster's difficulty tier and your Capture Level; rarity is a separate
-roll that also improves as you level. The Info tab spells it all out, and it climbs steeply as you
-grow — a level 1 hunter versus a level 99 one:
+roll that also improves as you level. The Info tab spells it all out — including the max rates —
+and it climbs steeply as you grow. A level 1 hunter versus a level 45 one:
 
 <table>
   <tr>
     <td align="center"><img src="docs/images/BestiaryLevel1CatchRates.png" width="330"><br><em>Level 1</em></td>
-    <td align="center"><img src="docs/images/BestiaryLevel99CatchRates.png" width="330"><br><em>Level 99</em></td>
+    <td align="center"><img src="docs/images/BestiaryLevel45CatchRates.png" width="330"><br><em>Level 45</em></td>
   </tr>
 </table>
 
@@ -81,7 +85,7 @@ grow — a level 1 hunter versus a level 99 one:
   rarity plus an independent shiny roll.
 - **Power Level** — a card's headline number: its seven rolled stats plus the monster's factual
   Hitpoints and combat level (at reduced weight), so bosses outclass trash mobs.
-- **Album / Dex** — a searchable, filterable grid of every catalogued monster, with per-monster
+- **Album** — a searchable, filterable grid of every known monster, with per-monster
   detail pages and paginated capture views.
 - **Collection views** — grouped by rarity or monster, or a flat individual list; favourites; and
   rich detail dialogs with per-stat bands and personal bests.
