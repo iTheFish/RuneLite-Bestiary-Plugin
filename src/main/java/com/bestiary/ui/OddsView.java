@@ -39,6 +39,7 @@ public class OddsView extends JPanel implements Scrollable {
     private void build() {
         // Title row — name + rarity on the left, REROLLED flag pinned top-right (if applicable)
         boolean rerolled = capture.rerolledBy != null && !capture.rerolledBy.isEmpty();
+        boolean generated = capture.generated;
         Box titleRow = Box.createHorizontalBox();
         titleRow.setAlignmentX(Component.LEFT_ALIGNMENT);
         JLabel title = new JLabel(capture.npcName + "  —  " + r.rarity.label + (r.shiny ? "  ✦ SHINY" : ""));
@@ -46,6 +47,10 @@ public class OddsView extends JPanel implements Scrollable {
         title.setForeground(r.rarity.displayColor);
         titleRow.add(title);
         titleRow.add(Box.createHorizontalGlue());
+        if (generated) {
+            titleRow.add(generatedBadge());
+            if (rerolled) titleRow.add(Box.createHorizontalStrut(4));
+        }
         if (rerolled) {
             titleRow.add(rerolledBadge());
         }
@@ -56,6 +61,10 @@ public class OddsView extends JPanel implements Scrollable {
         sub.setAlignmentX(Component.LEFT_ALIGNMENT);
         add(sub);
 
+        if (generated) {
+            add(paragraph("This card was opened from a Random Card pack — it wasn't caught in game. "
+                    + "The odds below describe a raw pull at this rarity.", new Color(90, 190, 180)));
+        }
         if (rerolled) {
             add(paragraph("This card was rerolled — the odds below describe a raw pull at this rarity, "
                     + "not how this particular card was produced.", new Color(150, 120, 200)));
@@ -153,6 +162,16 @@ public class OddsView extends JPanel implements Scrollable {
         badge.setForeground(new Color(180, 150, 230));
         badge.setBorder(BorderFactory.createCompoundBorder(
                 new MatteBorder(1, 1, 1, 1, new Color(120, 90, 170)),
+                new EmptyBorder(1, 5, 1, 5)));
+        return badge;
+    }
+
+    private JLabel generatedBadge() {
+        JLabel badge = new JLabel("GENERATED");
+        badge.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        badge.setForeground(new Color(120, 210, 200));
+        badge.setBorder(BorderFactory.createCompoundBorder(
+                new MatteBorder(1, 1, 1, 1, new Color(70, 150, 140)),
                 new EmptyBorder(1, 5, 1, 5)));
         return badge;
     }

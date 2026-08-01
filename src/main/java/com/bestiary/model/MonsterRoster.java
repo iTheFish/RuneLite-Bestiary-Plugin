@@ -1098,6 +1098,22 @@ public class MonsterRoster {
         return 0;
     }
 
+    /** All roster monster names whose difficulty resolves to {@code tier} (for Random Card packs). */
+    public static List<String> namesForDifficulty(DifficultyTier tier) {
+        List<String> out = new java.util.ArrayList<>();
+        for (String name : ROSTER) {
+            if (getDifficulty(name, getCombatLevel(name)) == tier) out.add(name);
+        }
+        return out;
+    }
+
+    /** Random-pack selection weight for a BOSS-tier monster: accessible common, endgame rarest. */
+    public static int bossWeight(String npcName) {
+        if (ENDGAME_BOSSES.contains(npcName))    return 1;
+        if (ACCESSIBLE_BOSSES.contains(npcName)) return 3;
+        return 2;   // mid-tier boss
+    }
+
     // -------------------------------------------------------------------------
     // Stat floor — used by RarityRoller to lift secondary/tertiary stats for
     // harder monsters so high-tier bosses always feel impressive.

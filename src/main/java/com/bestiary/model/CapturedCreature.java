@@ -131,6 +131,13 @@ public class CapturedCreature {
     public long xpEarned;
 
     /**
+     * True if this card came from a Random Card pack (bought in the shop) rather than an in-game
+     * capture. Persisted (Gson — no migration; false for legacy/normal captures). Carried across
+     * rerolls, and surfaced as a "Generated" tag on the card + Odds tab.
+     */
+    public boolean generated;
+
+    /**
      * How many kills of this species the player had accumulated before this
      * capture succeeded (useful for showing "lucky" catches).
      */

@@ -5,6 +5,7 @@ import com.bestiary.model.BestiaryCollection;
 import com.bestiary.model.CapturedCreature;
 import com.bestiary.model.CreatureQuality;
 import com.bestiary.model.CreatureRarity;
+import com.bestiary.model.DifficultyTier;
 import com.bestiary.model.MonsterRoster;
 import lombok.extern.slf4j.Slf4j;
 
@@ -649,10 +650,80 @@ public class BestiaryDataService {
         nc.albumCover    = c.albumCover;
         nc.creditsEarned = c.creditsEarned;   // a reroll doesn't re-award capture credits — carry the original
         nc.xpEarned      = c.xpEarned;        // nor capture XP — carry the original
+        nc.generated     = c.generated;       // a rerolled pack card is still a generated card
         // Replace in place (by id) so it can't leave a stale/duplicate copy behind.
         if (!collection.replaceCapture(nc)) collection.addCapture(nc);
         persistNow();
         return nc;
+    }
+
+    // -------------------------------------------------------------------------
+    // Random Card packs (consumable shop) — #135
+    // -------------------------------------------------------------------------
+
+    /** First-draft credit cost to open a random card of {@code tier}. Tunable. */
+    public static long randomPackCost(DifficultyTier tier) {
+        switch (tier) {
+            case BEGINNER: return 100;
+            case EASY:     return 250;
+            case MEDIUM:   return 500;
+            case HARD:     return 1000;
+            case ELITE:    return 2000;
+            case BOSS:     return 4000;
+            default:       return 500;
+        }
+    }
+
+    /**
+     * Buys and opens a Random Card pack of {@code tier}: spends the cost, rolls a monster of that
+     * difficulty (equal weight; BOSS weighted by sub-difficulty), then rolls rarity/shiny/stats like
+     * a capture. The card is flagged {@code generated}. Returns the new card, or null if viewing
+     * another account or the player can't afford it.
+     */
+    public CapturedCreature openRandomPack(DifficultyTier tier, int captureLevel) {
+        if (isViewing()) return null;                 // read-only while viewing another account
+        java.util.List<String> pool = MonsterRoster.namesForDifficulty(tier);
+        if (pool.isEmpty()) return null;
+        if (!spendCredits(randomPackCost(tier))) return null;
+
+        String npcName = pickFromPool(pool, tier);
+        int cl = MonsterRoster.getCombatLevel(npcName);
+        CreatureRarity rarity = com.bestiary.util.RarityRoller.roll(rerollRng, captureLevel);
+        boolean shiny = rerollRng.nextDouble()
+                < com.bestiary.service.CaptureService.shinyChance(captureLevel) + bonusShinyChance();
+        com.bestiary.model.CombatClass cls = MonsterRoster.getCombatClass(npcName, cl);
+        int[] bases = MonsterRoster.getStatBases(npcName, cl);
+        com.bestiary.model.CreatureQuality q =
+                com.bestiary.util.RarityRoller.generateQuality(cls, rarity, bases, rerollRng, shiny);
+        int prayer = com.bestiary.util.RarityRoller.rollPrayer(
+                MonsterRoster.getPrayer(npcName), rarity, rerollRng, shiny);
+        String owner = activeAccountName != null && !activeAccountName.isEmpty() ? activeAccountName : "Player";
+
+        CapturedCreature nc = CapturedCreature.builder()
+                .npcId(0).npcName(npcName).npcCombatLevel(cl)
+                .rarity(rarity).quality(q).captureTime(java.time.Instant.now())
+                .regionName("Random pack").captureLevel(captureLevel).killsBeforeCapture(0)
+                .playerName(owner).originalOwner(owner).currentOwner(owner)
+                .shiny(shiny).shinyBonus(bonusShinyChance()).prayer(prayer).observedHp(0)
+                .build();
+        nc.generated = true;
+        // A pack card is owned but not an in-game catch, so it doesn't bump the "Caught" lifetime tally.
+        collection.addCapture(nc);
+        persistNow();
+        return nc;
+    }
+
+    /** Uniform pick, except BOSS tier which weights by {@link MonsterRoster#bossWeight}. */
+    private String pickFromPool(java.util.List<String> pool, DifficultyTier tier) {
+        if (tier != DifficultyTier.BOSS) return pool.get(rerollRng.nextInt(pool.size()));
+        int total = 0;
+        for (String n : pool) total += MonsterRoster.bossWeight(n);
+        int r = rerollRng.nextInt(total);
+        for (String n : pool) {
+            r -= MonsterRoster.bossWeight(n);
+            if (r < 0) return n;
+        }
+        return pool.get(pool.size() - 1);
     }
 
     // -------------------------------------------------------------------------
