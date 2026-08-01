@@ -465,7 +465,7 @@ public class DashboardDialog extends JDialog {
         float pct                 = total > 0 ? (float) captured / total : 0f;
 
         root.add(heroStat(String.format("%.1f%%", pct * 100f) + "  (" + captured + " / " + total + ")",
-                "DEX COMPLETION", new Color(80, 200, 80)));
+                "ALBUM COMPLETION", new Color(80, 200, 80)));
         root.add(gap(10));
         root.add(sectionHeader("COMPLETION BY DIFFICULTY"));
 
@@ -1813,7 +1813,7 @@ public class DashboardDialog extends JDialog {
 
         int y = drawCardBase(g, W, H, account, "SPECIES", date, PAD);
         y = drawHeroStat(g, String.format("%.1f%%", pct * 100f) + "  (" + captured + " / " + total + ")",
-                "DEX COMPLETION", new Color(80, 200, 80), y, W, PAD);
+                "ALBUM COMPLETION", new Color(80, 200, 80), y, W, PAD);
         y += 12;
 
         // Completion by difficulty
