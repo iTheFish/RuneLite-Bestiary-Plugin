@@ -15,21 +15,25 @@ import java.util.List;
 public class SessionTracker {
 
     private final List<CapturedCreature> captures = new ArrayList<>();
-    private long xpGained  = 0;
-    private int  killCount = 0;
+    private long xpGained      = 0;
+    private long creditsGained = 0;
+    private int  killCount     = 0;
 
     public void add(CapturedCreature c) { captures.add(c); }
-    public void addXp(long xp)          { xpGained  += xp; }
+    public void addXp(long xp)          { xpGained      += xp; }
+    public void addCredits(long c)      { creditsGained += c; }
     public void addKill()               { killCount++; }
 
     public void clear() {
         captures.clear();
-        xpGained  = 0;
-        killCount = 0;
+        xpGained      = 0;
+        creditsGained = 0;
+        killCount     = 0;
     }
 
     public boolean isEmpty()             { return captures.isEmpty(); }
     public long    getXpGained()         { return xpGained; }
+    public long    getCreditsGained()    { return creditsGained; }
     public int     getKillCount()        { return killCount; }
 
     public List<CapturedCreature> getCaptures() {

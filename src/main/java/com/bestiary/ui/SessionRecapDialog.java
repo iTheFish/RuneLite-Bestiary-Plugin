@@ -80,10 +80,13 @@ public class SessionRecapDialog extends JDialog {
         subLabel.setFont(FontManager.getRunescapeSmallFont());
         subLabel.setForeground(best != null ? best.rarity.displayColor : ColorScheme.LIGHT_GRAY_COLOR);
 
-        long xpGained  = tracker.getXpGained();
-        int  killCount = tracker.getKillCount();
+        java.text.NumberFormat numFmt = java.text.NumberFormat.getNumberInstance(java.util.Locale.UK);
+        long xpGained      = tracker.getXpGained();
+        long creditsGained = tracker.getCreditsGained();
+        int  killCount     = tracker.getKillCount();
         String statsLine = killCount + " kill" + (killCount == 1 ? "" : "s")
-                + "  ·  " + java.text.NumberFormat.getNumberInstance(java.util.Locale.UK).format(xpGained) + " XP";
+                + "  ·  " + numFmt.format(xpGained) + " XP"
+                + "  ·  " + numFmt.format(creditsGained) + " credits";
         JLabel statsLabel = new JLabel(statsLine);
         statsLabel.setFont(FontManager.getRunescapeSmallFont());
         statsLabel.setForeground(new Color(130, 180, 130));
@@ -147,7 +150,7 @@ public class SessionRecapDialog extends JDialog {
         copyBtn.setFocusPainted(false);
         copyBtn.setEnabled(!captures.isEmpty());
         copyBtn.addActionListener(e -> {
-            copyTextSummary(captures, speciesCount, rarityCounts);
+            copyTextSummary(captures, speciesCount, rarityCounts, killCount, xpGained, creditsGained);
             copyBtn.setText("Copied!");
             copyBtn.setForeground(new Color(120, 200, 120));
             javax.swing.Timer t = new javax.swing.Timer(2000, ev -> {
@@ -253,7 +256,9 @@ public class SessionRecapDialog extends JDialog {
     }
 
     private void copyTextSummary(List<CapturedCreature> captures, long species,
-                                 Map<CreatureRarity, Long> counts) {
+                                 Map<CreatureRarity, Long> counts,
+                                 int killCount, long xpGained, long creditsGained) {
+        java.text.NumberFormat numFmt = java.text.NumberFormat.getNumberInstance(java.util.Locale.UK);
         // Build the body first so we can measure the longest NPC name for column alignment
         int maxNameLen = captures.stream().mapToInt(c -> c.npcName.length()).max().orElse(10);
         int nameCol = Math.max(maxNameLen + 2, 14);
@@ -262,6 +267,9 @@ public class SessionRecapDialog extends JDialog {
         body.append("=== Bestiary Session Recap ===\n");
         body.append(captures.size()).append(captures.size() == 1 ? " capture" : " captures")
             .append(", ").append(species).append(" species\n");
+        body.append(killCount).append(killCount == 1 ? " kill" : " kills")
+            .append(", ").append(numFmt.format(xpGained)).append(" XP")
+            .append(", ").append(numFmt.format(creditsGained)).append(" credits\n");
 
         // Rarity breakdown on one line
         StringBuilder rarLine = new StringBuilder();
