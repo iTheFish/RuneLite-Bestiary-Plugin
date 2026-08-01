@@ -298,6 +298,7 @@ public class BestiaryPlugin extends Plugin {
             // Record the true award now so Card Info stays accurate as-at-capture (set before the
             // capture is persisted via addCapture, so the value is written to disk with the card).
             creature.creditsEarned = awardedCredits;
+            sessionTracker.addCredits(awardedCredits);
 
             // Base capture XP + the Scholar's Insight % shop boost. Computed before addCapture so the
             // awarded value is persisted with the card for accurate as-at-capture Card Info.
@@ -313,6 +314,9 @@ public class BestiaryPlugin extends Plugin {
             }
             // XP already awarded above with the shop boost; recordCapture just checks achievements.
             List<Achievement> newAchievements = progressionService.recordCapture(creature, false);
+            // Achievement credit rewards (granted inside recordCapture) also count as session income.
+            long achievementCredits = newAchievements.stream().mapToLong(a -> a.creditReward).sum();
+            if (achievementCredits > 0) sessionTracker.addCredits(achievementCredits);
 
             // Chat notification
             if (config.notifyOnCapture()) {
