@@ -90,23 +90,18 @@ public class CaptureRateDialog extends JDialog {
     // Catch chance table
     // -------------------------------------------------------------------------
 
-    // Formula mirrors CaptureService.calculateCatchRate exactly.
-    // Tiers ordered BEGINNER→BOSS, matching DifficultyTier.values().
-    private static final double[] BASE     = {0.20,  0.15,  0.10,  0.06,  0.03,  0.015};
-    private static final double[] PER_LVL  = {0.0050,0.0040,0.0030,0.0022,0.0013,0.0007};
-    private static final double[] CAP      = {0.60,  0.50,  0.40,  0.28,  0.15,  0.08 };
-
     private static JPanel buildCatchTable(int level) {
         JPanel panel = col();
         panel.add(tableRow("Difficulty", "Your level", "Max (cap)", new Color(180, 180, 180), true));
         panel.add(Box.createVerticalStrut(2));
 
-        DifficultyTier[] tiers = DifficultyTier.values();
-        for (int i = 0; i < tiers.length; i++) {
-            double rate = Math.min(BASE[i] + (level - 1) * PER_LVL[i], CAP[i]);
+        // Read straight from the live formula (level 99 = the max) so the table can never drift.
+        for (DifficultyTier tier : DifficultyTier.values()) {
+            double rate = com.bestiary.service.CaptureService.calculateCatchRate(level, tier);
+            double max  = com.bestiary.service.CaptureService.calculateCatchRate(99, tier);
             String cur  = String.format("%.1f%%", rate * 100);
-            String cap  = String.format("%.0f%%", CAP[i] * 100);
-            panel.add(tableRow("● " + tiers[i].label, cur, cap, tiers[i].displayColor, false));
+            String cap  = String.format("%.0f%%", max * 100);
+            panel.add(tableRow("● " + tier.label, cur, cap, tier.displayColor, false));
             panel.add(Box.createVerticalStrut(1));
         }
         return panel;
