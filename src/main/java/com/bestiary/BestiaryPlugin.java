@@ -525,14 +525,67 @@ public class BestiaryPlugin extends Plugin {
         return configManager.getConfig(BestiaryConfig.class);
     }
 
+    /** Sidebar icon: a Mythic-shiny collection jar (red essence + shiny sparkle) with a "B". */
     private static BufferedImage buildPanelIcon() {
-        BufferedImage icon = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+        final int S = 32;
+        BufferedImage icon = new BufferedImage(S, S, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = icon.createGraphics();
-        g.setColor(new Color(255, 165, 0));
-        g.fillOval(2, 2, 12, 12);
-        g.setColor(new Color(200, 120, 0));
-        g.drawOval(2, 2, 12, 12);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+        // Jar body (glass)
+        float bx = 8, by = 9, bw = 16, bh = 20, arc = 6;
+        java.awt.geom.RoundRectangle2D body = new java.awt.geom.RoundRectangle2D.Float(bx, by, bw, bh, arc, arc);
+        // Mythic-red essence fills the lower part of the jar
+        Shape oldClip = g.getClip();
+        g.setClip(body);
+        float essTop = by + bh * 0.28f;
+        g.setPaint(new GradientPaint(0, essTop, new Color(255, 95, 95), 0, by + bh, new Color(165, 20, 35)));
+        g.fill(new java.awt.geom.Rectangle2D.Float(bx, essTop, bw, bh));
+        g.setClip(oldClip);
+        // Glass sheen + outline
+        g.setColor(new Color(200, 225, 245, 45));
+        g.fill(body);
+        g.setColor(new Color(190, 205, 225));
+        g.setStroke(new BasicStroke(1.6f));
+        g.draw(body);
+
+        // Stopper / lid
+        float sw = 10, sh = 5, sx = (S - sw) / 2f, sy = 4.5f;
+        java.awt.geom.RoundRectangle2D stop = new java.awt.geom.RoundRectangle2D.Float(sx, sy, sw, sh, 2.5f, 2.5f);
+        g.setColor(new Color(120, 120, 128));
+        g.fill(stop);
+        g.setColor(new Color(80, 80, 88));
+        g.setStroke(new BasicStroke(1f));
+        g.draw(stop);
+
+        // Letter B
+        g.setFont(new Font("SansSerif", Font.BOLD, 15));
+        FontMetrics fm = g.getFontMetrics();
+        String b = "B";
+        float tx = bx + (bw - fm.stringWidth(b)) / 2f;
+        float ty = by + (bh + fm.getAscent() - fm.getDescent()) / 2f + 1;
+        g.setColor(new Color(20, 10, 10, 120));
+        g.drawString(b, tx + 0.7f, ty + 0.7f);          // shadow
+        g.setColor(new Color(250, 250, 250));
+        g.drawString(b, tx, ty);
+
+        // Shiny sparkles
+        drawSparkle(g, 24.5f, 10.5f, 3.4f, new Color(255, 255, 220));
+        drawSparkle(g, 11f, 22f, 1.8f, new Color(255, 235, 235, 210));
+
         g.dispose();
         return icon;
+    }
+
+    /** A 4-point sparkle centred at (cx,cy). */
+    private static void drawSparkle(Graphics2D g, float cx, float cy, float r, Color c) {
+        g.setColor(c);
+        java.awt.geom.Path2D p = new java.awt.geom.Path2D.Float();
+        float t = r * 0.34f;
+        p.moveTo(cx, cy - r); p.lineTo(cx + t, cy - t); p.lineTo(cx + r, cy); p.lineTo(cx + t, cy + t);
+        p.lineTo(cx, cy + r); p.lineTo(cx - t, cy + t); p.lineTo(cx - r, cy); p.lineTo(cx - t, cy - t);
+        p.closePath();
+        g.fill(p);
     }
 }
