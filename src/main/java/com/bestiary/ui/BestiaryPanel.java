@@ -565,13 +565,26 @@ public class BestiaryPanel extends PluginPanel {
 
         panel.add(buildWipeBtn());
 
-        // Version footer
+        // Version footer — click to open the About / version-log dialog.
         JLabel version = new JLabel("Bestiary v" + com.bestiary.BestiaryPlugin.VERSION);
         version.setFont(FontManager.getRunescapeSmallFont());
-        version.setForeground(new Color(120, 120, 120));
+        version.setForeground(new Color(150, 150, 150));
         version.setAlignmentX(CENTER_ALIGNMENT);
         version.setHorizontalAlignment(SwingConstants.CENTER);
         version.setBorder(new EmptyBorder(6, 0, 0, 0));
+        version.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        version.setToolTipText("What's new — version log");
+        version.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override public void mouseClicked(java.awt.event.MouseEvent e) {
+                AboutDialog.open(SwingUtilities.getWindowAncestor(BestiaryPanel.this));
+            }
+            @Override public void mouseEntered(java.awt.event.MouseEvent e) {
+                version.setForeground(new Color(255, 165, 0));
+            }
+            @Override public void mouseExited(java.awt.event.MouseEvent e) {
+                version.setForeground(new Color(150, 150, 150));
+            }
+        });
         panel.add(version);
         return panel;
     }
