@@ -195,7 +195,8 @@ public class BestiaryPanel extends PluginPanel {
         collectionTab = new CollectionTab(dataService, imageService);
         progressTab   = new ProgressTab(progressionService, sessionTracker,
                 () -> DashboardDialog.open(SwingUtilities.getWindowAncestor(this), dataService,
-                        progressionService, DashboardDialog.DashView.PROGRESSION));
+                        progressionService, DashboardDialog.DashView.PROGRESSION),
+                this::confirmWipe);
         shopTab       = new ShopTab(dataService, progressionService,
                 () -> DashboardDialog.open(SwingUtilities.getWindowAncestor(this), dataService,
                         progressionService, DashboardDialog.DashView.ECONOMY));
@@ -500,15 +501,13 @@ public class BestiaryPanel extends PluginPanel {
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(new EmptyBorder(4, 0, 0, 0));
 
-        panel.add(buildWipeBtn());
-
         // Version footer — click to open the About / version-log dialog.
         JLabel version = new JLabel("Bestiary v" + com.bestiary.BestiaryPlugin.VERSION);
-        version.setFont(FontManager.getRunescapeSmallFont());
+        version.setFont(FontManager.getRunescapeBoldFont().deriveFont(14f));
         version.setForeground(new Color(150, 150, 150));
         version.setAlignmentX(CENTER_ALIGNMENT);
         version.setHorizontalAlignment(SwingConstants.CENTER);
-        version.setBorder(new EmptyBorder(6, 0, 0, 0));
+        version.setBorder(new EmptyBorder(8, 0, 4, 0));
         version.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         version.setToolTipText("What's new — version log");
         version.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -526,26 +525,8 @@ public class BestiaryPanel extends PluginPanel {
         return panel;
     }
 
-    private JButton buildWipeBtn() {
-        JButton btn = new JButton("Reset Collection");
-        btn.setFont(FontManager.getRunescapeSmallFont());
-        btn.setBackground(new Color(80, 20, 20));
-        btn.setForeground(new Color(220, 100, 100));
-        btn.setBorderPainted(false);
-        btn.setFocusPainted(false);
-        btn.setToolTipText("Permanently delete all captures and progression");
-        btn.addActionListener(e -> confirmWipe());
-        return fullWidth(btn);
-    }
-
-    /** Makes a button span the full panel width (consistent bottom-row buttons). */
-    private static JButton fullWidth(JButton btn) {
-        btn.setAlignmentX(CENTER_ALIGNMENT);
-        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
-        return btn;
-    }
-
-    private void confirmWipe() {
+    /** Confirms (twice) and permanently wipes the played collection. Triggered from the Progress tab. */
+    void confirmWipe() {
         int first = JOptionPane.showConfirmDialog(
                 this,
                 "This will permanently delete ALL capture history, kill counts,\n"

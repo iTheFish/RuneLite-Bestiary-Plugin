@@ -25,7 +25,7 @@ public class ProgressTab extends JPanel {
     private final JPanel achievementPanel;
 
     public ProgressTab(ProgressionService progressionService, SessionTracker sessionTracker,
-                       Runnable showDashboard) {
+                       Runnable showDashboard, Runnable onReset) {
         this.progressionService = progressionService;
         this.sessionTracker     = sessionTracker;
         setLayout(new BorderLayout(0, 8));
@@ -100,11 +100,31 @@ public class ProgressTab extends JPanel {
         achievementHeader.setFont(FontManager.getRunescapeBoldFont());
         achievementHeader.setForeground(Color.WHITE);
         achievementHeader.setBorder(new EmptyBorder(4, 0, 4, 0));
+        achievementHeader.setAlignmentX(LEFT_ALIGNMENT);
+
+        // Reset Collection — moved here from the panel footer (was too close to the version link).
+        JButton resetBtn = new JButton("Reset Collection");
+        resetBtn.setFont(FontManager.getRunescapeSmallFont());
+        resetBtn.setBackground(new Color(80, 20, 20));
+        resetBtn.setForeground(new Color(220, 100, 100));
+        resetBtn.setBorderPainted(false);
+        resetBtn.setFocusPainted(false);
+        resetBtn.setToolTipText("Permanently delete all captures and progression");
+        resetBtn.setAlignmentX(LEFT_ALIGNMENT);
+        resetBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
+        resetBtn.addActionListener(e -> { if (onReset != null) onReset.run(); });
+
+        JPanel achTop = new JPanel();
+        achTop.setOpaque(false);
+        achTop.setLayout(new BoxLayout(achTop, BoxLayout.Y_AXIS));
+        achTop.add(resetBtn);
+        achTop.add(Box.createVerticalStrut(6));
+        achTop.add(achievementHeader);
 
         JPanel centerPanel = new JPanel(new BorderLayout());
         centerPanel.setOpaque(false);
-        centerPanel.add(achievementHeader, BorderLayout.NORTH);
-        centerPanel.add(scroll,            BorderLayout.CENTER);
+        centerPanel.add(achTop, BorderLayout.NORTH);
+        centerPanel.add(scroll, BorderLayout.CENTER);
 
         JPanel northStack = new JPanel(new BorderLayout(0, 0));
         northStack.setOpaque(false);
