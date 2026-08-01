@@ -525,35 +525,39 @@ public class BestiaryPlugin extends Plugin {
         return configManager.getConfig(BestiaryConfig.class);
     }
 
-    /** Sidebar icon: a Mythic medallion (red disc + gold ring) with a white "B" and a shiny sparkle. */
+    /**
+     * Sidebar icon: a Mythic medallion (red disc + gold ring) with a white "B" and a shiny sparkle.
+     * Drawn at high resolution and filling the canvas so RuneLite scales it down crisply.
+     */
     private static BufferedImage buildPanelIcon() {
-        final int S = 32;
+        final int S = 128;   // high-res source; the toolbar scales it to its button size
         BufferedImage icon = new BufferedImage(S, S, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = icon.createGraphics();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 
-        // Mythic disc + gold ring
-        float d = 26, o = (S - d) / 2f;
+        // Mythic disc + thin gold ring, nearly edge-to-edge
+        float ring = S * 0.05f, o = ring * 0.6f, d = S - o * 2;
         java.awt.geom.Ellipse2D disc = new java.awt.geom.Ellipse2D.Float(o, o, d, d);
-        g.setPaint(new GradientPaint(0, o, new Color(220, 50, 60), 0, o + d, new Color(120, 15, 30)));
+        g.setPaint(new GradientPaint(0, o, new Color(225, 55, 65), 0, o + d, new Color(115, 14, 30)));
         g.fill(disc);
         g.setColor(new Color(255, 205, 70));
-        g.setStroke(new BasicStroke(2f));
+        g.setStroke(new BasicStroke(ring));
         g.draw(disc);
 
-        // Letter B (white, with a soft shadow)
-        g.setFont(new Font("SansSerif", Font.BOLD, 17));
+        // Letter B — large, white, soft shadow
+        g.setFont(new Font("SansSerif", Font.BOLD, Math.round(S * 0.70f)));
         FontMetrics fm = g.getFontMetrics();
         float tx = (S - fm.stringWidth("B")) / 2f;
         float ty = (S + fm.getAscent() - fm.getDescent()) / 2f;
         g.setColor(new Color(0, 0, 0, 140));
-        g.drawString("B", tx + 1f, ty + 1f);
-        g.setColor(new Color(250, 250, 250));
+        g.drawString("B", tx + S * 0.03f, ty + S * 0.03f);
+        g.setColor(new Color(252, 252, 252));
         g.drawString("B", tx, ty);
 
         // Shiny sparkle
-        drawSparkle(g, 24f, 8.5f, 3.2f, new Color(255, 255, 235));
+        drawSparkle(g, S * 0.75f, S * 0.26f, S * 0.13f, new Color(255, 255, 238));
 
         g.dispose();
         return icon;
