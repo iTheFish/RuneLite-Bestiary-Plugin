@@ -222,7 +222,9 @@ public class BestiaryPlugin extends Plugin {
         if (accountHash == -1L) return;
         String name = client.getLocalPlayer() != null ? client.getLocalPlayer().getName() : "";
         if (dataService.switchAccount(accountHash, name)) {
-            SwingUtilities.invokeLater(panel::refresh);
+            // A real account change (incl. a Jagex-launcher hop with no LOGIN_SCREEN in between) must
+            // dispose stale browsing windows bound to the previous account, not just refresh (#131).
+            SwingUtilities.invokeLater(panel::onAccountChanged);
         }
     }
 
