@@ -287,7 +287,6 @@ public class BestiaryPlugin extends Plugin {
 
         result.ifPresent(creature -> {
             sessionTracker.add(creature);
-            dataService.addCapture(creature);
 
             // Award Bestiary Credits (difficulty × rarity, shiny doubles; Hunter's Bounty adds a passive %)
             long baseCredits = com.bestiary.util.CreditCalculator.forCapture(
@@ -296,6 +295,10 @@ public class BestiaryPlugin extends Plugin {
                     creature.rarity, creature.isShiny());
             long awardedCredits = dataService.awardCaptureCredits(baseCredits);
             long bonusCredits   = awardedCredits - baseCredits;   // Hunter's Bounty flat boost
+            // Record the true award now so Card Info stays accurate as-at-capture (set before the
+            // capture is persisted via addCapture, so the value is written to disk with the card).
+            creature.creditsEarned = awardedCredits;
+            dataService.addCapture(creature);
 
             if (config.captureXpEnabled()) {
                 // Base capture XP + the Scholar's Insight % shop boost.
@@ -404,10 +407,10 @@ public class BestiaryPlugin extends Plugin {
 
     /** Colour used for the SHINY marker in capture chat messages. */
     private static final java.awt.Color SHINY_CHAT_COLOR = new java.awt.Color(255, 235, 120);
-    /** Colour used for the "+N credits" suffix in capture / achievement chat messages. */
-    private static final java.awt.Color CREDIT_CHAT_COLOR = new java.awt.Color(120, 190, 255);
-    /** Colour used for the "(+N)" Hunter's Bounty shop bonus shown after the base credits. */
-    private static final java.awt.Color BOUNTY_CHAT_COLOR = new java.awt.Color(120, 210, 120);
+    /** Colour used for the base "+N credits" in capture / achievement chat messages (dark blue). */
+    private static final java.awt.Color CREDIT_CHAT_COLOR = new java.awt.Color(51, 102, 204);
+    /** Colour for the "(+N)" Hunter's Bounty shop bonus shown after the base credits (dark green). */
+    private static final java.awt.Color BOUNTY_CHAT_COLOR = new java.awt.Color(34, 139, 34);
 
     private void notifyCapture(CapturedCreature creature, long credits, long bonus) {
         int quality = creature.powerLevel();

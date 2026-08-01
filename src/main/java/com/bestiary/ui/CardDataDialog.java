@@ -279,14 +279,25 @@ public class CardDataDialog extends JDialog {
         p.add(kv("Kills before catch", String.valueOf(c.killsBeforeCapture), Color.WHITE));
         p.add(kv("Combat level", c.npcCombatLevel >= 0 ? String.valueOf(c.npcCombatLevel) : "—", Color.WHITE));
 
-        long baseCredits = com.bestiary.util.CreditCalculator.forCapture(diff, c.rarity, c.isShiny());
-        long bounty      = captureCreditBonus.getAsLong();
+        // Use the ORIGINAL rarity/shiny (the first reroll snapshot) so a rerolled/upgraded card still
+        // reports the reward + XP it earned when first caught, not its current form.
+        com.bestiary.model.CreatureRarity capRarity =
+                c.rerollHistory.isEmpty() ? c.rarity : c.rerollHistory.get(0).rarity;
+        boolean capShiny = c.rerollHistory.isEmpty() ? c.isShiny() : c.rerollHistory.get(0).shiny;
+        long baseCredits = com.bestiary.util.CreditCalculator.forCapture(diff, capRarity, capShiny);
+        long earned = c.creditsEarned;   // true award recorded at capture (0 = legacy card)
+        long bounty;
+        if (earned > 0) {
+            bounty = Math.max(0, earned - baseCredits);
+        } else {                         // legacy: best-effort using the current Hunter's Bounty tier
+            bounty = captureCreditBonus.getAsLong();
+        }
         String creditVal = bounty > 0
-                ? "<html>" + baseCredits + " <font color='" + BONUS_HEX + "'>(+" + bounty + ")</font> cr</html>"
-                : baseCredits + " cr";
-        p.add(kv("Capture reward", creditVal, new Color(120, 190, 255)));
-        p.add(kv("Capture XP", com.bestiary.service.ProgressionService.captureXp(
-                c.npcCombatLevel, c.rarity) + " xp", new Color(170, 210, 120)));
+                ? "<html>" + baseCredits + " <font color='" + BONUS_HEX + "'>(+" + bounty + ")</font></html>"
+                : String.valueOf(baseCredits);
+        p.add(kv("Credits Earned", creditVal, new Color(120, 190, 255)));
+        p.add(kv("Capture XP", String.valueOf(com.bestiary.service.ProgressionService.captureXp(
+                c.npcCombatLevel, capRarity)), new Color(170, 210, 120)));
 
         p.add(kv("Caught by", c.originalOwner != null && !c.originalOwner.isEmpty() ? c.originalOwner
                 : (c.playerName != null && !c.playerName.isEmpty() ? c.playerName : "Unknown"),

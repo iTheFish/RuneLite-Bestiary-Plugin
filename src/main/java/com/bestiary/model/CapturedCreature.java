@@ -116,6 +116,14 @@ public class CapturedCreature {
     public boolean albumCover;
 
     /**
+     * Credits actually awarded for this capture at the moment it was caught (base reward + the
+     * Hunter's Bounty tier owned then). Persisted so the Card Info shows the true historical value,
+     * unaffected by later rerolls or shop purchases. 0 for legacy captures made before this was tracked.
+     * Carried forward across rerolls (a reroll doesn't re-award capture credits).
+     */
+    public long creditsEarned;
+
+    /**
      * How many kills of this species the player had accumulated before this
      * capture succeeded (useful for showing "lucky" catches).
      */
