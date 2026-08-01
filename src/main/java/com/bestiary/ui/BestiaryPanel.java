@@ -61,6 +61,7 @@ public class BestiaryPanel extends PluginPanel {
     private ProgressTab progressTab;
     private InfoTab infoTab;
     private ShopTab shopTab;
+    private RandomCardsTab randomTab;
 
     /** The top-level tab pane. When logged out, only the Info tab is kept and a welcome banner shows. */
     private JTabbedPane tabs;
@@ -205,6 +206,7 @@ public class BestiaryPanel extends PluginPanel {
         shopTab       = new ShopTab(dataService, progressionService,
                 () -> DashboardDialog.open(SwingUtilities.getWindowAncestor(this), dataService,
                         progressionService, DashboardDialog.DashView.ECONOMY));
+        randomTab     = new RandomCardsTab(dataService, progressionService, this::refresh);
 
         tabs = new JTabbedPane();
         tabs.setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -223,6 +225,7 @@ public class BestiaryPanel extends PluginPanel {
         tabs.addTab("Info",     infoTab);
         tabs.addTab("Cards",    collectionTab);
         tabs.addTab("Shop",     shopTab);
+        tabs.addTab("Packs",    randomTab);
         tabs.addTab("Progress", progressTab);
         // Block account switching while the Cards tab is open: switching removes that tab, and tearing
         // down a large rendered collection (e.g. a dev-seeded account) while it's the on-screen tab
@@ -464,6 +467,7 @@ public class BestiaryPanel extends PluginPanel {
         if (state == PanelState.NORMAL) {
             tabs.addTab("Cards",    collectionTab);
             tabs.addTab("Shop",     shopTab);
+            tabs.addTab("Packs",    randomTab);
             tabs.addTab("Progress", progressTab);
         }
         tabs.setSelectedIndex(0);   // always land on Info after a state change
@@ -720,6 +724,7 @@ public class BestiaryPanel extends PluginPanel {
         if (!viewing) {
             collectionTab.refresh();
             shopTab.refresh();
+            randomTab.refresh();
             progressTab.refresh();
         }
         infoTab.refresh();
