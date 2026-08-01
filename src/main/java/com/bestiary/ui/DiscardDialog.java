@@ -174,10 +174,14 @@ public class DiscardDialog extends JDialog {
         List<Group> groups = groups();
         groupsPanel.removeAll();
         long total = 0;
+        long totalBonus = 0;
         int cards = 0;
         for (Group g : groups) {
             long credits = g.discard.stream().mapToLong(dataService::discardValue).sum();
+            long base    = g.discard.stream().mapToLong(dataService::discardValueBase).sum();
+            long bonus   = credits - base;   // extra credits from the Salvager's Eye shop upgrade
             total += credits;
+            totalBonus += bonus;
             cards += g.discard.size();
 
             JPanel rowP = new JPanel(new BorderLayout(6, 0));
@@ -185,17 +189,33 @@ public class DiscardDialog extends JDialog {
             rowP.setAlignmentX(Component.LEFT_ALIGNMENT);
             rowP.setMaximumSize(new Dimension(Integer.MAX_VALUE, 22));
             rowP.setBorder(new EmptyBorder(1, 2, 1, 2));
-            JLabel l = new JLabel(g.npc + "  ·  " + g.rarity.label + "  — discard " + g.discard.size()
-                    + "  (+" + credits + "cr)");
+            String main = g.npc + "  ·  " + g.rarity.label + "  — discard " + g.discard.size()
+                    + "  (+" + base + "cr)";
+            String html = "<html><span style='color:" + hex(g.rarity.displayColor) + "'>" + main + "</span>"
+                    + (bonus > 0 ? "<span style='color:" + hex(BONUS_COLOR) + "'> (+" + bonus + ")</span>" : "")
+                    + "</html>";
+            JLabel l = new JLabel(html);
             l.setFont(FontManager.getRunescapeSmallFont());
             l.setForeground(g.rarity.displayColor);
+
+            JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+            actions.setOpaque(false);
             JButton inv = new JButton("Investigate");
             inv.setFont(FontManager.getRunescapeSmallFont());
             inv.setMargin(new Insets(0, 5, 0, 5));
             inv.setFocusPainted(false);
             inv.addActionListener(e -> AlbumDialog.requestOpenDetail(g.npc, g.rarity));
+            JButton drop = new JButton("Discard");
+            drop.setFont(FontManager.getRunescapeSmallFont());
+            drop.setMargin(new Insets(0, 5, 0, 5));
+            drop.setFocusPainted(false);
+            drop.setForeground(new Color(230, 140, 140));
+            drop.addActionListener(e -> discardCards(new ArrayList<>(g.discard)));
+            actions.add(inv);
+            actions.add(drop);
+
             rowP.add(l, BorderLayout.CENTER);
-            rowP.add(inv, BorderLayout.EAST);
+            rowP.add(actions, BorderLayout.EAST);
             groupsPanel.add(rowP);
         }
         if (groups.isEmpty()) {
@@ -208,9 +228,13 @@ public class DiscardDialog extends JDialog {
         groupsPanel.revalidate();
         groupsPanel.repaint();
 
-        totalLabel.setText(cards + " duplicate card" + (cards == 1 ? "" : "s")
+        String totalMain = cards + " duplicate card" + (cards == 1 ? "" : "s")
                 + " across " + groups.size() + " group" + (groups.size() == 1 ? "" : "s")
-                + "  →  " + total + " credits");
+                + "  →  " + (total - totalBonus) + " credits";
+        totalLabel.setText("<html><span style='color:#ffffff'>" + totalMain + "</span>"
+                + (totalBonus > 0 ? "<span style='color:" + hex(BONUS_COLOR)
+                        + "'> (+" + totalBonus + " from upgrades)</span>" : "")
+                + "</html>");
         discardBtn.setEnabled(cards > 0);
         discardBtn.setText(cards == 0 ? "Nothing to discard" : "Discard " + cards + " for " + total + " credits");
     }
@@ -218,14 +242,27 @@ public class DiscardDialog extends JDialog {
     private void doDiscard() {
         List<CapturedCreature> sel = new ArrayList<>();
         for (Group g : groups()) sel.addAll(g.discard);
-        if (sel.isEmpty()) return;
-        long credits = sel.stream().mapToLong(dataService::discardValue).sum();
+        discardCards(sel);
+    }
+
+    /** Confirms and discards the given cards, then refreshes callers + this dialog. */
+    private void discardCards(List<CapturedCreature> cards) {
+        if (cards.isEmpty()) return;
+        long credits = cards.stream().mapToLong(dataService::discardValue).sum();
         int choice = JOptionPane.showConfirmDialog(this,
-                "Discard " + sel.size() + " duplicate cards for " + credits + " credits? This cannot be undone.",
+                "Discard " + cards.size() + " card" + (cards.size() == 1 ? "" : "s")
+                        + " for " + credits + " credits? This cannot be undone.",
                 "Confirm discard", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
         if (choice != JOptionPane.YES_OPTION) return;
-        dataService.discardCaptures(sel);
+        dataService.discardCaptures(cards);
         if (onDone != null) onDone.run();
         recompute();
+    }
+
+    /** Colour used for the shop-upgrade bonus shown in brackets. */
+    private static final Color BONUS_COLOR = new Color(120, 210, 120);
+
+    private static String hex(Color c) {
+        return String.format("#%02x%02x%02x", c.getRed(), c.getGreen(), c.getBlue());
     }
 }

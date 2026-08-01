@@ -56,6 +56,13 @@ final class OddsBreakdownPanel {
         Color deltaCol = delta > 0 ? new Color(120, 200, 120) : delta < 0 ? new Color(224, 112, 112) : new Color(176, 176, 176);
         root.add(value(kvRow("This card vs average", body, Color.WHITE, deltaStr), deltaCol));
 
+        root.add(value(kvRow("Average " + r.rarity.label + " shiny roll", body, ColorScheme.LIGHT_GRAY_COLOR,
+                String.valueOf(r.avgShinyPowerLevel)), nearWhite));
+        int dShiny = r.powerLevel - r.avgShinyPowerLevel;
+        String dShinyStr = dShiny > 0 ? "+" + dShiny + " above avg shiny" : dShiny < 0 ? dShiny + " below avg shiny" : "bang on avg shiny";
+        Color dShinyCol = dShiny > 0 ? new Color(120, 200, 120) : dShiny < 0 ? new Color(224, 112, 112) : new Color(176, 176, 176);
+        root.add(value(kvRow("This card vs average shiny", body, Color.WHITE, dShinyStr), dShinyCol));
+
         return root;
     }
 

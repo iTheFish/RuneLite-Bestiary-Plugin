@@ -116,6 +116,15 @@ public class BestiaryCollection {
         captureCountByNpc.merge(c.npcName, 1, Integer::sum);
     }
 
+    /** True if a capture with this id is present (identity check, not object equality). */
+    public boolean containsId(String id) {
+        if (id == null) return false;
+        for (CapturedCreature c : creatures) {
+            if (id.equals(c.id)) return true;
+        }
+        return false;
+    }
+
     /** Replaces a capture (matched by id) in place. Returns true if one was found. */
     public boolean replaceCapture(CapturedCreature nc) {
         for (int i = 0; i < creatures.size(); i++) {

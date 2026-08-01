@@ -100,15 +100,20 @@ public class BestiaryPanel extends PluginPanel {
         CreatureDetailDialog.setConfig(config);
         CreatureDetailDialog.setSaveCallback(dataService::saveNow);
         CardExportDialog.setShared(imageService, dataService::getCollection);
+        CardDataDialog.setCaptureCreditBonus(dataService::captureCreditFlatBonus);
+        CardDataDialog.setCaptureXpBonus(dataService::captureXpBonus);
+        CardDataDialog.setKillXpFlatBonus(dataService::killXpFlatBonus);
         CardExportDialog.setOnMutate(() -> { dataService.saveNow(); refresh(); });
         AlbumCard.setConfig(config);
         AlbumCard.setSkillIconManager(skillIconManager);
         AlbumCard.setDiscardHandler((owner, cap) -> {
             if (dataService.isViewing()) return;   // read-only view of another account (#48)
-            long value = dataService.discardValue(cap);
+            long base  = dataService.discardValueBase(cap);
+            long bonus = dataService.discardValue(cap) - base;   // extra from Salvager's Eye
             String label = (cap.isShiny() ? "✦ " : "") + cap.rarity.label + " " + cap.npcName;
-            int choice = JOptionPane.showConfirmDialog(owner,
-                    "Discard " + label + " for " + value + " credits?",
+            String msg = "<html>Discard " + label + " for " + base + " credits"
+                    + (bonus > 0 ? " <font color='#78d278'>(+" + bonus + ")</font>" : "") + "?</html>";
+            int choice = JOptionPane.showConfirmDialog(owner, msg,
                     "Discard card", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
             if (choice == JOptionPane.YES_OPTION) {
                 dataService.discardCapture(cap);
@@ -481,6 +486,16 @@ public class BestiaryPanel extends PluginPanel {
      * none linger showing the now-cleared collection, then re-lock the panel.
      */
     public void onLoggedOut() {
+        closeAllBestiaryWindows();
+        refresh();
+    }
+
+    /**
+     * Called when the played account changes (login or a direct account hop, #131): dispose any
+     * browsing windows still bound to the previous account before they can be mutated against the
+     * new one, then refresh. Mirrors the logout cleanup for the no-LOGIN_SCREEN hop case.
+     */
+    public void onAccountChanged() {
         closeAllBestiaryWindows();
         refresh();
     }

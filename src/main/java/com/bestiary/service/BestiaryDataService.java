@@ -431,12 +431,23 @@ public class BestiaryDataService {
                 collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.CREDIT_DISCARD));
     }
 
-    /** Credits a card is worth if discarded, including the Salvager's Eye passive boost. */
+    /** Base credits a card is worth if discarded, BEFORE the Salvager's Eye passive boost. */
+    public long discardValueBase(CapturedCreature c) {
+        return Math.max(1L, com.bestiary.util.CreditCalculator.forDiscard(
+                com.bestiary.model.MonsterRoster.getDifficulty(c.npcName, c.npcCombatLevel),
+                c.rarity, c.isShiny()));
+    }
+
+    /**
+     * Credits a card is worth if discarded, including the Salvager's Eye passive boost.
+     * The boost always rounds UP, so even a 2-credit discard gains at least +1 with one tier —
+     * giving low-rarity cards a tangible benefit from the upgrade.
+     */
     public long discardValue(CapturedCreature c) {
         long base = com.bestiary.util.CreditCalculator.forDiscard(
                 com.bestiary.model.MonsterRoster.getDifficulty(c.npcName, c.npcCombatLevel),
                 c.rarity, c.isShiny());
-        return Math.max(1L, Math.round(base * (1.0 + discardCreditBonus())));
+        return Math.max(1L, (long) Math.ceil(base * (1.0 + discardCreditBonus())));
     }
 
     /**
@@ -593,6 +604,9 @@ public class BestiaryDataService {
      */
     public CapturedCreature rerollCard(CapturedCreature c, int currentLevel) {
         if (isViewing()) return null;   // read-only while viewing another account
+        // Guard against a stale card from a since-closed view (#131): never reroll — and never spend
+        // credits or inject a foreign card via addCapture — for a card not in the played collection.
+        if (!collection.containsId(c.id)) return null;
         if (!spendCredits(rerollCost(c))) return null;
         // Non-Mythic cards get a small chance to move up a rarity (raised by the Reroll Fortune shop upgrade).
         CreatureRarity rarity = c.rarity;
@@ -630,9 +644,11 @@ public class BestiaryDataService {
                 .rerolledBy(reroller)
                 .rerollHistory(history)
                 .build();
-        nc.favourite  = c.favourite;
-        nc.nickname   = c.nickname;
-        nc.albumCover = c.albumCover;
+        nc.favourite     = c.favourite;
+        nc.nickname      = c.nickname;
+        nc.albumCover    = c.albumCover;
+        nc.creditsEarned = c.creditsEarned;   // a reroll doesn't re-award capture credits — carry the original
+        nc.xpEarned      = c.xpEarned;        // nor capture XP — carry the original
         // Replace in place (by id) so it can't leave a stale/duplicate copy behind.
         if (!collection.replaceCapture(nc)) collection.addCapture(nc);
         persistNow();
