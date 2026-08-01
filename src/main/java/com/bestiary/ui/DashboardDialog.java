@@ -584,10 +584,11 @@ public class DashboardDialog extends JDialog {
         root.add(heroStat(FMT.format(col.lifetimeCaptures), "CREATURES CAUGHT", ORANGE));
         root.add(gap(2));
         root.add(sectionHeader(FMT.format(col.totalCaptures()) + " CARDS HELD"));
-        long sent = col.lifetimeCardsSent, received = col.tradedInCount();
-        if (sent > 0 || received > 0) {
+        long discarded = col.lifetimeCardsDiscarded, sent = col.lifetimeCardsSent, received = col.tradedInCount();
+        if (discarded > 0 || sent > 0 || received > 0) {
             root.add(gap(2));
-            root.add(sectionHeader(FMT.format(sent) + " SENT  ·  " + FMT.format(received) + " RECEIVED"));
+            root.add(sectionHeader(FMT.format(discarded) + " DISCARDED  ·  "
+                    + FMT.format(sent) + " SENT  ·  " + FMT.format(received) + " RECEIVED"));
         }
         root.add(gap(8));
         root.add(sectionHeader("AVERAGE POWER BY RARITY"));
@@ -1927,9 +1928,10 @@ public class DashboardDialog extends JDialog {
         g.setFont(FontManager.getRunescapeSmallFont());
         FontMetrics hfm = g.getFontMetrics();
         String heldLine = FMT.format(col.totalCaptures()) + " cards held";
-        long sentN = col.lifetimeCardsSent, recvN = col.tradedInCount();
-        if (sentN > 0 || recvN > 0) {
-            heldLine += "    ·    " + FMT.format(sentN) + " sent    ·    " + FMT.format(recvN) + " received";
+        long discN = col.lifetimeCardsDiscarded, sentN = col.lifetimeCardsSent, recvN = col.tradedInCount();
+        if (discN > 0 || sentN > 0 || recvN > 0) {
+            heldLine += "    ·    " + FMT.format(discN) + " discarded    ·    "
+                    + FMT.format(sentN) + " sent    ·    " + FMT.format(recvN) + " received";
         }
         g.setColor(new Color(185, 185, 185));
         g.drawString(heldLine, (W - hfm.stringWidth(heldLine)) / 2, y + hfm.getAscent());
