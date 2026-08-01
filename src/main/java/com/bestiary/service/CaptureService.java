@@ -4,7 +4,6 @@ import com.bestiary.BestiaryConfig;
 import com.bestiary.model.CapturedCreature;
 import com.bestiary.model.CreatureQuality;
 import com.bestiary.model.CreatureRarity;
-import com.bestiary.model.DevCaptureMode;
 import com.bestiary.model.DifficultyTier;
 import com.bestiary.model.MonsterRoster;
 import com.bestiary.model.CombatClass;
@@ -29,25 +28,16 @@ public class CaptureService {
 
     private final BestiaryConfig config;
     private final Random rng;
-    /** Dev-only overrides (set from dev-gated panel controls; default no-op for live users). */
-    private final DevOptions dev;
 
     @Inject
-    public CaptureService(BestiaryConfig config, DevOptions dev) {
+    public CaptureService(BestiaryConfig config) {
         this.config = config;
-        this.dev    = dev;
         this.rng    = new Random();
     }
 
     /** Constructor for tests where a seeded RNG is required. */
     CaptureService(BestiaryConfig config, Random rng) {
-        this(config, rng, new DevOptions());
-    }
-
-    /** Constructor for tests that need to exercise the dev overrides. */
-    CaptureService(BestiaryConfig config, Random rng, DevOptions dev) {
         this.config = config;
-        this.dev    = dev;
         this.rng    = rng;
     }
 
@@ -73,9 +63,7 @@ public class CaptureService {
         String npcName = npc.getName() != null ? npc.getName() : "Unknown";
         DifficultyTier difficulty = MonsterRoster.getDifficulty(npcName, npc.getCombatLevel());
 
-        double catchRate = dev.captureMode == DevCaptureMode.FORCE_0   ? 0.0
-                        : dev.captureMode == DevCaptureMode.FORCE_100 ? 1.0
-                        : calculateCatchRate(captureLevel, difficulty);
+        double catchRate = calculateCatchRate(captureLevel, difficulty);
         double roll = rng.nextDouble();
 
         log.debug("Capture roll for {} [{}]: roll={} catchRate={}", npcName, difficulty.label,
