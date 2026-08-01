@@ -28,8 +28,6 @@ public class BestiaryPanel extends PluginPanel {
     private final BestiaryDataService dataService;
     private final ProgressionService progressionService;
     private final SessionTracker sessionTracker;
-    private final boolean developerMode;
-    private final com.bestiary.service.DevOptions devOptions;
 
     /** Set by the plugin — sends chat messages for achievements unlocked outside the capture flow. */
     private static java.util.function.Consumer<java.util.List<com.bestiary.model.Achievement>> achievementNotifier;
@@ -69,7 +67,7 @@ public class BestiaryPanel extends PluginPanel {
     /** "Viewing AltRSN (read-only)" banner shown above the tabs while viewing another account (#48). */
     private JPanel viewingBanner;
     private JLabel viewingBannerLabel;
-    /** Bottom button strip (Reset + dev tools) — disabled while logged out. */
+    /** Bottom button strip (Reset Collection) — disabled while logged out. */
     private JPanel southPanel;
 
     /** Account switcher (#48): pick the played account or view any known account read-only. */
@@ -86,17 +84,13 @@ public class BestiaryPanel extends PluginPanel {
     public BestiaryPanel(BestiaryDataService dataService, ProgressionService progressionService,
                          WikiImageService imageService, BestiaryConfig config,
                          SessionTracker sessionTracker,
-                         net.runelite.client.game.SkillIconManager skillIconManager,
-                         @javax.inject.Named("developerMode") boolean developerMode,
-                         com.bestiary.service.DevOptions devOptions) {
+                         net.runelite.client.game.SkillIconManager skillIconManager) {
         super(false); // false = don't auto-wrap in scroll pane
         instance = this;
         readOnlyGate = dataService::isViewing;   // cards become look-only while viewing another account
         this.dataService        = dataService;
         this.progressionService = progressionService;
         this.sessionTracker     = sessionTracker;
-        this.developerMode      = developerMode;
-        this.devOptions         = devOptions;
         CreatureDetailDialog.setConfig(config);
         CreatureDetailDialog.setSaveCallback(dataService::saveNow);
         CardExportDialog.setShared(imageService, dataService::getCollection);
@@ -506,15 +500,6 @@ public class BestiaryPanel extends PluginPanel {
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(new EmptyBorder(4, 0, 0, 0));
 
-        // Dev-only helper — hidden for live users (only present when RuneLite runs in developer mode).
-        // Only the "Catch" override lives on main; the heavier cheats stay on the dev branch.
-        if (developerMode) {
-            panel.add(devCombo("Catch",
-                    com.bestiary.model.DevCaptureMode.values(), devOptions.captureMode,
-                    v -> devOptions.captureMode = v));
-            panel.add(Box.createVerticalStrut(6));
-        }
-
         panel.add(buildWipeBtn());
 
         // Version footer — click to open the About / version-log dialog.
@@ -539,30 +524,6 @@ public class BestiaryPanel extends PluginPanel {
         });
         panel.add(version);
         return panel;
-    }
-
-    /** A compact "label + dropdown" row for a dev override; calls {@code onChange} on selection. */
-    private static <T> JComponent devCombo(String label, T[] values, T current, java.util.function.Consumer<T> onChange) {
-        JComboBox<T> combo = new JComboBox<>(values);
-        combo.setSelectedItem(current);
-        combo.setFont(FontManager.getRunescapeSmallFont());
-        combo.addActionListener(e -> {
-            @SuppressWarnings("unchecked") T v = (T) combo.getSelectedItem();
-            if (v != null) onChange.accept(v);
-        });
-
-        JLabel l = new JLabel(label);
-        l.setFont(FontManager.getRunescapeSmallFont());
-        l.setForeground(new Color(100, 180, 255));
-        l.setBorder(new EmptyBorder(0, 0, 0, 4));
-
-        JPanel row = new JPanel(new BorderLayout(4, 0));
-        row.setOpaque(false);
-        row.setAlignmentX(CENTER_ALIGNMENT);
-        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
-        row.add(l,     BorderLayout.WEST);
-        row.add(combo, BorderLayout.CENTER);
-        return row;
     }
 
     private JButton buildWipeBtn() {

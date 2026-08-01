@@ -87,15 +87,17 @@ public class CaptureServiceTest {
         assertFalse(result.isPresent());
     }
 
-    // --- A successful capture yields a fully-populated card (forced via dev override) ---
+    // --- A successful capture yields a fully-populated card ---
 
     @Test
     public void captureReturnsPopulatedCard() {
-        DevOptions dev = new DevOptions();
-        dev.captureMode = com.bestiary.model.DevCaptureMode.FORCE_100;
-        CaptureService service = new CaptureService(config, new Random(SEED), dev);
+        CaptureService service = new CaptureService(config, new Random(SEED));
 
-        Optional<CapturedCreature> result = service.attemptCapture(npc, null, 1, 5, "Lumbridge", "Player", 0, 0.0);
+        // At a high Capture Level the catch rate is high; loop (deterministic RNG) until one lands.
+        Optional<CapturedCreature> result = Optional.empty();
+        for (int i = 0; i < 1000 && !result.isPresent(); i++) {
+            result = service.attemptCapture(npc, null, 99, 5, "Lumbridge", "Player", 0, 0.0);
+        }
         assertTrue(result.isPresent());
 
         CapturedCreature c = result.get();
