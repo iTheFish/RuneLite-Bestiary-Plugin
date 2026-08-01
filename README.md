@@ -40,7 +40,7 @@ owner stamp — and can be exported as an image to copy or share.
 
 ## Album
 
-The Album is a catalogue of every known monster (200+). Search it, filter by difficulty tier or
+The album is a catalogue of all tracked monsters (200+). Search it, filter by difficulty tier or
 species, sort it, and open any monster for its detail page and all your captures of it. Duplicates
 can be discarded for credits, and cards transferred between your own accounts.
 
