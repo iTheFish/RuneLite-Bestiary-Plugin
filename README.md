@@ -27,7 +27,7 @@ decide how good it is: higher rarities lift every stat toward 99, and a card's h
 Level** blends its seven rolled stats with the monster's factual Hitpoints and combat level, so
 bosses tower over trash mobs. Same monster, wildly different cards:
 
-<table>
+<table align="center">
   <tr>
     <td align="center"><img src="docs/images/common_bestiary_chicken.png" width="230"><br><em>Common — Power 8</em></td>
     <td align="center"><img src="docs/images/epic_bestiary_chicken.png" width="230"><br><em>Epic — Power 14</em></td>
@@ -55,10 +55,11 @@ achievements along the way — all shown on the **Progress** tab. Captures also 
 Credits** you spend in the **Shop** on passive upgrades and the **Card Reroller**. Shareable
 dashboards break down your progression, economy, species completion and best captures.
 
-<table>
+<table align="center">
   <tr>
-    <td align="center"><img src="docs/images/ProgressionTab.png" width="250"><br><em>Progress tab</em></td>
-    <td align="center"><img src="docs/images/ShopUnlocks.png" width="250"><br><em>Shop</em></td>
+    <td align="center"><img src="docs/images/ProgressionTab.png" width="230"><br><em>Progress tab</em></td>
+    <td align="center"><img src="docs/images/CardTab.png" width="230"><br><em>Cards tab</em></td>
+    <td align="center"><img src="docs/images/ShopUnlocks.png" width="230"><br><em>Shop</em></td>
   </tr>
 </table>
 
@@ -72,7 +73,7 @@ Catch chance depends on the monster's difficulty tier and your Capture Level; ra
 roll that also improves as you level. The Info tab spells it all out — including the max rates —
 and it climbs steeply as you grow. A level 1 hunter versus a level 45 one:
 
-<table>
+<table align="center">
   <tr>
     <td align="center"><img src="docs/images/BestiaryLevel1CatchRates.png" width="330"><br><em>Level 1</em></td>
     <td align="center"><img src="docs/images/BestiaryLevel45CatchRates.png" width="330"><br><em>Level 45</em></td>
