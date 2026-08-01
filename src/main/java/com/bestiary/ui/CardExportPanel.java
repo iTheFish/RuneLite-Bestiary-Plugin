@@ -38,6 +38,7 @@ public class CardExportPanel extends JPanel {
     private final String owner;
     private final String npcName;
     private final int rerollCount;
+    private final boolean dev;
 
     public CardExportPanel(CapturedCreature capture) {
         WikiImageService imageService = CardExportDialog.sharedImageService();
@@ -53,6 +54,7 @@ public class CardExportPanel extends JPanel {
         this.cardId = CardId.encode(dexNumber, capture);
         this.owner  = capturedBy;
         this.rerollCount = capture.rerollCount();
+        this.dev         = capture.dev;
 
         // Re-query the live collection at click time to avoid a stale snapshot.
         card.setClickOverride(() -> {
@@ -80,7 +82,7 @@ public class CardExportPanel extends JPanel {
                 g2.fillRect(0, AlbumCard.CARD_H, AlbumCard.CARD_W, BOTTOM_H);
                 String ownerStr = "Captured by " + owner;
                 CardExportDialog.drawBanner(g2, 0, AlbumCard.CARD_H, AlbumCard.CARD_W, BOTTOM_H,
-                        cardId, ownerStr, capture.rerollCount());
+                        cardId, ownerStr, capture.rerollCount(), capture.dev);
                 g2.dispose();
             }
         };
@@ -210,7 +212,7 @@ public class CardExportPanel extends JPanel {
         g2.fillRect(0, AlbumCard.CARD_H, AlbumCard.CARD_W, BOTTOM_H);
         String ownerStr = "Captured by " + owner;
         CardExportDialog.drawBanner(g2, 0, AlbumCard.CARD_H, AlbumCard.CARD_W, BOTTOM_H,
-                cardId, ownerStr, rerollCount);
+                cardId, ownerStr, rerollCount, dev);
         g2.dispose();
         return img;
     }

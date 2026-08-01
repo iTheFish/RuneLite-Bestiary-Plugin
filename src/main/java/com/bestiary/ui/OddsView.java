@@ -46,6 +46,10 @@ public class OddsView extends JPanel implements Scrollable {
         title.setForeground(r.rarity.displayColor);
         titleRow.add(title);
         titleRow.add(Box.createHorizontalGlue());
+        if (capture.dev) {
+            titleRow.add(devBadge());
+            if (rerolled) titleRow.add(Box.createHorizontalStrut(4));
+        }
         if (rerolled) {
             titleRow.add(rerolledBadge());
         }
@@ -153,6 +157,16 @@ public class OddsView extends JPanel implements Scrollable {
         badge.setForeground(new Color(180, 150, 230));
         badge.setBorder(BorderFactory.createCompoundBorder(
                 new MatteBorder(1, 1, 1, 1, new Color(120, 90, 170)),
+                new EmptyBorder(1, 5, 1, 5)));
+        return badge;
+    }
+
+    private JLabel devBadge() {
+        JLabel badge = new JLabel("DEV");
+        badge.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+        badge.setForeground(new Color(120, 195, 255));
+        badge.setBorder(BorderFactory.createCompoundBorder(
+                new MatteBorder(1, 1, 1, 1, new Color(70, 130, 190)),
                 new EmptyBorder(1, 5, 1, 5)));
         return badge;
     }

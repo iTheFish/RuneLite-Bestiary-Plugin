@@ -516,20 +516,18 @@ public class BestiaryPanel extends PluginPanel {
             seedBtn.setFocusPainted(false);
             seedBtn.setToolTipText("Wipe collection and insert 1 capture per rarity for every roster monster");
             seedBtn.addActionListener(e -> {
+                int choice = JOptionPane.showConfirmDialog(
+                        SwingUtilities.getWindowAncestor(this),
+                        "This will WIPE all of your current (legit) progress and replace it with dev\n"
+                      + "test data. The seeded cards are marked as DEV so they can't be mistaken for\n"
+                      + "real captures.\n\nThis cannot be undone. Continue?",
+                        "[DEV] Seed Test Data",
+                        JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                if (choice != JOptionPane.YES_OPTION) return;
                 dataService.seedTestCollection();
                 refresh();
             });
             panel.add(fullWidth(seedBtn));
-            panel.add(Box.createVerticalStrut(4));
-
-            JButton creditBtn = new JButton("[DEV] +100k Credits");
-            creditBtn.setFont(FontManager.getRunescapeSmallFont());
-            creditBtn.setBackground(new Color(20, 60, 40));
-            creditBtn.setForeground(new Color(120, 220, 150));
-            creditBtn.setBorderPainted(false);
-            creditBtn.setFocusPainted(false);
-            creditBtn.addActionListener(e -> { dataService.awardCredits(100_000); refresh(); });
-            panel.add(fullWidth(creditBtn));
             panel.add(Box.createVerticalStrut(4));
 
             // Dev capture overrides (never shown to live users; state lives in DevOptions).

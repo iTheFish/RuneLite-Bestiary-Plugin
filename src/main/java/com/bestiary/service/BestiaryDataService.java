@@ -707,6 +707,7 @@ public class BestiaryDataService {
                     .shiny(shiny)
                     .prayer(prayer)
                     .build();
+                c.dev = true;   // flag as dev test data (visible "DEV" tag)
 
                 collection.addCapture(c);
                 collection.recordLifetimeCapture(name);

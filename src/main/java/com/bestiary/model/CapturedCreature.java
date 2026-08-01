@@ -131,6 +131,13 @@ public class CapturedCreature {
     public long xpEarned;
 
     /**
+     * True for cards created by the dev-branch Seed Test Data tool (not real captures). Persisted
+     * so testers can always tell seeded data apart; surfaced as a "DEV" tag on the card + Odds tab.
+     * Always false in the released build (the seed tool only exists on the dev branch).
+     */
+    public boolean dev;
+
+    /**
      * How many kills of this species the player had accumulated before this
      * capture succeeded (useful for showing "lucky" catches).
      */

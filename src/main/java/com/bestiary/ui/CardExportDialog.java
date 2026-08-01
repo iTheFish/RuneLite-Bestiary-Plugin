@@ -89,7 +89,7 @@ public final class CardExportDialog {
         g2.setColor(new Color(12, 12, 12));
         g2.fillRect(0, AlbumCard.CARD_H, AlbumCard.CARD_W, bottomH);
         String ownerStr = "Captured by " + capturedBy;
-        drawBanner(g2, 0, AlbumCard.CARD_H, AlbumCard.CARD_W, bottomH, cardId, ownerStr, capture.rerollCount());
+        drawBanner(g2, 0, AlbumCard.CARD_H, AlbumCard.CARD_W, bottomH, cardId, ownerStr, capture.rerollCount(), capture.dev);
         g2.dispose();
         card.removeNotify();
 
@@ -109,12 +109,17 @@ public final class CardExportDialog {
     }
 
     static void drawBanner(Graphics2D g2, int bX, int bY, int bannerW, int bannerH, String cardId, String ownerStr) {
-        drawBanner(g2, bX, bY, bannerW, bannerH, cardId, ownerStr, 0);
+        drawBanner(g2, bX, bY, bannerW, bannerH, cardId, ownerStr, 0, false);
     }
 
-    /** Draws the banner: UniqueID + Captured by (+ optional Rerolled N times) centred, brand pinned bottom. */
     static void drawBanner(Graphics2D g2, int bX, int bY, int bannerW, int bannerH,
                            String cardId, String ownerStr, int rerollCount) {
+        drawBanner(g2, bX, bY, bannerW, bannerH, cardId, ownerStr, rerollCount, false);
+    }
+
+    /** Draws the banner: UniqueID + Captured by (+ optional DEV / Rerolled tag) centred, brand pinned bottom. */
+    static void drawBanner(Graphics2D g2, int bX, int bY, int bannerW, int bannerH,
+                           String cardId, String ownerStr, int rerollCount, boolean dev) {
         // Shrink the ID font if the (now longer) ID would overflow the banner width.
         float idSize = 7f;
         while (idSize > 4f && FontManager.getRunescapeSmallFont().deriveFont(idSize)
@@ -133,13 +138,21 @@ public final class CardExportDialog {
         g2.setFont(brandFont);
         g2.setColor(new Color(110, 110, 110));
         g2.drawString(brand, bX + (bannerW - bfm.stringWidth(brand)) / 2, brandY);
-        // UniqueID + Captured by (+ optional Rerolled N times) centred above the brand line
+        // UniqueID + Captured by (+ optional DEV / Rerolled tag) centred above the brand line
         boolean rerolled = rerollCount > 0;
+        String reStr;
+        Color tagColor;
+        String rerollStr = rerolled ? "Rerolled " + rerollCount + (rerollCount == 1 ? " time" : " times") : null;
+        if (dev && rerolled)      { reStr = "DEV · " + rerollStr; tagColor = new Color(90, 180, 255); }
+        else if (dev)             { reStr = "DEV";                tagColor = new Color(90, 180, 255); }
+        else if (rerolled)        { reStr = rerollStr;           tagColor = new Color(150, 120, 200); }
+        else                      { reStr = null;                tagColor = null; }
+        boolean hasTag = reStr != null;
         Font reFont = FontManager.getRunescapeSmallFont().deriveFont(Font.ITALIC, 8f);
         g2.setFont(reFont); FontMetrics rfm = g2.getFontMetrics();
         int gap    = 2;
         int upperH = bannerH - bfm.getHeight() - 2;
-        int blockH = ifm.getHeight() + gap + pfm.getHeight() + (rerolled ? gap + rfm.getHeight() : 0);
+        int blockH = ifm.getHeight() + gap + pfm.getHeight() + (hasTag ? gap + rfm.getHeight() : 0);
         int startY = bY + Math.max(2, (upperH - blockH) / 2);
         g2.setFont(idFont);
         g2.setColor(new Color(90, 90, 90));
@@ -148,10 +161,9 @@ public final class CardExportDialog {
         g2.setColor(new Color(200, 155, 50));
         int y2 = startY + ifm.getHeight() + gap;
         g2.drawString(ownerStr, bX + (bannerW - pfm.stringWidth(ownerStr)) / 2, y2 + pfm.getAscent());
-        if (rerolled) {
-            String reStr = "Rerolled " + rerollCount + (rerollCount == 1 ? " time" : " times");
+        if (hasTag) {
             g2.setFont(reFont);
-            g2.setColor(new Color(150, 120, 200));
+            g2.setColor(tagColor);
             int y3 = y2 + pfm.getHeight() + gap;
             g2.drawString(reStr, bX + (bannerW - rfm.stringWidth(reStr)) / 2, y3 + rfm.getAscent());
         }
