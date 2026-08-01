@@ -5,6 +5,7 @@ import com.bestiary.model.CapturedCreature;
 import com.bestiary.model.CreatureQuality;
 import com.bestiary.model.CreatureRarity;
 import com.bestiary.model.DevCaptureMode;
+import com.bestiary.model.DevRarityOverride;
 import com.bestiary.model.DifficultyTier;
 import com.bestiary.model.MonsterRoster;
 import com.bestiary.model.CombatClass;
@@ -85,10 +86,12 @@ public class CaptureService {
             return Optional.empty();
         }
 
-        CreatureRarity rarity = RarityRoller.roll(rng, captureLevel);
+        CreatureRarity rarity = dev.forceRarity != DevRarityOverride.NONE
+                ? CreatureRarity.fromLabel(dev.forceRarity.name())
+                : RarityRoller.roll(rng, captureLevel);
         // Independent shiny roll — orthogonal to rarity. Base 0.2% at Bestiary level 1,
         // scaling linearly to 2% at level 99. Future shop unlocks / passives can multiply this.
-        boolean shiny = rng.nextDouble() < shinyChance(captureLevel) + shinyBonus;
+        boolean shiny = dev.forceShiny || rng.nextDouble() < shinyChance(captureLevel) + shinyBonus;
 
         CombatClass combatClass = MonsterRoster.getCombatClass(npcName, npc.getCombatLevel());
         int[] statBases = MonsterRoster.getStatBases(npcName, npc.getCombatLevel());

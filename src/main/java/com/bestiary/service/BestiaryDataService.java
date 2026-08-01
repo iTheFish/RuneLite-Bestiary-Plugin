@@ -656,6 +656,91 @@ public class BestiaryDataService {
     }
 
     // -------------------------------------------------------------------------
+    // Dev tools
+    // -------------------------------------------------------------------------
+
+    /**
+     * Wipes the collection and inserts one capture per rarity for every roster
+     * monster. Stats are seeded from the monster name so the same data is
+     * produced each run. Only call this from a dev build.
+     */
+    public void seedTestCollection() {
+        wipeCollection();
+        Random rng = new Random();
+        Instant base = Instant.now().minusSeconds(60L * 60 * 24 * 365); // spread over a year
+        int idx = 0;
+        int[] captureLevels = {1, 20, 40, 60, 80, 95};
+        int[] killsBefore   = {3, 12, 30, 80, 200, 500};
+
+        for (String name : MonsterRoster.ROSTER) {
+            int combatLevel = combatLevelForSeed(name);
+            com.bestiary.model.CombatClass combatClass =
+                MonsterRoster.getCombatClass(name, combatLevel);
+
+            for (int r = 0; r < CreatureRarity.values().length; r++) {
+                CreatureRarity rarity = CreatureRarity.values()[r];
+
+                int[] statBases = MonsterRoster.getStatBases(name, combatLevel);
+                // Roll shiny the same way live captures do: independent roll scaled by the
+                // card's capture level, then generate quality with the shiny flag applied.
+                // Dev-seed only: 3x boost so the test collection shows ~20 shinies for visual
+                // testing (live captures use the real 0.2%-2% rate).
+                rng.setSeed((long) name.hashCode() * 31 + r);
+                boolean shiny = rng.nextDouble() < CaptureService.shinyChance(captureLevels[r]) * 3.0;
+                CreatureQuality quality = com.bestiary.util.RarityRoller
+                    .generateQuality(combatClass, rarity, statBases, rng, shiny);
+                int prayer = com.bestiary.util.RarityRoller
+                    .rollPrayer(com.bestiary.model.MonsterRoster.getPrayer(name),
+                            rarity, rng, shiny);
+
+                CapturedCreature c = CapturedCreature.builder()
+                    .npcId(0)
+                    .npcName(name)
+                    .npcCombatLevel(combatLevel)
+                    .rarity(rarity)
+                    .quality(quality)
+                    .captureTime(base.plusSeconds((long) idx * 600))
+                    .regionName("Dev Seed")
+                    .captureLevel(captureLevels[r])
+                    .killsBeforeCapture(killsBefore[r])
+                    .playerName("Dev")
+                    .shiny(shiny)
+                    .prayer(prayer)
+                    .build();
+
+                collection.addCapture(c);
+                collection.recordLifetimeCapture(name);
+                idx++;
+            }
+            rng.setSeed(name.hashCode());
+            collection.killCounts.put(name, killsBefore[5] + rng.nextInt(200));
+        }
+
+        // Set Bestiary level to 99 and grant demo credits so the Shop has a balance
+        progressionState.totalXp = 13_034_431L;
+        collection.credits       = 25_000L;
+        persistNow();
+        log.info("Dev seed complete: {} captures across {} monsters",
+            collection.totalCaptures(), MonsterRoster.ROSTER.size());
+    }
+
+    private static int combatLevelForSeed(String npcName) {
+        // Prefer the real per-monster combat level so seeded cards separate by
+        // Power Level (which includes combatLevel/6) the way live captures do.
+        int actual = MonsterRoster.getCombatLevel(npcName);
+        if (actual > 0) return actual;
+        // Unlisted monster: fall back to a flat per-difficulty-tier value.
+        switch (MonsterRoster.getDifficulty(npcName, -1)) {
+            case BEGINNER: return 5;
+            case EASY:     return 30;
+            case MEDIUM:   return 80;
+            case HARD:     return 150;
+            case ELITE:    return 250;
+            default:       return 400; // BOSS
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Internal
     // -------------------------------------------------------------------------
 

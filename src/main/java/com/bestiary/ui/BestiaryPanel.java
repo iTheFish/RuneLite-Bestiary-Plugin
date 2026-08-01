@@ -506,12 +506,60 @@ public class BestiaryPanel extends PluginPanel {
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(new EmptyBorder(4, 0, 0, 0));
 
-        // Dev-only helper — hidden for live users (only present when RuneLite runs in developer mode).
-        // Only the "Catch" override lives on main; the heavier cheats stay on the dev branch.
+        // Dev-only helpers — hidden for live users (only present when RuneLite runs in developer mode).
         if (developerMode) {
+            JButton seedBtn = new JButton("[DEV] Seed Test Data");
+            seedBtn.setFont(FontManager.getRunescapeSmallFont());
+            seedBtn.setBackground(new Color(20, 50, 80));
+            seedBtn.setForeground(new Color(100, 180, 255));
+            seedBtn.setBorderPainted(false);
+            seedBtn.setFocusPainted(false);
+            seedBtn.setToolTipText("Wipe collection and insert 1 capture per rarity for every roster monster");
+            seedBtn.addActionListener(e -> {
+                dataService.seedTestCollection();
+                refresh();
+            });
+            panel.add(fullWidth(seedBtn));
+            panel.add(Box.createVerticalStrut(4));
+
+            JButton creditBtn = new JButton("[DEV] +100k Credits");
+            creditBtn.setFont(FontManager.getRunescapeSmallFont());
+            creditBtn.setBackground(new Color(20, 60, 40));
+            creditBtn.setForeground(new Color(120, 220, 150));
+            creditBtn.setBorderPainted(false);
+            creditBtn.setFocusPainted(false);
+            creditBtn.addActionListener(e -> { dataService.awardCredits(100_000); refresh(); });
+            panel.add(fullWidth(creditBtn));
+            panel.add(Box.createVerticalStrut(4));
+
+            // Dev capture overrides (never shown to live users; state lives in DevOptions).
             panel.add(devCombo("Catch",
                     com.bestiary.model.DevCaptureMode.values(), devOptions.captureMode,
                     v -> devOptions.captureMode = v));
+            panel.add(Box.createVerticalStrut(3));
+            panel.add(devCombo("Rarity",
+                    com.bestiary.model.DevRarityOverride.values(), devOptions.forceRarity,
+                    v -> devOptions.forceRarity = v));
+            panel.add(Box.createVerticalStrut(3));
+
+            // Toggle button (not a checkbox — the dark-theme checkbox tick is unreadable).
+            JToggleButton shinyBtn = new JToggleButton();
+            shinyBtn.setSelected(devOptions.forceShiny);
+            shinyBtn.setFont(FontManager.getRunescapeSmallFont());
+            shinyBtn.setFocusPainted(false);
+            shinyBtn.setBorderPainted(false);
+            shinyBtn.setOpaque(true);
+            shinyBtn.setAlignmentX(CENTER_ALIGNMENT);
+            shinyBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
+            Runnable styleShiny = () -> {
+                boolean on = shinyBtn.isSelected();
+                shinyBtn.setText("Always Roll Shiny: " + (on ? "ON ✦" : "OFF"));
+                shinyBtn.setBackground(on ? new Color(120, 90, 20) : ColorScheme.DARKER_GRAY_COLOR);
+                shinyBtn.setForeground(on ? new Color(255, 215, 0) : new Color(150, 150, 150));
+            };
+            styleShiny.run();
+            shinyBtn.addActionListener(e -> { devOptions.forceShiny = shinyBtn.isSelected(); styleShiny.run(); });
+            panel.add(shinyBtn);
             panel.add(Box.createVerticalStrut(6));
         }
 

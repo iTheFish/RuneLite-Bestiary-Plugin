@@ -1,19 +1,19 @@
 package com.bestiary.service;
 
 import com.bestiary.model.DevCaptureMode;
+import com.bestiary.model.DevRarityOverride;
 
 import javax.inject.Singleton;
 
 /**
- * Developer-only capture override, set from the dev-gated "Catch" control in the panel and read by
- * {@link CaptureService}. Only added to the panel in RuneLite developer mode, so for live users it
- * always stays at its default (no effect). Volatile because the panel mutates it on the EDT while
- * captures read it on the client thread.
- *
- * <p>The heavier dev cheats (seed data, +credits, rarity/shiny overrides) deliberately live only on
- * the {@code dev} branch, never in the released build.
+ * Developer-only capture overrides, set from the dev-gated controls in the panel and read by
+ * {@link CaptureService}. These controls are only added to the panel in RuneLite developer mode,
+ * so for live users this always stays at its defaults (no effect). Fields are volatile because the
+ * panel mutates them on the EDT while captures read them on the client thread.
  */
 @Singleton
 public class DevOptions {
     public volatile DevCaptureMode captureMode = DevCaptureMode.NORMAL;
+    public volatile DevRarityOverride forceRarity = DevRarityOverride.NONE;
+    public volatile boolean forceShiny = false;
 }
