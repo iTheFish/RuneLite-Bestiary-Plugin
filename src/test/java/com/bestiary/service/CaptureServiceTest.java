@@ -38,15 +38,15 @@ public class CaptureServiceTest {
     // --- Catch rate formula ---
 
     @Test
-    public void beginnerBaseRateAtLevel1Is20Percent() {
+    public void beginnerBaseRateAtLevel1Is25Percent() {
         CaptureService service = new CaptureService(config, new Random(SEED));
-        assertEquals(0.20, service.calculateCatchRate(1, DifficultyTier.BEGINNER), 0.0001);
+        assertEquals(0.25, service.calculateCatchRate(1, DifficultyTier.BEGINNER), 0.0001);
     }
 
     @Test
-    public void bossBaseRateAtLevel1Is1Point5Percent() {
+    public void bossBaseRateAtLevel1Is3Percent() {
         CaptureService service = new CaptureService(config, new Random(SEED));
-        assertEquals(0.015, service.calculateCatchRate(1, DifficultyTier.BOSS), 0.0001);
+        assertEquals(0.03, service.calculateCatchRate(1, DifficultyTier.BOSS), 0.0001);
     }
 
     @Test
@@ -66,15 +66,15 @@ public class CaptureServiceTest {
     }
 
     @Test
-    public void beginnerCapsAt60PercentAtHighLevel() {
+    public void beginnerCapsAt70PercentAtHighLevel() {
         CaptureService service = new CaptureService(config, new Random(SEED));
-        assertEquals(0.60, service.calculateCatchRate(99, DifficultyTier.BEGINNER), 0.0001);
+        assertEquals(0.70, service.calculateCatchRate(99, DifficultyTier.BEGINNER), 0.0001);
     }
 
     @Test
-    public void bossCapsAt8PercentAtHighLevel() {
+    public void bossCapsAt25PercentAtHighLevel() {
         CaptureService service = new CaptureService(config, new Random(SEED));
-        assertEquals(0.08, service.calculateCatchRate(99, DifficultyTier.BOSS), 0.0001);
+        assertEquals(0.25, service.calculateCatchRate(99, DifficultyTier.BOSS), 0.0001);
     }
 
     // --- Capture disabled ---

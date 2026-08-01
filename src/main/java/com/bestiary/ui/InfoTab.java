@@ -271,7 +271,7 @@ public class InfoTab extends JPanel {
                 "into credits and keep your album tidy. Caught a shiny you don't need? Either upgrade " +
                 "that shiny Uncommon or discard it for a guaranteed +500 credits.\n\n" +
                 "Around level 50 your catch rates are much healthier (beginners near 50%, mediums " +
-                "near 25%). How's your RNG treating you? Tap any stat box at the top to open the " +
+                "near 35%). How's your RNG treating you? Tap any stat box at the top to open the " +
                 "dashboards and see your rarity spread, species progress and economy at a glance."));
         c.add(tile("Late mid-game",
                 "Credits piling up? Time to spend them. The Card Reroller re-rolls a card's stats " +

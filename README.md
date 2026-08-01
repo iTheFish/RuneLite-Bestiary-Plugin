@@ -71,12 +71,12 @@ dashboards break down your progression, economy, species completion and best cap
 
 Catch chance depends on the monster's difficulty tier and your Capture Level; rarity is a separate
 roll that also improves as you level. The Info tab spells it all out — including the max rates —
-and it climbs steeply as you grow. A level 1 hunter versus a level 45 one:
+and it climbs steeply as you grow. A level 1 hunter versus a level 52 one:
 
 <table align="center">
   <tr>
     <td align="center"><img src="docs/images/BestiaryLevel1CatchRates.png" width="330"><br><em>Level 1</em></td>
-    <td align="center"><img src="docs/images/BestiaryLevel45CatchRates.png" width="330"><br><em>Level 45</em></td>
+    <td align="center"><img src="docs/images/BestiaryLevel52CatchRates.png" width="330"><br><em>Level 52</em></td>
   </tr>
 </table>
 
