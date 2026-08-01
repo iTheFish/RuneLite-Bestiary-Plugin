@@ -316,7 +316,8 @@ public class CardDataDialog extends JDialog {
         // Kill XP: awarded on every kill of this monster (difficulty-tiered) + the Hunter's Focus
         // flat shop bonus. Not card-specific, so it reflects the current shop tier.
         long killXpBase  = com.bestiary.service.ProgressionService.killXp(diff);
-        p.add(kv("Kill XP", amountHtml(killXpBase, killXpFlatBonus.getAsLong()), new Color(170, 210, 120)));
+        p.add(kv("Kill XP", tradedIn ? "Transferred" : amountHtml(killXpBase, killXpFlatBonus.getAsLong()),
+                new Color(170, 210, 120)));
 
         // Capture XP: base (from the ORIGINAL rarity) + the Scholar's Insight % boost. Uses the true
         // awarded value when recorded (as-at-capture); legacy cards fall back to the current bonus.
@@ -332,7 +333,7 @@ public class CardDataDialog extends JDialog {
                 new Color(200, 155, 50)));
         if (tradedIn) {
             // Card was traded in from another of the player's accounts (#50).
-            p.add(kv("Traded in — held by", c.currentOwner, new Color(120, 190, 255)));
+            p.add(kv("Held by", c.currentOwner, new Color(120, 190, 255)));
         }
         if (c.rerollCount() > 0) {
             p.add(kv("Rerolled", c.rerollCount() + (c.rerollCount() == 1 ? " time" : " times"),
