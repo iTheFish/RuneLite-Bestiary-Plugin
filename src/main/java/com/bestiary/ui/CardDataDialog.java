@@ -272,9 +272,13 @@ public class CardDataDialog extends JDialog {
         com.bestiary.model.CreatureSpecies species =
                 MonsterRoster.getSpecies(c.npcName, c.npcCombatLevel);
 
+        com.bestiary.model.CombatClass combatClass =
+                MonsterRoster.getCombatClass(c.npcName, c.npcCombatLevel);
+
         p.add(sectionHeader("Card"));
         p.add(kv("Rarity", c.rarity.label, c.rarity.displayColor));
         p.add(kv("Species", species.label, species.displayColor));
+        p.add(kv("Class", combatClass.label, new Color(210, 210, 210)));
         p.add(kv("Difficulty", diff.label, diff.displayColor));
         p.add(kv("Power Level", String.valueOf(c.powerLevel()), Color.WHITE));
         p.add(kv("Hitpoints", String.valueOf(c.hitpoints())
@@ -304,7 +308,10 @@ public class CardDataDialog extends JDialog {
         } else {                         // legacy: best-effort using the current Hunter's Bounty tier
             bounty = captureCreditBonus.getAsLong();
         }
-        p.add(kv("Credits Earned", amountHtml(baseCredits, bounty), new Color(120, 190, 255)));
+        // A traded-in card's capture credits/XP were earned by the original owner, not this account.
+        boolean tradedIn = com.bestiary.model.BestiaryCollection.isTradedIn(c);
+        p.add(kv("Credits Earned", tradedIn ? "Transferred" : amountHtml(baseCredits, bounty),
+                new Color(120, 190, 255)));
 
         // Kill XP: awarded on every kill of this monster (difficulty-tiered) + the Hunter's Focus
         // flat shop bonus. Not card-specific, so it reflects the current shop tier.
@@ -317,12 +324,13 @@ public class CardDataDialog extends JDialog {
         long capXpBonus = c.xpEarned > 0
                 ? Math.max(0, c.xpEarned - capXpBase)
                 : Math.round(capXpBase * captureXpBonus.getAsDouble());
-        p.add(kv("Capture XP", amountHtml(capXpBase, capXpBonus), new Color(170, 210, 120)));
+        p.add(kv("Capture XP", tradedIn ? "Transferred" : amountHtml(capXpBase, capXpBonus),
+                new Color(170, 210, 120)));
 
         p.add(kv("Caught by", c.originalOwner != null && !c.originalOwner.isEmpty() ? c.originalOwner
                 : (c.playerName != null && !c.playerName.isEmpty() ? c.playerName : "Unknown"),
                 new Color(200, 155, 50)));
-        if (com.bestiary.model.BestiaryCollection.isTradedIn(c)) {
+        if (tradedIn) {
             // Card was traded in from another of the player's accounts (#50).
             p.add(kv("Traded in — held by", c.currentOwner, new Color(120, 190, 255)));
         }
