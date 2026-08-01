@@ -488,7 +488,7 @@ public class BestiaryDataService {
      * Cost of one "Card Reroller" use, scaled by the card's difficulty tier × rarity
      * (shiny does NOT affect cost). Difficulty sets a base (= a Common card's cost) and
      * rarity multiplies it, so rerolling a high-tier rare card costs far more than a
-     * beginner common. Anchors: Beginner Common 25 → Mythic 500; Boss Common 200 → Mythic 4000.
+     * beginner common. Anchors: Beginner Common 20 → Mythic 240; Boss Common 130 → Mythic 1560.
      */
     public static long rerollCost(CapturedCreature c) {
         return rerollBaseCost(MonsterRoster.getDifficulty(c.npcName, c.npcCombatLevel))
@@ -498,25 +498,25 @@ public class BestiaryDataService {
     /** Per-difficulty base cost — the price of rerolling a Common card of that tier. */
     private static long rerollBaseCost(com.bestiary.model.DifficultyTier d) {
         switch (d) {
-            case BEGINNER: return 25;
-            case EASY:     return 40;
-            case MEDIUM:   return 60;
-            case HARD:     return 90;
-            case ELITE:    return 130;
-            case BOSS:     return 200;
-            default:       return 60;
+            case BEGINNER: return 20;
+            case EASY:     return 30;
+            case MEDIUM:   return 45;
+            case HARD:     return 65;
+            case ELITE:    return 90;
+            case BOSS:     return 130;
+            default:       return 45;
         }
     }
 
-    /** Rarity multiplier applied to the difficulty base (Common 1× → Mythic 20×). */
+    /** Rarity multiplier applied to the difficulty base (Common 1× → Mythic 12×). */
     private static long rerollRarityMultiplier(CreatureRarity r) {
         switch (r) {
             case COMMON:    return 1;
             case UNCOMMON:  return 2;
-            case RARE:      return 4;
-            case EPIC:      return 7;
-            case LEGENDARY: return 12;
-            case MYTHIC:    return 20;
+            case RARE:      return 3;
+            case EPIC:      return 5;
+            case LEGENDARY: return 8;
+            case MYTHIC:    return 12;
             default:        return 1;
         }
     }
