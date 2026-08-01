@@ -488,7 +488,7 @@ public class BestiaryDataService {
      * Cost of one "Card Reroller" use, scaled by the card's difficulty tier × rarity
      * (shiny does NOT affect cost). Difficulty sets a base (= a Common card's cost) and
      * rarity multiplies it, so rerolling a high-tier rare card costs far more than a
-     * beginner common. Anchors: Beginner Common 20 → Mythic 240; Boss Common 130 → Mythic 1560.
+     * beginner common. Anchors: Beginner Common 20 → Mythic 240; Boss Common 100 → Mythic 1200.
      */
     public static long rerollCost(CapturedCreature c) {
         return rerollBaseCost(MonsterRoster.getDifficulty(c.npcName, c.npcCombatLevel))
@@ -502,8 +502,8 @@ public class BestiaryDataService {
             case EASY:     return 30;
             case MEDIUM:   return 45;
             case HARD:     return 65;
-            case ELITE:    return 90;
-            case BOSS:     return 130;
+            case ELITE:    return 80;
+            case BOSS:     return 100;
             default:       return 45;
         }
     }
