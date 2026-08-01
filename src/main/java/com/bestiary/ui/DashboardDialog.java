@@ -445,8 +445,15 @@ public class DashboardDialog extends JDialog {
     private static int countRankUps(BestiaryCollection col) {
         int n = 0;
         for (CapturedCreature c : col.creatures) {
-            for (CapturedCreature.RerollState s : c.rerollHistory) {
-                if (s.rarity != null && s.rarity.ordinal() < c.rarity.ordinal()) n++;
+            java.util.List<CapturedCreature.RerollState> h = c.rerollHistory;
+            // Count a rank-up only when the rarity actually rose from one reroll to the next.
+            // Each history entry is the state BEFORE a reroll; the state AFTER it is the next
+            // history entry (or the card's current rarity for the final reroll). Comparing every
+            // entry to the current rarity over-counted every reroll spent at a lower rarity.
+            for (int i = 0; i < h.size(); i++) {
+                CreatureRarity before = h.get(i).rarity;
+                CreatureRarity after  = (i + 1 < h.size()) ? h.get(i + 1).rarity : c.rarity;
+                if (before != null && after != null && after.ordinal() > before.ordinal()) n++;
             }
         }
         return n;
