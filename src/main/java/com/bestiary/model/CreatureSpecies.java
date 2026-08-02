@@ -19,7 +19,7 @@ public enum CreatureSpecies {
     INSECT   ("Insect",    new Color(170, 150, 40)),
     KALPHITE ("Kalphite",  new Color(200, 170, 80)),
     PLANT    ("Plant",     new Color(90,  175, 100)),
-    SNAKE    ("Snake",     new Color(120, 175, 70)),
+    REPTILE  ("Reptile",   new Color(105, 155, 75)),
     TROLL    ("Troll",     new Color(130, 110, 90)),
     TZHAAR   ("TzHaar",    new Color(220, 100, 40)),
     UNDEAD   ("Undead",    new Color(140, 80,  180)),
