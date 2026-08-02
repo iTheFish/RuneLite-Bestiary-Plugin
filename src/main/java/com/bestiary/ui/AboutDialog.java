@@ -14,12 +14,13 @@ import java.awt.*;
  * MODELESS "About Bestiary" dialog: the version log (what landed in each release, v1.0 being the
  * most extensive) and a thank-you note. Opened by clicking the version label in the panel footer.
  *
- * <p>The GitHub link is live; Discord / Patreon stay stubbed as disabled buttons until those are set up.
+ * <p>The GitHub and Discord links are live; Patreon stays a disabled stub until it's set up.
  */
 public class AboutDialog extends JDialog {
 
     private static final Color ORANGE = new Color(255, 165, 0);
-    private static final String GITHUB_URL = "https://github.com/iTheFish/RuneLite-Bestiary-Plugin";
+    private static final String GITHUB_URL  = "https://github.com/iTheFish/RuneLite-Bestiary-Plugin";
+    private static final String DISCORD_URL = "https://discord.gg/2HWSHH4mS5";
     private static AboutDialog current;
 
     public static void open(Window owner) {
@@ -165,7 +166,7 @@ public class AboutDialog extends JDialog {
         thanks.setAlignmentX(LEFT_ALIGNMENT);
         footer.add(thanks);
 
-        // Community links — GitHub is live; Discord / Patreon stubbed until they exist.
+        // Community links — GitHub & Discord are live; Patreon stubbed until it exists.
         JPanel links = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         links.setOpaque(false);
         links.setAlignmentX(LEFT_ALIGNMENT);
@@ -175,16 +176,20 @@ public class AboutDialog extends JDialog {
         github.addActionListener(e -> LinkBrowser.browse(GITHUB_URL));
         links.add(github);
 
-        for (String name : new String[]{"Discord", "Patreon"}) {
-            JButton b = linkButton(name);
-            b.setEnabled(false);
-            b.setToolTipText("Coming soon");
-            links.add(b);
-        }
+        JButton discord = linkButton("Discord");
+        discord.setToolTipText(DISCORD_URL);
+        discord.addActionListener(e -> LinkBrowser.browse(DISCORD_URL));
+        links.add(discord);
+
+        JButton patreon = linkButton("Patreon");
+        patreon.setEnabled(false);
+        patreon.setToolTipText("Coming soon");
+        links.add(patreon);
+
         footer.add(Box.createVerticalStrut(8));
         footer.add(links);
 
-        JLabel soon = new JLabel("Discord & Patreon coming soon.");
+        JLabel soon = new JLabel("Patreon coming soon.");
         soon.setFont(FontManager.getRunescapeSmallFont());
         soon.setForeground(new Color(120, 120, 120));
         soon.setAlignmentX(LEFT_ALIGNMENT);
