@@ -57,9 +57,9 @@ dashboards break down your progression, economy, species completion and best cap
 
 <table align="center">
   <tr>
-    <td align="center"><img src="docs/images/ProgressionTab.png" width="230"><br><em>Progress tab</em></td>
     <td align="center"><img src="docs/images/CardTab.png" width="230"><br><em>Cards tab</em></td>
     <td align="center"><img src="docs/images/ShopUnlocks.png" width="230"><br><em>Shop</em></td>
+    <td align="center"><img src="docs/images/ProgressionTab.png" width="230"><br><em>Progress tab</em></td>
   </tr>
 </table>
 
@@ -82,25 +82,43 @@ and it climbs steeply as you grow. A level 1 hunter versus a level 52 one:
 
 ## Features at a glance
 
+Core mechanics:
+
 - **Capture cards on kill** — a catch roll by difficulty tier and Capture Level, then a weighted
   rarity plus an independent shiny roll.
 - **Power Level** — a card's headline number: its seven rolled stats plus the monster's factual
   Hitpoints and combat level (at reduced weight), so bosses outclass trash mobs.
-- **Album** — a searchable, filterable grid of every known monster, with per-monster
-  detail pages and paginated capture views.
-- **Collection views** — grouped by rarity or monster, or a flat individual list; favourites; and
-  rich detail dialogs with per-stat bands and personal bests.
-- **Progression** — a Capture Level (1–99, with virtual levels), XP from kills and captures, and
-  achievements.
-- **Shop & economy** — earn Bestiary Credits per capture and spend them on passive upgrades, the
-  **Card Reroller** (re-roll a card's stats/shiny), or **discard** cards for credits.
-- **Multiple accounts** — each account keeps its own collection; browse any known account read-only,
-  and transfer cards between your own accounts.
-- **Dashboards & Session Recap** — breakdowns of kills, species, economy and top captures, plus a
-  shareable per-session summary.
-- **Card export** — save or copy any card as an image, with a unique ID and owner stamp.
 - **Overlay & chat notifications** — an on-screen capture animation, level-up banners, and
   configurable chat messages.
+
+Tabs & views:
+
+- **Cards tab** — your collection grouped by rarity or monster, or a flat individual list, plus
+  favourites; rich detail dialogs with per-stat bands and personal bests.
+- **Album** — a searchable, filterable grid of every known monster, with per-monster detail pages
+  and paginated capture views.
+- **Shop** — spend Bestiary Credits (earned per capture) on passive upgrades and the Card Reroller.
+- **Progress tab** — a Capture Level (1–99, with virtual levels), XP from kills and captures, and
+  achievements.
+
+Screens & tools (each opens its own window):
+
+- **Catch Rates** — per-difficulty catch and rarity chances at your current Capture Level.
+- **Card Info** — a per-card breakdown: Overview, Odds, a percentile/reroll Graph, and reroll history.
+- **Card Reroller** — re-roll a card's stats/shiny for credits, with an odds breakdown and a
+  before/after result (shiny stays shiny).
+- **Card export** — save or copy any card, or a whole album page, as an image with a unique ID and
+  owner stamp.
+- **Discard duplicates** — turn spare cards into credits.
+- **Transfer cards** — move cards between your own accounts via a searchable picker.
+- **Dashboards** — Progression, Economy, Species and Caught breakdowns, exportable as images.
+- **Session Recap** — a shareable per-session summary of XP and credits gained.
+- **Reset Progress & Collection** — wipe everything and start over (double-confirmed).
+- **About** — plugin info and version.
+
+Accounts:
+
+- **Multiple accounts** — each account keeps its own collection; browse any known account read-only.
 
 ## Data & privacy
 
