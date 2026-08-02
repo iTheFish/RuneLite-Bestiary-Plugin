@@ -14,8 +14,7 @@ import java.awt.*;
  * MODELESS "About Bestiary" dialog: the version log (what landed in each release, v1.0 being the
  * most extensive) and a thank-you note. Opened by clicking the version label in the panel footer.
  *
- * <p>The GitHub and Discord links are live; Patreon is a playful no-op (there's no Patreon) with a
- * tooltip note.
+ * <p>The GitHub and Discord links are live; Patreon stays greyed out with a playful hover tooltip.
  */
 public class AboutDialog extends JDialog {
 
@@ -182,9 +181,9 @@ public class AboutDialog extends JDialog {
         discord.addActionListener(e -> LinkBrowser.browse(DISCORD_URL));
         links.add(discord);
 
-        // Patreon: intentionally a no-op (there's no Patreon) — kept enabled so the hover
-        // tooltip still shows (disabled Swing buttons don't display tooltips).
+        // Patreon: greyed out (there's no Patreon), just a playful hover tooltip.
         JButton patreon = linkButton("Patreon");
+        patreon.setEnabled(false);
         patreon.setToolTipText("<html>Doing it for the love of the game :)<br>- Fish</html>");
         links.add(patreon);
 
