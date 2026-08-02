@@ -3,6 +3,7 @@ package com.bestiary.ui;
 import com.bestiary.BestiaryPlugin;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
+import net.runelite.client.util.LinkBrowser;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -13,12 +14,13 @@ import java.awt.*;
  * MODELESS "About Bestiary" dialog: the version log (what landed in each release, v1.0 being the
  * most extensive) and a thank-you note. Opened by clicking the version label in the panel footer.
  *
- * <p>Community links (GitHub / Discord / Patreon) are stubbed as disabled buttons for now — they go
- * live once the repo is public and the accounts are set up.
+ * <p>The GitHub and Discord links are live; Patreon stays greyed out with a playful hover tooltip.
  */
 public class AboutDialog extends JDialog {
 
     private static final Color ORANGE = new Color(255, 165, 0);
+    private static final String GITHUB_URL  = "https://github.com/iTheFish/RuneLite-Bestiary-Plugin";
+    private static final String DISCORD_URL = "https://discord.gg/2HWSHH4mS5";
     private static AboutDialog current;
 
     public static void open(Window owner) {
@@ -164,27 +166,43 @@ public class AboutDialog extends JDialog {
         thanks.setAlignmentX(LEFT_ALIGNMENT);
         footer.add(thanks);
 
-        // Community links — stubbed until the repo is public and the accounts exist.
+        // Community links — GitHub & Discord are live; Patreon stubbed until it exists.
         JPanel links = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         links.setOpaque(false);
         links.setAlignmentX(LEFT_ALIGNMENT);
-        for (String name : new String[]{"GitHub", "Discord", "Patreon"}) {
-            JButton b = new JButton(name);
-            b.setFont(FontManager.getRunescapeSmallFont());
-            b.setFocusPainted(false);
-            b.setEnabled(false);   // held off for release
-            b.setToolTipText("Coming with release");
-            links.add(b);
-        }
+
+        JButton github = linkButton("GitHub");
+        github.setToolTipText(GITHUB_URL);
+        github.addActionListener(e -> LinkBrowser.browse(GITHUB_URL));
+        links.add(github);
+
+        JButton discord = linkButton("Discord");
+        discord.setToolTipText(DISCORD_URL);
+        discord.addActionListener(e -> LinkBrowser.browse(DISCORD_URL));
+        links.add(discord);
+
+        // Patreon: greyed out (there's no Patreon), just a playful hover tooltip.
+        JButton patreon = linkButton("Patreon");
+        patreon.setEnabled(false);
+        patreon.setToolTipText("<html>Doing it for the love of the game :)<br>- Fish</html>");
+        links.add(patreon);
+
         footer.add(Box.createVerticalStrut(8));
         footer.add(links);
 
-        JLabel soon = new JLabel("Community links coming with release.");
-        soon.setFont(FontManager.getRunescapeSmallFont());
-        soon.setForeground(new Color(120, 120, 120));
-        soon.setAlignmentX(LEFT_ALIGNMENT);
+        JLabel linksNote = new JLabel("Feel free to check out the links above!");
+        linksNote.setFont(FontManager.getRunescapeSmallFont());
+        linksNote.setForeground(Color.WHITE);
+        linksNote.setAlignmentX(LEFT_ALIGNMENT);
         footer.add(Box.createVerticalStrut(4));
-        footer.add(soon);
+        footer.add(linksNote);
         return footer;
+    }
+
+    private static JButton linkButton(String name) {
+        JButton b = new JButton(name);
+        b.setFont(FontManager.getRunescapeSmallFont());
+        b.setFocusPainted(false);
+        return b;
     }
 }

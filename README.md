@@ -127,6 +127,11 @@ Accounts:
   (off by default) downloads monster artwork from the OSRS Wiki (`oldschool.runescape.wiki`) — only
   the monster's name is requested, no account or personal data is sent, and images are cached to disk.
 
+## Community
+
+- **Discord** — help, showcase your cards, and shape what's next: https://discord.gg/2HWSHH4mS5
+- **GitHub** — issues, source and releases: https://github.com/iTheFish/RuneLite-Bestiary-Plugin
+
 ## Building
 
 A standard RuneLite external plugin, built with Gradle (targets Java 11 bytecode; a JDK 11+ is
