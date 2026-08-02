@@ -239,8 +239,10 @@ public final class RegionNames {
         // Wilderness: north of Edgeville latitude
         if (ry >= 55 && rx >= 43 && rx <= 53) return "Wilderness";
 
-        // Morytania: east of Misthalin
-        if (rx >= 53 && ry >= 48) return "Morytania";
+        // Morytania: east of the River Salve. Real Morytania surface starts at rx >= 54
+        // (Canifis, Mort Myre, Burgh de Rott…); the rx == 53 column is eastern Misthalin
+        // (its only genuine Morytania spot, the Slayer Tower, is in the explicit name map).
+        if (rx >= 54 && ry >= 48) return "Morytania";
 
         // Great Kourend / Zeah: far west
         if (rx <= 28) return "Great Kourend";
@@ -254,8 +256,9 @@ public final class RegionNames {
         // Karamja: south, central
         if (rx >= 42 && rx <= 48 && ry >= 42 && ry <= 48) return "Karamja";
 
-        // Desert: south-east
-        if (ry <= 50 && rx >= 49) return "Desert";
+        // Desert: south-east. The desert proper sits at ry <= 47 (Pollnivneach, Sophanem…);
+        // ry 48-50 at this longitude is the Al Kharid / eastern-Misthalin gateway, not desert.
+        if (ry <= 47 && rx >= 49) return "Desert";
 
         // Kandarin: west-central
         if (rx >= 39 && rx <= 46 && ry >= 48 && ry <= 57) return "Kandarin";
