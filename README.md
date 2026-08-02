@@ -105,10 +105,9 @@ and it climbs steeply as you grow. A level 1 hunter versus a level 52 one:
 ## Data & privacy
 
 - Your collection is stored locally as JSON in `~/.runelite/bestiary/`.
-- With **"Fetch NPC images from the Wiki"** enabled (default), the plugin downloads monster artwork
-  from the OSRS Wiki (`oldschool.runescape.wiki`) — only the monster's name is requested, no account
-  or personal data is sent, and images are cached to disk. Turn the option off to make no network
-  requests at all.
+- The plugin makes **no network requests by default**. Enabling **"Fetch NPC images from the Wiki"**
+  (off by default) downloads monster artwork from the OSRS Wiki (`oldschool.runescape.wiki`) — only
+  the monster's name is requested, no account or personal data is sent, and images are cached to disk.
 
 ## Building
 
