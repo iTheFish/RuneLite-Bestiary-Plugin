@@ -139,7 +139,6 @@ required — the Gradle wrapper downloads Gradle itself).
 ```
 
 `./gradlew run` is the easiest way to try it: log in and open the Bestiary panel from the sidebar.
-The `[DEV]` helper buttons and the Developer Tools config only appear in developer mode.
 
 ## Project layout
 
