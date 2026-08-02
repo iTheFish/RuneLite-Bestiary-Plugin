@@ -170,7 +170,13 @@ public class MonsterRoster {
         "Tormented Demon", "Kalphite Queen", "Skotizo",
         "Crystalline Hunllef", "Corrupted Hunllef", "Ice demon",
         "Revenant maledictus",
-        "Blood Moon", "Blue Moon", "Eclipse Moon"
+        "Blood Moon", "Blue Moon", "Eclipse Moon",
+
+        // === #69 additions (2026-08-02): bats + wilderness revenant family ===
+        "Bat", "Giant bat",
+        "Revenant imp", "Revenant goblin", "Revenant pyrefiend", "Revenant hobgoblin",
+        "Revenant cyclops", "Revenant hellhound", "Revenant demon", "Revenant ork",
+        "Revenant dark beast", "Revenant knight", "Revenant dragon"
     );
 
     // -------------------------------------------------------------------------
@@ -294,6 +300,18 @@ public class MonsterRoster {
             "Blood Moon", "Blue Moon", "Eclipse Moon"
         )) { d.put(n, BOSS); }
 
+        // #69 additions (2026-08-02): bats + wilderness revenants
+        d.put("Bat", BEGINNER);
+        d.put("Revenant imp", BEGINNER);
+        d.put("Giant bat", EASY);
+        d.put("Revenant goblin", EASY);
+        for (String n : Arrays.asList(
+            "Revenant pyrefiend", "Revenant hobgoblin", "Revenant cyclops", "Revenant hellhound"
+        )) { d.put(n, MEDIUM); }
+        for (String n : Arrays.asList(
+            "Revenant demon", "Revenant ork", "Revenant dark beast", "Revenant knight", "Revenant dragon"
+        )) { d.put(n, HARD); }
+
         DIFFICULTY = Collections.unmodifiableMap(d);
     }
 
@@ -393,6 +411,15 @@ public class MonsterRoster {
         a.put("Blood Moon", WARRIOR);           // Moons of Peril — all melee mid-bosses
         a.put("Blue Moon", WARRIOR);
         a.put("Eclipse Moon", WARRIOR);
+
+        // #69 additions (2026-08-02).
+        a.put("Bat", NIMBLE);                   // fast, fragile flyer
+        a.put("Giant bat", WARRIOR);            // aggressive melee flyer
+        for (String n : Arrays.asList(          // revenants fight with magic + ranged (like the maledictus)
+            "Revenant imp", "Revenant goblin", "Revenant pyrefiend", "Revenant hobgoblin",
+            "Revenant cyclops", "Revenant hellhound", "Revenant demon", "Revenant ork",
+            "Revenant dark beast", "Revenant knight", "Revenant dragon"
+        )) { a.put(n, OCCULTIST); }
 
         COMBAT_CLASSES = Collections.unmodifiableMap(a);
     }
@@ -618,6 +645,21 @@ public class MonsterRoster {
         b.put("Blood Moon",          new int[]{60, 65, 55, 60, 40, 30});
         b.put("Blue Moon",           new int[]{55, 60, 50, 60, 40, 30});
         b.put("Eclipse Moon",        new int[]{55, 60, 50, 60, 40, 35});
+        // #69 additions (2026-08-02). Order: {ATK,STR,DEF,MAG,RNG,AGI}
+        b.put("Bat",                 new int[]{ 2,  2,  1,  1,  1, 80});
+        b.put("Giant bat",           new int[]{10, 10,  6,  1,  1, 70});
+        // Wilderness revenants — magic/ranged primary, scaling up the family.
+        b.put("Revenant imp",        new int[]{ 3,  3,  3,  6,  6, 55});
+        b.put("Revenant goblin",     new int[]{ 5,  5,  5, 10, 10, 55});
+        b.put("Revenant pyrefiend",  new int[]{15, 15, 20, 30, 30, 50});
+        b.put("Revenant hobgoblin",  new int[]{18, 18, 22, 33, 33, 50});
+        b.put("Revenant cyclops",    new int[]{24, 24, 30, 40, 40, 45});
+        b.put("Revenant hellhound",  new int[]{27, 27, 32, 44, 44, 50});
+        b.put("Revenant demon",      new int[]{30, 30, 36, 50, 50, 50});
+        b.put("Revenant ork",        new int[]{33, 33, 40, 52, 52, 45});
+        b.put("Revenant dark beast", new int[]{36, 36, 45, 58, 58, 45});
+        b.put("Revenant knight",     new int[]{40, 40, 50, 62, 62, 45});
+        b.put("Revenant dragon",     new int[]{45, 45, 55, 68, 68, 45});
 
         STAT_BASES = Collections.unmodifiableMap(b);
     }
@@ -847,6 +889,20 @@ public class MonsterRoster {
         h.put("Blood Moon",          500);
         h.put("Blue Moon",           500);
         h.put("Eclipse Moon",        500);
+        // #69 additions (2026-08-02)
+        h.put("Bat",                 8);
+        h.put("Giant bat",           30);
+        h.put("Revenant imp",        10);
+        h.put("Revenant goblin",     20);
+        h.put("Revenant pyrefiend",  55);
+        h.put("Revenant hobgoblin",  60);
+        h.put("Revenant cyclops",    90);
+        h.put("Revenant hellhound",  105);
+        h.put("Revenant demon",      120);
+        h.put("Revenant ork",        135);
+        h.put("Revenant dark beast", 165);
+        h.put("Revenant knight",     180);
+        h.put("Revenant dragon",     210);
         HITPOINTS = Collections.unmodifiableMap(h);
     }
 
@@ -866,7 +922,8 @@ public class MonsterRoster {
             "Rock crab", "Sand crab", "Swamp crab", "Gemstone crab",
             "Warped tortoise", "Tortoise",
             "Giant Mole", "Callisto", "Artio", "Scurrius", "Kraken",
-            "Ba-Ba", "Zebak"
+            "Ba-Ba",
+            "Bat", "Giant bat"
         )) { s.put(n, ANIMAL); }
 
         // DEMON — creatures of demonic or infernal origin
@@ -942,7 +999,10 @@ public class MonsterRoster {
             "Vampyre", "Vyrewatch",
             "Spiritual warrior", "Spiritual mage", "Spiritual ranger",
             "Vet'ion", "Calvar'ion",
-            "Verzik Vitur", "Xarpus", "Pestilent Bloat"
+            "Verzik Vitur", "Xarpus", "Pestilent Bloat",
+            "Revenant imp", "Revenant goblin", "Revenant pyrefiend", "Revenant hobgoblin",
+            "Revenant cyclops", "Revenant hellhound", "Revenant demon", "Revenant ork",
+            "Revenant dark beast", "Revenant knight", "Revenant dragon"
         )) { s.put(n, UNDEAD); }
         // Barrows brothers are NOT undead (common misconception) → left unlisted, fall back to OTHER.
 
@@ -955,8 +1015,12 @@ public class MonsterRoster {
         // PLANT — plant-based creatures
         for (String n : Arrays.asList("Hespori")) { s.put(n, PLANT); }
 
-        // SNAKE — serpents
-        for (String n : Arrays.asList("Zulrah")) { s.put(n, SNAKE); }
+        // REPTILE — snakes, crocodiles, lizardfolk and basilisks (absorbs the former Snake species)
+        for (String n : Arrays.asList(
+            "Zulrah", "Zebak",
+            "Lizardman", "Lizardman brute", "Lizardman shaman",
+            "Basilisk", "Basilisk knight"
+        )) { s.put(n, REPTILE); }
 
         // TZHAAR — TzHaar-kin and their champions
         for (String n : Arrays.asList("TzTok-Jad", "TzKal-Zuk")) { s.put(n, TZHAAR); }
@@ -1508,6 +1572,20 @@ public class MonsterRoster {
         c.put("Tumeken's Warden",    750);
         c.put("Elidinis' Warden",    750);
         c.put("Abyssal Sire",        350);
+        // #69 additions (2026-08-02)
+        c.put("Bat",                 6);
+        c.put("Giant bat",           27);
+        c.put("Revenant imp",        7);
+        c.put("Revenant goblin",     15);
+        c.put("Revenant pyrefiend",  52);
+        c.put("Revenant hobgoblin",  60);
+        c.put("Revenant cyclops",    82);
+        c.put("Revenant hellhound",  90);
+        c.put("Revenant demon",      98);
+        c.put("Revenant ork",        105);
+        c.put("Revenant dark beast", 120);
+        c.put("Revenant knight",     126);
+        c.put("Revenant dragon",     135);
         COMBAT_LEVELS = Collections.unmodifiableMap(c);
     }
 
