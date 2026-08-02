@@ -1,6 +1,5 @@
 package com.bestiary.service;
 
-import com.bestiary.BestiaryConfig;
 import com.bestiary.model.CapturedCreature;
 import com.bestiary.model.CreatureRarity;
 import com.bestiary.model.DifficultyTier;
@@ -21,7 +20,6 @@ import static org.mockito.Mockito.*;
 
 public class CaptureServiceTest {
 
-    @Mock private BestiaryConfig config;
     @Mock private NPC npc;
 
     private static final long SEED = 42L;
@@ -29,7 +27,6 @@ public class CaptureServiceTest {
     @Before
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        when(config.captureEnabled()).thenReturn(true);
         when(npc.getId()).thenReturn(1);
         when(npc.getName()).thenReturn("Cow");   // BEGINNER tier
         when(npc.getCombatLevel()).thenReturn(2);
@@ -39,19 +36,19 @@ public class CaptureServiceTest {
 
     @Test
     public void beginnerBaseRateAtLevel1Is25Percent() {
-        CaptureService service = new CaptureService(config, new Random(SEED));
+        CaptureService service = new CaptureService(new Random(SEED));
         assertEquals(0.25, service.calculateCatchRate(1, DifficultyTier.BEGINNER), 0.0001);
     }
 
     @Test
     public void bossBaseRateAtLevel1Is3Percent() {
-        CaptureService service = new CaptureService(config, new Random(SEED));
+        CaptureService service = new CaptureService(new Random(SEED));
         assertEquals(0.03, service.calculateCatchRate(1, DifficultyTier.BOSS), 0.0001);
     }
 
     @Test
     public void catchRateIncreasesWithLevel() {
-        CaptureService service = new CaptureService(config, new Random(SEED));
+        CaptureService service = new CaptureService(new Random(SEED));
         double level1  = service.calculateCatchRate(1, DifficultyTier.BEGINNER);
         double level50 = service.calculateCatchRate(50, DifficultyTier.BEGINNER);
         assertTrue("Rate at 50 should exceed rate at 1", level50 > level1);
@@ -59,7 +56,7 @@ public class CaptureServiceTest {
 
     @Test
     public void harderTiersHaveLowerRateAtSameLevel() {
-        CaptureService service = new CaptureService(config, new Random(SEED));
+        CaptureService service = new CaptureService(new Random(SEED));
         double beginner = service.calculateCatchRate(50, DifficultyTier.BEGINNER);
         double boss     = service.calculateCatchRate(50, DifficultyTier.BOSS);
         assertTrue("BEGINNER rate should exceed BOSS at same level", beginner > boss);
@@ -67,31 +64,21 @@ public class CaptureServiceTest {
 
     @Test
     public void beginnerCapsAt70PercentAtHighLevel() {
-        CaptureService service = new CaptureService(config, new Random(SEED));
+        CaptureService service = new CaptureService(new Random(SEED));
         assertEquals(0.70, service.calculateCatchRate(99, DifficultyTier.BEGINNER), 0.0001);
     }
 
     @Test
     public void bossCapsAt25PercentAtHighLevel() {
-        CaptureService service = new CaptureService(config, new Random(SEED));
+        CaptureService service = new CaptureService(new Random(SEED));
         assertEquals(0.25, service.calculateCatchRate(99, DifficultyTier.BOSS), 0.0001);
-    }
-
-    // --- Capture disabled ---
-
-    @Test
-    public void returnEmptyWhenCaptureDisabled() {
-        when(config.captureEnabled()).thenReturn(false);
-        CaptureService service = new CaptureService(config, new Random(SEED));
-        Optional<CapturedCreature> result = service.attemptCapture(npc, null, 1, 0, "Test", "Player", 0, 0.0);
-        assertFalse(result.isPresent());
     }
 
     // --- A successful capture yields a fully-populated card ---
 
     @Test
     public void captureReturnsPopulatedCard() {
-        CaptureService service = new CaptureService(config, new Random(SEED));
+        CaptureService service = new CaptureService(new Random(SEED));
 
         // At a high Capture Level the catch rate is high; loop (deterministic RNG) until one lands.
         Optional<CapturedCreature> result = Optional.empty();

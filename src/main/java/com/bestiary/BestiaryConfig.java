@@ -11,16 +11,6 @@ import com.bestiary.model.OverlayPos;
 public interface BestiaryConfig extends Config {
 
     @ConfigItem(
-            keyName = "captureEnabled",
-            name = "Capture Enabled",
-            description = "Enable or disable creature capture attempts on kill",
-            position = 0
-    )
-    default boolean captureEnabled() {
-        return true;
-    }
-
-    @ConfigItem(
             keyName = "notifyOnCapture",
             name = "Notify on Capture",
             description = "Show a chat message when a creature is captured",
@@ -122,11 +112,23 @@ public interface BestiaryConfig extends Config {
         return 200;
     }
 
+    @Range(min = 20, max = 100)
+    @ConfigItem(
+            keyName = "overlayOpacity",
+            name = "Overlay Opacity",
+            description = "How opaque the capture overlay's background panel is, as a percentage "
+                        + "(20–100). Lower is more see-through, so it blocks less of the screen.",
+            position = 15
+    )
+    default int overlayOpacity() {
+        return 75;
+    }
+
     @ConfigItem(
             keyName = "autoShimmer",
             name = "Auto-shimmer EPIC+ Cards",
             description = "Automatically play the foil shimmer on Epic+ cards in the Album view every 10 seconds",
-            position = 15
+            position = 16
     )
     default boolean autoShimmer() {
         return true;
@@ -140,7 +142,7 @@ public interface BestiaryConfig extends Config {
                         + "Only the monster's name is requested — no account or personal<br>"
                         + "data is sent — and images are cached to disk.<br>"
                         + "<b>Off by default</b> — turn it on for the best album experience.</html>",
-            position = 16
+            position = 17
     )
     default boolean wikiImages() {
         return false;

@@ -1,6 +1,5 @@
 package com.bestiary.service;
 
-import com.bestiary.BestiaryConfig;
 import com.bestiary.model.CapturedCreature;
 import com.bestiary.model.CreatureQuality;
 import com.bestiary.model.CreatureRarity;
@@ -20,25 +19,22 @@ import java.util.Random;
 
 /**
  * Pure capture logic \u00e2\u20ac" no RuneLite event handling, no UI, no I/O.
- * Depends only on the config and a Random instance, so it is easy to unit test.
+ * Depends only on a Random instance, so it is easy to unit test.
  */
 @Slf4j
 @Singleton
 public class CaptureService {
 
-    private final BestiaryConfig config;
     private final Random rng;
 
     @Inject
-    public CaptureService(BestiaryConfig config) {
-        this.config = config;
-        this.rng    = new Random();
+    public CaptureService() {
+        this.rng = new Random();
     }
 
     /** Constructor for tests where a seeded RNG is required. */
-    CaptureService(BestiaryConfig config, Random rng) {
-        this.config = config;
-        this.rng    = rng;
+    CaptureService(Random rng) {
+        this.rng = rng;
     }
 
     /**
@@ -56,10 +52,6 @@ public class CaptureService {
                                                      int captureLevel, int killCount,
                                                      String regionName, String playerName,
                                                      int observedDamage, double shinyBonus) {
-        if (!config.captureEnabled()) {
-            return Optional.empty();
-        }
-
         String npcName = npc.getName() != null ? npc.getName() : "Unknown";
         DifficultyTier difficulty = MonsterRoster.getDifficulty(npcName, npc.getCombatLevel());
 
