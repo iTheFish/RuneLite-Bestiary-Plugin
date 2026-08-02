@@ -17,9 +17,14 @@ public class RerollResultDialog extends JDialog {
 
     private static RerollResultDialog current;
 
-    public static void open(Window owner, CapturedCreature before, CapturedCreature after) {
+    /**
+     * @param onRerollAgain re-runs the reroll flow on the just-rerolled card (opens the confirm
+     *                      dialog again); null hides the "Reroll again?" button.
+     */
+    public static void open(Window owner, CapturedCreature before, CapturedCreature after,
+                            Runnable onRerollAgain) {
         if (current != null && current.isShowing()) current.dispose();
-        current = new RerollResultDialog(owner, before, after);
+        current = new RerollResultDialog(owner, before, after, onRerollAgain);
         current.setVisible(true);
     }
 
@@ -47,7 +52,7 @@ public class RerollResultDialog extends JDialog {
         d.setVisible(true);
     }
 
-    private RerollResultDialog(Window owner, CapturedCreature b, CapturedCreature a) {
+    private RerollResultDialog(Window owner, CapturedCreature b, CapturedCreature a, Runnable onRerollAgain) {
         super(owner, "Reroll result", ModalityType.MODELESS);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setResizable(false);
@@ -128,17 +133,38 @@ public class RerollResultDialog extends JDialog {
         odds.setForeground(Color.WHITE);
         odds.setFocusPainted(false);
         odds.addActionListener(e -> CardDataDialog.open(owner, a, CardDataDialog.TAB_ODDS));
+
         JButton close = new JButton("Close");
         close.setFont(FontManager.getRunescapeSmallFont());
         close.setFocusPainted(false);
+        close.setAlignmentX(Component.LEFT_ALIGNMENT);
+        close.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
         close.addActionListener(e -> dispose());
-        JPanel btns = new JPanel(new GridLayout(1, 2, 8, 0));
-        btns.setOpaque(false);
-        btns.setAlignmentX(Component.LEFT_ALIGNMENT);
-        btns.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
-        btns.add(odds);
-        btns.add(close);
-        root.add(btns);
+
+        // Top row: Card Info… + Reroll again? (side by side). Close sits on its own full-width row below.
+        if (onRerollAgain != null) {
+            JButton again = new JButton("Reroll again?");
+            again.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+            again.setBackground(new Color(60, 120, 60));
+            again.setForeground(Color.WHITE);
+            again.setFocusPainted(false);
+            again.setToolTipText("Reroll this same card again (opens the confirm screen)");
+            again.addActionListener(e -> { dispose(); onRerollAgain.run(); });
+            JPanel topRow = new JPanel(new GridLayout(1, 2, 8, 0));
+            topRow.setOpaque(false);
+            topRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+            topRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+            topRow.add(odds);
+            topRow.add(again);
+            root.add(topRow);
+            root.add(Box.createVerticalStrut(8));
+        } else {
+            odds.setAlignmentX(Component.LEFT_ALIGNMENT);
+            odds.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+            root.add(odds);
+            root.add(Box.createVerticalStrut(8));
+        }
+        root.add(close);
 
         setContentPane(root);
         pack();

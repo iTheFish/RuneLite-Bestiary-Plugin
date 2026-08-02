@@ -132,26 +132,8 @@ public class BestiaryPanel extends PluginPanel {
                 DiscardDialog.refreshOpen();
             });
         });
-        AlbumCard.setRerollHandler((owner, cap) -> {
-            if (dataService.isViewing()) return;   // read-only view of another account (#48)
-            Window win = SwingUtilities.getWindowAncestor(owner);
-            long cost = com.bestiary.service.BestiaryDataService.rerollCost(cap);
-            if (dataService.getCredits() < cost) {
-                RerollResultDialog.info(win, "Card Reroller",
-                        "You need " + cost + " credits to reroll (you have " + dataService.getCredits() + ").");
-                return;
-            }
-            RerollConfirmDialog.open(win, cap, cost, progressionService.getLevel(),
-                    dataService.bonusRerollShinyChance(), dataService.bonusRerollRarityChance(), () -> {
-                com.bestiary.model.CapturedCreature nc =
-                        dataService.rerollCard(cap, progressionService.getLevel());
-                refresh();
-                AlbumDialog.refreshOpenAlbum();
-                if (nc != null) {
-                    RerollResultDialog.open(win, cap, nc);   // MODELESS before/after
-                }
-            });
-        });
+        AlbumCard.setRerollHandler((owner, cap) ->
+                startReroll(SwingUtilities.getWindowAncestor(owner), cap));
 
         setLayout(new BorderLayout(0, 6));
         setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -248,6 +230,33 @@ public class BestiaryPanel extends PluginPanel {
 
         // Start locked — the Info/Guide tab stays browsable; a character login adds the rest.
         applyState(PanelState.LOCKED);
+    }
+
+    /**
+     * Runs the full Card Reroller flow for one card: affordability check → confirm dialog →
+     * reroll → MODELESS before/after result. The result screen's "Reroll again?" button re-enters
+     * this same flow on the freshly rerolled card, so the player can keep rerolling without
+     * hunting the card down in the album again.
+     */
+    private void startReroll(Window win, com.bestiary.model.CapturedCreature cap) {
+        if (dataService.isViewing()) return;   // read-only view of another account (#48)
+        long cost = com.bestiary.service.BestiaryDataService.rerollCost(cap);
+        if (dataService.getCredits() < cost) {
+            RerollResultDialog.info(win, "Card Reroller",
+                    "You need " + cost + " credits to reroll (you have " + dataService.getCredits() + ").");
+            return;
+        }
+        RerollConfirmDialog.open(win, cap, cost, progressionService.getLevel(),
+                dataService.bonusRerollShinyChance(), dataService.bonusRerollRarityChance(), () -> {
+            com.bestiary.model.CapturedCreature nc =
+                    dataService.rerollCard(cap, progressionService.getLevel());
+            refresh();
+            AlbumDialog.refreshOpenAlbum();
+            if (nc != null) {
+                // Pass a "reroll again" hook that re-runs this flow on the new card (same id).
+                RerollResultDialog.open(win, cap, nc, () -> startReroll(win, nc));
+            }
+        });
     }
 
     // -------------------------------------------------------------------------
@@ -499,7 +508,7 @@ public class BestiaryPanel extends PluginPanel {
         JPanel panel = new JPanel();
         panel.setOpaque(false);
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBorder(new EmptyBorder(4, 0, 0, 0));
+        panel.setBorder(new EmptyBorder(2, 0, 0, 0));
 
         // Version footer — a clickable box (whole area opens the About / version-log dialog).
         final Color idleFg = new Color(200, 200, 200), hotFg = new Color(255, 165, 0);
@@ -529,7 +538,6 @@ public class BestiaryPanel extends PluginPanel {
             @Override public void mouseEntered(java.awt.event.MouseEvent e) { style.accept(true); }
             @Override public void mouseExited(java.awt.event.MouseEvent e)  { style.accept(false); }
         });
-        panel.add(Box.createVerticalStrut(6));
         panel.add(version);
         return panel;
     }
