@@ -409,6 +409,13 @@ public class InfoTab extends JPanel {
                 "• Reroll Shine — +0.1% per tier to the shiny chance when you reroll a card.\n" +
                 "• Reroll Fortune — +1% per tier to the chance a reroll ranks a card up one rarity.\n\n" +
                 "Each card shows its current bonus and what the next tier upgrades it to before you buy."));
+        c.add(tile("No real-world value",
+                "Bestiary is a free, fan-made minigame — it's all just for fun. Bestiary Credits, cards, " +
+                "rarities, shinies and Power Levels live entirely inside this plugin: they have no " +
+                "real-world or in-game value, can't be bought, sold or traded for real money, RuneScape " +
+                "GP or items, and give no advantage in Old School RuneScape.\n\n" +
+                "Bestiary isn't affiliated with or endorsed by Jagex. Old School RuneScape is a trademark " +
+                "of Jagex Ltd; all monster names and artwork belong to Jagex and the OSRS Wiki."));
     }
 
     private void fillProgress(JPanel c) {
