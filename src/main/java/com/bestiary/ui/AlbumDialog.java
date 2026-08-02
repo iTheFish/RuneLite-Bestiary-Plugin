@@ -94,7 +94,7 @@ public class AlbumDialog extends JDialog {
 
     private static final String[] SORT_OPTIONS = {
         "Name A–Z", "Name Z–A", "Difficulty ↑", "Difficulty ↓", "Most caught",
-        "Rarity (best)", "Power (high)", "Newest first"
+        "Rarity (best)", "Power (high)", "Power (avg)", "Newest first"
     };
 
     private final Map<String, List<CapturedCreature>> capturesByNpc;
@@ -1064,6 +1064,8 @@ public class AlbumDialog extends JDialog {
                 names.sort((a, b) -> maxRarity(capturesByNpc.get(b)).ordinal()
                                    - maxRarity(capturesByNpc.get(a)).ordinal()); break;
             case "Power (high)":
+                names.sort((a, b) -> maxQuality(capturesByNpc.get(b)) - maxQuality(capturesByNpc.get(a))); break;
+            case "Power (avg)":
                 names.sort((a, b) -> avgQuality(capturesByNpc.get(b)) - avgQuality(capturesByNpc.get(a))); break;
             case "Newest first":
                 names.sort((a, b) -> latestCapture(capturesByNpc.get(b))
@@ -1093,6 +1095,12 @@ public class AlbumDialog extends JDialog {
                     return rb - ra;
                 }); break;
             case "Power (high)":
+                names.sort((a, b) -> {
+                    int qa = capturesByNpc.containsKey(a) ? maxQuality(capturesByNpc.get(a)) : 0;
+                    int qb = capturesByNpc.containsKey(b) ? maxQuality(capturesByNpc.get(b)) : 0;
+                    return qb - qa;
+                }); break;
+            case "Power (avg)":
                 names.sort((a, b) -> {
                     int qa = capturesByNpc.containsKey(a) ? avgQuality(capturesByNpc.get(a)) : 0;
                     int qb = capturesByNpc.containsKey(b) ? avgQuality(capturesByNpc.get(b)) : 0;
@@ -1162,6 +1170,11 @@ public class AlbumDialog extends JDialog {
 
     private static int avgQuality(List<CapturedCreature> captures) {
         return (int) captures.stream().mapToInt(c -> c.powerLevel()).average().orElse(0);
+    }
+
+    /** Highest single-card Power Level among a monster's captures (drives "Power (high)"). */
+    private static int maxQuality(List<CapturedCreature> captures) {
+        return captures.stream().mapToInt(c -> c.powerLevel()).max().orElse(0);
     }
 
     private static Instant latestCapture(List<CapturedCreature> captures) {
