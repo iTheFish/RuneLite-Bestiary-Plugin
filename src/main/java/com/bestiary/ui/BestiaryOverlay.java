@@ -33,6 +33,8 @@ import java.util.Random;
 public class BestiaryOverlay extends Overlay {
 
     private int panelW = 200;
+    /** Capture-card background opacity (0–255), driven by the Overlay Opacity config. */
+    private int bgAlpha = 191;
 
     // Shared phase timings (ms)
     private static final long FLY_MS      = 500;
@@ -70,6 +72,7 @@ public class BestiaryOverlay extends Overlay {
     public void applyConfig(BestiaryConfig config) {
         setPosition(toOverlayPosition(config.overlayPosition()));
         panelW = config.overlayWidth();
+        bgAlpha = Math.max(0, Math.min(255, Math.round(config.overlayOpacity() / 100f * 255f)));
     }
 
     private static OverlayPosition toOverlayPosition(OverlayPos pos) {
@@ -368,8 +371,8 @@ public class BestiaryOverlay extends Overlay {
         g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, (float) reveal));
 
         Color rc = c.rarity.displayColor;
-        // Plate
-        g.setColor(new Color(18, 18, 18, 235));
+        // Plate (background opacity is configurable via Overlay Opacity)
+        g.setColor(new Color(18, 18, 18, bgAlpha));
         g.fillRoundRect(3, 4 + dy, w - 6, h - 8, 10, 10);
         if (c.isShiny()) {
             g.setPaint(new GradientPaint(0, 4 + dy, new Color(255, 224, 120, 70),
