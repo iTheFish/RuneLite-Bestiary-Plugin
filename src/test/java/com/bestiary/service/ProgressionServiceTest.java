@@ -132,6 +132,7 @@ public class ProgressionServiceTest {
                 .npcId(1).npcName("Rat").npcCombatLevel(1)
                 .rarity(CreatureRarity.COMMON).build();
         collection.addCapture(c);
+        collection.recordLifetimeCapture(c.npcName);   // a genuine capture bumps the lifetime counter
 
         List<Achievement> newAchievements = service.recordCapture(c, true);
         assertTrue(newAchievements.contains(Achievement.FIRST_CATCH));
@@ -153,11 +154,13 @@ public class ProgressionServiceTest {
         CapturedCreature c1 = CapturedCreature.builder().npcId(1).npcName("A").npcCombatLevel(1)
                 .rarity(CreatureRarity.COMMON).build();
         collection.addCapture(c1);
+        collection.recordLifetimeCapture(c1.npcName);
         service.recordCapture(c1, true);
 
         CapturedCreature c2 = CapturedCreature.builder().npcId(2).npcName("B").npcCombatLevel(1)
                 .rarity(CreatureRarity.COMMON).build();
         collection.addCapture(c2);
+        collection.recordLifetimeCapture(c2.npcName);
         List<Achievement> second = service.recordCapture(c2, true);
         assertFalse(second.contains(Achievement.FIRST_CATCH));
     }
@@ -189,6 +192,7 @@ public class ProgressionServiceTest {
                 .npcId(1).npcName("Rat").npcCombatLevel(1)
                 .rarity(CreatureRarity.COMMON).build();
         collection.addCapture(c);
+        collection.recordLifetimeCapture(c.npcName);
         service.recordCapture(c, false); // no XP -> only the FIRST_CATCH achievement bounty
 
         assertEquals(Achievement.FIRST_CATCH.creditReward, awarded[0]);

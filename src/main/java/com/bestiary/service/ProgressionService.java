@@ -143,14 +143,16 @@ public class ProgressionService {
     public List<Achievement> checkNewAchievements(CapturedCreature latestCapture) {
         List<Achievement> newly = new ArrayList<>();
         int level      = getLevel();
-        int totalCaps  = collection.totalCaptures();
-        int species    = (int) collection.uniqueSpeciesCount();
+        // Catch-count achievements track LIFETIME captures (monotonic) — a discarded or transferred-away
+        // card still counts, and a received card does not, so use lifetimeCaptures not the held-card count.
+        int lifetimeCaps = (int) collection.lifetimeCaptures;
+        int species      = (int) collection.uniqueSpeciesCount();
 
         for (Achievement a : Achievement.values()) {
             if (state.unlockedAchievements.contains(a)) {
                 continue;
             }
-            if (isUnlocked(a, latestCapture, totalCaps, species, level)) {
+            if (isUnlocked(a, latestCapture, lifetimeCaps, species, level)) {
                 unlock(a, newly);
             }
         }
@@ -181,7 +183,7 @@ public class ProgressionService {
     }
 
     private boolean isUnlocked(Achievement a, CapturedCreature capture,
-                                int totalCaps, int species, int level) {
+                                int lifetimeCaps, int species, int level) {
         switch (a) {
             case FIRST_CATCH:
             case TEN_CATCHES:
@@ -190,7 +192,7 @@ public class ProgressionService {
             case TWO_FIFTY_CATCHES:
             case FIVE_HUNDRED_CATCHES:
             case THOUSAND_CATCHES:
-                return !a.isSpeciesBased && totalCaps >= a.countThreshold;
+                return !a.isSpeciesBased && lifetimeCaps >= a.countThreshold;
 
             case FIVE_SPECIES:
             case TWENTY_SPECIES:
