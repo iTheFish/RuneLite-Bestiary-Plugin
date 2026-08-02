@@ -530,7 +530,7 @@ public class DashboardDialog extends JDialog {
         }
         root.add(typePanel);
         root.add(gap(10));
-        root.add(sectionHeader("TOP 5 CREATURES  (captures · kills as tiebreaker)"));
+        root.add(sectionHeader("TOP 5 CREATURES  (cards held · kills as tiebreaker)"));
         root.add(buildTopSpeciesSection(col));
         root.add(gap(10));
 
@@ -558,7 +558,7 @@ public class DashboardDialog extends JDialog {
                         JLabel nl = new JLabel("● " + e.getKey());
                         nl.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
                         nl.setForeground(rarest.displayColor);
-                        JLabel cl = new JLabel(e.getValue().size() + " caught", SwingConstants.RIGHT);
+                        JLabel cl = new JLabel(e.getValue().size() + " held", SwingConstants.RIGHT);
                         cl.setFont(FontManager.getRunescapeSmallFont());
                         cl.setForeground(MUTED);
                         row.add(nl, BorderLayout.WEST);
@@ -1842,7 +1842,7 @@ public class DashboardDialog extends JDialog {
         y += 8;
 
         // Top 5 monsters — rarity breakdown table
-        y = drawCardSectionHeader(g, "TOP 5 CREATURES", y, W, PAD);
+        y = drawCardSectionHeader(g, "TOP 5 CREATURES (CARDS HELD)", y, W, PAD);
         y += 6;
         CreatureRarity[] rarOrder = {CreatureRarity.COMMON, CreatureRarity.UNCOMMON, CreatureRarity.RARE,
                 CreatureRarity.EPIC, CreatureRarity.LEGENDARY, CreatureRarity.MYTHIC};
