@@ -28,7 +28,6 @@ import java.util.function.Consumer;
 public class InfoTab extends JPanel {
 
     private static final Color ORANGE = new Color(255, 165, 0);
-    private static final Color GREEN  = new Color(80, 200, 80);
     private static final NumberFormat FMT = NumberFormat.getNumberInstance(Locale.UK);
 
     private final BestiaryDataService dataService;
@@ -285,7 +284,7 @@ public class InfoTab extends JPanel {
                 "Did that level 92 achievement bring back some memories? You're deep in it now, but " +
                 "level 92 is only halfway to 99 in XP. The last stretch is all about the best " +
                 "XP-per-hour and the rarest catches.\n\n" +
-                "Catch rates cap out (beginner 60%, boss 8%), high-value captures are capped at the " +
+                "Catch rates cap out (beginner 70%, boss 25%), high-value captures are capped at the " +
                 "combat-100 XP scale, and top rarities and shinies stay genuinely rare, so the " +
                 "album's final slots and the flashiest cards are a real flex. Keep at it: 99 " +
                 "Bestiary and a full album await."));
@@ -302,12 +301,12 @@ public class InfoTab extends JPanel {
         c.add(tile("Catch rate",
                 "Each kill rolls a capture attempt. The chance depends on two things: " +
                 "the monster's difficulty tier and your current Capture Level.\n\n" +
-                "Beginner (cows, goblins): 20% at level 1, rising to 60% at level 99.\n" +
-                "Easy (lesser demons, skeletons): 15% → 50%.\n" +
-                "Medium (hill giants, moss giants): 10% → 40%.\n" +
-                "Hard (hellhounds, gargoyles): 6% → 28%.\n" +
-                "Elite (Adamant/Rune dragons): 3% → 15%.\n" +
-                "Boss (Cerberus, Callisto, etc.): 1.5% → 8%.\n\n" +
+                "Beginner (cows, goblins): 25% at level 1, rising to 70% at level 99.\n" +
+                "Easy (skeletons, hobgoblins): 20% → 65%.\n" +
+                "Medium (fire giants, bloodvelds): 15% → 55%.\n" +
+                "Hard (hellhounds, gargoyles): 10% → 50%.\n" +
+                "Elite (Adamant/Rune dragons): 5% → 35%.\n" +
+                "Boss (Cerberus, Callisto, etc.): 3% → 25%.\n\n" +
                 "Only catalogued roster monsters are tracked — off-roster NPCs are ignored."));
         c.add(tile("Rarity",
                 "When a capture succeeds, a second weighted roll picks the rarity. " +
@@ -381,7 +380,7 @@ public class InfoTab extends JPanel {
                 "Right-click a card → 'Reroll (shop)…' to re-roll its stats and shiny at the " +
                 "same monster and rarity — a chance to improve a roll or hit a shiny.\n\n" +
                 "The cost scales with the card's difficulty × rarity (shiny doesn't change it): from " +
-                "25 credits for a Beginner Common up to 4,000 for a Boss Mythic.\n\n" +
+                "20 credits for a Beginner Common up to 1,200 for a Boss Mythic.\n\n" +
                 "A shiny stays shiny; a non-shiny gets a fresh shiny roll (raised by the Reroll Shine " +
                 "shop unlock). Non-Mythic cards have a 5% base chance to rank up one rarity " +
                 "(raised by the Reroll Fortune shop unlock). Your " +
@@ -460,12 +459,9 @@ public class InfoTab extends JPanel {
                 "is sent to your chatbox.\n\n" +
                 "The chat message is controlled by 'Notify On Level Up' in Config (on by default) — " +
                 "turn it off if you only want the on-screen banner."));
-        c.add(tile("Reset Collection",
-                "The 'Reset Collection' button at the bottom of the panel permanently deletes all " +
+        c.add(tile("Reset Progress & Collection",
+                "The 'Reset Progress & Collection?' button on the Progress tab permanently deletes all " +
                 "captures, kill counts, XP, levels and achievements. You are asked to confirm twice."));
-        c.add(Box.createVerticalStrut(4));
-        c.add(tipRow("Dev: use 'Capture Rate Override' (FORCE_100 / FORCE_0), 'Force Rarity' and " +
-                "'Always Roll Shiny' in the Developer Tools config section for testing."));
     }
 
     // -------------------------------------------------------------------------
@@ -759,18 +755,4 @@ public class InfoTab extends JPanel {
         return panel;
     }
 
-    private static JPanel tipRow(String text) {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setOpaque(false);
-        panel.setAlignmentX(LEFT_ALIGNMENT);
-        panel.setBorder(BorderFactory.createCompoundBorder(
-                new MatteBorder(0, 3, 0, 0, GREEN),
-                new EmptyBorder(3, 8, 3, 0)));
-
-        JLabel label = new JLabel("<html>" + text + "</html>");
-        label.setFont(FontManager.getRunescapeSmallFont());
-        label.setForeground(GREEN);
-        panel.add(label, BorderLayout.CENTER);
-        return panel;
-    }
 }
