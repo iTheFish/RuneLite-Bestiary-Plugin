@@ -158,6 +158,16 @@ src/main/java/com/bestiary/
   util/               — RarityRoller, OddsCalculator, XpTable, CardId, RegionNames
 ```
 
+## Disclaimer
+
+Bestiary is a free, fan-made minigame for entertainment only. Bestiary Credits, cards, rarities,
+shinies and Power Levels live entirely inside the plugin — they have **no real-world or in-game
+value** and cannot be bought, sold, or traded for real money, RuneScape gold, or items. Nothing in
+Bestiary affects your Old School RuneScape account or grants any in-game advantage.
+
+Bestiary is not affiliated with, endorsed by, or associated with Jagex Ltd. Old School RuneScape is a
+trademark of Jagex Ltd; all monster names and artwork are the property of Jagex and/or the OSRS Wiki.
+
 ## Licence
 
 BSD 2-Clause — see [LICENSE](LICENSE).
