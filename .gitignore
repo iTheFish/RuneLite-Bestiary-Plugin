@@ -14,3 +14,8 @@ build/
 
 # Local scratch / review CSVs (kept locally, not published)
 *.csv
+
+# Internal design / handover docs — kept locally, not published to GitHub
+docs/CARD-STATS.md
+docs/multi-account-design.md
+docs/PLUGIN-HUB-SUBMISSION.md
