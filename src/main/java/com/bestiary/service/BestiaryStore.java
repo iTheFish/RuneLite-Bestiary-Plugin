@@ -102,6 +102,11 @@ public class BestiaryStore {
     });
     private final Object lock = new Object();
     private StoreData pending;              // guarded by lock
+    // The write target is captured alongside the buffered data at save() time, so a debounced write
+    // always lands in the file that was active when the data was buffered — even if the active
+    // account is repointed (setActiveAccount) before the background writer runs.
+    private File pendingFile;               // guarded by lock
+    private File pendingBackup;             // guarded by lock
     private ScheduledFuture<?> scheduled;   // guarded by lock
 
     @Inject
@@ -190,9 +195,12 @@ public class BestiaryStore {
 
     /** Debounced save — coalesces bursts and writes ~1s after the last change on a background thread. */
     public void save(StoreData data) {
-        if (file == null) return;   // no active account — nothing to persist
+        File f = file, b = backup;   // snapshot the active target as of this call
+        if (f == null) return;       // no active account — nothing to persist
         synchronized (lock) {
             pending = data;
+            pendingFile = f;
+            pendingBackup = b;
             if (scheduled == null || scheduled.isDone()) {
                 scheduled = writer.schedule(this::flush, DEBOUNCE_MS, TimeUnit.MILLISECONDS);
             }
@@ -201,37 +209,39 @@ public class BestiaryStore {
 
     /** Immediate synchronous save (shutdown / wipe / user-initiated). Cancels any pending debounce. */
     public void saveNow(StoreData data) {
-        if (file == null) return;   // no active account — nothing to persist
+        File f = file, b = backup;   // snapshot the active target as of this call
+        if (f == null) return;       // no active account — nothing to persist
         synchronized (lock) {
             if (scheduled != null) scheduled.cancel(false);
             pending = null;
+            pendingFile = null;
+            pendingBackup = null;
         }
-        write(data);
+        writeTo(f, b, data);
     }
 
     private void flush() {
-        StoreData d;
+        StoreData d; File f, b;
         synchronized (lock) {
-            d = pending;
-            pending = null;
+            d = pending; f = pendingFile; b = pendingBackup;
+            pending = null; pendingFile = null; pendingBackup = null;
         }
-        if (d != null) write(d);
+        if (d != null && f != null) writeTo(f, b, d);
     }
 
-    /** Writes any debounced-but-unwritten snapshot to the CURRENT active file, synchronously. */
+    /**
+     * Writes any debounced-but-unwritten snapshot to the file it was buffered for, synchronously.
+     * Called before an account repoint (setActiveAccount) and on logout, so the previous account's
+     * buffered data is committed to its own file first.
+     */
     private void flushPending() {
-        StoreData d;
+        StoreData d; File f, b;
         synchronized (lock) {
             if (scheduled != null) scheduled.cancel(false);
-            d = pending;
-            pending = null;
+            d = pending; f = pendingFile; b = pendingBackup;
+            pending = null; pendingFile = null; pendingBackup = null;
         }
-        if (d != null) write(d);
-    }
-
-    private synchronized void write(StoreData d) {
-        if (file == null) return;
-        writeTo(file, backup, d);
+        if (d != null && f != null) writeTo(f, b, d);
     }
 
     /** Crash-safe write of {@code d} to {@code target} (temp file → back up previous → atomic rename). */
