@@ -55,16 +55,11 @@ public final class RarityRoller {
         return weights[r.ordinal()] / total;
     }
 
-    /** Legacy uniform-floor variant — treats {@code floor} as every stat's base. */
+    /** Legacy uniform-floor variant — treats {@code floor} as every stat's base (incl. Prayer). */
     public static CreatureQuality generateQuality(CombatClass cls, CreatureRarity rarity,
                                                   int floor, Random rng) {
         int[] bases = {floor, floor, floor, floor, floor, floor};
-        return generateQuality(cls, rarity, bases, rng, false);
-    }
-
-    public static CreatureQuality generateQuality(CombatClass cls, CreatureRarity rarity,
-                                                  int[] bases, Random rng) {
-        return generateQuality(cls, rarity, bases, rng, false);
+        return generateQuality(cls, rarity, bases, floor, rng, false);
     }
 
     /**
@@ -80,12 +75,14 @@ public final class RarityRoller {
      * per-stat bases already encode each monster's offensive profile (it remains a display label).
      */
     public static CreatureQuality generateQuality(CombatClass cls, CreatureRarity rarity,
-                                                  int[] bases, Random rng, boolean shiny) {
-        int[] stats = new int[6];
-        for (int i = 0; i < 6; i++) {
-            // Agility (index 5), like Prayer, is a utility stat rolled at HALF scale.
-            boolean utility = (i == AGILITY_INDEX);
-            int[] band = utility ? utilityBand(bases[i], rarity) : statBand(bases[i], rarity);
+                                                  int[] bases, int prayerBase, Random rng, boolean shiny) {
+        // Bases for all 7 stats: the 6 combat/agility bases + Prayer (index 6).
+        int[] allBases = {bases[0], bases[1], bases[2], bases[3], bases[4], bases[5], prayerBase};
+        int[] stats = new int[7];
+        for (int i = 0; i < 7; i++) {
+            // Agility (index 5) and Prayer (index 6) are utility stats rolled at HALF scale.
+            boolean utility = (i == AGILITY_INDEX || i == PRAYER_INDEX);
+            int[] band = utility ? utilityBand(allBases[i], rarity) : statBand(allBases[i], rarity);
             if (shiny) {
                 // Anchor to the TOP of the band + bonus, so a shiny always beats a
                 // same-rarity non-shiny (which can only reach band top). Utility stats
@@ -96,7 +93,7 @@ public final class RarityRoller {
                 stats[i] = band[0] + (band[1] > band[0] ? rng.nextInt(band[1] - band[0] + 1) : 0);
             }
         }
-        return new CreatureQuality(stats[0], stats[1], stats[2], stats[3], stats[4], stats[5]);
+        return new CreatureQuality(stats[0], stats[1], stats[2], stats[3], stats[4], stats[5], stats[6]);
     }
 
     // Unified stat model. Every rarity rolls a band expressed as a LIFT FRACTION of the
@@ -147,6 +144,7 @@ public final class RarityRoller {
     // combat stats). They stay ~1 for low-base monsters at low rarity and only climb at high
     // rarity / shiny (base 1 → ~40 at Mythic). Same banded, overlapping model — just halved lift.
     public static final int    AGILITY_INDEX = 5;
+    public static final int    PRAYER_INDEX  = 6;
     public static final double UTILITY_SCALE = 0.5;
 
     /** The inclusive [lo, hi] range a non-shiny utility stat (Prayer/Agility) rolls in. */
@@ -170,15 +168,5 @@ public final class RarityRoller {
     public static int[] shinyUtilityBand(int base, CreatureRarity rarity) {
         int hi = utilityBand(base, rarity)[1];
         return new int[]{clampStat(hi + SHINY_MIN_BONUS / 2), clampStat(hi + SHINY_MAX_BONUS / 2)};
-    }
-
-    /** Rolls a capture's prayer: a utility stat (half scale); shiny gets a smaller boost. */
-    public static int rollPrayer(int base, CreatureRarity rarity, Random rng, boolean shiny) {
-        int[] b = utilityBand(base, rarity);
-        if (shiny) {
-            int bonus = (SHINY_MIN_BONUS + rng.nextInt(SHINY_MAX_BONUS - SHINY_MIN_BONUS + 1)) / 2;
-            return clampStat(b[1] + bonus);   // top of the band + bonus
-        }
-        return b[0] + (b[1] > b[0] ? rng.nextInt(b[1] - b[0] + 1) : 0);
     }
 }

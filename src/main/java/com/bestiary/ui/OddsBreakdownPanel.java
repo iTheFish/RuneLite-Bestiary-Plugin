@@ -35,7 +35,7 @@ final class OddsBreakdownPanel {
         root.add(Box.createVerticalStrut(10));
 
         // Power Level: 7-stat average + HP at 1/6 weight + combat level at 1/6 weight (Prayer is the 7th stat)
-        int sevenStats = r.statSum + r.prayer;
+        int sevenStats = r.statSum;
         int statAvg = Math.round(sevenStats / 7f);
         Color nearWhite = new Color(235, 235, 235);
         root.add(header("Power Level", bodyBold));

@@ -63,9 +63,6 @@ public class CapturedCreature {
     /** True when this capture won the independent shiny roll at capture time. Persisted. */
     public final boolean shiny;
 
-    /** Rolled Prayer level for this capture (rarity-banded, half stat scale). Persisted. */
-    public final int prayer;
-
     /** Damage the player dealt to this kill ("observed HP"). 0 = unknown → use placeholder. Persisted. */
     public final int observedHp;
 
@@ -90,23 +87,21 @@ public class CapturedCreature {
     /** An immutable snapshot of the card's state just before one reroll replaced it. */
     public static final class RerollState {
         public final CreatureRarity rarity;
-        /** The 6 combat stats at this point. May be null for reroll entries stored before this was tracked. */
+        /** The 7 rolled stats (incl. Prayer) at this point. May be null for pre-tracking entries. */
         public final CreatureQuality quality;
         public final int powerLevel;
         public final boolean shiny;
-        public final int prayer;
         /** Player who performed the reroll that superseded this state. */
         public final String rerolledBy;
         /** UTC epoch second the reroll happened. */
         public final long epoch;
 
         public RerollState(CreatureRarity rarity, CreatureQuality quality, int powerLevel, boolean shiny,
-                           int prayer, String rerolledBy, long epoch) {
+                           String rerolledBy, long epoch) {
             this.rarity     = rarity;
             this.quality    = quality;
             this.powerLevel = powerLevel;
             this.shiny      = shiny;
-            this.prayer     = prayer;
             this.rerolledBy = rerolledBy != null ? rerolledBy : "";
             this.epoch      = epoch;
         }
@@ -152,7 +147,6 @@ public class CapturedCreature {
         this.originalOwner     = firstNonEmpty(b.originalOwner, this.playerName);
         this.currentOwner      = firstNonEmpty(b.currentOwner, this.playerName);
         this.shiny             = b.shiny;
-        this.prayer            = b.prayer >= 0 ? b.prayer : MonsterRoster.getPrayer(b.npcName);
         this.observedHp        = b.observedHp;
         this.shinyBonus        = b.shinyBonus;
         this.rerolledBy        = b.rerolledBy != null ? b.rerolledBy : "";
@@ -184,7 +178,6 @@ public class CapturedCreature {
         private String originalOwner = "";
         private String currentOwner = "";
         private boolean shiny = false;
-        private int prayer = -1;   // -1 = unset → defaults to the monster's base prayer
         private int observedHp = 0;
         private double shinyBonus = 0.0;
         private String rerolledBy = "";
@@ -204,7 +197,6 @@ public class CapturedCreature {
         public Builder originalOwner(String v)     { this.originalOwner = v; return this; }
         public Builder currentOwner(String v)      { this.currentOwner = v; return this; }
         public Builder shiny(boolean v)           { this.shiny = v; return this; }
-        public Builder prayer(int v)              { this.prayer = v; return this; }
         public Builder observedHp(int v)          { this.observedHp = v; return this; }
         public Builder shinyBonus(double v)       { this.shinyBonus = v; return this; }
         public Builder rerolledBy(String v)       { this.rerolledBy = v; return this; }
@@ -212,7 +204,7 @@ public class CapturedCreature {
 
         public CapturedCreature build() {
             if (quality == null) {
-                quality = new CreatureQuality(50, 50, 50, 50, 50, 50);
+                quality = new CreatureQuality(50, 50, 50, 50, 50, 50, 10);
             }
             return new CapturedCreature(this);
         }
@@ -268,7 +260,7 @@ public class CapturedCreature {
      * stats/prayer are flavour.
      */
     public int powerLevel() {
-        return Math.round((quality.statSum() + prayer) / 7f
+        return Math.round(quality.statSum() / 7f
                 + hitpoints() / 6f
                 + Math.max(0, npcCombatLevel) / 6f);
     }

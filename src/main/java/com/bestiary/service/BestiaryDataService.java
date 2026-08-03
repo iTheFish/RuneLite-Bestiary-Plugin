@@ -623,10 +623,9 @@ public class BestiaryDataService {
         // A shiny stays shiny; a non-shiny gets a fresh shiny roll (raised by the Reroll Shine shop upgrade).
         boolean shiny = c.isShiny()
                 || rerollRng.nextDouble() < CaptureService.shinyChance(currentLevel) + bonusRerollShinyChance();
+        int prayerBase = com.bestiary.model.MonsterRoster.getPrayer(c.npcName);
         com.bestiary.model.CreatureQuality q =
-                com.bestiary.util.RarityRoller.generateQuality(cls, rarity, bases, rerollRng, shiny);
-        int prayer = com.bestiary.util.RarityRoller.rollPrayer(
-                com.bestiary.model.MonsterRoster.getPrayer(c.npcName), rarity, rerollRng, shiny);
+                com.bestiary.util.RarityRoller.generateQuality(cls, rarity, bases, prayerBase, rerollRng, shiny);
         // The reroller is the account performing the reroll now (the active/current owner), NOT the
         // card's original capturer — otherwise a traded-in card credits its reroll to the wrong account.
         String reroller = activeAccountName != null && !activeAccountName.isEmpty() ? activeAccountName
@@ -635,14 +634,14 @@ public class BestiaryDataService {
         // Log the card's pre-reroll state, then carry the whole history forward onto the new card.
         java.util.List<CapturedCreature.RerollState> history = new java.util.ArrayList<>(c.rerollHistory);
         history.add(new CapturedCreature.RerollState(
-                c.rarity, c.quality, c.powerLevel(), c.isShiny(), c.prayer, reroller, java.time.Instant.now().getEpochSecond()));
+                c.rarity, c.quality, c.powerLevel(), c.isShiny(), reroller, java.time.Instant.now().getEpochSecond()));
         CapturedCreature nc = CapturedCreature.builder()
                 .id(c.id).npcId(c.npcId).npcName(c.npcName).npcCombatLevel(c.npcCombatLevel)
                 .rarity(rarity).quality(q).captureTime(c.captureTime).regionName(c.regionName)
                 .captureLevel(currentLevel)   // reroll happened now → odds reflect the current level
                 .killsBeforeCapture(c.killsBeforeCapture)
                 .playerName(c.playerName).originalOwner(c.originalOwner).currentOwner(c.currentOwner)
-                .shiny(shiny).prayer(prayer).observedHp(c.observedHp)
+                .shiny(shiny).observedHp(c.observedHp)
                 .shinyBonus(bonusRerollShinyChance())   // reroll re-rolled shiny with the current reroll bonus
                 .rerolledBy(reroller)
                 .rerollHistory(history)

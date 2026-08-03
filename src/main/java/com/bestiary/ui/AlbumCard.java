@@ -240,7 +240,7 @@ public class AlbumCard extends JPanel {
         // shiny would make a higher-rarity non-shiny cover render as shiny (#66).
         this.hasShiny       = best.isShiny();
         this.overallQuality = best.powerLevel();
-        this.prayerValue    = best.prayer;
+        this.prayerValue    = best.quality.prayer;
         // Show the SAME HP the power level was computed from (observed damage preferred),
         // so the heart pill matches the capture popup and the P: value — not the wiki default.
         this.hitpoints      = best.hitpoints();

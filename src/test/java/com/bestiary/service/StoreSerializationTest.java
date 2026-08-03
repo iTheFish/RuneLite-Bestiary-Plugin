@@ -48,14 +48,14 @@ public class StoreSerializationTest {
         CapturedCreature c = CapturedCreature.builder()
                 .npcId(5).npcName("Goblin").npcCombatLevel(2)
                 .rarity(CreatureRarity.MYTHIC)
-                .quality(new CreatureQuality(90, 80, 70, 60, 50, 40))
+                .quality(new CreatureQuality(90, 80, 70, 60, 50, 40, 33))
                 .captureTime(Instant.ofEpochSecond(1_700_000_000L))
                 .regionName("Lumbridge").captureLevel(50).killsBeforeCapture(7)
-                .playerName("Zezima").shiny(true).prayer(33).observedHp(120)
+                .playerName("Zezima").shiny(true).observedHp(120)
                 .rerolledBy("Zezima")
                 .rerollHistory(Collections.singletonList(
                         new CapturedCreature.RerollState(CreatureRarity.EPIC,
-                                new CreatureQuality(40, 41, 42, 43, 44, 45), 42, false, 10, "Zezima", 1_699_000_000L)))
+                                new CreatureQuality(40, 41, 42, 43, 44, 45, 10), 42, false, "Zezima", 1_699_000_000L)))
                 .build();
 
         Gson g = gson();
@@ -68,7 +68,7 @@ public class StoreSerializationTest {
         assertEquals(c.quality.attack, back.quality.attack);
         assertEquals(c.quality.agility, back.quality.agility);
         assertTrue(back.isShiny());
-        assertEquals(c.prayer, back.prayer);
+        assertEquals(c.quality.prayer, back.quality.prayer);
         assertEquals(c.observedHp, back.observedHp);
         assertEquals(1, back.rerollCount());
         assertEquals("Zezima", back.rerollHistory.get(0).rerolledBy);
@@ -102,7 +102,7 @@ public class StoreSerializationTest {
         Gson g = gson();
         BestiaryStore.StoreData back = g.fromJson(g.toJson(d), BestiaryStore.StoreData.class);
 
-        assertEquals(1, back.version);
+        assertEquals(BestiaryStore.VERSION, back.version);
         assertEquals(12_345L, back.credits);
         assertEquals(99_999L, back.totalXp);
         assertEquals(Integer.valueOf(42), back.killCounts.get("Goblin"));
