@@ -6,11 +6,11 @@ package com.bestiary.model;
  */
 public enum CaptureNotifyFilter {
 
-    ALL      (CreatureRarity.COMMON,    "All captures"),
-    UNCOMMON (CreatureRarity.UNCOMMON,  "Uncommon and above"),
-    RARE     (CreatureRarity.RARE,      "Rare and above"),
-    EPIC     (CreatureRarity.EPIC,      "Epic and above"),
-    LEGENDARY(CreatureRarity.LEGENDARY, "Legendary and above"),
+    ALL      (CreatureRarity.COMMON,    "All"),
+    UNCOMMON (CreatureRarity.UNCOMMON,  "Uncommon+"),
+    RARE     (CreatureRarity.RARE,      "Rare+"),
+    EPIC     (CreatureRarity.EPIC,      "Epic+"),
+    LEGENDARY(CreatureRarity.LEGENDARY, "Legendary+"),
     MYTHIC   (CreatureRarity.MYTHIC,    "Mythic only");
 
     private final CreatureRarity min;

@@ -98,7 +98,9 @@ public class BestiaryPlugin extends Plugin {
 
         // Achievements unlocked by non-capture actions (rerolls, favourites, purchases) are detected
         // on panel refresh; announce them in chat just like capture achievements.
-        BestiaryPanel.setAchievementNotifier(list -> list.forEach(this::sendAchievementMessage));
+        BestiaryPanel.setAchievementNotifier(list -> {
+            if (config.notifyOnAchievement()) list.forEach(this::sendAchievementMessage);
+        });
 
         navButton = NavigationButton.builder()
                 .tooltip("Bestiary")
@@ -249,8 +251,10 @@ public class BestiaryPlugin extends Plugin {
         dataService.incrementKillCount(npcName);
         sessionTracker.addKill();
         List<Achievement> killAchievements = progressionService.checkKillAchievements();
-        for (Achievement a : killAchievements) {
-            sendAchievementMessage(a);
+        if (config.notifyOnAchievement()) {
+            for (Achievement a : killAchievements) {
+                sendAchievementMessage(a);
+            }
         }
 
         // Snapshot the level before ANY XP (kill or capture) so we can announce the level-up
@@ -333,8 +337,10 @@ public class BestiaryPlugin extends Plugin {
                 }
             }
 
-            for (Achievement a : newAchievements) {
-                sendAchievementMessage(a);
+            if (config.notifyOnAchievement()) {
+                for (Achievement a : newAchievements) {
+                    sendAchievementMessage(a);
+                }
             }
         });
 

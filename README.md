@@ -129,13 +129,14 @@ notes each default in brackets.
 **Notifications**
 
 - **Notify on Capture** *(on)* — post a chat message on each capture.
-- **Notify for Rarity** *(All captures)* — which captures produce a chat message: all of them, or
-  only a chosen rarity and above (Uncommon+, Rare+, Epic+, Legendary+, or Mythic only). Shinies
-  always announce regardless of this setting.
+- **Notify for Rarity** *(All)* — which captures produce a chat message: all of them, or only a
+  chosen rarity and above (Uncommon+, Rare+, Epic+, Legendary+, or Mythic only). Shinies always
+  announce regardless of this setting.
 - **Chat Notification Mode** *(Verbose)* — **Verbose** posts one message per capture (with the kill
   number, so identical captures aren't silently de-duplicated by the client). **Batched** rolls up
   captures of the same monster + rarity that happen within a 5-second lull into one `Nx …` summary.
   Shinies always post individually in either mode.
+- **Notify on Achievement** *(on)* — post a chat message when you unlock an achievement.
 - **Notify on Level Up** *(on)* — post a chat message when your Capture Level increases.
 
 **Overlay & animation**

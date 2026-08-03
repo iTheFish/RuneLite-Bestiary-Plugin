@@ -14,7 +14,7 @@ public interface BestiaryConfig extends Config {
 
     @ConfigSection(
             name = "Notifications",
-            description = "Chat messages for captures and level-ups",
+            description = "Chat messages for captures, achievements and level-ups",
             position = 0
     )
     String notificationsSection = "notifications";
@@ -49,8 +49,9 @@ public interface BestiaryConfig extends Config {
     @ConfigItem(
             keyName = "notifyRarityFilter",
             name = "Notify for Rarity",
-            description = "Which captures produce a chat notification: all of them, or only a chosen "
-                        + "rarity and above. Shinies always notify regardless of this setting.",
+            description = "<html>Which captures produce a chat notification:<br>"
+                        + "all of them, or only a chosen rarity and above.<br>"
+                        + "Shinies always notify regardless.</html>",
             section = notificationsSection,
             position = 1
     )
@@ -61,9 +62,11 @@ public interface BestiaryConfig extends Config {
     @ConfigItem(
             keyName = "chatNotifyMode",
             name = "Chat Notification Mode",
-            description = "Verbose: one message per capture with kill# (prevents duplicates). "
-                        + "Batched: accumulates captures of the same monster over a 5s lull, "
-                        + "then posts a single count. Shinies always post individually.",
+            description = "<html>Verbose: one message per capture, with the kill<br>"
+                        + "number so identical captures aren't dropped.<br>"
+                        + "Batched: rolls up captures of the same monster<br>"
+                        + "over a 5s lull into one count message.<br>"
+                        + "Shinies always post individually either way.</html>",
             section = notificationsSection,
             position = 2
     )
@@ -72,11 +75,24 @@ public interface BestiaryConfig extends Config {
     }
 
     @ConfigItem(
-            keyName = "notifyOnLevelUp",
-            name = "Notify on Level Up",
-            description = "Show a chat message when the Capture Level increases",
+            keyName = "notifyOnAchievement",
+            name = "Notify on Achievement",
+            description = "<html>Show a chat message when you unlock<br>"
+                        + "an achievement</html>",
             section = notificationsSection,
             position = 3
+    )
+    default boolean notifyOnAchievement() {
+        return true;
+    }
+
+    @ConfigItem(
+            keyName = "notifyOnLevelUp",
+            name = "Notify on Level Up",
+            description = "<html>Show a chat message when the Capture<br>"
+                        + "Level increases</html>",
+            section = notificationsSection,
+            position = 4
     )
     default boolean notifyOnLevelUp() {
         return true;
@@ -87,7 +103,8 @@ public interface BestiaryConfig extends Config {
     @ConfigItem(
             keyName = "showOverlay",
             name = "Show Capture Overlay",
-            description = "Display an in-game overlay notification when a creature is captured",
+            description = "<html>Display an in-game overlay notification<br>"
+                        + "when a creature is captured</html>",
             section = overlaySection,
             position = 0
     )
@@ -98,7 +115,8 @@ public interface BestiaryConfig extends Config {
     @ConfigItem(
             keyName = "showCaptureAnimation",
             name = "Show Capture Animation",
-            description = "Pokeball-style shake animation on each kill attempt (shows before capture result)",
+            description = "<html>Pokeball-style shake animation on each kill<br>"
+                        + "attempt (shows before the capture result)</html>",
             section = overlaySection,
             position = 1
     )
@@ -109,7 +127,8 @@ public interface BestiaryConfig extends Config {
     @ConfigItem(
             keyName = "animationShowMisses",
             name = "Animate Failed Catches",
-            description = "Show the animation even when the capture attempt fails (requires animation enabled)",
+            description = "<html>Show the animation even when the capture<br>"
+                        + "attempt fails (requires animation enabled)</html>",
             section = overlaySection,
             position = 2
     )
@@ -120,7 +139,8 @@ public interface BestiaryConfig extends Config {
     @ConfigItem(
             keyName = "showLevelUpOverlay",
             name = "Show Level-Up Banner",
-            description = "Play the on-screen level-up banner when your Capture Level increases",
+            description = "<html>Play the on-screen level-up banner when<br>"
+                        + "your Capture Level increases</html>",
             section = overlaySection,
             position = 3
     )
@@ -155,8 +175,9 @@ public interface BestiaryConfig extends Config {
     @ConfigItem(
             keyName = "overlayOpacity",
             name = "Overlay Opacity",
-            description = "How opaque the capture overlay's background panel is, as a percentage "
-                        + "(20–100). Lower is more see-through, so it blocks less of the screen.",
+            description = "<html>How opaque the capture overlay's background is,<br>"
+                        + "as a percentage (20–100). Lower is more<br>"
+                        + "see-through, so it blocks less of the screen.</html>",
             section = overlaySection,
             position = 6
     )
@@ -169,7 +190,8 @@ public interface BestiaryConfig extends Config {
     @ConfigItem(
             keyName = "autoShimmer",
             name = "Auto-shimmer EPIC+ Cards",
-            description = "Automatically play the foil shimmer on Epic+ cards in the Album view every 10 seconds",
+            description = "<html>Automatically play the foil shimmer on Epic+<br>"
+                        + "cards in the Album view every 10 seconds</html>",
             section = albumSection,
             position = 0
     )
