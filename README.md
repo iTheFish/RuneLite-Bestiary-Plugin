@@ -122,41 +122,46 @@ Accounts:
 
 ## Settings
 
-All settings live under the **Bestiary** config group (RuneLite sidebar → wrench icon → Bestiary).
-Sensible defaults ship out of the box — the list below notes each default in brackets.
+Settings live under the **Bestiary** config group (RuneLite sidebar → wrench icon → Bestiary),
+organised into three collapsible sections. Sensible defaults ship out of the box — the list below
+notes each default in brackets.
 
 **Notifications**
 
 - **Notify on Capture** *(on)* — post a chat message on each capture.
-- **Notify Rare+ Only** *(off)* — restrict those messages to Rare rarity and above. Shinies always
+- **Notify for Rarity** *(All)* — which captures produce a chat message: all of them, or only a
+  chosen rarity and above (Uncommon+, Rare+, Epic+, Legendary+, or Mythic only). Shinies always
   announce regardless of this setting.
-- **Notify on Level Up** *(on)* — post a chat message when your Capture Level increases.
 - **Chat Notification Mode** *(Verbose)* — **Verbose** posts one message per capture (with the kill
   number, so identical captures aren't silently de-duplicated by the client). **Batched** rolls up
-  captures of the same monster + rarity that happen within a 5-second lull into one `Nx …` summary.
+  captures of the same monster + rarity that happen within a 9-second lull into one `Nx …` summary.
   Shinies always post individually in either mode.
+- **Notify on Achievement** *(on)* — post a chat message when you unlock an achievement.
+- **Notify on Level Up** *(on)* — post a chat message when your Capture Level increases.
 
 **Overlay & animation**
 
 - **Show Capture Overlay** *(on)* — the on-screen card reveal shown when you catch something.
-- **Show Capture Animation** *(off)* — the collection-jar shake sequence that plays *before* the
+- **Show Capture Animation** *(on)* — the collection-jar shake sequence that plays *before* the
   result on each kill attempt.
 - **Animate Failed Catches** *(off)* — extends that animation to failed attempts too (requires the
   capture animation to be enabled).
+- **Show Level-Up Banner** *(on)* — play the on-screen banner when your Capture Level increases.
 - **Overlay Position** *(Top center)* — which edge/corner of the screen the overlay appears at.
 - **Overlay Width** *(200px; range 150–300)* — width of the overlay panel.
 - **Overlay Opacity** *(75%; range 20–100)* — how opaque the overlay's background is. Lower is more
   see-through, so it blocks less of the screen.
 
-**Progression & album**
+**Album & images**
 
-- **Capture XP Enabled** *(on)* — award bonus capture XP in addition to kill XP.
 - **Auto-shimmer EPIC+ Cards** *(on)* — periodically play the foil shimmer on Epic+ cards in the
   Album, every 10 seconds.
 - **Fetch NPC images from the Wiki** *(off)* — the only setting that touches the network. Downloads
   monster artwork from the OSRS Wiki to show on cards and in the album; only the monster's name is
   requested (no account or personal data), and images are cached to disk. Off by default — turn it
-  on for the best album experience. See *Data & privacy* below.
+  on to sync images. This setting only controls **network fetching**: once images are cached you can
+  turn it back off and keep seeing them, then re-enable it later to fetch newly added monsters. See
+  *Data & privacy* below.
 
 ## Data & privacy
 

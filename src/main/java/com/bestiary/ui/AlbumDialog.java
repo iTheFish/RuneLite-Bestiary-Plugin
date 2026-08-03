@@ -132,6 +132,9 @@ public class AlbumDialog extends JDialog {
     private java.time.Instant   detailFilterCapture  = null;
     private boolean             detailFilterShiny    = false;
 
+    // Catalog "turn on wiki images" nudge — shown only while some monster still lacks an image
+    private JLabel            imgHint;
+
     // Detail bar controls
     private JPanel            topBarHolder;
     private JLabel            detailTitleLabel;
@@ -301,12 +304,14 @@ public class AlbumDialog extends JDialog {
             dRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
             dRow.setBorder(new EmptyBorder(4, 0, 0, 0));
             dRow.add(discardBtn, BorderLayout.WEST);
-            // Nudge to enable wiki images when they're off (best album experience).
-            if (imageService != null && !imageService.isEnabled()) {
-                JLabel imgHint = new JLabel("Turn on 'Fetch NPC images from the Wiki' in config for the best experience");
+            // Nudge to enable wiki images. Only shown when some monster still lacks an image —
+            // once everything is cached there's nothing left to sync (see refreshImageHint()).
+            if (imageService != null) {
+                imgHint = new JLabel("Turn on 'Fetch NPC images from the Wiki' in config for the best experience");
                 imgHint.setFont(FontManager.getRunescapeSmallFont());
                 imgHint.setForeground(new Color(220, 180, 60));
                 imgHint.setBorder(new EmptyBorder(0, 8, 0, 0));
+                imgHint.setVisible(false);
                 dRow.add(imgHint, BorderLayout.CENTER);
             }
             topBar.add(dRow);
@@ -550,13 +555,26 @@ public class AlbumDialog extends JDialog {
             @Override public void windowClosed(WindowEvent e)  { CardExportDialog.disposeOpen(); }
         });
 
-        imageService.prefetchBatch(fullRoster, gridPanel::repaint);
+        imageService.prefetchBatch(fullRoster, () -> { gridPanel.repaint(); refreshImageHint(); });
         SwingUtilities.invokeLater(this::rebuildGrid);
+        SwingUtilities.invokeLater(this::refreshImageHint);
         if (startFavourites) {
             SwingUtilities.invokeLater(this::showFavouritesDetailView);
         }
         setVisible(true);
         toFront();
+    }
+
+    /**
+     * The "turn on wiki images" nudge is only useful when art is actually missing: show it only
+     * while fetching is off AND at least one roster monster has no cached image. Once every monster
+     * is cached (e.g. the player synced once then opted back out) there's nothing to sync, so hide it.
+     */
+    private void refreshImageHint() {
+        if (imgHint == null || imageService == null) return;
+        boolean show = !imageService.isEnabled()
+                && fullRoster.stream().anyMatch(n -> imageService.getImage(n) == null);
+        if (imgHint.isVisible() != show) imgHint.setVisible(show);
     }
 
     // -------------------------------------------------------------------------

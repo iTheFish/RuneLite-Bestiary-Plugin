@@ -3,7 +3,6 @@ package com.bestiary;
 import com.bestiary.model.Achievement;
 import com.bestiary.model.CapturedCreature;
 import com.bestiary.model.ChatNotifyMode;
-import com.bestiary.model.CreatureRarity;
 import com.bestiary.service.BestiaryDataService;
 import com.bestiary.service.CaptureService;
 import com.bestiary.service.KillTracker;
@@ -82,7 +81,7 @@ public class BestiaryPlugin extends Plugin {
     /** Dev-only EDT-hang detector (#48 debugging): dumps the AWT stack to the log if the UI freezes. */
     private ScheduledFuture<?> edtWatchdog;
 
-    // BATCHED mode: 5-second accumulation per npcName+rarity key (executor thread only)
+    // BATCHED mode: 9-second accumulation per npcName+rarity key (executor thread only)
     private final Map<String, Integer>            batchCounts       = new HashMap<>();
     private final Map<String, CapturedCreature>   batchLastCreature = new HashMap<>();
     private final Map<String, List<Integer>>      batchQualities    = new HashMap<>();
@@ -99,7 +98,9 @@ public class BestiaryPlugin extends Plugin {
 
         // Achievements unlocked by non-capture actions (rerolls, favourites, purchases) are detected
         // on panel refresh; announce them in chat just like capture achievements.
-        BestiaryPanel.setAchievementNotifier(list -> list.forEach(this::sendAchievementMessage));
+        BestiaryPanel.setAchievementNotifier(list -> {
+            if (config.notifyOnAchievement()) list.forEach(this::sendAchievementMessage);
+        });
 
         navButton = NavigationButton.builder()
                 .tooltip("Bestiary")
@@ -250,8 +251,10 @@ public class BestiaryPlugin extends Plugin {
         dataService.incrementKillCount(npcName);
         sessionTracker.addKill();
         List<Achievement> killAchievements = progressionService.checkKillAchievements();
-        for (Achievement a : killAchievements) {
-            sendAchievementMessage(a);
+        if (config.notifyOnAchievement()) {
+            for (Achievement a : killAchievements) {
+                sendAchievementMessage(a);
+            }
         }
 
         // Snapshot the level before ANY XP (kill or capture) so we can announce the level-up
@@ -302,9 +305,9 @@ public class BestiaryPlugin extends Plugin {
 
             // Base capture XP + the Scholar's Insight % shop boost. Computed before addCapture so the
             // awarded value is persisted with the card for accurate as-at-capture Card Info.
-            long capXp = config.captureXpEnabled() ? Math.round(
+            long capXp = Math.round(
                     ProgressionService.captureXp(creature.npcCombatLevel, creature.rarity)
-                    * (1.0 + dataService.captureXpBonus())) : 0L;
+                    * (1.0 + dataService.captureXpBonus()));
             creature.xpEarned = capXp;
             dataService.addCapture(creature);
 
@@ -321,8 +324,7 @@ public class BestiaryPlugin extends Plugin {
             // Chat notification
             if (config.notifyOnCapture()) {
                 boolean shouldNotify = creature.isShiny()          // shinies always announce
-                        || !config.notifyRareOnly()
-                        || creature.rarity.ordinal() >= CreatureRarity.RARE.ordinal();
+                        || config.notifyRarityFilter().accepts(creature.rarity);
                 if (shouldNotify) {
                     if (config.chatNotifyMode() == ChatNotifyMode.BATCHED && !creature.isShiny()) {
                         // Submit to executor so batch maps are only touched on one thread
@@ -335,8 +337,10 @@ public class BestiaryPlugin extends Plugin {
                 }
             }
 
-            for (Achievement a : newAchievements) {
-                sendAchievementMessage(a);
+            if (config.notifyOnAchievement()) {
+                for (Achievement a : newAchievements) {
+                    sendAchievementMessage(a);
+                }
             }
         });
 
@@ -347,7 +351,7 @@ public class BestiaryPlugin extends Plugin {
                 sendChatMessage("Capture Level up! You are now level " + levelAfter + ".",
                         ChatColorType.HIGHLIGHT);
             }
-            if (config.showCaptureAnimation() || config.showOverlay()) {
+            if (config.showLevelUpOverlay()) {
                 overlay.enqueueLevelUp(levelAfter);
             }
         }
@@ -358,7 +362,7 @@ public class BestiaryPlugin extends Plugin {
     }
 
     /**
-     * BATCHED mode: accumulates captures for 5 seconds of inactivity per NPC+rarity key,
+     * BATCHED mode: accumulates captures for 9 seconds of inactivity per NPC+rarity key,
      * then posts a single "Nx Rarity Name captured!" message.  Timer resets on each kill.
      * Called on executor thread.
      */
@@ -373,7 +377,7 @@ public class BestiaryPlugin extends Plugin {
         ScheduledFuture<?> existing = batchFutures.remove(key);
         if (existing != null) existing.cancel(false);
 
-        batchFutures.put(key, executor.schedule(() -> flushBatch(key), 5, TimeUnit.SECONDS));
+        batchFutures.put(key, executor.schedule(() -> flushBatch(key), 9, TimeUnit.SECONDS));
     }
 
     private void flushBatch(String key) {

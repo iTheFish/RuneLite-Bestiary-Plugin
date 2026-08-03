@@ -458,7 +458,7 @@ public class InfoTab extends JPanel {
                 "Two modes, selected in Config under 'Chat Notification Mode':\n\n" +
                 "Verbose — one message per capture with rarity, NPC name, kill number and Power " +
                 "Level. The kill number keeps messages unique (RuneLite drops duplicates).\n\n" +
-                "Batched — repeated NPC+rarity kills are held for 5 seconds of inactivity then sent " +
+                "Batched — repeated NPC+rarity kills are held for 9 seconds of inactivity then sent " +
                 "as one summary (e.g. '3× Common Goblin captured!  Kill #42  PWR:28, 35, 41'). " +
                 "Shinies always announce immediately."));
         c.add(tile("Level-up alerts",
