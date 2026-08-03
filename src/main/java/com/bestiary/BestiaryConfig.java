@@ -84,7 +84,8 @@ public interface BestiaryConfig extends Config {
             keyName = "chatNotifyMode",
             name = "Chat Notification Mode",
             description = "Verbose: one message per capture with kill# (prevents duplicates). "
-                        + "Batched: accumulates captures over 30s then posts a count.",
+                        + "Batched: accumulates captures of the same monster over a 5s lull, "
+                        + "then posts a single count. Shinies always post individually.",
             position = 10
     )
     default ChatNotifyMode chatNotifyMode() {
