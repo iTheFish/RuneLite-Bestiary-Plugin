@@ -53,6 +53,7 @@ public class MonsterRoster {
         "Basilisk", "Basilisk knight",
         "Bloodveld", "Mutated bloodveld",
         "Cave bug", "Cave crawler", "Cave slime", "Cave horror",
+        "Crawling Hand",
         "Dagannoth",
         "Dark beast",
         "Drake",
@@ -258,7 +259,7 @@ public class MonsterRoster {
         for (String n : Arrays.asList(
             "Adamant dragon", "Rune dragon",
             "Hydra",
-            "Kraken",
+            "Tormented Demon",
             "Basilisk knight"
         )) { d.put(n, ELITE); }
 
@@ -268,7 +269,7 @@ public class MonsterRoster {
             "Alchemical Hydra",
             "Giant Mole",
             "Sarachnis", "Hespori", "Obor", "Bryophyta",
-            "Cerberus", "Thermonuclear smoke devil",
+            "Cerberus", "Thermonuclear smoke devil", "Kraken",
             "Abyssal Sire",
             "Deranged Archaeologist",
             "Chaos Fanatic", "Crazy Archaeologist", "Scorpia",
@@ -294,13 +295,14 @@ public class MonsterRoster {
             "Akkha", "Ba-Ba", "Kephri", "Zebak",
             "Tumeken's Warden", "Elidinis' Warden",
             "Yama", "Brutus", "Vasa Nistirio",
-            "Tormented Demon", "Kalphite Queen", "Skotizo",
+            "Kalphite Queen", "Skotizo",
             "Crystalline Hunllef", "Corrupted Hunllef", "Ice demon",
             "Revenant maledictus",
             "Blood Moon", "Blue Moon", "Eclipse Moon"
         )) { d.put(n, BOSS); }
 
         // #69 additions (2026-08-02): bats + wilderness revenants
+        d.put("Crawling Hand", BEGINNER);
         d.put("Bat", BEGINNER);
         d.put("Revenant imp", BEGINNER);
         d.put("Giant bat", EASY);
@@ -338,6 +340,7 @@ public class MonsterRoster {
             "Pirate","Rogue","Ankou","Spiritual warrior","Lizardman","Lizardman brute",
             "Turoth","Mogre","Kalphite","Kalphite soldier","Kalphite worker","Ice warrior",
             "Dark warrior","Ice spider","Cave bug","Cave crawler","Fever spider","Fleshcrawler",
+            "Crawling Hand",
             "Rockslugs","Kurask","Dust devil","Nechryael","Greater nechryael","Abyssal demon",
             "Vampyre","Feral vampyre","Dagannoth","Cave horror","Vyrewatch","Hellhound",
             "Troll","Mountain troll","Ice troll","Zombie pirate","Dharok the Wretched",
@@ -453,6 +456,7 @@ public class MonsterRoster {
         b.put("Imp", new int[]{1, 1, 1, 1, 1, 90});
         b.put("Zombie", new int[]{2, 3, 3, 1, 1, 15});
         b.put("Skeleton", new int[]{5, 5, 5, 1, 1, 30});
+        b.put("Crawling Hand", new int[]{4, 4, 2, 1, 1, 15});
         b.put("Ghost", new int[]{4, 4, 5, 1, 1, 60});
         b.put("Barbarian", new int[]{2, 2, 1, 1, 1, 60});
         b.put("Warrior", new int[]{2, 2, 1, 1, 1, 60});
@@ -694,6 +698,7 @@ public class MonsterRoster {
         h.put("Imp",                 8);
         h.put("Zombie",              22);
         h.put("Skeleton",            18);
+        h.put("Crawling Hand",       13);
         h.put("Ghost",               14);
         h.put("Barbarian",           30);
         h.put("Warrior",             30);
@@ -994,6 +999,7 @@ public class MonsterRoster {
         // UNDEAD — reanimated or spectral creatures
         for (String n : Arrays.asList(
             "Zombie", "Skeleton", "Ghost", "Zombie pirate",
+            "Crawling Hand",
             "Ankou", "Banshee", "Twisted banshee",
             "Aberrant spectre", "Deviant spectre",
             "Vampyre", "Vyrewatch",
@@ -1181,7 +1187,7 @@ public class MonsterRoster {
         "Karil the Tainted", "Torag the Corrupted", "Verac the Defiled",
         "Dusk", "Dawn",
         "Amoxliatl", "Chaos Elemental", "Hueycoatl", "King Black Dragon",
-        "Brutus", "Tormented Demon", "Skotizo"
+        "Brutus", "Skotizo", "Kraken"
     );
 
     private static final java.util.Set<String> ENDGAME_BOSSES = ciSet(
@@ -1391,6 +1397,7 @@ public class MonsterRoster {
         c.put("Imp",                 2);
         c.put("Zombie",              18);
         c.put("Skeleton",            22);
+        c.put("Crawling Hand",       8);
         c.put("Ghost",               19);
         c.put("Barbarian",           15);
         c.put("Warrior",             19);
