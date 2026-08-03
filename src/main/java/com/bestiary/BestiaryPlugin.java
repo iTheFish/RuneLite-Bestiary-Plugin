@@ -81,7 +81,7 @@ public class BestiaryPlugin extends Plugin {
     /** Dev-only EDT-hang detector (#48 debugging): dumps the AWT stack to the log if the UI freezes. */
     private ScheduledFuture<?> edtWatchdog;
 
-    // BATCHED mode: 5-second accumulation per npcName+rarity key (executor thread only)
+    // BATCHED mode: 9-second accumulation per npcName+rarity key (executor thread only)
     private final Map<String, Integer>            batchCounts       = new HashMap<>();
     private final Map<String, CapturedCreature>   batchLastCreature = new HashMap<>();
     private final Map<String, List<Integer>>      batchQualities    = new HashMap<>();
@@ -362,7 +362,7 @@ public class BestiaryPlugin extends Plugin {
     }
 
     /**
-     * BATCHED mode: accumulates captures for 5 seconds of inactivity per NPC+rarity key,
+     * BATCHED mode: accumulates captures for 9 seconds of inactivity per NPC+rarity key,
      * then posts a single "Nx Rarity Name captured!" message.  Timer resets on each kill.
      * Called on executor thread.
      */
@@ -377,7 +377,7 @@ public class BestiaryPlugin extends Plugin {
         ScheduledFuture<?> existing = batchFutures.remove(key);
         if (existing != null) existing.cancel(false);
 
-        batchFutures.put(key, executor.schedule(() -> flushBatch(key), 5, TimeUnit.SECONDS));
+        batchFutures.put(key, executor.schedule(() -> flushBatch(key), 9, TimeUnit.SECONDS));
     }
 
     private void flushBatch(String key) {

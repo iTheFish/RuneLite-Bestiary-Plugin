@@ -65,7 +65,7 @@ public interface BestiaryConfig extends Config {
             description = "<html>Verbose: one message per capture, with the kill<br>"
                         + "number so identical captures aren't dropped.<br>"
                         + "Batched: rolls up captures of the same monster<br>"
-                        + "over a 5s lull into one count message.<br>"
+                        + "over a 9s lull into one count message.<br>"
                         + "Shinies always post individually either way.</html>",
             section = notificationsSection,
             position = 2
@@ -115,7 +115,7 @@ public interface BestiaryConfig extends Config {
     @ConfigItem(
             keyName = "showCaptureAnimation",
             name = "Show Capture Animation",
-            description = "<html>Pokeball-style shake animation on each kill<br>"
+            description = "<html>Play the capture animation on each kill<br>"
                         + "attempt (shows before the capture result)</html>",
             section = overlaySection,
             position = 1

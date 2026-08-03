@@ -134,7 +134,7 @@ notes each default in brackets.
   announce regardless of this setting.
 - **Chat Notification Mode** *(Verbose)* — **Verbose** posts one message per capture (with the kill
   number, so identical captures aren't silently de-duplicated by the client). **Batched** rolls up
-  captures of the same monster + rarity that happen within a 5-second lull into one `Nx …` summary.
+  captures of the same monster + rarity that happen within a 9-second lull into one `Nx …` summary.
   Shinies always post individually in either mode.
 - **Notify on Achievement** *(on)* — post a chat message when you unlock an achievement.
 - **Notify on Level Up** *(on)* — post a chat message when your Capture Level increases.
@@ -159,7 +159,9 @@ notes each default in brackets.
 - **Fetch NPC images from the Wiki** *(off)* — the only setting that touches the network. Downloads
   monster artwork from the OSRS Wiki to show on cards and in the album; only the monster's name is
   requested (no account or personal data), and images are cached to disk. Off by default — turn it
-  on for the best album experience. See *Data & privacy* below.
+  on to sync images. This setting only controls **network fetching**: once images are cached you can
+  turn it back off and keep seeing them, then re-enable it later to fetch newly added monsters. See
+  *Data & privacy* below.
 
 ## Data & privacy
 

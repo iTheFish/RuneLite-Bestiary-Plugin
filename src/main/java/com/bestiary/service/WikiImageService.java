@@ -202,21 +202,23 @@ public class WikiImageService {
     }
 
     public void requestImage(String npcName, Runnable onLoad) {
-        // Respect the user's wiki-fetch toggle — no disk or network work at all when disabled.
-        if (!config.wikiImages()) return;
         if (cache.containsKey(npcName)) {
             onLoad.run();
             return;
         }
         if (failed.contains(npcName)) return;
 
-        // Check disk cache before hitting the network
+        // Disk cache is always available — even when the fetch toggle is off — so previously
+        // synced images keep showing after a player opts out.
         BufferedImage disk = loadFromDisk(npcName);
         if (disk != null) {
             cache.put(npcName, disk);
             onLoad.run();
             return;
         }
+
+        // Anything not already on disk requires a network fetch — only when the user has opted in.
+        if (!config.wikiImages()) return;
 
         if (!pending.add(npcName)) {
             pendingCallbacks.computeIfAbsent(npcName, k -> Collections.synchronizedList(new ArrayList<>())).add(onLoad);
@@ -244,9 +246,9 @@ public class WikiImageService {
 
     @Nullable
     public BufferedImage getImage(String npcName) {
-        // Hide wiki art entirely when disabled, even if previously cached to disk/memory —
-        // the album should fall back to placeholders until the user opts in.
-        if (!config.wikiImages()) return null;
+        // Always show images we already have — the fetch toggle governs NETWORK access, not display.
+        // Disk-cached art is local data, so a player can sync once, opt out, and keep their images
+        // (and opt back in later to fetch newly added monsters).
         return cache.get(npcName);
     }
 
