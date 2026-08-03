@@ -46,10 +46,9 @@ public final class OddsCalculator {
         public double shinyChance;    // 0..1 — chance of the shiny outcome (shiny or not)
         public List<StatOdds> stats = new ArrayList<>();
         // Power Level inputs
-        public int statSum;
+        public int statSum;   // sum of all 7 rolled stats (incl. Prayer)
         public int hp;
         public int combatLevel;
-        public int prayer;
         public int powerLevel;
         public int avgPowerLevel;      // Power Level if every stat (prayer included) rolled its band centre
         public int avgShinyPowerLevel; // ...if every stat rolled the centre of its SHINY band
@@ -88,7 +87,7 @@ public final class OddsCalculator {
         int prayerBase = MonsterRoster.getPrayer(c.npcName);
         int[] pBand = r.shiny ? RarityRoller.shinyUtilityBand(prayerBase, r.rarity)
                              : RarityRoller.utilityBand(prayerBase, r.rarity);
-        r.stats.add(new StatOdds("Prayer", prayerBase, c.prayer,
+        r.stats.add(new StatOdds("Prayer", prayerBase, c.quality.prayer,
                 RarityRoller.utilityCentre(prayerBase, r.rarity), pBand[0], pBand[1]));
         // Agility is a utility stat too — half scale, same as Prayer.
         int centreAgi = RarityRoller.utilityCentre(bases[5], r.rarity);
@@ -99,7 +98,6 @@ public final class OddsCalculator {
         // Power Level inputs
         r.statSum    = c.quality.statSum();
         r.hp         = c.hitpoints();
-        r.prayer     = c.prayer;
         r.powerLevel = c.powerLevel();
         // Combat level is a second factual difficulty term (1/6 weight, same as HP); mirror powerLevel().
         int cmb = Math.max(0, c.npcCombatLevel);

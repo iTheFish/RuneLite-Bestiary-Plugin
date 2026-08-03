@@ -52,8 +52,12 @@ import java.util.concurrent.TimeUnit;
 @Singleton
 public class BestiaryStore {
 
-    /** Bump when the on-disk shape changes incompatibly. */
-    public static final int VERSION = 1;
+    /**
+     * Bump when the on-disk shape changes incompatibly. A file whose {@code version} doesn't match
+     * is discarded on load (clean-slate reset) rather than migrated.
+     * v2: Prayer folded into {@link com.bestiary.model.CreatureQuality} as the 7th stat.
+     */
+    public static final int VERSION = 2;
 
     private static final long DEBOUNCE_MS = 1000;
 
@@ -170,6 +174,11 @@ public class BestiaryStore {
             if (d != null) log.warn("Bestiary main file unreadable — recovered from backup");
         }
         if (d == null) return new StoreData();
+        if (d.version != VERSION) {
+            log.info("Bestiary store version {} != {} — starting this account fresh (data reset)",
+                    d.version, VERSION);
+            return new StoreData();
+        }
         if (d.captures == null)    d.captures = new ArrayList<>();
         if (d.killCounts == null)  d.killCounts = new LinkedHashMap<>();
         if (d.achievements == null) d.achievements = new ArrayList<>();

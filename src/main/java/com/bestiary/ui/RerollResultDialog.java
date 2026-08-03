@@ -99,9 +99,9 @@ public class RerollResultDialog extends JDialog {
         }
         String[] names = {"Attack", "Strength", "Defence", "Magic", "Ranged", "Agility", "Prayer", "Power Level"};
         int[] bv = {b.quality.attack, b.quality.strength, b.quality.defence, b.quality.magic,
-                    b.quality.ranged, b.quality.agility, b.prayer, b.powerLevel()};
+                    b.quality.ranged, b.quality.agility, b.quality.prayer, b.powerLevel()};
         int[] av = {a.quality.attack, a.quality.strength, a.quality.defence, a.quality.magic,
-                    a.quality.ranged, a.quality.agility, a.prayer, a.powerLevel()};
+                    a.quality.ranged, a.quality.agility, a.quality.prayer, a.powerLevel()};
         for (int i = 0; i < names.length; i++) {
             int d = av[i] - bv[i];
             g.gridy = i + 1;

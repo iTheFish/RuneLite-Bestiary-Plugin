@@ -61,7 +61,7 @@ public class RerollGraph extends JPanel {
         for (int i = 0; i < n; i++) {
             boolean isCurrent = i == h.size();
             CreatureQuality q = isCurrent ? c.quality : h.get(i).quality;
-            int prayer = isCurrent ? c.prayer : h.get(i).prayer;
+            int prayer = q != null ? q.prayer : -1;
             int power  = isCurrent ? c.powerLevel() : h.get(i).powerLevel;
             labels[i] = isCurrent ? "Now" : (i == 0 ? "Orig" : "R" + i);
             int[] combat = q != null

@@ -106,7 +106,7 @@ public class OddsView extends JPanel implements Scrollable {
         add(Box.createVerticalStrut(10));
 
         // Power Level
-        int sevenStats = r.statSum + r.prayer;
+        int sevenStats = r.statSum;
         int statAvg = Math.round(sevenStats / 7f);
         Color nearWhite = new Color(235, 235, 235);
         add(sectionHeader("Power Level"));

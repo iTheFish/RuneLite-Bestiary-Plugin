@@ -31,7 +31,7 @@ public class RarityRollerTest {
         int[] combat  = RarityRoller.statBand(50, CreatureRarity.MYTHIC);
         Random rng = new Random(42);
         for (int t = 0; t < 300; t++) {
-            CreatureQuality q = RarityRoller.generateQuality(null, CreatureRarity.MYTHIC, bases, rng, false);
+            CreatureQuality q = RarityRoller.generateQuality(null, CreatureRarity.MYTHIC, bases, 50, rng, false);
             // Agility must land in the (lower) utility band...
             assertTrue("agility " + q.agility + " within utility band",
                     q.agility >= utility[0] && q.agility <= utility[1]);

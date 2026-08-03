@@ -283,7 +283,7 @@ public class CardDataDialog extends JDialog {
         p.add(kv("Power Level", String.valueOf(c.powerLevel()), Color.WHITE));
         p.add(kv("Hitpoints", String.valueOf(c.hitpoints())
                 + (c.observedHp > 0 ? "  (observed)" : ""), new Color(120, 200, 120)));
-        p.add(kv("Prayer", String.valueOf(c.prayer), Color.WHITE));
+        p.add(kv("Prayer", String.valueOf(c.quality.prayer), Color.WHITE));
         p.add(kv("Shiny", c.isShiny() ? "Yes ✦" : "No",
                 c.isShiny() ? new Color(255, 215, 0) : ColorScheme.LIGHT_GRAY_COLOR));
 

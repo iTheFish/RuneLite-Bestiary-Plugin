@@ -28,7 +28,7 @@ public final class CardId {
     public static String encode(int dexNumber, CapturedCreature capture) {
         CreatureQuality q = capture.quality;
         int hp     = Math.min(99999, MonsterRoster.getHitpoints(capture.npcName));
-        int prayer = Math.min(99, capture.prayer);
+        int prayer = Math.min(99, capture.quality.prayer);
         return String.format("%03d%s%s%s%s%s%s%d%d%05d%02d%s",
                 dexNumber,
                 encodeStat(q.attack),
