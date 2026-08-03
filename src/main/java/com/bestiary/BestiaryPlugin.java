@@ -3,7 +3,6 @@ package com.bestiary;
 import com.bestiary.model.Achievement;
 import com.bestiary.model.CapturedCreature;
 import com.bestiary.model.ChatNotifyMode;
-import com.bestiary.model.CreatureRarity;
 import com.bestiary.service.BestiaryDataService;
 import com.bestiary.service.CaptureService;
 import com.bestiary.service.KillTracker;
@@ -302,9 +301,9 @@ public class BestiaryPlugin extends Plugin {
 
             // Base capture XP + the Scholar's Insight % shop boost. Computed before addCapture so the
             // awarded value is persisted with the card for accurate as-at-capture Card Info.
-            long capXp = config.captureXpEnabled() ? Math.round(
+            long capXp = Math.round(
                     ProgressionService.captureXp(creature.npcCombatLevel, creature.rarity)
-                    * (1.0 + dataService.captureXpBonus())) : 0L;
+                    * (1.0 + dataService.captureXpBonus()));
             creature.xpEarned = capXp;
             dataService.addCapture(creature);
 
@@ -321,8 +320,7 @@ public class BestiaryPlugin extends Plugin {
             // Chat notification
             if (config.notifyOnCapture()) {
                 boolean shouldNotify = creature.isShiny()          // shinies always announce
-                        || !config.notifyRareOnly()
-                        || creature.rarity.ordinal() >= CreatureRarity.RARE.ordinal();
+                        || config.notifyRarityFilter().accepts(creature.rarity);
                 if (shouldNotify) {
                     if (config.chatNotifyMode() == ChatNotifyMode.BATCHED && !creature.isShiny()) {
                         // Submit to executor so batch maps are only touched on one thread
@@ -347,7 +345,7 @@ public class BestiaryPlugin extends Plugin {
                 sendChatMessage("Capture Level up! You are now level " + levelAfter + ".",
                         ChatColorType.HIGHLIGHT);
             }
-            if (config.showCaptureAnimation() || config.showOverlay()) {
+            if (config.showLevelUpOverlay()) {
                 overlay.enqueueLevelUp(levelAfter);
             }
         }
