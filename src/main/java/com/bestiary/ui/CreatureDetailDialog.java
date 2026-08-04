@@ -439,9 +439,14 @@ public class CreatureDetailDialog extends JDialog {
                     btnRow.add(okBtn);
                     btnRow.add(cancelBtn);
 
+                    JLabel warn = new JLabel(" ");
+                    warn.setFont(FontManager.getRunescapeSmallFont());
+                    warn.setForeground(new Color(0xE0, 0x40, 0x40));
+                    warn.setVisible(false);
                     JPanel content = new JPanel(new BorderLayout(0, 8));
                     content.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
                     content.add(inputPanel, BorderLayout.CENTER);
+                    content.add(warn,       BorderLayout.NORTH);
                     content.add(btnRow,     BorderLayout.SOUTH);
 
                     JDialog nickDlg = new JDialog(CreatureDetailDialog.this, "Name Capture", ModalityType.MODELESS);
@@ -453,6 +458,12 @@ public class CreatureDetailDialog extends JDialog {
 
                     okBtn.addActionListener(ae -> {
                         String val = field.getText().trim();
+                        if (com.bestiary.util.ProfanityFilter.isProfane(val)) {
+                            warn.setText("Let's keep it clean — try another name");
+                            warn.setVisible(true);
+                            nickDlg.pack();
+                            return;
+                        }
                         c.nickname = val.isBlank() ? null : val;
                         buildList(currentSort);
                         if (saveCallback != null) saveCallback.run();
