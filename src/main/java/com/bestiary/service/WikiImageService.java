@@ -78,7 +78,6 @@ public class WikiImageService {
         m.put("Bear",                "Grizzly bear");        // disambiguation
         m.put("Wyvern",              "Skeletal Wyvern");     // disambiguation
         m.put("Kalphite",            "Kalphite Worker");     // disambiguation
-        m.put("Fossil island wyvern","Long-tailed Wyvern");  // no generic page
         m.put("Maiden of Sugadinti", "The Maiden of Sugadinti");
         // Redirect targets / case fixes — pageimages doesn't follow redirects, so map to canonical.
         m.put("Hill giant",          "Hill Giant");
