@@ -491,9 +491,14 @@ public class AlbumCard extends JPanel {
         JButton cancelBtn = new JButton("Cancel");
         JPanel btnRow = new JPanel(new GridLayout(1, 2, 4, 0));
         btnRow.add(okBtn); btnRow.add(cancelBtn);
+        JLabel warn = new JLabel(" ");
+        warn.setFont(FontManager.getRunescapeSmallFont());
+        warn.setForeground(new Color(0xE0, 0x40, 0x40));
+        warn.setVisible(false);
         JPanel content = new JPanel(new BorderLayout(0, 8));
         content.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
         content.add(inputPanel, BorderLayout.CENTER);
+        content.add(warn, BorderLayout.NORTH);
         content.add(btnRow, BorderLayout.SOUTH);
         Window owner = SwingUtilities.getWindowAncestor(anchor);
         JDialog dlg = new JDialog(owner, "Name Capture", java.awt.Dialog.ModalityType.MODELESS);
@@ -504,6 +509,12 @@ public class AlbumCard extends JPanel {
         dlg.setLocationRelativeTo(anchor);
         okBtn.addActionListener(ae -> {
             String val = field.getText().trim();
+            if (com.bestiary.util.ProfanityFilter.isProfane(val)) {
+                warn.setText("Let's keep it clean — try another name");
+                warn.setVisible(true);
+                dlg.pack();
+                return;
+            }
             c.nickname = val.isBlank() ? null : val;
             if (onSaved != null) onSaved.run();
             dlg.dispose();
