@@ -1289,8 +1289,10 @@ public class DashboardDialog extends JDialog {
     // ---- shared card base ----
 
     private static String resolveAccount(BestiaryDataService ds) {
-        // The active account name — data is scoped per account, so this is the collection's owner.
-        String name = ds.getActiveAccountName();
+        // Owner of the collection actually on display: the read-only viewed account when
+        // viewing another profile (#48), otherwise the played (logged-in) account. Mirrors
+        // getCollection() so the export label always matches the data it was rendered from.
+        String name = ds.isViewing() ? ds.getViewedAccountName() : ds.getActiveAccountName();
         return name != null && !name.isEmpty() ? name : "Unknown";
     }
 
