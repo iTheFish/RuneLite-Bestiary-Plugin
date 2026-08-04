@@ -77,10 +77,10 @@ public class MonsterRoster {
         "Spiritual warrior", "Spiritual mage", "Spiritual ranger",
         "Suqah",
         "Turoth",
-        "Vampyre", "Vyrewatch",
+        "Vyrewatch Sentinel",
         "Waterfiend",
         "Wyrm",
-        "Ancient wyvern", "Skeletal wyvern", "Fossil island wyvern",
+        "Ancient wyvern", "Skeletal wyvern",
         "Warped tortoise",
         "Zombie pirate",
 
@@ -177,7 +177,12 @@ public class MonsterRoster {
         "Bat", "Giant bat",
         "Revenant imp", "Revenant goblin", "Revenant pyrefiend", "Revenant hobgoblin",
         "Revenant cyclops", "Revenant hellhound", "Revenant demon", "Revenant ork",
-        "Revenant dark beast", "Revenant knight", "Revenant dragon"
+        "Revenant dark beast", "Revenant knight", "Revenant dragon",
+
+        // === New bosses (2026-08-04) ===
+        "Eldric the Ice King", "Branda the Fire Queen",   // Royal Titans (accessible duo boss)
+        "Mad Angel",                                       // Wyrmscraig golem boss
+        "Maggot King"                                      // Vampyrium ur-maggot boss
     );
 
     // -------------------------------------------------------------------------
@@ -213,7 +218,7 @@ public class MonsterRoster {
             "Ankou",
             "Basilisk", "Black knight",
             "Baby blue dragon", "Baby green dragon",
-            "Kalphite worker", "Vampyre", "White knight"
+            "Kalphite worker", "White knight"
         )) { d.put(n, EASY); }
 
         // Medium — mid-game slayer, accessible dungeon monsters
@@ -228,7 +233,6 @@ public class MonsterRoster {
             "Spiritual warrior", "Spiritual mage", "Spiritual ranger",
             "Lizardman", "Lizardman brute",
             "Mogre",
-            "Vyrewatch",
             "Smoke devil", "Dust devil", "Infernal mage",
             "Zombie pirate",
             "Warped tortoise",
@@ -245,14 +249,15 @@ public class MonsterRoster {
             "Kalphite guardian",
             "Kurask",
             "Steel dragon", "Mithril dragon", "Black dragon", "Iron dragon",
-            "Drake", "Fossil island wyvern",
+            "Drake",
             "Ancient wyvern", "Skeletal wyvern",
             "Waterfiend", "Suqah",
             "Deviant spectre",
             "Lizardman shaman",
             "Brutal black dragon", "Brutal red dragon",
             "Brutal blue dragon", "Brutal green dragon",
-            "Lava dragon"
+            "Lava dragon",
+            "Vyrewatch Sentinel"
         )) { d.put(n, HARD); }
 
         // Elite — challenging late-game PvM (pre-boss tier)
@@ -314,6 +319,11 @@ public class MonsterRoster {
             "Revenant demon", "Revenant ork", "Revenant dark beast", "Revenant knight", "Revenant dragon"
         )) { d.put(n, HARD); }
 
+        // New bosses (2026-08-04): Royal Titans + Mad Angel + Maggot King
+        for (String n : Arrays.asList(
+            "Eldric the Ice King", "Branda the Fire Queen", "Mad Angel", "Maggot King"
+        )) { d.put(n, BOSS); }
+
         DIFFICULTY = Collections.unmodifiableMap(d);
     }
 
@@ -342,7 +352,7 @@ public class MonsterRoster {
             "Dark warrior","Ice spider","Cave bug","Cave crawler","Fever spider","Fleshcrawler",
             "Crawling Hand",
             "Rockslugs","Kurask","Dust devil","Nechryael","Greater nechryael","Abyssal demon",
-            "Vampyre","Feral vampyre","Dagannoth","Cave horror","Vyrewatch","Hellhound",
+            "Feral vampyre","Dagannoth","Cave horror","Vyrewatch Sentinel","Hellhound",
             "Troll","Mountain troll","Ice troll","Zombie pirate","Dharok the Wretched",
             "Guthan the Infested","Verac the Defiled","Baby blue dragon","Baby green dragon",
             "Scorpia","Ba-Ba","Suqah","Desert lizard","King scorpion"
@@ -398,7 +408,7 @@ public class MonsterRoster {
             "Nex","TzTok-Jad","Hueycoatl","Sol Heredit","Dusk","Dawn","The Nightmare",
             "Phosani's Nightmare","Pestilent Bloat","Sotetseg","Verzik Vitur","Akkha","Zebak",
             "Tumeken's Warden","Elidinis' Warden","Great Olm","Lizardman shaman","Wyvern",
-            "Ancient wyvern","Skeletal wyvern","Fossil island wyvern","Mithril dragon",
+            "Ancient wyvern","Skeletal wyvern","Mithril dragon",
             "Adamant dragon","Rune dragon","Yama"
         )) { a.put(n, APEX); }
 
@@ -423,6 +433,12 @@ public class MonsterRoster {
             "Revenant cyclops", "Revenant hellhound", "Revenant demon", "Revenant ork",
             "Revenant dark beast", "Revenant knight", "Revenant dragon"
         )) { a.put(n, OCCULTIST); }
+
+        // New bosses (2026-08-04).
+        a.put("Eldric the Ice King",   WARRIOR);    // crush melee
+        a.put("Branda the Fire Queen", WARRIOR);    // crush melee
+        a.put("Mad Angel",             BATTLEMAGE); // melee + magic
+        a.put("Maggot King",           APEX);       // ranged + magic + melee
 
         COMBAT_CLASSES = Collections.unmodifiableMap(a);
     }
@@ -534,14 +550,12 @@ public class MonsterRoster {
         b.put("Spiritual ranger", new int[]{1, 1, 24, 1, 42, 30});
         b.put("Suqah", new int[]{29, 29, 29, 1, 1, 25});
         b.put("Turoth", new int[]{16, 25, 25, 1, 1, 45});
-        b.put("Vampyre", new int[]{17, 18, 17, 12, 1, 33});
-        b.put("Vyrewatch", new int[]{32, 26, 26, 32, 32, 60});
+        b.put("Vyrewatch Sentinel", new int[]{36, 48, 40, 36, 36, 60});
         b.put("Waterfiend", new int[]{1, 1, 38, 32, 32, 30});
         b.put("Wyrm", new int[]{26, 18, 24, 24, 24, 20});
         b.put("Wyvern", new int[]{38, 35, 36, 38, 36, 22});
         b.put("Ancient wyvern", new int[]{45, 45, 45, 27, 27, 22});
         b.put("Skeletal wyvern", new int[]{38, 35, 36, 38, 36, 22});
-        b.put("Fossil island wyvern", new int[]{38, 36, 27, 27, 27, 22});
         b.put("Warped tortoise", new int[]{23, 32, 23, 15, 1, 15});
         b.put("Tortoise", new int[]{5, 27, 24, 1, 1, 15});
         b.put("Zombie pirate", new int[]{6, 3, 6, 1, 1, 15});
@@ -664,6 +678,11 @@ public class MonsterRoster {
         b.put("Revenant dark beast", new int[]{36, 36, 45, 58, 58, 45});
         b.put("Revenant knight",     new int[]{40, 40, 50, 62, 62, 45});
         b.put("Revenant dragon",     new int[]{45, 45, 55, 68, 68, 45});
+        // New bosses (2026-08-04). Scaled from OSRS wiki stats; user to tweak. Order: {ATK,STR,DEF,MAG,RNG,AGI}
+        b.put("Eldric the Ice King",   new int[]{50, 65, 50, 50, 20, 10});
+        b.put("Branda the Fire Queen", new int[]{50, 65, 50, 50, 20, 10});
+        b.put("Mad Angel",             new int[]{65, 73, 40, 60, 15, 20});
+        b.put("Maggot King",           new int[]{75, 85, 65, 70, 70, 15});
 
         STAT_BASES = Collections.unmodifiableMap(b);
     }
@@ -777,14 +796,12 @@ public class MonsterRoster {
         h.put("Spiritual ranger",    90);
         h.put("Suqah",               100);
         h.put("Turoth",              100);
-        h.put("Vampyre",             30);
-        h.put("Vyrewatch",           150);
+        h.put("Vyrewatch Sentinel",  150);
         h.put("Waterfiend",          128);
         h.put("Wyrm",                130);
         h.put("Wyvern",              200);
         h.put("Ancient wyvern",      200);
         h.put("Skeletal wyvern",     200);
-        h.put("Fossil island wyvern",200);
         h.put("Warped tortoise",     145);
         h.put("Tortoise",            145);
         h.put("Zombie pirate",       55);
@@ -908,6 +925,11 @@ public class MonsterRoster {
         h.put("Revenant dark beast", 165);
         h.put("Revenant knight",     180);
         h.put("Revenant dragon",     210);
+        // New bosses (2026-08-04)
+        h.put("Eldric the Ice King",   600);
+        h.put("Branda the Fire Queen", 600);
+        h.put("Mad Angel",             565);
+        h.put("Maggot King",          1500);
         HITPOINTS = Collections.unmodifiableMap(h);
     }
 
@@ -953,7 +975,8 @@ public class MonsterRoster {
         // GIANT — giants and giant-kin
         for (String n : Arrays.asList(
             "Hill giant", "Moss giant", "Fire giant", "Ice giant",
-            "Obor", "Bryophyta", "Tekton", "General Graardor"
+            "Obor", "Bryophyta", "Tekton", "General Graardor",
+            "Eldric the Ice King", "Branda the Fire Queen"   // Royal Titans
         )) { s.put(n, GIANT); }
 
         // GOBLINOID — goblins and goblin-like creatures
@@ -1002,7 +1025,7 @@ public class MonsterRoster {
             "Crawling Hand",
             "Ankou", "Banshee", "Twisted banshee",
             "Aberrant spectre", "Deviant spectre",
-            "Vampyre", "Vyrewatch",
+            "Vyrewatch Sentinel",
             "Spiritual warrior", "Spiritual mage", "Spiritual ranger",
             "Vet'ion", "Calvar'ion",
             "Verzik Vitur", "Xarpus", "Pestilent Bloat",
@@ -1015,7 +1038,7 @@ public class MonsterRoster {
         // WYRM — reptilian magical creatures (hydras, wyverns, wyrms)
         for (String n : Arrays.asList(
             "Wyrm", "Drake", "Hydra", "Alchemical Hydra",
-            "Wyvern", "Ancient wyvern", "Skeletal wyvern", "Fossil island wyvern"
+            "Wyvern", "Ancient wyvern", "Skeletal wyvern"
         )) { s.put(n, WYRM); }
 
         // PLANT — plant-based creatures
@@ -1187,7 +1210,8 @@ public class MonsterRoster {
         "Karil the Tainted", "Torag the Corrupted", "Verac the Defiled",
         "Dusk", "Dawn",
         "Amoxliatl", "Chaos Elemental", "Hueycoatl", "King Black Dragon",
-        "Brutus", "Skotizo", "Kraken"
+        "Brutus", "Skotizo", "Kraken",
+        "Eldric the Ice King", "Branda the Fire Queen"   // Royal Titans (accessible duo boss)
     );
 
     private static final java.util.Set<String> ENDGAME_BOSSES = ciSet(
@@ -1197,7 +1221,8 @@ public class MonsterRoster {
         "Sol Heredit",
         "Tekton", "Great Olm", "Vespula",
         "Maiden of Sugadinti", "Pestilent Bloat", "Sotetseg", "Xarpus", "Verzik Vitur",
-        "Akkha", "Ba-Ba", "Kephri", "Zebak", "Tumeken's Warden", "Elidinis' Warden"
+        "Akkha", "Ba-Ba", "Kephri", "Zebak", "Tumeken's Warden", "Elidinis' Warden",
+        "Maggot King"
     );
 
     /**
@@ -1266,12 +1291,11 @@ public class MonsterRoster {
         p.put("Spiritual warrior", 26);
         p.put("Spiritual mage", 26);
         p.put("Spiritual ranger", 26);
-        p.put("Vyrewatch", 20);
+        p.put("Vyrewatch Sentinel", 20);
         p.put("Wyrm", 15);
         p.put("Wyvern", 30);
         p.put("Ancient wyvern", 25);
         p.put("Skeletal wyvern", 30);
-        p.put("Fossil island wyvern", 30);
         p.put("Green dragon", 2);
         p.put("Blue dragon", 25);
         p.put("Red dragon", 2);
@@ -1368,6 +1392,11 @@ public class MonsterRoster {
         p.put("Cave horror", 2);
         p.put("Chaos Fanatic", 5);
         p.put("Dark wizard", 5);
+        // New bosses (2026-08-04) — wiki lists no Prayer; user set a flat 30.
+        p.put("Eldric the Ice King", 30);
+        p.put("Branda the Fire Queen", 30);
+        p.put("Mad Angel", 30);
+        p.put("Maggot King", 30);
 
         PRAYER = Collections.unmodifiableMap(p);
     }
@@ -1486,14 +1515,12 @@ public class MonsterRoster {
         c.put("Spiritual ranger",    91);
         c.put("Suqah",               111);
         c.put("Turoth",              89);
-        c.put("Vampyre",             34);
-        c.put("Vyrewatch",           123);
+        c.put("Vyrewatch Sentinel",  151);
         c.put("Waterfiend",          115);
         c.put("Wyrm",                99);
         c.put("Wyvern",              139);
         c.put("Ancient wyvern",      210);
         c.put("Skeletal wyvern",     140);
-        c.put("Fossil island wyvern",145);
         c.put("Warped tortoise",     92);
         c.put("Tortoise",            79);
         c.put("Zombie pirate",       57);
@@ -1603,6 +1630,11 @@ public class MonsterRoster {
         c.put("Revenant dark beast", 120);
         c.put("Revenant knight",     126);
         c.put("Revenant dragon",     135);
+        // New bosses (2026-08-04)
+        c.put("Eldric the Ice King",   350);
+        c.put("Branda the Fire Queen", 350);
+        c.put("Mad Angel",             270);
+        c.put("Maggot King",           741);
         COMBAT_LEVELS = Collections.unmodifiableMap(c);
     }
 
