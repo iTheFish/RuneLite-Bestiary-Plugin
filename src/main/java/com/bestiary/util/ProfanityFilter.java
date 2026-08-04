@@ -9,25 +9,13 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * Lightweight profanity gate for user-entered card nicknames.
+ * Filters card nicknames for profanity. The blocklist is kept as salted, truncated
+ * SHA-256 digests rather than plaintext, so nothing offensive lands in the source.
  *
- * <p>The blocklist is stored as truncated SHA-256 digests, not plaintext — the
- * actual words never appear in source. At runtime we normalise the input (lowercase
- * + basic leet/symbol de-obfuscation, non-letters to spaces) and hash candidate
- * tokens/substrings, checking them against the digest sets. A fixed salt makes the
- * digests specific to this use.
- *
- * <p>Deliberately simple and predictable, not exhaustive: card nicknames are short
- * ({@literal <=}20 chars) and low-stakes. Two tiers keep false positives down:
- * <ul>
- *   <li>{@link #STRONG_HASHES} — strong terms matched as a substring inside any token
- *       (catches padded forms like "xX___Xx").</li>
- *   <li>{@link #TOKEN_HASHES} — short/embeddable terms matched only as a standalone
- *       token, to dodge the Scunthorpe problem (so "assassin", "raccoon", "Dickens",
- *       "grape", "Nigeria" all pass).</li>
- * </ul>
- * A determined user can still slip something past this; that only affects their own
- * card's label.
+ * <p>Input is normalised (lowercase, common leet/symbol swaps, non-letters to spaces),
+ * then candidate tokens and substrings are hashed and looked up. Strong terms match
+ * anywhere inside a word; milder ones only as a whole word, which keeps ordinary names
+ * from tripping it. It's intentionally simple — enough for a 20-char label.
  */
 public final class ProfanityFilter {
 
@@ -35,7 +23,6 @@ public final class ProfanityFilter {
 
     private static final String SALT = "bestiary-v1:";
 
-    /** Substring windows are only hashed for lengths within the strong-term range. */
     private static final int STRONG_MIN_LEN = 4;
     private static final int STRONG_MAX_LEN = 12;
 
@@ -82,11 +69,7 @@ public final class ProfanityFilter {
         return false;
     }
 
-    /**
-     * Lowercases, maps common leet/symbol substitutions to letters, and replaces any
-     * non-letter with a space. No repeat-collapsing: that would create sensitive false
-     * positives (e.g. "Nigeria" collapsing toward "niger").
-     */
+    /** Lowercases, swaps common leet characters back to letters, and blanks out the rest. */
     private static String normalise(String s) {
         s = s.toLowerCase(Locale.ROOT);
         StringBuilder sb = new StringBuilder(s.length());

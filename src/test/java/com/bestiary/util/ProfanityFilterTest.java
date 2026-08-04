@@ -6,25 +6,23 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Guards the nickname profanity gate. Blocked cases use masked/leet inputs on
- * purpose — it keeps fully-spelled profanity out of the repo and doubles as a
- * check that the normaliser de-obfuscates before matching. The clean-name cases
- * guard against Scunthorpe-style false positives (assassin, raccoon, Nigeria…).
+ * Tests for the nickname profanity gate. Blocked cases use masked/leet inputs so the
+ * test file stays clean; the pass cases make sure ordinary names aren't caught.
  */
 public class ProfanityFilterTest {
 
     @Test
     public void blocksMaskedProfanity() {
-        assertTrue(ProfanityFilter.isProfane("sh1t"));      // 1 -> i
-        assertTrue(ProfanityFilter.isProfane("b!tch"));     // ! -> i
-        assertTrue(ProfanityFilter.isProfane("b0llocks"));  // 0 -> o, substring match
+        assertTrue(ProfanityFilter.isProfane("sh1t"));
+        assertTrue(ProfanityFilter.isProfane("b!tch"));
+        assertTrue(ProfanityFilter.isProfane("b0llocks"));
         assertTrue(ProfanityFilter.isProfane("xX b!tch Xx"));
     }
 
     @Test
     public void catchesLeetAndSymbols() {
-        assertTrue(ProfanityFilter.isProfane("a$$"));  // $ -> s, token match
-        assertTrue(ProfanityFilter.isProfane("@ss"));  // @ -> a, token match
+        assertTrue(ProfanityFilter.isProfane("a$$"));
+        assertTrue(ProfanityFilter.isProfane("@ss"));
     }
 
     @Test
@@ -41,8 +39,8 @@ public class ProfanityFilterTest {
         assertFalse(ProfanityFilter.isProfane("  "));
         assertFalse(ProfanityFilter.isProfane("Fluffy"));
         assertFalse(ProfanityFilter.isProfane("Sir Reginald"));
-        assertFalse(ProfanityFilter.isProfane("Nigeria"));  // not the slur (no double-g)
-        assertFalse(ProfanityFilter.isProfane("Dickens"));  // token-only match protects this
-        assertFalse(ProfanityFilter.isProfane("grape"));    // token-only match protects this
+        assertFalse(ProfanityFilter.isProfane("Nigeria"));
+        assertFalse(ProfanityFilter.isProfane("Dickens"));
+        assertFalse(ProfanityFilter.isProfane("grape"));
     }
 }
