@@ -71,6 +71,7 @@ public class BestiaryPlugin extends Plugin {
     @Inject private ProgressionService progressionService;
     @Inject private BestiaryDataService dataService;
     @Inject private com.bestiary.service.SessionTracker sessionTracker;
+    @Inject private com.bestiary.service.DiscordWebhookService discordWebhook;
 
     @Inject private BestiaryPanel panel;
     @Inject private BestiaryOverlay overlay;
@@ -343,6 +344,9 @@ public class BestiaryPlugin extends Plugin {
                 sendFortuneMessage(creature);
             }
 
+            // Discord webhook alert for high-rarity captures (opt-in via a pasted webhook URL).
+            maybeSendDiscordAlert(creature);
+
             if (config.notifyOnAchievement()) {
                 for (Achievement a : newAchievements) {
                     sendAchievementMessage(a);
@@ -456,6 +460,26 @@ public class BestiaryPlugin extends Plugin {
                 .type(ChatMessageType.GAMEMESSAGE)
                 .runeLiteFormattedMessage(message)
                 .build());
+    }
+
+    /** Minimum rarity that triggers a Discord webhook alert (Legendary and above). */
+    private static final com.bestiary.model.CreatureRarity DISCORD_MIN_RARITY =
+            com.bestiary.model.CreatureRarity.LEGENDARY;
+
+    /**
+     * Posts a Legendary+ capture to the user's Discord webhook, if one is set. The card is rendered
+     * on the EDT (Swing) and the HTTP POST is dispatched async by the webhook service, so neither
+     * blocks the game thread.
+     */
+    private void maybeSendDiscordAlert(CapturedCreature creature) {
+        String url = config.discordWebhookUrl();
+        if (url == null || url.trim().isEmpty()) return;                          // disabled — no URL
+        if (creature.rarity.ordinal() < DISCORD_MIN_RARITY.ordinal()) return;     // below threshold
+        if (!com.bestiary.service.DiscordWebhookService.looksLikeWebhook(url)) return;
+        SwingUtilities.invokeLater(() -> {
+            java.awt.image.BufferedImage card = CardExportDialog.renderCardImage(creature);
+            if (card != null) discordWebhook.sendCaptureAlert(url, creature, card);
+        });
     }
 
     /**

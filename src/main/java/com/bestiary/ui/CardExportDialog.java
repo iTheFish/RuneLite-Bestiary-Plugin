@@ -64,9 +64,13 @@ public final class CardExportDialog {
         CardDataDialog.open(owner, capture, CardDataDialog.TAB_EXPORT);
     }
 
-    /** Copy a capture card directly to clipboard without opening any view. */
-    public static void copyNow(Window owner, CapturedCreature capture) {
-        if (sharedImageService == null || collectionSupplier == null) return;
+    /**
+     * Renders a capture to a standalone card image (2× scale, with the export banner footer),
+     * exactly as the clipboard/export paths do. Must be called on the EDT (it prints a Swing
+     * component). Returns null if the shared wiring isn't set up yet.
+     */
+    public static BufferedImage renderCardImage(CapturedCreature capture) {
+        if (sharedImageService == null || collectionSupplier == null) return null;
         int dex = MonsterRoster.getDexNumber(capture.npcName);
         String capturedBy = capture.playerName != null && !capture.playerName.isEmpty()
                 ? capture.playerName : "Unknown";
@@ -92,6 +96,16 @@ public final class CardExportDialog {
         drawBanner(g2, 0, AlbumCard.CARD_H, AlbumCard.CARD_W, bottomH, cardId, ownerStr, capture.rerollCount());
         g2.dispose();
         card.removeNotify();
+        return img;
+    }
+
+    /** Copy a capture card directly to clipboard without opening any view. */
+    public static void copyNow(Window owner, CapturedCreature capture) {
+        if (sharedImageService == null || collectionSupplier == null) return;
+        int dex = MonsterRoster.getDexNumber(capture.npcName);
+        String cardId = CardId.encode(dex, capture);
+        BufferedImage img = renderCardImage(capture);
+        if (img == null) return;
 
         BufferedImage exported = img;
         Transferable t = new Transferable() {
