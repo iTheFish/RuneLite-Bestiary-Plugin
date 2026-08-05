@@ -89,7 +89,8 @@ Core mechanics:
 - **Power Level** — a card's headline number: its seven rolled stats plus the monster's factual
   Hitpoints and combat level (at reduced weight), so bosses outclass trash mobs.
 - **Overlay & chat notifications** — an on-screen capture animation, level-up banners, and
-  configurable chat messages.
+  configurable chat messages, plus an optional Discord webhook that posts a card image on Legendary+
+  captures.
 
 Tabs & views:
 
@@ -138,6 +139,10 @@ notes each default in brackets.
   Shinies always post individually in either mode.
 - **Notify on Achievement** *(on)* — post a chat message when you unlock an achievement.
 - **Notify on Level Up** *(on)* — post a chat message when your Capture Level increases.
+- **Discord Webhook** *(blank / off)* — paste a Discord channel webhook URL to auto-post a card
+  image to that channel when you capture a **Legendary or better** creature. Leave it blank to
+  disable — nothing is ever sent without a URL. Only the card image and capture details are sent
+  (no account data). Touches the network; see *Data & privacy* below.
 
 **Overlay & animation**
 
@@ -156,7 +161,8 @@ notes each default in brackets.
 
 - **Auto-shimmer EPIC+ Cards** *(on)* — periodically play the foil shimmer on Epic+ cards in the
   Album, every 10 seconds.
-- **Fetch NPC images from the Wiki** *(off)* — the only setting that touches the network. Downloads
+- **Fetch NPC images from the Wiki** *(off)* — one of only two settings that can reach the network
+  (the other is the optional **Discord Webhook** above). Downloads
   monster artwork from the OSRS Wiki to show on cards and in the album; only the monster's name is
   requested (no account or personal data), and images are cached to disk. Off by default — turn it
   on to sync images. This setting only controls **network fetching**: once images are cached you can
@@ -166,9 +172,15 @@ notes each default in brackets.
 ## Data & privacy
 
 - Your collection is stored locally as JSON in `~/.runelite/bestiary/`.
-- The plugin makes **no network requests by default**. Enabling **"Fetch NPC images from the Wiki"**
-  (off by default) downloads monster artwork from the OSRS Wiki (`oldschool.runescape.wiki`) — only
-  the monster's name is requested, no account or personal data is sent, and images are cached to disk.
+- The plugin makes **no network requests by default** — both network features below are opt-in and off
+  until you enable them.
+- Enabling **"Fetch NPC images from the Wiki"** (off by default) downloads monster artwork from the
+  OSRS Wiki (`oldschool.runescape.wiki`) — only the monster's name is requested, no account or personal
+  data is sent, and images are cached to disk.
+- Setting a **Discord Webhook** (blank by default) makes the plugin post to the Discord URL *you*
+  provide, and only when *you* capture a Legendary or better creature. It sends only your own
+  capture — the card image, plus the monster, rarity and the RSN shown on the card — to your own
+  webhook. No data about other players is ever sent, and nothing is sent while the field is blank.
 
 ## Community
 
