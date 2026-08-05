@@ -327,6 +327,14 @@ public class ShopTab extends JPanel {
     // -------------------------------------------------------------------------
 
     public void refresh() {
+        // Rebuilding the upgrade cards (removeAll + re-add) is what makes the shop visibly "jiggle".
+        // The whole panel refreshes on EVERY kill (for XP), but the shop only ever changes on a
+        // capture, purchase, discard or reroll — i.e. when credits or an owned tier moves. Skip the
+        // rebuild when nothing shop-relevant changed, which removes the per-kill flicker entirely.
+        long sig = shopStateSignature();
+        if (sig == lastShopSig) return;
+        lastShopSig = sig;
+
         creditsLabel.setText(dataService.getCredits() + " credits");
         if (contentCards != null) {
             // Preserve the active tab's scroll position so buying a tier (which rebuilds the cards)
@@ -338,5 +346,20 @@ public class ShopTab extends JPanel {
                 SwingUtilities.invokeLater(() -> active.getViewport().setViewPosition(pos));
             }
         }
+    }
+
+    /** Last-seen shop state; a refresh is a no-op unless this changes (see {@link #refresh}). */
+    private long lastShopSig = Long.MIN_VALUE;
+
+    /**
+     * A cheap fingerprint of everything the shop renders: the credit balance and every upgrade's
+     * owned tier. Unchanged fingerprint ⇒ the shop looks identical ⇒ no need to rebuild the cards.
+     */
+    private long shopStateSignature() {
+        long sig = dataService.getCredits();
+        for (ShopUpgrade u : ShopUpgrade.values()) {
+            sig = sig * 31 + dataService.getUpgradeTier(u);
+        }
+        return sig;
     }
 }
