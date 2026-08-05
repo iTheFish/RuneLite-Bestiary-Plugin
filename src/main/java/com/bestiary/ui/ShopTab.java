@@ -37,6 +37,9 @@ public class ShopTab extends JPanel {
             new java.util.EnumMap<>(ShopCategory.class);
     private final java.util.Map<ShopCategory, JScrollPane> categoryScrolls =
             new java.util.EnumMap<>(ShopCategory.class);
+    /** Live buy-button per upgrade, so affordability can update in place without a card rebuild. */
+    private final java.util.Map<ShopUpgrade, JButton> buyButtons =
+            new java.util.EnumMap<>(ShopUpgrade.class);
     private int selectedCat = 0;
 
     private final Runnable showDashboard;
@@ -179,6 +182,7 @@ public class ShopTab extends JPanel {
 
     /** Rebuilds each category's upgrade cards from current state (the tab is the category label). */
     private void rebuildUpgrades() {
+        buyButtons.clear();   // stale button refs — repopulated as cards are rebuilt below
         for (ShopCategory cat : ShopCategory.values()) {
             JPanel inner = categoryPanels.get(cat);
             inner.removeAll();
@@ -287,6 +291,9 @@ public class ShopTab extends JPanel {
                     BestiaryPanel.recheckAchievements();
                 }
             });
+            // Registered so a credit-only change (e.g. a capture) can re-check affordability in place,
+            // without rebuilding the card (the rebuild is what made the shop jiggle on capture).
+            buyButtons.put(u, buy);
         }
         card.add(Box.createVerticalStrut(4));
         card.add(buy);
@@ -328,38 +335,65 @@ public class ShopTab extends JPanel {
 
     public void refresh() {
         // Rebuilding the upgrade cards (removeAll + re-add) is what makes the shop visibly "jiggle".
-        // The whole panel refreshes on EVERY kill (for XP), but the shop only ever changes on a
-        // capture, purchase, discard or reroll — i.e. when credits or an owned tier moves. Skip the
-        // rebuild when nothing shop-relevant changed, which removes the per-kill flicker entirely.
-        long sig = shopStateSignature();
-        if (sig == lastShopSig) return;
-        lastShopSig = sig;
+        // The panel refreshes on every kill, and a CAPTURE awards credits — so rebuilding whenever
+        // credits move meant the shop jumped on every capture. Split the cases:
+        //   • an owned TIER changed (a purchase) → full rebuild (rare, user-initiated, expected).
+        //   • only CREDITS changed (a capture / discard) → re-check buy-button affordability in place,
+        //     with NO teardown, so nothing shifts.
+        //   • nothing changed → no-op.
+        long credits  = dataService.getCredits();
+        int  tierSig  = tierSignature();
 
-        creditsLabel.setText(dataService.getCredits() + " credits");
-        if (contentCards != null) {
-            // Preserve the active tab's scroll position so buying a tier (which rebuilds the cards)
-            // doesn't jump the shop up or down.
-            final JScrollPane active = categoryScrolls.get(ShopCategory.values()[selectedCat]);
-            final Point pos = active != null ? active.getViewport().getViewPosition() : null;
-            rebuildUpgrades();
-            if (active != null && pos != null) {
-                SwingUtilities.invokeLater(() -> active.getViewport().setViewPosition(pos));
+        if (tierSig != lastTierSig) {
+            lastTierSig = tierSig;
+            lastCredits = credits;
+            creditsLabel.setText(credits + " credits");
+            if (contentCards != null) {
+                // Preserve the active tab's scroll position so a rebuild doesn't jump the shop.
+                final JScrollPane active = categoryScrolls.get(ShopCategory.values()[selectedCat]);
+                final Point pos = active != null ? active.getViewport().getViewPosition() : null;
+                rebuildUpgrades();
+                if (active != null && pos != null) {
+                    SwingUtilities.invokeLater(() -> active.getViewport().setViewPosition(pos));
+                }
             }
+            return;
+        }
+
+        if (credits != lastCredits) {
+            lastCredits = credits;
+            creditsLabel.setText(credits + " credits");
+            updateAffordability(credits);
         }
     }
 
-    /** Last-seen shop state; a refresh is a no-op unless this changes (see {@link #refresh}). */
-    private long lastShopSig = Long.MIN_VALUE;
+    /** Owned tiers when the cards were last built; a change means a purchase → full rebuild needed. */
+    private int  lastTierSig = Integer.MIN_VALUE;
+    /** Credit balance at the last refresh; a change alone only re-checks affordability (no rebuild). */
+    private long lastCredits = Long.MIN_VALUE;
 
-    /**
-     * A cheap fingerprint of everything the shop renders: the credit balance and every upgrade's
-     * owned tier. Unchanged fingerprint ⇒ the shop looks identical ⇒ no need to rebuild the cards.
-     */
-    private long shopStateSignature() {
-        long sig = dataService.getCredits();
+    /** A fingerprint of every upgrade's owned tier — changes only on a purchase. */
+    private int tierSignature() {
+        int sig = 1;
         for (ShopUpgrade u : ShopUpgrade.values()) {
             sig = sig * 31 + dataService.getUpgradeTier(u);
         }
         return sig;
+    }
+
+    /**
+     * Re-checks each (non-maxed) buy button against the new credit balance, toggling only its
+     * enabled state and colour. This touches no layout, so it can run on every capture without the
+     * shop shifting — unlike a full {@link #rebuildUpgrades()}. Tier costs are unchanged here (only a
+     * purchase changes a tier, and that path rebuilds), so the button text needs no update.
+     */
+    private void updateAffordability(long credits) {
+        for (java.util.Map.Entry<ShopUpgrade, JButton> e : buyButtons.entrySet()) {
+            long cost = dataService.upgradeCost(e.getKey());   // -1 if maxed (not in the map anyway)
+            boolean afford = cost >= 0 && credits >= cost;
+            JButton buy = e.getValue();
+            buy.setEnabled(afford);
+            buy.setForeground(afford ? GOLD : DIM);
+        }
     }
 }
