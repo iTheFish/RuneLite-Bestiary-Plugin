@@ -380,7 +380,8 @@ public class InfoTab extends JPanel {
                 "Right-click a card → 'Reroll (shop)…' to re-roll its stats and shiny at the " +
                 "same monster and rarity — a chance to improve a roll or hit a shiny.\n\n" +
                 "The cost scales with the card's difficulty × rarity (shiny doesn't change it): from " +
-                "20 credits for a Beginner Common up to 1,200 for a Boss Mythic.\n\n" +
+                "20 credits for a Beginner Common up to 1,200 for a Boss Mythic. The Haggler shop " +
+                "unlock cuts this cost by up to 20%.\n\n" +
                 "A shiny stays shiny; a non-shiny gets a fresh shiny roll (raised by the Reroll Shine " +
                 "shop unlock). Non-Mythic cards have a 5% base chance to rank up one rarity " +
                 "(raised by the Reroll Fortune shop unlock). Your " +
@@ -404,10 +405,13 @@ public class InfoTab extends JPanel {
                 "• Salvager's Eye — +2% per tier to credits earned from discarding cards.\n" +
                 "• Hunter's Focus — +5 XP per tier (up to +25) added to every kill's XP.\n" +
                 "• Scholar's Insight — +5% per tier (up to +25%) to the XP from every capture.\n" +
-                "• Shiny Charm — +0.1% per tier (up to +0.5%) to your capture shiny chance.\n\n" +
+                "• Shiny Charm — +0.1% per tier (up to +0.5%) to your capture shiny chance.\n" +
+                "• Fortune's Favour — +1% per tier (up to +5%) chance a capture rolls one rarity " +
+                "higher. Owning any tier is what enables the roll, so tier 1 costs the most.\n\n" +
                 "Rerolls:\n" +
                 "• Reroll Shine — +0.1% per tier to the shiny chance when you reroll a card.\n" +
-                "• Reroll Fortune — +1% per tier to the chance a reroll ranks a card up one rarity.\n\n" +
+                "• Reroll Fortune — +1% per tier to the chance a reroll ranks a card up one rarity.\n" +
+                "• Haggler — 4% per tier (up to 20%) off the credit cost of every Card Reroller use.\n\n" +
                 "Each card shows its current bonus and what the next tier upgrades it to before you buy."));
         c.add(tile("No real-world value",
                 "Bestiary is a free, fan-made minigame — it's all just for fun. Bestiary Credits, cards, " +

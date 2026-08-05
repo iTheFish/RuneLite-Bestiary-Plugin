@@ -34,6 +34,18 @@ public enum ShopUpgrade {
             "Increases the XP earned from every successful capture.",
             ShopCategory.PROGRESSION, 5, new long[]{500, 1000, 2500, 5000, 10000}, 0.05),
 
+    /**
+     * Chance that a capture rolls ONE rarity higher than it landed (Mythic can't climb further).
+     * Owning any tier is what enables this extra roll — with zero tiers it never happens, which is
+     * why the first tier is the priciest. effect = added rarity-up chance/tier.
+     */
+    CAPTURE_RARITY(
+            "Fortune's Favour",
+            "Gives every capture a chance to roll one rarity higher than it landed (Mythic can't "
+                    + "climb further). Buying the first tier unlocks the roll; further tiers raise "
+                    + "the chance. A proc is announced in chat.",
+            ShopCategory.PROGRESSION, 5, new long[]{7500, 1500, 3000, 4500, 6000}, 0.01),
+
     /** Adds to the passive shiny chance on every capture. */
     SHINY_CHANCE(
             "Shiny Charm",
@@ -50,7 +62,14 @@ public enum ShopUpgrade {
     REROLL_RARITY(
             "Reroll Fortune",
             "Raises the chance a reroll bumps a card up one rarity.",
-            ShopCategory.REROLLS, 5, 1500, 0.01);
+            ShopCategory.REROLLS, 5, 1500, 0.01),
+
+    /** Reduces the credit cost of every Card Reroller use (fractional discount/tier). */
+    REROLL_COST(
+            "Haggler",
+            "Haggles down the credit cost of every Card Reroller use, stacking to a 20% discount "
+                    + "at max tier.",
+            ShopCategory.REROLLS, 5, new long[]{1500, 3000, 4500, 6000, 7500}, 0.04);
 
     public final String       title;
     public final String       description;

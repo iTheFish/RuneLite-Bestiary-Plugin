@@ -131,6 +131,13 @@ public class CapturedCreature {
      */
     public final int killsBeforeCapture;
 
+    /**
+     * Transient (NEVER persisted): true when Fortune's Favour bumped this capture up one rarity.
+     * Set at capture only, to drive the one-off "Fortune's Favour shines" chat proc — it carries no
+     * lasting meaning, so it is intentionally excluded from the builder and the on-disk codec.
+     */
+    public transient boolean fortuneBumped;
+
     private CapturedCreature(Builder b) {
         this.id                = b.id;
         this.npcId             = b.npcId;

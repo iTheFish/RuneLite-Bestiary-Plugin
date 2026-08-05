@@ -279,7 +279,7 @@ public class BestiaryPlugin extends Plugin {
         String playerName = client.getLocalPlayer() != null ? client.getLocalPlayer().getName() : "";
         Optional<CapturedCreature> result = captureService.attemptCapture(
                 npc, location, captureLevel, killCount, region, playerName, observedDamage,
-                dataService.bonusShinyChance());
+                dataService.bonusShinyChance(), dataService.bonusCaptureRarityChance());
 
         // Overlay / animation
         if (config.showCaptureAnimation()) {
@@ -335,6 +335,12 @@ public class BestiaryPlugin extends Plugin {
                         notifyCapture(creature, baseCredits, bonusCredits);
                     }
                 }
+            }
+
+            // Fortune's Favour proc (shop upgrade): a rare, exciting rarity climb — always worth a
+            // shout, ring-of-wealth style, whenever capture notifications are on.
+            if (creature.fortuneBumped && config.notifyOnCapture()) {
+                sendFortuneMessage(creature);
             }
 
             if (config.notifyOnAchievement()) {
@@ -422,6 +428,8 @@ public class BestiaryPlugin extends Plugin {
     private static final java.awt.Color CREDIT_CHAT_COLOR = new java.awt.Color(51, 102, 204);
     /** Colour for the "(+N)" Hunter's Bounty shop bonus shown after the base credits (dark green). */
     private static final java.awt.Color BOUNTY_CHAT_COLOR = new java.awt.Color(34, 139, 34);
+    /** Colour for "brightly" in the Fortune's Favour proc line (warm gold glow). */
+    private static final java.awt.Color FORTUNE_CHAT_COLOR = new java.awt.Color(255, 200, 40);
 
     private void notifyCapture(CapturedCreature creature, long credits, long bonus) {
         int quality = creature.powerLevel();
@@ -447,6 +455,27 @@ public class BestiaryPlugin extends Plugin {
         chatMessageManager.queue(QueuedMessage.builder()
                 .type(ChatMessageType.GAMEMESSAGE)
                 .runeLiteFormattedMessage(message)
+                .build());
+    }
+
+    /**
+     * The Fortune's Favour proc line, ring-of-wealth style: "shines brightly" glows gold and the
+     * new rarity is drawn in its own rarity colour.
+     */
+    private void sendFortuneMessage(CapturedCreature creature) {
+        String formatted = new ChatMessageBuilder()
+                .append(ChatColorType.HIGHLIGHT)
+                .append("Fortune's Favour shines ")
+                .append(FORTUNE_CHAT_COLOR, "brightly")
+                .append(ChatColorType.HIGHLIGHT)
+                .append("! This capture climbed to ")
+                .append(creature.rarity.displayColor, creature.rarity.label)
+                .append(ChatColorType.HIGHLIGHT)
+                .append(".")
+                .build();
+        chatMessageManager.queue(QueuedMessage.builder()
+                .type(ChatMessageType.GAMEMESSAGE)
+                .runeLiteFormattedMessage(formatted)
                 .build());
     }
 
