@@ -338,39 +338,53 @@ public class BestiaryPanel extends PluginPanel {
         boolean viewing = dataService.isViewing();
         boolean loggedIn = activeHash != null;
 
-        switcherUpdating = true;
-        try {
-            accountSwitcher.removeAllItems();
-            AccountItem toSelect = null;
+        // Only rebuild the combo model when the accounts or the selection actually changed. This runs
+        // on EVERY panel refresh (i.e. every kill); rebuilding the JComboBox unconditionally fired a
+        // revalidate() across the whole panel, which made the width-sensitive Shop tab visibly
+        // "jiggle" on each kill. Accounts change rarely (login / add), so skip the churn otherwise.
+        String sig = loggedIn + "|" + viewing + "|" + activeHash + "|" + viewedHash + "|" + accounts.stream()
+                .map(a -> a.hash + ":" + a.rsn).collect(java.util.stream.Collectors.joining(","));
+        if (!sig.equals(lastSwitcherSig)) {
+            lastSwitcherSig = sig;
+            switcherUpdating = true;
+            try {
+                accountSwitcher.removeAllItems();
+                AccountItem toSelect = null;
 
-            // Logged-out default: a non-account placeholder, so nothing is "viewed" until picked.
-            AccountItem placeholder = null;
-            if (!loggedIn) {
-                placeholder = new AccountItem(null, null, false);
-                accountSwitcher.addItem(placeholder);
-            }
-
-            for (com.bestiary.service.BestiaryStore.AccountRef a : accounts) {
-                boolean isPlayed = loggedIn && a.hash == activeHash;
-                AccountItem item = new AccountItem(a.hash, a.rsn, isPlayed);
-                accountSwitcher.addItem(item);
-                if (viewing) {
-                    if (viewedHash != null && a.hash == viewedHash) toSelect = item;
-                } else if (isPlayed) {
-                    toSelect = item;
+                // Logged-out default: a non-account placeholder, so nothing is "viewed" until picked.
+                AccountItem placeholder = null;
+                if (!loggedIn) {
+                    placeholder = new AccountItem(null, null, false);
+                    accountSwitcher.addItem(placeholder);
                 }
+
+                for (com.bestiary.service.BestiaryStore.AccountRef a : accounts) {
+                    boolean isPlayed = loggedIn && a.hash == activeHash;
+                    AccountItem item = new AccountItem(a.hash, a.rsn, isPlayed);
+                    accountSwitcher.addItem(item);
+                    if (viewing) {
+                        if (viewedHash != null && a.hash == viewedHash) toSelect = item;
+                    } else if (isPlayed) {
+                        toSelect = item;
+                    }
+                }
+                // Logged out and not viewing → show the placeholder ("— Not logged in —").
+                if (toSelect == null && placeholder != null) toSelect = placeholder;
+                if (toSelect != null) accountSwitcher.setSelectedItem(toSelect);
+            } finally {
+                switcherUpdating = false;
             }
-            // Logged out and not viewing → show the placeholder ("— Not logged in —").
-            if (toSelect == null && placeholder != null) toSelect = placeholder;
-            if (toSelect != null) accountSwitcher.setSelectedItem(toSelect);
-        } finally {
-            switcherUpdating = false;
         }
+        // Cheap + idempotent (no-ops when unchanged), so always kept current — the enabled state also
+        // depends on the selected tab, not just the account set.
         // Show when there's a real choice (2+ accounts), while viewing, or while logged out with any
         // known account to browse (so the "not logged in" default + browsable accounts are visible).
         accountRow.setVisible(accounts.size() >= 2 || viewing || (!loggedIn && !accounts.isEmpty()));
         updateSwitcherEnabled();
     }
+
+    /** Last account-switcher state; the combo is only rebuilt when this changes (see above). */
+    private String lastSwitcherSig = null;
 
     /**
      * Disables the account switcher while the Cards tab is the one on screen. Switching account removes
