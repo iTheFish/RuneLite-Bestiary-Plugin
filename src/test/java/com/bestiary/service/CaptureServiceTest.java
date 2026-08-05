@@ -83,7 +83,7 @@ public class CaptureServiceTest {
         // At a high Capture Level the catch rate is high; loop (deterministic RNG) until one lands.
         Optional<CapturedCreature> result = Optional.empty();
         for (int i = 0; i < 1000 && !result.isPresent(); i++) {
-            result = service.attemptCapture(npc, null, 99, 5, "Lumbridge", "Player", 0, 0.0);
+            result = service.attemptCapture(npc, null, 99, 5, "Lumbridge", "Player", 0, 0.0, 0.0);
         }
         assertTrue(result.isPresent());
 

@@ -51,7 +51,8 @@ public class CaptureService {
     public Optional<CapturedCreature> attemptCapture(NPC npc, WorldPoint location,
                                                      int captureLevel, int killCount,
                                                      String regionName, String playerName,
-                                                     int observedDamage, double shinyBonus) {
+                                                     int observedDamage, double shinyBonus,
+                                                     double rarityUpChance) {
         String npcName = npc.getName() != null ? npc.getName() : "Unknown";
         DifficultyTier difficulty = MonsterRoster.getDifficulty(npcName, npc.getCombatLevel());
 
@@ -66,6 +67,14 @@ public class CaptureService {
         }
 
         CreatureRarity rarity = RarityRoller.roll(rng, captureLevel);
+        // Fortune's Favour (shop): a chance to climb one rarity higher than the roll landed. Only
+        // happens if the player owns the upgrade (rarityUpChance > 0); Mythic can't climb further.
+        boolean fortuneBumped = false;
+        if (rarity != CreatureRarity.MYTHIC && rarityUpChance > 0
+                && rng.nextDouble() < rarityUpChance) {
+            rarity = CreatureRarity.values()[rarity.ordinal() + 1];
+            fortuneBumped = true;
+        }
         // Independent shiny roll — orthogonal to rarity. Base 0.2% at Bestiary level 1,
         // scaling linearly to 2% at level 99. Future shop unlocks / passives can multiply this.
         boolean shiny = rng.nextDouble() < shinyChance(captureLevel) + shinyBonus;
@@ -90,8 +99,10 @@ public class CaptureService {
                 .killsBeforeCapture(killCount)
                 .playerName(playerName != null ? playerName : "")
                 .build();
+        creature.fortuneBumped = fortuneBumped;
 
-        log.info("Captured {} [{}] difficulty={}", creature.npcName, creature.rarity.label, difficulty.label);
+        log.info("Captured {} [{}] difficulty={}{}", creature.npcName, creature.rarity.label,
+                difficulty.label, fortuneBumped ? " (Fortune's Favour bumped)" : "");
         return Optional.of(creature);
     }
 

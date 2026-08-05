@@ -600,6 +600,30 @@ public class BestiaryDataService {
     }
 
     /**
+     * Passive capture rarity-up chance from the Fortune's Favour upgrade. 0 when unowned — that's
+     * the point: with no tier the capture never rolls the extra rarity bump at all.
+     */
+    public double bonusCaptureRarityChance() {
+        return com.bestiary.model.ShopUpgrade.CAPTURE_RARITY.effectFor(
+                collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.CAPTURE_RARITY));
+    }
+
+    /** Passive reroll-cost discount (0..0.20) from the Haggler upgrade. */
+    public double rerollDiscount() {
+        return com.bestiary.model.ShopUpgrade.REROLL_COST.effectFor(
+                collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.REROLL_COST));
+    }
+
+    /**
+     * Actual credits charged to reroll {@code c}: the {@link #rerollCost base cost} minus the
+     * Haggler discount, floored at 1. Use this everywhere the reroll price is shown or spent so the
+     * quoted and charged amounts always match.
+     */
+    public long effectiveRerollCost(CapturedCreature c) {
+        return Math.max(1L, Math.round(rerollCost(c) * (1.0 - rerollDiscount())));
+    }
+
+    /**
      * Card Reroller (shop POC): for {@link #rerollCost} credits, re-rolls a card's stats,
      * prayer and shiny at the SAME rarity/monster (a chance to improve stats or hit shiny).
      * Keeps id + metadata (favourite/nickname/album-cover/observed HP). Returns the new
@@ -610,7 +634,7 @@ public class BestiaryDataService {
         // Guard against a stale card from a since-closed view (#131): never reroll — and never spend
         // credits or inject a foreign card via addCapture — for a card not in the played collection.
         if (!collection.containsId(c.id)) return null;
-        if (!spendCredits(rerollCost(c))) return null;
+        if (!spendCredits(effectiveRerollCost(c))) return null;
         // Non-Mythic cards get a small chance to move up a rarity (raised by the Reroll Fortune shop upgrade).
         CreatureRarity rarity = c.rarity;
         if (rarity != CreatureRarity.MYTHIC

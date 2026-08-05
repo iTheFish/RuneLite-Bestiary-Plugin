@@ -240,7 +240,7 @@ public class BestiaryPanel extends PluginPanel {
      */
     private void startReroll(Window win, com.bestiary.model.CapturedCreature cap) {
         if (dataService.isViewing()) return;   // read-only view of another account (#48)
-        long cost = com.bestiary.service.BestiaryDataService.rerollCost(cap);
+        long cost = dataService.effectiveRerollCost(cap);
         if (dataService.getCredits() < cost) {
             RerollResultDialog.info(win, "Card Reroller",
                     "You need " + cost + " credits to reroll (you have " + dataService.getCredits() + ").");
