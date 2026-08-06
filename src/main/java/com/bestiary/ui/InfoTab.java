@@ -480,15 +480,26 @@ public class InfoTab extends JPanel {
     // -------------------------------------------------------------------------
 
     private JPanel buildStatsStrip() {
-        JPanel strip = new JPanel(new GridLayout(2, 2, 4, 4));
+        // GridBag (not GridLayout) so the two columns fill the panel to the exact pixel and the right
+        // column's edge matches the full-width shortcut buttons below. A plain GridLayout drops the odd
+        // leftover pixel via integer division, leaving the right accents 1px out of line on odd widths.
+        JPanel strip = new JPanel(new GridBagLayout());
         strip.setOpaque(false);
         strip.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
         strip.setAlignmentX(LEFT_ALIGNMENT);
 
-        strip.add(clickable(statBox("Level",   levelVal,    false), DashboardDialog.DashView.PROGRESSION));
-        strip.add(clickable(statBox("Kills",   killsVal,    true),  DashboardDialog.DashView.PROGRESSION));
-        strip.add(clickable(statBox("Species", speciesVal,  false), DashboardDialog.DashView.SPECIES));
-        strip.add(clickable(statBox("Caught",  capturesVal, true),  DashboardDialog.DashView.CAUGHT));
+        GridBagConstraints g = new GridBagConstraints();
+        g.fill = GridBagConstraints.BOTH;
+        g.weightx = 1; g.weighty = 1;
+        // Split the old 4px GridLayout gap as 2px on each adjoining side.
+        g.gridx = 0; g.gridy = 0; g.insets = new Insets(0, 0, 2, 2);
+        strip.add(clickable(statBox("Level",   levelVal,    false), DashboardDialog.DashView.PROGRESSION), g);
+        g.gridx = 1; g.insets = new Insets(0, 2, 2, 0);
+        strip.add(clickable(statBox("Kills",   killsVal,    true),  DashboardDialog.DashView.PROGRESSION), g);
+        g.gridx = 0; g.gridy = 1; g.insets = new Insets(2, 0, 0, 2);
+        strip.add(clickable(statBox("Species", speciesVal,  false), DashboardDialog.DashView.SPECIES), g);
+        g.gridx = 1; g.insets = new Insets(2, 2, 0, 0);
+        strip.add(clickable(statBox("Caught",  capturesVal, true),  DashboardDialog.DashView.CAUGHT), g);
 
         return strip;
     }
@@ -547,31 +558,36 @@ public class InfoTab extends JPanel {
 
     private JPanel buildShortcutRow(Runnable openAlbum, Runnable openFavourites,
                                             Runnable openRecap, Runnable openCatchRates) {
-        JPanel container = new JPanel();
-        container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
+        // One 2-column GridBag for the whole block: Favourites + Catch Rates take a column each, while
+        // the full-width Open Album / Session Recap buttons span BOTH columns. Sharing a single grid is
+        // what makes every button's right accent land on the exact same pixel as the stat boxes' right
+        // accent above — regardless of the (odd or even) side-panel width.
+        JPanel container = new JPanel(new GridBagLayout());
         container.setOpaque(false);
         container.setAlignmentX(LEFT_ALIGNMENT);
+        container.setMaximumSize(new Dimension(Integer.MAX_VALUE, 140));
 
-        // Full-width Open Album (top), Favourites + Catch Rates (middle), full-width Session Recap (bottom).
-        JPanel albumRow = new JPanel(new GridLayout(1, 1));
-        albumRow.setOpaque(false);
-        albumRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
-        albumRow.setAlignmentX(LEFT_ALIGNMENT);
-        albumRow.add(blockBtn("Open Album", ORANGE, openAlbum, true));
+        GridBagConstraints g = new GridBagConstraints();
+        g.fill = GridBagConstraints.BOTH;
+        g.weightx = 1;
 
-        JPanel midRow = new JPanel(new GridLayout(1, 2, 4, 0));
-        midRow.setOpaque(false);
-        midRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
-        midRow.setAlignmentX(LEFT_ALIGNMENT);
+        // Full-width Open Album (spans both columns)
+        g.gridx = 0; g.gridy = 0; g.gridwidth = 2; g.insets = new Insets(0, 0, 4, 0);
+        container.add(blockBtn("Open Album", ORANGE, openAlbum, true), g);
+
+        // Favourites + Catch Rates (one column each; 4px gap split as 2px per side)
+        g.gridwidth = 1; g.gridy = 1;
+        g.gridx = 0; g.insets = new Insets(0, 0, 4, 2);
         favouritesBtn = blockBtn("★ Favourites", new Color(220, 180, 60), openFavourites);
-        midRow.add(favouritesBtn);
+        container.add(favouritesBtn, g);
+
         JButton catchBtn = blockBtn(" Catch Rates", new Color(100, 180, 220), openCatchRates, true);
         final int iD = 13;
         catchBtn.setIcon(new Icon() {
             @Override public int getIconWidth()  { return iD; }
             @Override public int getIconHeight() { return iD; }
-            @Override public void paintIcon(Component c, Graphics g, int x, int y) {
-                Graphics2D g2 = (Graphics2D) g.create();
+            @Override public void paintIcon(Component c, Graphics g2raw, int x, int y) {
+                Graphics2D g2 = (Graphics2D) g2raw.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,      RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
                 g2.setColor(Color.WHITE);
@@ -586,20 +602,14 @@ public class InfoTab extends JPanel {
             }
         });
         catchBtn.setIconTextGap(3);
-        midRow.add(catchBtn);
+        g.gridx = 1; g.insets = new Insets(0, 2, 4, 0);
+        container.add(catchBtn, g);
 
-        JPanel recapRow = new JPanel(new GridLayout(1, 1));
-        recapRow.setOpaque(false);
-        recapRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
-        recapRow.setAlignmentX(LEFT_ALIGNMENT);
+        // Full-width Session Recap (spans both columns)
+        g.gridx = 0; g.gridy = 2; g.gridwidth = 2; g.insets = new Insets(0, 0, 0, 0);
         recapBtn = blockBtn("Session Recap", new Color(120, 200, 120), openRecap, true);
-        recapRow.add(recapBtn);
+        container.add(recapBtn, g);
 
-        container.add(albumRow);
-        container.add(Box.createVerticalStrut(4));
-        container.add(midRow);
-        container.add(Box.createVerticalStrut(4));
-        container.add(recapRow);
         return container;
     }
 
