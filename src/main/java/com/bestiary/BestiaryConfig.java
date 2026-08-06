@@ -206,6 +206,8 @@ public interface BestiaryConfig extends Config {
                         + "(oldschool.runescape.wiki) to show on cards and in the album.<br>"
                         + "Only the monster's name is requested — no account or personal<br>"
                         + "data is sent — and images are cached to disk.<br>"
+                        + "Already-downloaded artwork keeps showing even if you<br>"
+                        + "turn this off; the toggle only controls new downloads.<br>"
                         + "<b>Off by default</b> — turn it on for the best album experience.</html>",
             section = albumSection,
             position = 1
