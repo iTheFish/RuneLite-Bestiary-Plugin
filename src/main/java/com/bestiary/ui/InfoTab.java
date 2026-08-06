@@ -46,9 +46,10 @@ public class InfoTab extends JPanel {
     private final List<JToggleButton> catButtons = new ArrayList<>();
 
     // Header controls that act on the collection — disabled while logged out (the category
-    // sub-tabs stay live so the guide/reference is always browsable).
-    private JPanel statsStrip;
-    private JPanel shortcutRow;
+    // sub-tabs stay live so the guide/reference is always browsable). The stat boxes and the
+    // shortcut buttons share ONE GridBag so every accent lines up to the pixel (see below).
+    private JPanel headerControls;
+    private final List<JPanel> statBoxes = new ArrayList<>();
     private boolean interactiveEnabled = true;
 
     public InfoTab(BestiaryDataService dataService, ProgressionService progressionService,
@@ -69,11 +70,8 @@ public class InfoTab extends JPanel {
         header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
         header.setBackground(ColorScheme.DARK_GRAY_COLOR);
         header.setBorder(new EmptyBorder(6, 6, 4, 6));
-        statsStrip  = buildStatsStrip();
-        shortcutRow = buildShortcutRow(openAlbum, openFavourites, openRecap, openCatchRates);
-        header.add(statsStrip);
-        header.add(Box.createVerticalStrut(6));
-        header.add(shortcutRow);
+        headerControls = buildStatsAndShortcuts(openAlbum, openFavourites, openRecap, openCatchRates);
+        header.add(headerControls);
         header.add(Box.createVerticalStrut(8));
         header.add(headerDivider());
         header.add(Box.createVerticalStrut(6));
@@ -110,10 +108,12 @@ public class InfoTab extends JPanel {
      */
     public void setInteractiveEnabled(boolean enabled) {
         interactiveEnabled = enabled;
-        setButtonsEnabled(shortcutRow, enabled);
-        for (Component c : statsStrip.getComponents()) {
-            c.setEnabled(enabled);
-            c.setCursor(Cursor.getPredefinedCursor(enabled ? Cursor.HAND_CURSOR : Cursor.DEFAULT_CURSOR));
+        // The stat boxes and the shortcut buttons now live in one panel; disable the buttons
+        // recursively and grey the (non-button) stat boxes via their tracked references.
+        setButtonsEnabled(headerControls, enabled);
+        for (JPanel box : statBoxes) {
+            box.setEnabled(enabled);
+            box.setCursor(Cursor.getPredefinedCursor(enabled ? Cursor.HAND_CURSOR : Cursor.DEFAULT_CURSOR));
         }
     }
 
@@ -479,18 +479,78 @@ public class InfoTab extends JPanel {
     // Live stats strip  (4 boxes in one row)
     // -------------------------------------------------------------------------
 
-    private JPanel buildStatsStrip() {
-        JPanel strip = new JPanel(new GridLayout(2, 2, 4, 4));
-        strip.setOpaque(false);
-        strip.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
-        strip.setAlignmentX(LEFT_ALIGNMENT);
+    /**
+     * Builds the whole header control block — the 2×2 stat boxes and the three shortcut rows — in ONE
+     * 2-column {@link GridBagLayout}. Because the stat boxes and the buttons share the same grid, the
+     * full-width buttons (Open Album, Session Recap span both columns) end at the exact same pixel as
+     * the right-hand stat boxes (Kills, Caught), and Catch Rates lines up with them too — on any panel
+     * width. (Two separate panels drift by a pixel because each rounds its column split independently.)
+     */
+    private JPanel buildStatsAndShortcuts(Runnable openAlbum, Runnable openFavourites,
+                                          Runnable openRecap, Runnable openCatchRates) {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setOpaque(false);
+        panel.setAlignmentX(LEFT_ALIGNMENT);
+        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 260));
 
-        strip.add(clickable(statBox("Level",   levelVal,    false), DashboardDialog.DashView.PROGRESSION));
-        strip.add(clickable(statBox("Kills",   killsVal,    true),  DashboardDialog.DashView.PROGRESSION));
-        strip.add(clickable(statBox("Species", speciesVal,  false), DashboardDialog.DashView.SPECIES));
-        strip.add(clickable(statBox("Caught",  capturesVal, true),  DashboardDialog.DashView.CAUGHT));
+        GridBagConstraints g = new GridBagConstraints();
+        g.fill = GridBagConstraints.BOTH;
+        g.weightx = 1;
 
-        return strip;
+        // --- Stat boxes (rows 0–1). weighty pulls them to equal, taller box height. ---
+        g.weighty = 1;
+        JPanel level = clickable(statBox("Level", levelVal, false), DashboardDialog.DashView.PROGRESSION);
+        g.gridx = 0; g.gridy = 0; g.insets = new Insets(0, 0, 2, 2); panel.add(level, g);
+        JPanel kills = clickable(statBox("Kills", killsVal, true), DashboardDialog.DashView.PROGRESSION);
+        g.gridx = 1; g.insets = new Insets(0, 2, 2, 0); panel.add(kills, g);
+        JPanel species = clickable(statBox("Species", speciesVal, false), DashboardDialog.DashView.SPECIES);
+        g.gridx = 0; g.gridy = 1; g.insets = new Insets(2, 0, 6, 2); panel.add(species, g);
+        JPanel caught = clickable(statBox("Caught", capturesVal, true), DashboardDialog.DashView.CAUGHT);
+        g.gridx = 1; g.insets = new Insets(2, 2, 6, 0); panel.add(caught, g);
+        statBoxes.add(level); statBoxes.add(kills); statBoxes.add(species); statBoxes.add(caught);
+
+        // --- Shortcut buttons (rows 2–4). weighty 0 keeps them at natural button height. ---
+        g.weighty = 0;
+        // Full-width Open Album (spans both columns)
+        g.gridx = 0; g.gridy = 2; g.gridwidth = 2; g.insets = new Insets(0, 0, 4, 0);
+        panel.add(blockBtn("Open Album", ORANGE, openAlbum, true), g);
+
+        // Favourites + Catch Rates (one column each; 4px gap split as 2px per side)
+        g.gridwidth = 1; g.gridy = 3;
+        g.gridx = 0; g.insets = new Insets(0, 0, 4, 2);
+        favouritesBtn = blockBtn("★ Favourites", new Color(220, 180, 60), openFavourites);
+        panel.add(favouritesBtn, g);
+
+        JButton catchBtn = blockBtn(" Catch Rates", new Color(100, 180, 220), openCatchRates, true);
+        final int iD = 13;
+        catchBtn.setIcon(new Icon() {
+            @Override public int getIconWidth()  { return iD; }
+            @Override public int getIconHeight() { return iD; }
+            @Override public void paintIcon(Component c, Graphics g2raw, int x, int y) {
+                Graphics2D g2 = (Graphics2D) g2raw.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,      RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                g2.setColor(Color.WHITE);
+                g2.fillOval(x, y, iD, iD);
+                g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+                FontMetrics fm = g2.getFontMetrics();
+                g2.setColor(new Color(30, 30, 30));
+                String ch = "i";
+                g2.drawString(ch, x + (iD - fm.stringWidth(ch)) / 2,
+                        y + (iD + fm.getAscent() - fm.getDescent()) / 2);
+                g2.dispose();
+            }
+        });
+        catchBtn.setIconTextGap(3);
+        g.gridx = 1; g.insets = new Insets(0, 2, 4, 0);
+        panel.add(catchBtn, g);
+
+        // Full-width Session Recap (spans both columns)
+        g.gridx = 0; g.gridy = 4; g.gridwidth = 2; g.insets = new Insets(0, 0, 0, 0);
+        recapBtn = blockBtn("Session Recap", new Color(120, 200, 120), openRecap, true);
+        panel.add(recapBtn, g);
+
+        return panel;
     }
 
     private JPanel clickable(JPanel panel, DashboardDialog.DashView view) {
@@ -544,64 +604,6 @@ public class InfoTab extends JPanel {
     /** Shortcuts disabled while viewing another account (about YOUR play, not the viewed collection). */
     private JButton favouritesBtn;
     private JButton recapBtn;
-
-    private JPanel buildShortcutRow(Runnable openAlbum, Runnable openFavourites,
-                                            Runnable openRecap, Runnable openCatchRates) {
-        JPanel container = new JPanel();
-        container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
-        container.setOpaque(false);
-        container.setAlignmentX(LEFT_ALIGNMENT);
-
-        // Full-width Open Album (top), Favourites + Catch Rates (middle), full-width Session Recap (bottom).
-        JPanel albumRow = new JPanel(new GridLayout(1, 1));
-        albumRow.setOpaque(false);
-        albumRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
-        albumRow.setAlignmentX(LEFT_ALIGNMENT);
-        albumRow.add(blockBtn("Open Album", ORANGE, openAlbum, true));
-
-        JPanel midRow = new JPanel(new GridLayout(1, 2, 4, 0));
-        midRow.setOpaque(false);
-        midRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
-        midRow.setAlignmentX(LEFT_ALIGNMENT);
-        favouritesBtn = blockBtn("★ Favourites", new Color(220, 180, 60), openFavourites);
-        midRow.add(favouritesBtn);
-        JButton catchBtn = blockBtn(" Catch Rates", new Color(100, 180, 220), openCatchRates, true);
-        final int iD = 13;
-        catchBtn.setIcon(new Icon() {
-            @Override public int getIconWidth()  { return iD; }
-            @Override public int getIconHeight() { return iD; }
-            @Override public void paintIcon(Component c, Graphics g, int x, int y) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,      RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-                g2.setColor(Color.WHITE);
-                g2.fillOval(x, y, iD, iD);
-                g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
-                FontMetrics fm = g2.getFontMetrics();
-                g2.setColor(new Color(30, 30, 30));
-                String ch = "i";
-                g2.drawString(ch, x + (iD - fm.stringWidth(ch)) / 2,
-                        y + (iD + fm.getAscent() - fm.getDescent()) / 2);
-                g2.dispose();
-            }
-        });
-        catchBtn.setIconTextGap(3);
-        midRow.add(catchBtn);
-
-        JPanel recapRow = new JPanel(new GridLayout(1, 1));
-        recapRow.setOpaque(false);
-        recapRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
-        recapRow.setAlignmentX(LEFT_ALIGNMENT);
-        recapBtn = blockBtn("Session Recap", new Color(120, 200, 120), openRecap, true);
-        recapRow.add(recapBtn);
-
-        container.add(albumRow);
-        container.add(Box.createVerticalStrut(4));
-        container.add(midRow);
-        container.add(Box.createVerticalStrut(4));
-        container.add(recapRow);
-        return container;
-    }
 
     /** A chunky, header-style shortcut button (orange left accent, like the stat boxes). */
     private static JButton blockBtn(String text, Color fg, Runnable action) {
