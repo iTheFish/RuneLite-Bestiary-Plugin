@@ -96,7 +96,9 @@ public final class PanelIcon {
     public static void main(String[] args) throws Exception {
         System.setProperty("java.awt.headless", "true");
         String out = args.length > 0 ? args[0] : "icon.png";
-        ImageIO.write(render(128), "png", new File(out));
+        // The Plugin Hub caps the listing icon at 48x72px, so render at 48. The in-client sidebar
+        // button doesn't use this file — it calls render(s) at the nav-button size directly.
+        ImageIO.write(render(48), "png", new File(out));
         System.out.println("Wrote " + out);
     }
 }
