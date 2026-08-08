@@ -16,12 +16,15 @@ import java.io.File;
 
 import javax.imageio.ImageIO;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * The Bestiary panel / Plugin Hub icon: a Mythic-shiny collection jar (red essence, grey stopper,
  * shiny sparkle) with a white "B". Drawn purely with AWT so it doubles as the single source of
  * truth for both the in-client sidebar button ({@link #render}) and the repo-root {@code icon.png}
  * the Plugin Hub lists ({@link #main}). Regenerate the file after any tweak here — see {@link #main}.
  */
+@Slf4j
 public final class PanelIcon {
 
     private PanelIcon() {}
@@ -99,6 +102,6 @@ public final class PanelIcon {
         // The Plugin Hub caps the listing icon at 48x72px, so render at 48. The in-client sidebar
         // button doesn't use this file — it calls render(s) at the nav-button size directly.
         ImageIO.write(render(48), "png", new File(out));
-        System.out.println("Wrote " + out);
+        log.info("Wrote {}", out);
     }
 }
