@@ -6,6 +6,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.Call;
+import okhttp3.Callback;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -17,12 +19,13 @@ import javax.inject.Singleton;
 import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -99,15 +102,18 @@ public class WikiImageService {
 
     private final OkHttpClient httpClient;
     private final BestiaryConfig config;
+    /** RuneLite's shared executor — client-owned, so we submit tasks but never shut it down. */
+    private final ScheduledExecutorService executor;
 
     @Inject
-    public WikiImageService(OkHttpClient httpClient, BestiaryConfig config) {
+    public WikiImageService(OkHttpClient httpClient, BestiaryConfig config, ScheduledExecutorService executor) {
         // Reuse RuneLite's shared OkHttp client, with our shorter timeouts.
         this.httpClient = httpClient.newBuilder()
                 .connectTimeout(TIMEOUT_MS, TimeUnit.MILLISECONDS)
                 .readTimeout(TIMEOUT_MS, TimeUnit.MILLISECONDS)
                 .build();
         this.config = config;
+        this.executor = executor;
         imageCacheDir = new File(System.getProperty("user.home"),
                 ".runelite" + File.separator + "bestiary" + File.separator + "images");
     }
@@ -146,7 +152,12 @@ public class WikiImageService {
             return;
         }
 
-        CompletableFuture.runAsync(() -> {
+        // One short background task on RuneLite's shared executor resolves the thumbnail URLs (a few
+        // batched calls), then hands the actual image downloads to OkHttp's async dispatcher via
+        // enqueue(). The dispatcher runs several downloads concurrently (capped per-host) on the
+        // shared client's own threads — so we get parallelism back without owning any threads, using
+        // the common ForkJoinPool, or blocking one of the shared executor's threads for the whole run.
+        executor.execute(() -> {
             Map<String, String> urlsByName = new LinkedHashMap<>();
             for (int i = 0; i < toFetch.size(); i += BATCH_SIZE) {
                 List<String> chunk = toFetch.subList(i, Math.min(i + BATCH_SIZE, toFetch.size()));
@@ -163,31 +174,50 @@ public class WikiImageService {
                 }
             }
 
-            List<CompletableFuture<Void>> downloads = new ArrayList<>();
             for (Map.Entry<String, String> entry : urlsByName.entrySet()) {
-                String npcName  = entry.getKey();
-                String imageUrl = entry.getValue();
-                downloads.add(CompletableFuture.runAsync(() -> {
-                    try {
-                        BufferedImage img = downloadImage(imageUrl);
-                        if (img != null) {
-                            cache.put(npcName, img);
-                            saveToDisk(npcName, img);
-                            SwingUtilities.invokeLater(onEachLoad);
-                            firePendingCallbacks(npcName);
-                        } else {
-                            failed.add(npcName);
-                        }
-                    } catch (Exception e) {
-                        failed.add(npcName);
-                    } finally {
-                        pending.remove(npcName);
-                    }
-                }));
+                downloadImageAsync(entry.getKey(), entry.getValue(), onEachLoad);
             }
-            CompletableFuture.allOf(downloads.toArray(new CompletableFuture[0])).join();
-            log.debug("WikiImageService: prefetch complete — {} cached, {} failed",
-                    cache.size(), failed.size());
+        });
+    }
+
+    /**
+     * Downloads one image via OkHttp's async dispatcher (RuneLite's shared client). Concurrency and
+     * per-host limits are managed by the dispatcher, so many of these can be in flight at once without
+     * the plugin creating threads or holding a shared executor thread. The callback lands the image
+     * into the cache and repaints as each one arrives; {@code pending} is always cleared.
+     */
+    private void downloadImageAsync(String npcName, String imageUrl, Runnable onEachLoad) {
+        Request request = new Request.Builder().url(imageUrl).header("User-Agent", USER_AGENT).build();
+        httpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                failed.add(npcName);
+                pending.remove(npcName);
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) {
+                try (Response resp = response) {
+                    BufferedImage img = null;
+                    if (resp.isSuccessful() && resp.body() != null) {
+                        try (InputStream is = resp.body().byteStream()) {
+                            img = ImageIO.read(is);
+                        }
+                    }
+                    if (img != null) {
+                        cache.put(npcName, img);
+                        saveToDisk(npcName, img);
+                        SwingUtilities.invokeLater(onEachLoad);
+                        firePendingCallbacks(npcName);
+                    } else {
+                        failed.add(npcName);
+                    }
+                } catch (Exception e) {
+                    failed.add(npcName);
+                } finally {
+                    pending.remove(npcName);
+                }
+            }
         });
     }
 
@@ -224,7 +254,7 @@ public class WikiImageService {
             return;
         }
 
-        CompletableFuture.runAsync(() -> {
+        executor.execute(() -> {
             try {
                 String thumbUrl = fetchThumbUrlSingle(npcName);
                 if (thumbUrl == null) { failed.add(npcName); return; }

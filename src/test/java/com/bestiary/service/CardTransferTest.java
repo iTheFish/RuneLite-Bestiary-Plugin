@@ -8,6 +8,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -25,8 +27,9 @@ public class CardTransferTest {
         Path tmpHome = Files.createTempDirectory("bestiary-transfer-home");
         String oldHome = System.getProperty("user.home");
         System.setProperty("user.home", tmpHome.toString());
+        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         try {
-            BestiaryStore store = new BestiaryStore(new Gson());
+            BestiaryStore store = new BestiaryStore(new Gson(), executor);
             BestiaryDataService ds = new BestiaryDataService(new ProgressionService(), store);
 
             // Register the Alt account, then play as Main and catch two cards.
@@ -79,6 +82,7 @@ public class CardTransferTest {
 
             store.close();
         } finally {
+            executor.shutdownNow();
             if (oldHome != null) System.setProperty("user.home", oldHome);
         }
     }

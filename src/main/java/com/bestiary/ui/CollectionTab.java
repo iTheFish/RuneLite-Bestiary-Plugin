@@ -306,36 +306,49 @@ public class CollectionTab extends JPanel {
 
     private void rebuildCards() {
         dirty = false;
-        cardContainer.removeAll();
 
-        String query          = searchBar.getText().trim().toLowerCase();
-        String selectedRarity = (String) rarityFilter.getSelectedItem();
-        String selectedSort   = (String) sortOrder.getSelectedItem();
+        // Add/remove all the cards while the container is hidden. AWT only runs its costly
+        // heavyweight/lightweight shape-mixing recompute (recursiveApplyCurrentShape) for a child
+        // whose parent isShowing() — with RuneLite's embedded game canvas that recompute is O(n^2)
+        // per mutation and would stall for many seconds on a large view (e.g. Individual, 250 rows).
+        // Toggling visibility off for the churn and back on once (single container-level mix) makes
+        // it cheap. It all happens in one EDT dispatch, so there's no flicker. See applyTabs (#logout).
+        boolean wasVisible = cardContainer.isVisible();
+        cardContainer.setVisible(false);
+        try {
+            cardContainer.removeAll();
 
-        List<CapturedCreature> allCreatures = dataService.getCollection().creatures;
+            String query          = searchBar.getText().trim().toLowerCase();
+            String selectedRarity = (String) rarityFilter.getSelectedItem();
+            String selectedSort   = (String) sortOrder.getSelectedItem();
 
-        // Apply search + rarity filters to raw creature list
-        List<CapturedCreature> filtered = allCreatures.stream()
-                .filter(c -> query.isEmpty() || c.npcName.toLowerCase().contains(query))
-                .filter(c -> selectedRarity == null || "All Rarities".equals(selectedRarity)
-                        || c.rarity == CreatureRarity.fromLabel(selectedRarity))
-                .collect(Collectors.toList());
+            List<CapturedCreature> allCreatures = dataService.getCollection().creatures;
 
-        if (viewMode == ViewMode.FAVOURITES) {
-            buildFavouritesView(filtered, selectedSort);
-        } else if (filtered.isEmpty()) {
-            JLabel empty = new JLabel("No creatures match.");
-            empty.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-            empty.setFont(FontManager.getRunescapeSmallFont());
-            empty.setAlignmentX(Component.CENTER_ALIGNMENT);
-            empty.setBorder(new EmptyBorder(20, 0, 0, 0));
-            cardContainer.add(empty);
-        } else if (viewMode == ViewMode.GROUPED && byMonster) {
-            buildMonsterView(filtered, selectedSort);
-        } else if (viewMode == ViewMode.GROUPED) {
-            buildGroupedView(filtered, selectedSort);
-        } else {
-            buildIndividualView(filtered, selectedSort);
+            // Apply search + rarity filters to raw creature list
+            List<CapturedCreature> filtered = allCreatures.stream()
+                    .filter(c -> query.isEmpty() || c.npcName.toLowerCase().contains(query))
+                    .filter(c -> selectedRarity == null || "All Rarities".equals(selectedRarity)
+                            || c.rarity == CreatureRarity.fromLabel(selectedRarity))
+                    .collect(Collectors.toList());
+
+            if (viewMode == ViewMode.FAVOURITES) {
+                buildFavouritesView(filtered, selectedSort);
+            } else if (filtered.isEmpty()) {
+                JLabel empty = new JLabel("No creatures match.");
+                empty.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+                empty.setFont(FontManager.getRunescapeSmallFont());
+                empty.setAlignmentX(Component.CENTER_ALIGNMENT);
+                empty.setBorder(new EmptyBorder(20, 0, 0, 0));
+                cardContainer.add(empty);
+            } else if (viewMode == ViewMode.GROUPED && byMonster) {
+                buildMonsterView(filtered, selectedSort);
+            } else if (viewMode == ViewMode.GROUPED) {
+                buildGroupedView(filtered, selectedSort);
+            } else {
+                buildIndividualView(filtered, selectedSort);
+            }
+        } finally {
+            cardContainer.setVisible(wasVisible);
         }
 
         cardContainer.revalidate();
