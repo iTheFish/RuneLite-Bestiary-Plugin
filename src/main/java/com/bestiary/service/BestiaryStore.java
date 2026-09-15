@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -99,11 +98,8 @@ public class BestiaryStore {
     private volatile File backup;
     private volatile Long activeHash;
 
-    private final ScheduledExecutorService writer = Executors.newSingleThreadScheduledExecutor(r -> {
-        Thread t = new Thread(r, "bestiary-store-writer");
-        t.setDaemon(true);
-        return t;
-    });
+    /** RuneLite's shared executor — the client owns its lifecycle, so we never shut it down. */
+    private final ScheduledExecutorService executor;
     private final Object lock = new Object();
     private StoreData pending;              // guarded by lock
     // The write target is captured alongside the buffered data at save() time, so a debounced write
@@ -114,7 +110,8 @@ public class BestiaryStore {
     private ScheduledFuture<?> scheduled;   // guarded by lock
 
     @Inject
-    public BestiaryStore(Gson gson) {
+    public BestiaryStore(Gson gson, ScheduledExecutorService executor) {
+        this.executor    = executor;
         this.dir         = new File(System.getProperty("user.home"),
                 ".runelite" + File.separator + "bestiary");
         this.accountsDir = new File(dir, "accounts");
@@ -211,7 +208,7 @@ public class BestiaryStore {
             pendingFile = f;
             pendingBackup = b;
             if (scheduled == null || scheduled.isDone()) {
-                scheduled = writer.schedule(this::flush, DEBOUNCE_MS, TimeUnit.MILLISECONDS);
+                scheduled = executor.schedule(this::flush, DEBOUNCE_MS, TimeUnit.MILLISECONDS);
             }
         }
     }
@@ -325,15 +322,12 @@ public class BestiaryStore {
         return out;
     }
 
-    /** Flush any pending write and stop the writer thread. Call from plugin shutDown. */
+    /**
+     * Commit any debounced-but-unwritten snapshot synchronously. Call from plugin shutDown.
+     * The executor is RuneLite's shared one, so we cancel our pending task but never shut it down.
+     */
     public void close() {
-        flush();
-        writer.shutdown();
-        try {
-            writer.awaitTermination(2, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+        flushPending();
     }
 
     // -------------------------------------------------------------------------
