@@ -473,6 +473,13 @@ public class BestiaryPanel extends PluginPanel {
 
     /** Rebuilds the tab set to match {@code state}. Only called on transitions (see {@link #applyState}). */
     private void applyTabs(PanelState state) {
+        // Select Info FIRST so the heavy tab (Cards, when it's the open one) stops showing before we
+        // tear it down. AWT only runs its O(n^2) heavyweight/lightweight shape-mixing recompute
+        // (Component.mixOnHiding -> recursiveApplyCurrentShape) for a removed subtree whose parent is
+        // still showing — RuneLite's embedded game canvas makes that recompute pathologically slow on
+        // a big collection, freezing the client on logout from the Cards→Individual view. Hiding the
+        // tab first short-circuits it (this is why logout was already instant from every other screen).
+        if (tabs.getTabCount() > 1) tabs.setSelectedIndex(0);
         // Keep Info (index 0); drop the rest. Hard cap the iterations so a pathological
         // tab-count state can never spin the EDT (defensive — normally 3 removals max).
         for (int guard = 0; tabs.getTabCount() > 1 && guard < 8; guard++) tabs.remove(1);
