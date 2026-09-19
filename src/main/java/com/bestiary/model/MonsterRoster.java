@@ -32,7 +32,7 @@ public class MonsterRoster {
         "Zombie", "Skeleton", "Ghost",
         "Barbarian", "Warrior", "Wizard", "Dark wizard",
         "Minotaur",
-        "Bear", "Grizzly bear",
+        "Grizzly bear",
         "Unicorn",
         "Spider", "Giant spider",
         "Scorpion",
@@ -201,7 +201,7 @@ public class MonsterRoster {
         for (String n : Arrays.asList(
             "Chicken", "Cow", "Cow calf", "Duck", "Ram", "Seagull", "Man", "Woman", "Farmer",
             "Goblin", "Rat", "Giant rat", "Imp", "Unicorn", "Spider",
-            "Bear", "Grizzly bear",
+            "Grizzly bear",
             "Dark wizard", "Minotaur",
             "Cave bug",
             "Rock crab", "Sand crab", "Swamp crab",
@@ -354,7 +354,7 @@ public class MonsterRoster {
         for (String n : Arrays.asList(
             "Man","Woman","Farmer",
             "Goblin","Guard","Imp","Zombie","Skeleton","Ghost",
-            "Barbarian","Warrior","Minotaur","Bear","Grizzly bear","Unicorn",
+            "Barbarian","Warrior","Minotaur","Grizzly bear","Unicorn",
             "Hill giant","Moss giant","Earth warrior",
             "Black knight","White knight","Hobgoblin","Chaos druid","Chaos druid warrior",
             "Pirate","Rogue","Ankou","Spiritual warrior","Lizardman","Lizardman brute",
@@ -496,7 +496,6 @@ public class MonsterRoster {
         b.put("Wizard", new int[]{2, 2, 2, 3, 1, 45});
         b.put("Dark wizard", new int[]{5, 5, 4, 7, 1, 37});
         b.put("Minotaur", new int[]{7, 8, 8, 1, 1, 30});
-        b.put("Bear", new int[]{5, 5, 5, 1, 1, 30});
         b.put("Grizzly bear", new int[]{12, 11, 11, 1, 1, 30});
         b.put("Unicorn", new int[]{3, 4, 4, 1, 1, 75});
         b.put("Spider", new int[]{1, 1, 1, 1, 1, 75});
@@ -747,7 +746,6 @@ public class MonsterRoster {
         h.put("Wizard",              15);
         h.put("Dark wizard",         24);
         h.put("Minotaur",            24);
-        h.put("Bear",                25);
         h.put("Grizzly bear",        45);
         h.put("Unicorn",             30);
         h.put("Spider",              2);
@@ -974,7 +972,7 @@ public class MonsterRoster {
         // ANIMAL — real-world creature analogues
         for (String n : Arrays.asList(
             "Chicken", "Cow", "Cow calf", "Duck", "Ram", "Seagull",
-            "Rat", "Giant rat", "Bear", "Grizzly bear", "Unicorn",
+            "Rat", "Giant rat", "Grizzly bear", "Unicorn",
             "Rock crab", "Sand crab", "Swamp crab", "Gemstone crab",
             "Warped tortoise", "Tortoise",
             "Giant Mole", "Callisto", "Artio", "Scurrius", "Kraken",
@@ -1484,7 +1482,6 @@ public class MonsterRoster {
         c.put("Wizard",              9);
         c.put("Dark wizard",         20);
         c.put("Minotaur",            19);
-        c.put("Bear",                19);
         c.put("Grizzly bear",        21);
         c.put("Unicorn",             15);
         c.put("Spider",              1);
