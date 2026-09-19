@@ -39,6 +39,10 @@ public class AboutDialog extends JDialog {
 
     // Newest first. Future releases get prepended above v1.0.
     private static final Release[] RELEASES = {
+        new Release("v1.0.1", "More monsters", new String[][]{
+            {"New monsters", "Added Araxytes, Gryphons, the Shellbane Gryphon, Mammoths and Ghouls "
+                + "to the roster to catch, catalogue and complete."},
+        }),
         new Release("v1.0", "First release", new String[][]{
             {"Capturing", "Every kill rolls a catch chance (by difficulty tier and your Capture Level), "
                 + "then a weighted rarity from Common to Mythic — plus an independent shiny roll."},
