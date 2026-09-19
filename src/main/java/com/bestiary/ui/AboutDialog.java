@@ -11,7 +11,7 @@ import javax.swing.border.MatteBorder;
 import java.awt.*;
 
 /**
- * MODELESS "About Bestiary" dialog: the version log (what landed in each release, v1.0 being the
+ * MODELESS "About Bestiary" dialog: the version log (what landed in each release, v1.0.0 being the
  * most extensive) and a thank-you note. Opened by clicking the version label in the panel footer.
  *
  * <p>The GitHub and Discord links are live; Patreon stays greyed out with a playful hover tooltip.
@@ -37,13 +37,13 @@ public class AboutDialog extends JDialog {
         }
     }
 
-    // Newest first. Future releases get prepended above v1.0.
+    // Newest first. Future releases get prepended above v1.0.0.
     private static final Release[] RELEASES = {
         new Release("v1.0.1", "More monsters", new String[][]{
             {"New monsters", "Added Araxytes, Gryphons, the Shellbane Gryphon, Mammoths and Ghouls "
                 + "to the roster to catch, catalogue and complete."},
         }),
-        new Release("v1.0", "First release", new String[][]{
+        new Release("v1.0.0", "First release", new String[][]{
             {"Capturing", "Every kill rolls a catch chance (by difficulty tier and your Capture Level), "
                 + "then a weighted rarity from Common to Mythic — plus an independent shiny roll."},
             {"Cards & Power Level", "Each capture is a card with 7 rolled stats and the monster's "
@@ -74,8 +74,9 @@ public class AboutDialog extends JDialog {
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
+        JScrollPane logScroll = buildLogScroll();
         root.add(buildHeader(), BorderLayout.NORTH);
-        root.add(buildLogScroll(), BorderLayout.CENTER);
+        root.add(logScroll, BorderLayout.CENTER);
         root.add(buildFooter(), BorderLayout.SOUTH);
 
         setContentPane(root);
@@ -84,6 +85,8 @@ public class AboutDialog extends JDialog {
         setLocationRelativeTo(owner);
         setVisible(true);
         toFront();
+        // Open scrolled to the top — JTextArea carets can nudge the pane down on first layout.
+        SwingUtilities.invokeLater(() -> logScroll.getVerticalScrollBar().setValue(0));
     }
 
     private JPanel buildHeader() {
@@ -140,6 +143,7 @@ public class AboutDialog extends JDialog {
                 body.setBackground(ColorScheme.DARK_GRAY_COLOR);
                 body.setBorder(new EmptyBorder(0, 10, 0, 0));
                 body.setAlignmentX(LEFT_ALIGNMENT);
+                body.setCaretPosition(0);   // keep caret at start so it can't scroll the pane down
                 log.add(body);
             }
         }
