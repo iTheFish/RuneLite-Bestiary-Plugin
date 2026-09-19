@@ -8,6 +8,7 @@ import com.google.gson.JsonParser;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import okhttp3.Callback;
+import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -34,6 +35,10 @@ import java.util.stream.Collectors;
 public class WikiImageService {
 
     private static final String API_BASE   = "https://oldschool.runescape.wiki/api.php";
+    /** The ONLY host this plugin downloads from. Image URLs arrive in the wiki API response,
+     *  so each is validated against this fixed host before being requested, keeping the
+     *  plugin's network destinations statically verifiable (plugin-hub requirement). */
+    private static final String WIKI_HOST  = "oldschool.runescape.wiki";
     private static final String USER_AGENT = "RuneLite Bestiary Plugin 1.0";
     private static final int    THUMB_W    = 130;
     private static final int    TIMEOUT_MS = 8000;
@@ -78,7 +83,6 @@ public class WikiImageService {
         m.put("Fleshcrawler",        "Flesh Crawler");
         m.put("Vampyre",             "Feral Vampyre");      // race overview page, not a monster
         m.put("Warrior",             "Al Kharid warrior");  // disambiguation
-        m.put("Bear",                "Grizzly bear");        // disambiguation
         m.put("Wyvern",              "Skeletal Wyvern");     // disambiguation
         m.put("Kalphite",            "Kalphite Worker");     // disambiguation
         m.put("Maiden of Sugadinti", "The Maiden of Sugadinti");
@@ -187,6 +191,11 @@ public class WikiImageService {
      * into the cache and repaints as each one arrives; {@code pending} is always cleared.
      */
     private void downloadImageAsync(String npcName, String imageUrl, Runnable onEachLoad) {
+        if (!isAllowedImageUrl(imageUrl)) {   // never call a host we didn't hardcode
+            failed.add(npcName);
+            pending.remove(npcName);
+            return;
+        }
         Request request = new Request.Builder().url(imageUrl).header("User-Agent", USER_AGENT).build();
         httpClient.newCall(request).enqueue(new Callback() {
             @Override
@@ -316,6 +325,16 @@ public class WikiImageService {
     // Internals
     // -------------------------------------------------------------------------
 
+    /**
+     * True only for https URLs on the hardcoded wiki host. Thumbnail URLs are read from the
+     * wiki API response, so every one passes through here before any request is made — the
+     * plugin can therefore only ever contact {@link #WIKI_HOST}, verifiable by static review.
+     */
+    private static boolean isAllowedImageUrl(String url) {
+        HttpUrl parsed = url == null ? null : HttpUrl.parse(url);
+        return parsed != null && "https".equals(parsed.scheme()) && WIKI_HOST.equals(parsed.host());
+    }
+
     private Map<String, String> fetchThumbUrlBatch(List<String> names) throws Exception {
         // Translate NPC names to wiki page titles; keep a reverse map for results
         Map<String, String> lowerToName = new LinkedHashMap<>();
@@ -370,7 +389,12 @@ public class WikiImageService {
             String pageTitle = page.get("title").getAsString();
             String origName  = lowerToName.get(pageTitle.toLowerCase());
             if (origName != null && page.has("thumbnail")) {
-                result.put(origName, page.getAsJsonObject("thumbnail").get("source").getAsString());
+                String source = page.getAsJsonObject("thumbnail").get("source").getAsString();
+                if (isAllowedImageUrl(source)) {
+                    result.put(origName, source);
+                } else {
+                    log.warn("WikiImageService: ignoring off-host image URL for '{}': {}", origName, source);
+                }
             }
         }
         return result;
@@ -384,6 +408,7 @@ public class WikiImageService {
 
     @Nullable
     private BufferedImage downloadImage(String imageUrl) throws Exception {
+        if (!isAllowedImageUrl(imageUrl)) return null;   // never call a host we didn't hardcode
         Request request = new Request.Builder().url(imageUrl).header("User-Agent", USER_AGENT).build();
         try (Response resp = httpClient.newCall(request).execute()) {
             if (!resp.isSuccessful() || resp.body() == null) return null;
