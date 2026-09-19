@@ -182,7 +182,10 @@ public class MonsterRoster {
         // === New bosses (2026-08-04) ===
         "Eldric the Ice King", "Branda the Fire Queen",   // Royal Titans (accessible duo boss)
         "Mad Angel",                                       // Wyrmscraig golem boss
-        "Maggot King"                                      // Vampyrium ur-maggot boss
+        "Maggot King",                                     // Vampyrium ur-maggot boss
+
+        // === Post-release additions (2026-09-19): friend feedback (#186) ===
+        "Araxyte", "Gryphon", "Shellbane gryphon", "Mammoth", "Ghoul"
     );
 
     // -------------------------------------------------------------------------
@@ -324,6 +327,13 @@ public class MonsterRoster {
             "Eldric the Ice King", "Branda the Fire Queen", "Mad Angel", "Maggot King"
         )) { d.put(n, BOSS); }
 
+        // Post-release additions (2026-09-19): #186
+        d.put("Araxyte",           ELITE);
+        d.put("Gryphon",           MEDIUM);
+        d.put("Shellbane gryphon", BOSS);
+        d.put("Mammoth",           MEDIUM);
+        d.put("Ghoul",             EASY);
+
         DIFFICULTY = Collections.unmodifiableMap(d);
     }
 
@@ -439,6 +449,13 @@ public class MonsterRoster {
         a.put("Branda the Fire Queen", WARRIOR);    // crush melee
         a.put("Mad Angel",             BATTLEMAGE); // melee + magic
         a.put("Maggot King",           APEX);       // ranged + magic + melee
+
+        // Post-release additions (2026-09-19): #186
+        a.put("Araxyte",           WARRIOR);    // crush melee, STR-heavy
+        a.put("Gryphon",           WARRIOR);    // crush melee
+        a.put("Shellbane gryphon", WARDEN);     // melee + ranged
+        a.put("Mammoth",           WARRIOR);    // stab melee
+        a.put("Ghoul",             WARRIOR);    // crush melee
 
         COMBAT_CLASSES = Collections.unmodifiableMap(a);
     }
@@ -683,6 +700,12 @@ public class MonsterRoster {
         b.put("Branda the Fire Queen", new int[]{50, 65, 50, 50, 20, 10});
         b.put("Mad Angel",             new int[]{65, 73, 40, 60, 15, 20});
         b.put("Maggot King",           new int[]{75, 85, 65, 70, 70, 15});
+        // Post-release additions (2026-09-19): #186. Order: {ATK,STR,DEF,MAG,RNG,AGI}
+        b.put("Araxyte",               new int[]{34, 42, 20, 20, 20, 65});
+        b.put("Gryphon",               new int[]{20, 23, 15, 15,  1, 50});
+        b.put("Shellbane gryphon",     new int[]{48, 63, 36, 30, 45, 40});
+        b.put("Mammoth",               new int[]{17, 18, 15,  1,  1, 15});
+        b.put("Ghoul",                 new int[]{ 9, 12,  9,  1,  1, 30});
 
         STAT_BASES = Collections.unmodifiableMap(b);
     }
@@ -930,6 +953,12 @@ public class MonsterRoster {
         h.put("Branda the Fire Queen", 600);
         h.put("Mad Angel",             565);
         h.put("Maggot King",          1500);
+        // Post-release additions (2026-09-19): #186
+        h.put("Araxyte",               100);
+        h.put("Gryphon",               110);
+        h.put("Shellbane gryphon",     400);
+        h.put("Mammoth",               130);
+        h.put("Ghoul",                  50);
         HITPOINTS = Collections.unmodifiableMap(h);
     }
 
@@ -1071,6 +1100,13 @@ public class MonsterRoster {
         s.put("Ice demon",           DEMON);
         s.put("Revenant maledictus", UNDEAD);
 
+        // Post-release additions (2026-09-19): #186
+        s.put("Araxyte",           ARACHNID);
+        s.put("Gryphon",           ANIMAL);
+        s.put("Shellbane gryphon", ANIMAL);
+        s.put("Mammoth",           ANIMAL);
+        s.put("Ghoul",             HUMAN);   // OSRS ghouls are living, not undead
+
         // All unlisted monsters fall back to OTHER via getSpecies()
         SPECIES = Collections.unmodifiableMap(s);
     }
@@ -1211,7 +1247,8 @@ public class MonsterRoster {
         "Dusk", "Dawn",
         "Amoxliatl", "Chaos Elemental", "Hueycoatl", "King Black Dragon",
         "Brutus", "Skotizo", "Kraken",
-        "Eldric the Ice King", "Branda the Fire Queen"   // Royal Titans (accessible duo boss)
+        "Eldric the Ice King", "Branda the Fire Queen",  // Royal Titans (accessible duo boss)
+        "Shellbane gryphon"                              // on-task gryphon boss (#186)
     );
 
     private static final java.util.Set<String> ENDGAME_BOSSES = ciSet(
@@ -1397,6 +1434,10 @@ public class MonsterRoster {
         p.put("Branda the Fire Queen", 30);
         p.put("Mad Angel", 30);
         p.put("Maggot King", 30);
+        // Post-release additions (2026-09-19): #186 (rest default to 1)
+        p.put("Shellbane gryphon", 20);
+        p.put("Araxyte", 5);
+        p.put("Mammoth", 3);
 
         PRAYER = Collections.unmodifiableMap(p);
     }
