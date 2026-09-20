@@ -105,6 +105,16 @@ public class WikiImageService {
     /** Disk cache directory: ~/.runelite/bestiary/images/ — shared across all profiles. */
     private final File imageCacheDir;
 
+    /**
+     * Bump this whenever a {@link #WIKI_IMAGE_NAMES} mapping changes so previously downloaded
+     * (now-wrong) art is purged from disk and re-fetched. Without this, the disk cache — checked
+     * before the network — keeps serving the old image forever.
+     *   gen 2: "Warrior" repointed from the Al Kharid warrior to the Fremennik warrior (Rellekka).
+     */
+    private static final int CACHE_GENERATION = 2;
+    /** Disk-cached images (by NPC name) to delete when {@link #CACHE_GENERATION} advances. */
+    private static final List<String> STALE_ON_UPGRADE = Collections.singletonList("Warrior");
+
     private final OkHttpClient httpClient;
     private final BestiaryConfig config;
     /** RuneLite's shared executor — client-owned, so we submit tasks but never shut it down. */
@@ -121,6 +131,41 @@ public class WikiImageService {
         this.executor = executor;
         imageCacheDir = new File(System.getProperty("user.home"),
                 ".runelite" + File.separator + "bestiary" + File.separator + "images");
+        purgeStaleImages();
+    }
+
+    /**
+     * One-time-per-upgrade cleanup: if the stored cache generation is older than
+     * {@link #CACHE_GENERATION}, delete the images whose wiki mapping has since changed so they
+     * re-download with the correct art, then record the new generation. A tiny marker file in the
+     * cache dir tracks the last-seen generation, so this runs at most once per user per bump.
+     */
+    private void purgeStaleImages() {
+        File marker = new File(imageCacheDir, ".cache-generation");
+        int stored = 0;
+        try {
+            if (marker.isFile()) {
+                stored = Integer.parseInt(
+                        new String(java.nio.file.Files.readAllBytes(marker.toPath()), StandardCharsets.UTF_8).trim());
+            }
+        } catch (Exception e) {
+            stored = 0;   // unreadable/corrupt marker → treat as oldest, re-run the purge
+        }
+        if (stored >= CACHE_GENERATION) return;
+
+        for (String name : STALE_ON_UPGRADE) {
+            File f = diskFile(name);
+            if (f.isFile() && !f.delete()) {
+                log.debug("WikiImageService: could not delete stale cached image '{}'", f);
+            }
+        }
+        try {
+            imageCacheDir.mkdirs();
+            java.nio.file.Files.write(marker.toPath(),
+                    String.valueOf(CACHE_GENERATION).getBytes(StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            log.debug("WikiImageService: could not write cache-generation marker: {}", e.getMessage());
+        }
     }
 
     // -------------------------------------------------------------------------
