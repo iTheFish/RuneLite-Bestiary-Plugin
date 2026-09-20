@@ -39,6 +39,15 @@ public class AboutDialog extends JDialog {
 
     // Newest first. Future releases get prepended above v1.0.0.
     private static final Release[] RELEASES = {
+        new Release("v1.0.2", "Bug fixes", new String[][]{
+            {"Finisher-item kills now count", "Monsters you finish off with a special item — "
+                + "gargoyles (rock hammer), rockslugs (bag of salt), the Grotesque Guardians and "
+                + "more — are now captured properly instead of being missed."},
+            {"Fixed monsters", "Rockslugs and Flesh Crawlers weren't being recognised and are now "
+                + "catchable."},
+            {"New monster", "Added the Al Kharid warrior, and gave the Warrior card its correct "
+                + "Fremennik (Rellekka) artwork."},
+        }),
         new Release("v1.0.1", "More monsters", new String[][]{
             {"New monsters", "Added Araxytes, Gryphons, the Shellbane Gryphon, Mammoths and Ghouls "
                 + "to the roster to catch, catalogue and complete."},

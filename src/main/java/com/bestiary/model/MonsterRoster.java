@@ -30,7 +30,7 @@ public class MonsterRoster {
         "Rat", "Giant rat",
         "Imp",
         "Zombie", "Skeleton", "Ghost",
-        "Barbarian", "Warrior", "Wizard", "Dark wizard",
+        "Barbarian", "Warrior", "Al Kharid warrior", "Wizard", "Dark wizard",
         "Minotaur",
         "Grizzly bear",
         "Unicorn",
@@ -59,7 +59,7 @@ public class MonsterRoster {
         "Drake",
         "Dust devil",
         "Fever spider",
-        "Fleshcrawler",
+        "Flesh Crawler",
         "Gargoyle",
         "Hellhound",
         "Hydra",
@@ -72,7 +72,7 @@ public class MonsterRoster {
         "Mogre",
         "Nechryael", "Greater nechryael",
         "Pyrefiend",
-        "Rockslugs",
+        "Rockslug",
         "Smoke devil",
         "Spiritual warrior", "Spiritual mage", "Spiritual ranger",
         "Suqah",
@@ -203,6 +203,7 @@ public class MonsterRoster {
             "Goblin", "Rat", "Giant rat", "Imp", "Unicorn", "Spider",
             "Grizzly bear",
             "Dark wizard", "Minotaur",
+            "Al Kharid warrior",
             "Cave bug",
             "Rock crab", "Sand crab", "Swamp crab",
             "Barbarian", "Banshee",
@@ -215,8 +216,8 @@ public class MonsterRoster {
             "Zombie", "Skeleton", "Ghost", "Pirate", "Rogue",
             "Hobgoblin", "Chaos druid",
             "Cave crawler", "Cave slime",
-            "Fever spider", "Pyrefiend", "Rockslugs",
-            "Fleshcrawler", "Ice warrior", "Ice spider",
+            "Fever spider", "Pyrefiend", "Rockslug",
+            "Flesh Crawler", "Ice warrior", "Ice spider",
             "Hill giant", "Moss giant", "Ice giant", "Earth warrior",
             "Ankou",
             "Basilisk", "Black knight",
@@ -359,9 +360,9 @@ public class MonsterRoster {
             "Black knight","White knight","Hobgoblin","Chaos druid","Chaos druid warrior",
             "Pirate","Rogue","Ankou","Spiritual warrior","Lizardman","Lizardman brute",
             "Turoth","Mogre","Kalphite","Kalphite soldier","Kalphite worker","Ice warrior",
-            "Dark warrior","Ice spider","Cave bug","Cave crawler","Fever spider","Fleshcrawler",
+            "Dark warrior","Ice spider","Cave bug","Cave crawler","Fever spider","Flesh Crawler",
             "Crawling Hand",
-            "Rockslugs","Kurask","Dust devil","Nechryael","Greater nechryael","Abyssal demon",
+            "Rockslug","Kurask","Dust devil","Nechryael","Greater nechryael","Abyssal demon",
             "Feral vampyre","Dagannoth","Cave horror","Vyrewatch Sentinel","Hellhound",
             "Troll","Mountain troll","Ice troll","Zombie pirate","Dharok the Wretched",
             "Guthan the Infested","Verac the Defiled","Baby blue dragon","Baby green dragon",
@@ -450,6 +451,10 @@ public class MonsterRoster {
         a.put("Mad Angel",             BATTLEMAGE); // melee + magic
         a.put("Maggot King",           APEX);       // ranged + magic + melee
 
+        // Post-release additions (2026-09-20): Al Kharid warrior (bug report).
+        // Explicit WARRIOR — low stats would otherwise make deriveProfileClass() tag it NIMBLE.
+        a.put("Al Kharid warrior", WARRIOR);
+
         // Post-release additions (2026-09-19): #186
         a.put("Araxyte",           WARRIOR);    // crush melee, STR-heavy
         a.put("Gryphon",           WARRIOR);    // crush melee
@@ -493,6 +498,7 @@ public class MonsterRoster {
         b.put("Ghost", new int[]{4, 4, 5, 1, 1, 60});
         b.put("Barbarian", new int[]{2, 2, 1, 1, 1, 60});
         b.put("Warrior", new int[]{2, 2, 1, 1, 1, 60});
+        b.put("Al Kharid warrior", new int[]{7, 5, 4, 1, 1, 45});
         b.put("Wizard", new int[]{2, 2, 2, 3, 1, 45});
         b.put("Dark wizard", new int[]{5, 5, 4, 7, 1, 37});
         b.put("Minotaur", new int[]{7, 8, 8, 1, 1, 30});
@@ -538,7 +544,7 @@ public class MonsterRoster {
         b.put("Drake", new int[]{42, 35, 36, 34, 42, 45});
         b.put("Dust devil", new int[]{32, 21, 12, 1, 1, 40});
         b.put("Fever spider", new int[]{18, 9, 12, 1, 1, 60});
-        b.put("Fleshcrawler", new int[]{18, 1, 3, 1, 1, 60});
+        b.put("Flesh Crawler", new int[]{18, 1, 3, 1, 1, 60});
         b.put("Gargoyle", new int[]{35, 35, 32, 1, 1, 42});
         b.put("Hellhound", new int[]{32, 31, 31, 1, 1, 45});
         b.put("Hydra", new int[]{1, 1, 30, 63, 63, 30});
@@ -559,7 +565,7 @@ public class MonsterRoster {
         b.put("Nechryael", new int[]{29, 29, 32, 1, 1, 15});
         b.put("Greater nechryael", new int[]{59, 59, 26, 1, 1, 15});
         b.put("Pyrefiend", new int[]{16, 9, 7, 1, 1, 25});
-        b.put("Rockslugs", new int[]{7, 8, 8, 1, 1, 15});
+        b.put("Rockslug", new int[]{7, 8, 8, 1, 1, 15});
         b.put("Smoke devil", new int[]{1, 1, 40, 20, 66, 45});
         b.put("Spiritual warrior", new int[]{30, 30, 30, 1, 1, 30});
         b.put("Spiritual mage", new int[]{1, 1, 18, 54, 1, 30});
@@ -743,6 +749,7 @@ public class MonsterRoster {
         h.put("Ghost",               14);
         h.put("Barbarian",           30);
         h.put("Warrior",             30);
+        h.put("Al Kharid warrior",   19);
         h.put("Wizard",              15);
         h.put("Dark wizard",         24);
         h.put("Minotaur",            24);
@@ -789,7 +796,7 @@ public class MonsterRoster {
         h.put("Drake",               240);
         h.put("Dust devil",          105);
         h.put("Fever spider",        30);
-        h.put("Fleshcrawler",        25);
+        h.put("Flesh Crawler",        25);
         h.put("Gargoyle",            105);
         h.put("Hellhound",           116);
         h.put("Hydra",               300);
@@ -810,7 +817,7 @@ public class MonsterRoster {
         h.put("Nechryael",           105);
         h.put("Greater nechryael",   200);
         h.put("Pyrefiend",           60);
-        h.put("Rockslugs",           30);
+        h.put("Rockslug",           30);
         h.put("Smoke devil",         65);
         h.put("Spiritual warrior",   100);
         h.put("Spiritual mage",      120);
@@ -1014,7 +1021,7 @@ public class MonsterRoster {
         // HUMAN — humanoid mortals (NPCs and human-variant monsters)
         for (String n : Arrays.asList(
             "Man", "Woman", "Farmer",
-            "Guard", "Barbarian", "Warrior", "Wizard", "Dark wizard",
+            "Guard", "Barbarian", "Warrior", "Al Kharid warrior", "Wizard", "Dark wizard",
             "Black knight", "White knight",
             "Pirate", "Rogue",
             "Chaos druid", "Dark warrior",
@@ -1025,7 +1032,7 @@ public class MonsterRoster {
 
         // INSECT — true insects (six-legged / bug-type creatures)
         for (String n : Arrays.asList(
-            "Cave bug", "Cave crawler", "Cave slime", "Fleshcrawler",
+            "Cave bug", "Cave crawler", "Cave slime", "Flesh Crawler",
             "Vespula", "Kephri"
         )) { s.put(n, INSECT); }
 
@@ -1479,6 +1486,7 @@ public class MonsterRoster {
         c.put("Ghost",               19);
         c.put("Barbarian",           15);
         c.put("Warrior",             19);
+        c.put("Al Kharid warrior",   9);
         c.put("Wizard",              9);
         c.put("Dark wizard",         20);
         c.put("Minotaur",            19);
@@ -1525,7 +1533,7 @@ public class MonsterRoster {
         c.put("Drake",               192);
         c.put("Dust devil",          93);
         c.put("Fever spider",        40);
-        c.put("Fleshcrawler",        35);
+        c.put("Flesh Crawler",        35);
         c.put("Gargoyle",            111);
         c.put("Hellhound",           122);
         c.put("Hydra",               194);
@@ -1546,7 +1554,7 @@ public class MonsterRoster {
         c.put("Nechryael",           115);
         c.put("Greater nechryael",   200);
         c.put("Pyrefiend",           43);
-        c.put("Rockslugs",           29);
+        c.put("Rockslug",           29);
         c.put("Smoke devil",         160);
         c.put("Spiritual warrior",   90);
         c.put("Spiritual mage",      120);
