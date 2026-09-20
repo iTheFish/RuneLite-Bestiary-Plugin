@@ -129,8 +129,10 @@ public class WikiImageService {
                 .build();
         this.config = config;
         this.executor = executor;
-        imageCacheDir = new File(System.getProperty("user.home"),
-                ".runelite" + File.separator + "bestiary" + File.separator + "images");
+        // RuneLite.RUNELITE_DIR is the canonical ~/.runelite location and honours a relocated
+        // RuneLite home (-Drunelite.home), unlike a hardcoded user.home/.runelite path.
+        imageCacheDir = new File(net.runelite.client.RuneLite.RUNELITE_DIR,
+                "bestiary" + File.separator + "images");
         purgeStaleImages();
     }
 
