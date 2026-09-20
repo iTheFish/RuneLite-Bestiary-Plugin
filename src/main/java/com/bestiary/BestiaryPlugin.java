@@ -57,7 +57,7 @@ import java.util.concurrent.TimeUnit;
 public class BestiaryPlugin extends Plugin {
 
     /** Plugin version, shown in the panel footer. Keep in sync with build.gradle's {@code version}. */
-    public static final String VERSION = "1.0.1";
+    public static final String VERSION = "1.0.2";
 
     @Inject private Client client;
     @Inject private BestiaryConfig config;
@@ -198,7 +198,10 @@ public class BestiaryPlugin extends Plugin {
 
     @Subscribe
     public void onNpcDespawned(NpcDespawned event) {
-        killTracker.onNpcDespawned(event);
+        // Catches finisher-item kills (gargoyles, rockslugs, Grotesque Guardians, …) that never
+        // fire ActorDeath. Normal kills were already handled in onActorDeath, so no double count.
+        Optional<NPC> kill = killTracker.onNpcDespawned(event);
+        kill.ifPresent(npc -> handleKill(npc, killTracker.getLastKillDamage()));
     }
 
     @Subscribe

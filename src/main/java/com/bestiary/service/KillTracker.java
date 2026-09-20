@@ -9,6 +9,7 @@ import net.runelite.api.events.ActorDeath;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.HitsplatApplied;
 import net.runelite.api.events.NpcDespawned;
+import net.runelite.client.game.NpcUtil;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -30,6 +31,7 @@ import java.util.Optional;
 public class KillTracker {
 
     private final Client client;
+    private final NpcUtil npcUtil;
 
     /**
      * NPCs the local player has dealt damage to, keyed by NPC index.
@@ -45,8 +47,9 @@ public class KillTracker {
     public int getLastKillDamage() { return lastKillDamage; }
 
     @Inject
-    public KillTracker(Client client) {
+    public KillTracker(Client client, NpcUtil npcUtil) {
         this.client = client;
+        this.npcUtil = npcUtil;
     }
 
     /**
@@ -87,10 +90,32 @@ public class KillTracker {
         return Optional.of(npc);
     }
 
-    /** Removes a despawned NPC from tracking (cleanup only). */
-    public void onNpcDespawned(NpcDespawned event) {
-        attackedNpcs.remove(event.getNpc().getIndex());
-        damageDealt.remove(event.getNpc().getIndex());
+    /**
+     * Secondary kill confirmation for NPCs that reach 0 HP <em>without</em> a normal death —
+     * gargoyles, rockslugs, lizards, zygomites, Grotesque Guardians (Dusk/Dawn) etc. are only
+     * "finished" with a special item and never fire {@link ActorDeath}. Instead they linger in a
+     * dying state and then despawn. {@link NpcUtil#isDying(NPC)} knows every such NPC, so if a
+     * tracked (player-damaged) NPC is dying when it despawns, credit the kill here.
+     *
+     * <p>Normal kills are already removed from {@link #attackedNpcs} by {@link #onActorDeath}, so
+     * their later despawn finds nothing tracked — no double count. This path only fires for the
+     * finisher NPCs (and any death we somehow missed). Otherwise this is pure cleanup.
+     */
+    public Optional<NPC> onNpcDespawned(NpcDespawned event) {
+        NPC npc = event.getNpc();
+        int index = npc.getIndex();
+        boolean tracked = attackedNpcs.containsKey(index);
+        // Always clear tracking for this NPC — whether or not it counts as a kill.
+        attackedNpcs.remove(index);
+        Integer dmg = damageDealt.remove(index);
+
+        if (tracked && npcUtil.isDying(npc)) {
+            lastKillDamage = dmg != null ? dmg : 0;
+            log.debug("Kill confirmed via NpcDespawned (finisher item): {} (ID {}), player damage {}",
+                    npc.getName(), npc.getId(), lastKillDamage);
+            return Optional.of(npc);
+        }
+        return Optional.empty();
     }
 
     /** Clears all state on logout or world hop. */

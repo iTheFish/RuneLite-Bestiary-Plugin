@@ -79,10 +79,11 @@ public class WikiImageService {
         // second word) — no mapping needed; forcing "Ice Warrior"/"Ice Spider" was a redirect
         // that pageimages can't resolve, so those were left out on purpose.
         // Name/structure differences
-        m.put("Rockslugs",           "Rockslug");
-        m.put("Fleshcrawler",        "Flesh Crawler");
         m.put("Vampyre",             "Feral Vampyre");      // race overview page, not a monster
-        m.put("Warrior",             "Al Kharid warrior");  // disambiguation
+        // "Warrior" (in-game) = the Fremennik warriors of Rellekka, NOT the Al Kharid warriors.
+        // Al Kharid warriors are a separate roster monster ("Al Kharid warrior") whose page title
+        // matches its name, so it needs no mapping here.
+        m.put("Warrior",             "Warrior (Rellekka)"); // disambiguation
         m.put("Wyvern",              "Skeletal Wyvern");     // disambiguation
         m.put("Kalphite",            "Kalphite Worker");     // disambiguation
         m.put("Maiden of Sugadinti", "The Maiden of Sugadinti");
