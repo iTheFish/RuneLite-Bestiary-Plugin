@@ -170,7 +170,8 @@ public class ProgressionService {
     /** Check kill-count achievements after incrementing kill count. Call on client thread. */
     /** Kill-count milestones, checked against the persisted total-kills counter. */
     private static final Achievement[] KILL_ACHIEVEMENTS = {
-        Achievement.FIVE_HUNDRED_KILLS, Achievement.FIVE_K_KILLS, Achievement.TEN_K_KILLS,
+        Achievement.FIVE_HUNDRED_KILLS, Achievement.ONE_K_KILLS, Achievement.TWOFIVE_HUNDRED_KILLS,
+        Achievement.FIVE_K_KILLS, Achievement.TEN_K_KILLS,
         Achievement.TWENTYFIVE_K_KILLS, Achievement.FIFTY_K_KILLS, Achievement.HUNDRED_K_KILLS
     };
 
@@ -221,6 +222,8 @@ public class ProgressionService {
                 return capture != null && capture.isShiny();
 
             case FIVE_HUNDRED_KILLS:
+            case ONE_K_KILLS:
+            case TWOFIVE_HUNDRED_KILLS:
             case FIVE_K_KILLS:
             case TEN_K_KILLS:
             case TWENTYFIVE_K_KILLS:

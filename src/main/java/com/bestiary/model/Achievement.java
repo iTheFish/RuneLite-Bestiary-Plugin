@@ -33,6 +33,8 @@ public enum Achievement {
     MYTHIC_CATCH       ("Beyond Myth",           "Capture a Mythic creature",            0,    false, new Color(255, 50,  50), 3000),
     SHINY_CATCH        ("Shiny Hunter",          "Capture a shiny creature",             0,    false, new Color(255, 240, 150),  500),
     FIVE_HUNDRED_KILLS ("Veteran",               "Accumulate 500 kills",                 500,   false, new Color(180, 180, 180),  300),
+    ONE_K_KILLS        ("Butcher",               "Accumulate 1,000 kills",               1000,  false, new Color(180, 180, 180),  600),
+    TWOFIVE_HUNDRED_KILLS("Executioner",         "Accumulate 2,500 kills",               2500,  false, new Color(180, 180, 180), 1200),
     FIVE_K_KILLS       ("Slaughterer",           "Accumulate 5,000 kills",               5000,  false, new Color(180, 180, 180), 2500),
     TEN_K_KILLS        ("Exterminator",          "Accumulate 10,000 kills",              10000, false, new Color(190, 190, 190), 5000),
     TWENTYFIVE_K_KILLS ("Reaper",                "Accumulate 25,000 kills",              25000, false, new Color(205, 195, 130),12000),
