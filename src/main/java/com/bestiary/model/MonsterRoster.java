@@ -185,7 +185,12 @@ public class MonsterRoster {
         "Maggot King",                                     // Vampyrium ur-maggot boss
 
         // === Post-release additions (2026-09-19): friend feedback (#186) ===
-        "Araxyte", "Gryphon", "Shellbane gryphon", "Mammoth", "Ghoul"
+        "Araxyte", "Gryphon", "Shellbane gryphon", "Mammoth", "Ghoul",
+
+        // === #196 additions (2026-09-22) ===
+        "Cockatrice", "Cyclops",
+        "Sulphur Nagua", "Frost Nagua", "Earthen Nagua",
+        "Venator", "Frost dragon"
     );
 
     // -------------------------------------------------------------------------
@@ -336,6 +341,15 @@ public class MonsterRoster {
         d.put("Mammoth",           MEDIUM);
         d.put("Ghoul",             EASY);
 
+        // #196 additions (2026-09-22)
+        d.put("Cockatrice",        EASY);
+        d.put("Cyclops",           MEDIUM);
+        d.put("Sulphur Nagua",     HARD);
+        d.put("Frost Nagua",       HARD);
+        d.put("Earthen Nagua",     HARD);
+        d.put("Venator",           ELITE);
+        d.put("Frost dragon",      ELITE);
+
         DIFFICULTY = Collections.unmodifiableMap(d);
     }
 
@@ -462,6 +476,15 @@ public class MonsterRoster {
         a.put("Shellbane gryphon", WARDEN);     // melee + ranged
         a.put("Mammoth",           WARRIOR);    // stab melee
         a.put("Ghoul",             WARRIOR);    // crush melee
+
+        // #196 additions (2026-09-22)
+        a.put("Cockatrice",        WARRIOR);    // stab melee
+        a.put("Cyclops",           WARRIOR);    // crush melee
+        a.put("Sulphur Nagua",     WARRIOR);    // slash melee
+        a.put("Frost Nagua",       MAGE);       // pure magic
+        a.put("Earthen Nagua",     WARRIOR);    // stab melee
+        a.put("Venator",           WARDEN);     // melee + ranged
+        a.put("Frost dragon",      BATTLEMAGE); // melee + dragonfire
 
         COMBAT_CLASSES = Collections.unmodifiableMap(a);
     }
@@ -710,6 +733,15 @@ public class MonsterRoster {
         b.put("Shellbane gryphon",     new int[]{48, 63, 36, 30, 45, 40});
         b.put("Mammoth",               new int[]{17, 18, 15,  1,  1, 15});
         b.put("Ghoul",                 new int[]{ 9, 12,  9,  1,  1, 30});
+
+        // #196 additions (2026-09-22)
+        b.put("Cockatrice",            new int[]{20, 28, 26,  1,  1, 40});
+        b.put("Cyclops",               new int[]{30, 34, 21,  1,  1, 18});
+        b.put("Sulphur Nagua",         new int[]{42, 46, 32, 24,  1, 30});
+        b.put("Frost Nagua",           new int[]{ 1,  1, 32, 46,  1, 30});
+        b.put("Earthen Nagua",         new int[]{48, 50, 32, 24,  1, 25});
+        b.put("Venator",               new int[]{62, 63, 51, 41, 44, 26});
+        b.put("Frost dragon",          new int[]{64, 64, 64, 61,  1, 39});
 
         STAT_BASES = Collections.unmodifiableMap(b);
     }
@@ -961,6 +993,14 @@ public class MonsterRoster {
         h.put("Shellbane gryphon",     400);
         h.put("Mammoth",               130);
         h.put("Ghoul",                  50);
+        // #196 additions (2026-09-22)
+        h.put("Cockatrice",             37);
+        h.put("Cyclops",                75);
+        h.put("Sulphur Nagua",         100);
+        h.put("Frost Nagua",           120);
+        h.put("Earthen Nagua",         160);
+        h.put("Venator",               345);
+        h.put("Frost dragon",          230);
         HITPOINTS = Collections.unmodifiableMap(h);
     }
 
@@ -1108,6 +1148,15 @@ public class MonsterRoster {
         s.put("Shellbane gryphon", ANIMAL);
         s.put("Mammoth",           ANIMAL);
         s.put("Ghoul",             HUMAN);   // OSRS ghouls are living, not undead
+
+        // #196 additions (2026-09-22)
+        s.put("Cockatrice",        ANIMAL);
+        s.put("Cyclops",           GIANT);
+        s.put("Sulphur Nagua",     UNDEAD);  // spectral creatures
+        s.put("Frost Nagua",       UNDEAD);
+        s.put("Earthen Nagua",     UNDEAD);
+        s.put("Venator",           UNDEAD);  // Tier-3 Vampyre (cf. Vyrewatch Sentinel)
+        s.put("Frost dragon",      DRAGON);
 
         // All unlisted monsters fall back to OTHER via getSpecies()
         SPECIES = Collections.unmodifiableMap(s);
@@ -1441,6 +1490,15 @@ public class MonsterRoster {
         p.put("Araxyte", 5);
         p.put("Mammoth", 3);
 
+        // #196 additions (2026-09-22)
+        p.put("Cockatrice", 2);
+        p.put("Cyclops", 3);
+        p.put("Sulphur Nagua", 12);
+        p.put("Frost Nagua", 20);
+        p.put("Earthen Nagua", 15);
+        p.put("Venator", 23);
+        p.put("Frost dragon", 28);
+
         PRAYER = Collections.unmodifiableMap(p);
     }
 
@@ -1676,6 +1734,14 @@ public class MonsterRoster {
         c.put("Branda the Fire Queen", 350);
         c.put("Mad Angel",             270);
         c.put("Maggot King",           741);
+        // #196 additions (2026-09-22)
+        c.put("Cockatrice",             37);
+        c.put("Cyclops",               106);
+        c.put("Sulphur Nagua",          98);
+        c.put("Frost Nagua",           104);
+        c.put("Earthen Nagua",         128);
+        c.put("Venator",               246);
+        c.put("Frost dragon",          202);
         COMBAT_LEVELS = Collections.unmodifiableMap(c);
     }
 
