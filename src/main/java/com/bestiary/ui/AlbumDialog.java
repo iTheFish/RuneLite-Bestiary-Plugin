@@ -618,6 +618,23 @@ public class AlbumDialog extends JDialog {
         updateMonsterNav();
     }
 
+    /** Opens the detail pane showing all shiny captures (cross-monster). */
+    private void showShiniesDetailView() {
+        if (detailMonsterName == null && gridScroll != null) {   // leaving the catalog
+            savedCatalogScroll = gridScroll.getVerticalScrollBar().getValue();
+        }
+        detailMonsterName   = SHINIES_SENTINEL;
+        detailFilterRarity  = null;
+        detailFilterCapture = null;
+        detailFilterShiny   = false;
+        detailPage          = 0;
+        detailSort          = "Power (high)";
+        detailSortBox.setSelectedItem("Power (high)");
+        ((CardLayout) topBarHolder.getLayout()).show(topBarHolder, "DETAIL");
+        rebuildGrid();
+        updateMonsterNav();
+    }
+
     /** If the Album is open, switch it to the Favourites detail view and return true. */
     public static boolean switchToFavouritesIfOpen() {
         if (current != null && current.isShowing()) {
@@ -630,7 +647,7 @@ public class AlbumDialog extends JDialog {
 
     /** Steps to the previous/next captured monster in the current catalog order. */
     private void navigateMonster(int dir) {
-        if (detailMonsterName == null || detailMonsterName.startsWith("★")) return;
+        if (detailMonsterName == null || isVirtualDetail()) return;
         if (catalogOrder.isEmpty()) return;
         int idx = catalogOrder.indexOf(detailMonsterName);
         if (idx < 0) return;
@@ -640,7 +657,7 @@ public class AlbumDialog extends JDialog {
 
     /** Enables Prev/Next Monster only for a real monster with siblings to move to. */
     private void updateMonsterNav() {
-        boolean on = detailMonsterName != null && !detailMonsterName.startsWith("★")
+        boolean on = detailMonsterName != null && !isVirtualDetail()
                 && catalogOrder.size() > 1 && catalogOrder.contains(detailMonsterName);
         if (prevMonsterBtn != null) prevMonsterBtn.setEnabled(on);
         if (nextMonsterBtn != null) nextMonsterBtn.setEnabled(on);
@@ -670,7 +687,7 @@ public class AlbumDialog extends JDialog {
                 .collect(Collectors.groupingBy(c -> c.npcName));
         capturesByNpc.clear();
         capturesByNpc.putAll(grouped);
-        if (detailMonsterName != null && !detailMonsterName.startsWith("★")
+        if (detailMonsterName != null && !isVirtualDetail()
                 && !capturesByNpc.containsKey(detailMonsterName)
                 && killCounts.getOrDefault(detailMonsterName, 0) == 0) {
             showCatalog();            // truly locked again — no captures and never killed
@@ -754,10 +771,12 @@ public class AlbumDialog extends JDialog {
         catalogOrder.clear();
         ordered.stream().filter(capturesByNpc::containsKey).forEach(catalogOrder::add);
 
-        // Favourites shortcut card — always shown when no search/filter active
-        long favCount = capturesByNpc.values().stream().flatMap(List::stream).filter(c -> c.favourite).count();
+        // Favourites + Shinies shortcut cards — always shown when no search/filter active
+        long favCount   = capturesByNpc.values().stream().flatMap(List::stream).filter(c -> c.favourite).count();
+        long shinyCount = capturesByNpc.values().stream().flatMap(List::stream).filter(CapturedCreature::isShiny).count();
         if (searchTerm.isEmpty() && filterDifficulty == null && filterSpecies == null) {
             gridPanel.add(buildFavouritesShortcutCard((int) favCount));
+            gridPanel.add(buildShiniesShortcutCard((int) shinyCount));
         }
 
         for (String name : ordered) {
@@ -780,15 +799,25 @@ public class AlbumDialog extends JDialog {
         gridPanel.repaint();
     }
 
-    private static final String FAVS_SENTINEL = "★ Favourites";  // "★ Favourites"
+    private static final String FAVS_SENTINEL    = "★ Favourites";  // "★ Favourites"
+    private static final String SHINIES_SENTINEL = "✦ Shinies";     // "✦ Shinies"
 
     private boolean isFavouritesDetail() { return FAVS_SENTINEL.equals(detailMonsterName); }
+    private boolean isShiniesDetail()    { return SHINIES_SENTINEL.equals(detailMonsterName); }
+    /** True for either cross-monster virtual view (Favourites / Shinies) — no real monster. */
+    private boolean isVirtualDetail()    { return isFavouritesDetail() || isShiniesDetail(); }
 
     private void buildDetailView() {
-        List<CapturedCreature> allCaps = isFavouritesDetail()
-                ? capturesByNpc.values().stream().flatMap(List::stream)
-                    .filter(c -> c.favourite).collect(Collectors.toList())
-                : capturesByNpc.getOrDefault(detailMonsterName, Collections.emptyList());
+        List<CapturedCreature> allCaps;
+        if (isFavouritesDetail()) {
+            allCaps = capturesByNpc.values().stream().flatMap(List::stream)
+                    .filter(c -> c.favourite).collect(Collectors.toList());
+        } else if (isShiniesDetail()) {
+            allCaps = capturesByNpc.values().stream().flatMap(List::stream)
+                    .filter(CapturedCreature::isShiny).collect(Collectors.toList());
+        } else {
+            allCaps = capturesByNpc.getOrDefault(detailMonsterName, Collections.emptyList());
+        }
 
         // Apply filter
         List<CapturedCreature> filtered;
@@ -831,6 +860,10 @@ public class AlbumDialog extends JDialog {
             String suffix = detailFilterRarity != null ? " — " + detailFilterRarity.label : "";
             detailTitleLabel.setText("★ Favourites (" + total + ")" + suffix);
             detailTitleLabel.setForeground(new Color(255, 195, 40));
+        } else if (isShiniesDetail()) {
+            String suffix = detailFilterRarity != null ? " — " + detailFilterRarity.label : "";
+            detailTitleLabel.setText("✦ Shinies (" + total + ")" + suffix);
+            detailTitleLabel.setForeground(new Color(150, 225, 255));
         } else {
             CreatureRarity best = detailFilterRarity != null ? detailFilterRarity
                     : total > 0 ? filtered.stream().map(c -> c.rarity)
@@ -979,15 +1012,18 @@ public class AlbumDialog extends JDialog {
             row.add(rb);
         }
 
-        // Shiny pill sits after Common (orthogonal to rarity — filters shiny captures)
-        JButton shinyBtn = makeRarityPill("✦ Shiny", detailFilterShiny, new Color(255, 235, 120), !anyShiny);
-        if (anyShiny) {
-            shinyBtn.addActionListener(e -> {
-                detailFilterShiny = !detailFilterShiny;   // clicking again toggles back to All
-                detailFilterRarity = null; detailPage = 0; rebuildGrid();
-            });
+        // Shiny pill sits after Common (orthogonal to rarity — filters shiny captures).
+        // Redundant inside the Shinies view (everything there is already shiny), so hide it.
+        if (!isShiniesDetail()) {
+            JButton shinyBtn = makeRarityPill("✦ Shiny", detailFilterShiny, new Color(255, 235, 120), !anyShiny);
+            if (anyShiny) {
+                shinyBtn.addActionListener(e -> {
+                    detailFilterShiny = !detailFilterShiny;   // clicking again toggles back to All
+                    detailFilterRarity = null; detailPage = 0; rebuildGrid();
+                });
+            }
+            row.add(shinyBtn);
         }
-        row.add(shinyBtn);
         return row;
     }
 
@@ -1058,6 +1094,55 @@ public class AlbumDialog extends JDialog {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 showFavouritesDetailView();
+            }
+        });
+        return card;
+    }
+
+    /** Special card in the catalog grid that shortcuts to the cross-monster Shinies view. */
+    private JPanel buildShiniesShortcutCard(int shinyCount) {
+        JPanel card = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                int w = getWidth();
+                int h = AlbumCard.CARD_H; // fixed height, same as AlbumCard
+                g2.setColor(new Color(10, 24, 34));
+                g2.fillRoundRect(0, 0, w, h, 8, 8);
+                g2.setColor(new Color(60, 110, 140));
+                g2.drawRoundRect(0, 0, w - 1, h - 1, 8, 8);
+
+                int cx = w / 2;
+                g2.setFont(new Font(Font.DIALOG, Font.BOLD, 28));
+                FontMetrics sfm = g2.getFontMetrics();
+                int starY = h / 2 - sfm.getHeight() / 2 + sfm.getAscent() - 20;
+                g2.setColor(new Color(150, 225, 255));
+                g2.drawString("✦", cx - sfm.stringWidth("✦") / 2, starY);
+
+                g2.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+                FontMetrics tfm = g2.getFontMetrics();
+                String title = "Shinies";
+                g2.setColor(new Color(180, 230, 255));
+                g2.drawString(title, cx - tfm.stringWidth(title) / 2, starY + sfm.getHeight() + 4);
+
+                g2.setFont(FontManager.getRunescapeSmallFont());
+                FontMetrics cfm = g2.getFontMetrics();
+                String countStr = shinyCount + " shiny";
+                g2.setColor(new Color(110, 165, 195));
+                g2.drawString(countStr, cx - cfm.stringWidth(countStr) / 2,
+                        starY + sfm.getHeight() + 4 + tfm.getHeight() + 2);
+                g2.dispose();
+            }
+        };
+        card.setOpaque(false);
+        card.setPreferredSize(new Dimension(AlbumCard.CARD_W, AlbumCard.CARD_H));
+        card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        card.setToolTipText("View all your shiny captures");
+        card.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                showShiniesDetailView();
             }
         });
         return card;
