@@ -1096,7 +1096,6 @@ public class MonsterRoster {
             "Crawling Hand",
             "Ankou", "Banshee", "Twisted banshee",
             "Aberrant spectre", "Deviant spectre",
-            "Vyrewatch Sentinel",
             "Spiritual warrior", "Spiritual mage", "Spiritual ranger",
             "Vet'ion", "Calvar'ion",
             "Verzik Vitur", "Xarpus", "Pestilent Bloat",
@@ -1105,6 +1104,7 @@ public class MonsterRoster {
             "Revenant dark beast", "Revenant knight", "Revenant dragon"
         )) { s.put(n, UNDEAD); }
         // Barrows brothers are NOT undead (common misconception) → left unlisted, fall back to OTHER.
+        // Vyrewatch Sentinel likewise unlisted → OTHER (user review 2026-09-22).
 
         // WYRM — reptilian magical creatures (hydras, wyverns, wyrms)
         for (String n : Arrays.asList(
@@ -1152,11 +1152,9 @@ public class MonsterRoster {
         // #196 additions (2026-09-22)
         s.put("Cockatrice",        ANIMAL);
         s.put("Cyclops",           GIANT);
-        s.put("Sulphur Nagua",     UNDEAD);  // spectral creatures
-        s.put("Frost Nagua",       UNDEAD);
-        s.put("Earthen Nagua",     UNDEAD);
-        s.put("Venator",           UNDEAD);  // Tier-3 Vampyre (cf. Vyrewatch Sentinel)
         s.put("Frost dragon",      DRAGON);
+        // Sulphur/Frost/Earthen Nagua + Venator intentionally OTHER (spectral / vampyre
+        // hound — no fitting species) → left unlisted, fall back to OTHER via getSpecies().
 
         // All unlisted monsters fall back to OTHER via getSpecies()
         SPECIES = Collections.unmodifiableMap(s);
