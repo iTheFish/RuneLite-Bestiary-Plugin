@@ -168,14 +168,19 @@ public class ProgressionService {
     }
 
     /** Check kill-count achievements after incrementing kill count. Call on client thread. */
+    /** Kill-count milestones, checked against the persisted total-kills counter. */
+    private static final Achievement[] KILL_ACHIEVEMENTS = {
+        Achievement.FIVE_HUNDRED_KILLS, Achievement.ONE_K_KILLS, Achievement.TWOFIVE_HUNDRED_KILLS,
+        Achievement.FIVE_K_KILLS, Achievement.TEN_K_KILLS,
+        Achievement.TWENTYFIVE_K_KILLS, Achievement.FIFTY_K_KILLS, Achievement.HUNDRED_K_KILLS
+    };
+
     public List<Achievement> checkKillAchievements() {
         int totalKills = collection.totalKills();
         List<Achievement> newly = new ArrayList<>();
-        for (Achievement a : new Achievement[]{Achievement.FIVE_HUNDRED_KILLS, Achievement.FIVE_K_KILLS}) {
+        for (Achievement a : KILL_ACHIEVEMENTS) {
             if (state.unlockedAchievements.contains(a)) continue;
-            boolean reached = (a == Achievement.FIVE_HUNDRED_KILLS && totalKills >= 500)
-                          || (a == Achievement.FIVE_K_KILLS && totalKills >= 5000);
-            if (reached) {
+            if (totalKills >= a.countThreshold) {
                 unlock(a, newly);
             }
         }
@@ -192,6 +197,9 @@ public class ProgressionService {
             case TWO_FIFTY_CATCHES:
             case FIVE_HUNDRED_CATCHES:
             case THOUSAND_CATCHES:
+            case TWENTYFIVE_HUNDRED_CATCHES:
+            case FIVE_K_CATCHES:
+            case TEN_K_CATCHES:
                 return !a.isSpeciesBased && lifetimeCaps >= a.countThreshold;
 
             case FIVE_SPECIES:
@@ -214,7 +222,13 @@ public class ProgressionService {
                 return capture != null && capture.isShiny();
 
             case FIVE_HUNDRED_KILLS:
+            case ONE_K_KILLS:
+            case TWOFIVE_HUNDRED_KILLS:
             case FIVE_K_KILLS:
+            case TEN_K_KILLS:
+            case TWENTYFIVE_K_KILLS:
+            case FIFTY_K_KILLS:
+            case HUNDRED_K_KILLS:
                 return false; // handled by checkKillAchievements()
 
             case LEVEL_5:   return level >= 5;
@@ -232,6 +246,11 @@ public class ProgressionService {
             case LEVEL_92:  return level >= 92;
             case LEVEL_95:  return level >= 95;
             case LEVEL_99:  return level >= 99;
+            case LEVEL_120: return level >= 120;
+
+            // Total XP milestones (post-99 grind) — read from the persisted XP counter.
+            case XP_25M: case XP_35M: case XP_50M: case XP_100M: case XP_150M: case XP_200M:
+                return getTotalXp() >= a.countThreshold;
 
             // Credits earned / spent (lifetime)
             case EARN_1K: case EARN_5K: case EARN_10K: case EARN_50K: case EARN_100K:

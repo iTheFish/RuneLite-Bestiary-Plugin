@@ -23,6 +23,7 @@ public class ProgressTab extends JPanel {
     private final JProgressBar xpBar;
     private final JLabel xpLabel;
     private final JPanel achievementPanel;
+    private final JLabel achievementHeader = new JLabel("Achievements");
 
     public ProgressTab(ProgressionService progressionService, SessionTracker sessionTracker,
                        Runnable showDashboard, Runnable onReset) {
@@ -96,7 +97,6 @@ public class ProgressTab extends JPanel {
         scroll.getVerticalScrollBar().setPreferredSize(new java.awt.Dimension(0, 0));
         scroll.getVerticalScrollBar().setUnitIncrement(16);
 
-        JLabel achievementHeader = new JLabel("Achievements");
         achievementHeader.setFont(FontManager.getRunescapeBoldFont());
         achievementHeader.setForeground(Color.WHITE);
         achievementHeader.setBorder(new EmptyBorder(4, 0, 4, 0));
@@ -162,9 +162,13 @@ public class ProgressTab extends JPanel {
         achievementPanel.removeAll();
         ProgressionService.ProgressionState state = progressionService.getState();
 
+        int total    = Achievement.values().length;
+        int unlocked = state.unlockedAchievements.size();
+        achievementHeader.setText("Achievements  (" + unlocked + " / " + total + ")");
+
         for (Achievement a : Achievement.values()) {
-            boolean unlocked = state.unlockedAchievements.contains(a);
-            achievementPanel.add(buildAchievementRow(a, unlocked));
+            boolean done = state.unlockedAchievements.contains(a);
+            achievementPanel.add(buildAchievementRow(a, done));
             achievementPanel.add(Box.createVerticalStrut(2));
         }
 
