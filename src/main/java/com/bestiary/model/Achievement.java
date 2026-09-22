@@ -86,12 +86,17 @@ public enum Achievement {
     REROLL_25          ("Perfectionist",          "Reroll 25 cards",                      25,     false, new Color(100, 180, 255), 500),
     REROLL_50          ("Reroll Addict",          "Reroll 50 cards",                      50,     false, new Color(100, 180, 255),1000),
     REROLL_RANK_UP     ("Against the Odds",       "Rank a card up a rarity by rerolling", 0,      false, new Color(170, 120, 235),2000),
-    REROLL_SHINY       ("Gilded Gambler",         "Reroll a shiny card",                  0,      false, new Color(255, 240, 150),2000),
-    REROLL_NATTY_LEG   ("Tempting Fate",          "Reroll a naturally-caught Legendary",  0,      false, new Color(255, 165, 0),  3000),
-    REROLL_NATTY_MYTH  ("No Regrets",             "Reroll a naturally-caught Mythic",     0,      false, new Color(255, 50,  50), 6000),
+    REROLL_SHINY       ("Gilded Gambler",         "Reroll a shiny card",                  0,      false, new Color(255, 240, 150), 300),
+    REROLL_NATTY_LEG   ("Tempting Fate",          "Reroll a naturally-caught Legendary",  0,      false, new Color(255, 165, 0),   200),
+    REROLL_NATTY_MYTH  ("No Regrets",             "Reroll a naturally-caught Mythic",     0,      false, new Color(255, 50,  50),  300),
 
     // --- Collection milestones ---
     POWERHOUSE         ("Powerhouse",             "Own a card with Power Level 150+",     0,      false, new Color(240, 150, 45),  150),
+    PWR_300            ("Colossus",               "Own a card with Power Level 300+",     0,      false, new Color(245, 140, 40),  500),
+    PWR_500            ("Behemoth",               "Own a card with Power Level 500+",     0,      false, new Color(250, 110, 40), 1500),
+    PWR_700            ("Titan",                  "Own a card with Power Level 700+",     0,      false, new Color(255, 85,  45), 3000),
+    PWR_800            ("Godlike",                "Own a card with Power Level 800+",     0,      false, new Color(255, 65,  50), 5000),
+    PWR_1000           ("Off the Charts",         "Own a card with Power Level 1000+",    0,      false, new Color(255, 45,  45),10000),
     FULL_HOUSE         ("Full House",             "Catch all six rarities of one monster",0,      false, new Color(255, 165, 0), 6000),
     CHROMATIC          ("Chromatic",              "Capture 5 shiny creatures",            5,      false, new Color(255, 240, 150),1500),
     COMPLETIONIST      ("Completionist",          "Catch every monster in the album",     0,      false, new Color(255, 120, 20),25000),
@@ -103,8 +108,8 @@ public enum Achievement {
     DEX_UNCOMMON       ("Uncommonly Thorough",    "Own an Uncommon of every monster",     0,      false, new Color(80,  200, 80),  8000),
     DEX_RARE           ("Rare Form",              "Own a Rare of every monster",          0,      false, new Color(80,  140, 255), 12000),
     DEX_EPIC           ("Epic Completionist",     "Own an Epic of every monster",         0,      false, new Color(190, 80,  220), 20000),
-    DEX_LEGENDARY      ("Legendary Dex",          "Own a Legendary of every monster",     0,      false, new Color(255, 165, 0),  35000),
-    DEX_MYTHIC         ("Mythic Dex",             "Own a Mythic of every monster",        0,      false, new Color(255, 50,  50), 75000);
+    DEX_LEGENDARY      ("Legendary Completionist","Own a Legendary of every monster",     0,      false, new Color(255, 165, 0),  35000),
+    DEX_MYTHIC         ("Mythic Madness",         "Own a Mythic of every monster",        0,      false, new Color(255, 50,  50), 75000);
 
     public final String title;
     public final String description;

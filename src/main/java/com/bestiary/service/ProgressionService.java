@@ -273,6 +273,11 @@ public class ProgressionService {
             // Collection milestones
             case POWERHOUSE:
                 return collection.maxPowerLevel() >= 150;
+            case PWR_300:  return collection.maxPowerLevel() >= 300;
+            case PWR_500:  return collection.maxPowerLevel() >= 500;
+            case PWR_700:  return collection.maxPowerLevel() >= 700;
+            case PWR_800:  return collection.maxPowerLevel() >= 800;
+            case PWR_1000: return collection.maxPowerLevel() >= 1000;
             case FULL_HOUSE:
                 return collection.hasFullRaritySet();
             case CHROMATIC:
