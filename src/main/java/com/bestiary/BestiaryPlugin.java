@@ -65,6 +65,12 @@ public class BestiaryPlugin extends Plugin {
     @Inject private ChatMessageManager chatMessageManager;
     @Inject private OverlayManager overlayManager;
     @Inject private ScheduledExecutorService executor;
+    @Inject private net.runelite.client.callback.ClientThread clientThread;
+
+    /** Warn about a failed Discord webhook at most once per plugin session, so it never spams.
+     *  Atomic because it's set from both the client thread and OkHttp's async callback thread. */
+    private final java.util.concurrent.atomic.AtomicBoolean discordWebhookWarned =
+            new java.util.concurrent.atomic.AtomicBoolean(false);
 
     @Inject private KillTracker killTracker;
     @Inject private CaptureService captureService;
@@ -481,10 +487,35 @@ public class BestiaryPlugin extends Plugin {
         String url = config.discordWebhookUrl();
         if (url == null || url.trim().isEmpty()) return;                          // disabled — no URL
         if (!qualifiesForDiscordAlert(creature)) return;                          // below threshold
-        if (!com.bestiary.service.DiscordWebhookService.looksLikeWebhook(url)) return;
+        if (!com.bestiary.service.DiscordWebhookService.looksLikeWebhook(url)) {  // set but malformed
+            warnDiscordFailureOnce("invalid webhook URL");
+            return;
+        }
         SwingUtilities.invokeLater(() -> {
             java.awt.image.BufferedImage card = CardExportDialog.renderCardImage(creature);
-            if (card != null) discordWebhook.sendCaptureAlert(url, creature, card);
+            if (card != null) discordWebhook.sendCaptureAlert(url, creature, card, this::warnDiscordFailureOnce);
+        });
+    }
+
+    /**
+     * One-time-per-session chat warning when a Discord webhook alert can't be delivered (bad URL,
+     * no permission, network error). Fires only when a URL is set and a qualifying capture actually
+     * tried to send, so it never nags a user who left the field blank. Called from OkHttp's async
+     * thread, so the chat post is marshalled onto the client thread.
+     */
+    private void warnDiscordFailureOnce(String reason) {
+        if (!discordWebhookWarned.compareAndSet(false, true)) return;
+        clientThread.invoke(() -> {
+            String formatted = new ChatMessageBuilder()
+                    .append(ChatColorType.HIGHLIGHT)
+                    .append("Bestiary: Discord webhook failed (")
+                    .append(reason)
+                    .append("). Check the webhook URL in the plugin settings.")
+                    .build();
+            chatMessageManager.queue(QueuedMessage.builder()
+                    .type(ChatMessageType.GAMEMESSAGE)
+                    .runeLiteFormattedMessage(formatted)
+                    .build());
         });
     }
 

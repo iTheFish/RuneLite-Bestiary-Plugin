@@ -63,7 +63,8 @@ public class DiscordWebhookService {
      * Sends a capture alert with the rendered card attached. No-op if the URL is blank/invalid or
      * the image is null. Safe to call from any thread — the HTTP request is dispatched async.
      */
-    public void sendCaptureAlert(String webhookUrl, CapturedCreature capture, BufferedImage cardImage) {
+    public void sendCaptureAlert(String webhookUrl, CapturedCreature capture, BufferedImage cardImage,
+                                 java.util.function.Consumer<String> onError) {
         if (capture == null || cardImage == null) return;
         if (!looksLikeWebhook(webhookUrl)) {
             log.debug("Discord webhook skipped — URL blank or not a webhook");
@@ -96,6 +97,7 @@ public class DiscordWebhookService {
             @Override
             public void onFailure(Call call, IOException e) {
                 log.warn("Discord webhook: send failed", e);
+                if (onError != null) onError.accept("send failed");
             }
 
             @Override
@@ -103,6 +105,7 @@ public class DiscordWebhookService {
                 try (Response r = response) {
                     if (!r.isSuccessful()) {
                         log.warn("Discord webhook: HTTP {} — {}", r.code(), r.message());
+                        if (onError != null) onError.accept("HTTP " + r.code());
                     }
                 }
             }
