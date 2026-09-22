@@ -189,6 +189,11 @@ public class BestiaryPlugin extends Plugin {
     @Subscribe
     public void onConfigChanged(ConfigChanged event) {
         if (!"bestiary".equals(event.getGroup())) return;
+        // A changed webhook URL is a fresh attempt — re-arm the one-shot failure warning so a
+        // corrected (but still broken) URL can be flagged again.
+        if ("discordWebhookUrl".equals(event.getKey())) {
+            discordWebhookWarned.set(false);
+        }
         overlay.applyConfig(config);
     }
 
