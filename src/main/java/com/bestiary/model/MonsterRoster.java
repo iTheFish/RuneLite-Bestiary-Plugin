@@ -152,7 +152,7 @@ public class MonsterRoster {
         "Karil the Tainted",  "Torag the Corrupted",  "Verac the Defiled",
 
         // === CoX bosses ===
-        "Tekton", "Great Olm", "Vespula",
+        "Tekton", "Great Olm",
 
         // === ToB bosses ===
         "Maiden of Sugadinti", "Pestilent Bloat", "Sotetseg",
@@ -185,7 +185,12 @@ public class MonsterRoster {
         "Maggot King",                                     // Vampyrium ur-maggot boss
 
         // === Post-release additions (2026-09-19): friend feedback (#186) ===
-        "Araxyte", "Gryphon", "Shellbane gryphon", "Mammoth", "Ghoul"
+        "Araxyte", "Gryphon", "Shellbane gryphon", "Mammoth", "Ghoul",
+
+        // === #196 additions (2026-09-22) ===
+        "Cockatrice", "Cyclops",
+        "Sulphur Nagua", "Frost Nagua", "Earthen Nagua",
+        "Venator", "Frost dragon"
     );
 
     // -------------------------------------------------------------------------
@@ -299,7 +304,7 @@ public class MonsterRoster {
             "Araxxor", "Hueycoatl", "Sol Heredit", "Amoxliatl",
             "Ahrim the Blighted", "Dharok the Wretched", "Guthan the Infested",
             "Karil the Tainted",  "Torag the Corrupted",  "Verac the Defiled",
-            "Tekton", "Great Olm", "Vespula",
+            "Tekton", "Great Olm",
             "Maiden of Sugadinti", "Pestilent Bloat", "Sotetseg",
             "Xarpus", "Verzik Vitur",
             "Akkha", "Ba-Ba", "Kephri", "Zebak",
@@ -335,6 +340,15 @@ public class MonsterRoster {
         d.put("Shellbane gryphon", BOSS);
         d.put("Mammoth",           MEDIUM);
         d.put("Ghoul",             EASY);
+
+        // #196 additions (2026-09-22)
+        d.put("Cockatrice",        EASY);
+        d.put("Cyclops",           MEDIUM);
+        d.put("Sulphur Nagua",     HARD);
+        d.put("Frost Nagua",       HARD);
+        d.put("Earthen Nagua",     HARD);
+        d.put("Venator",           ELITE);
+        d.put("Frost dragon",      ELITE);
 
         DIFFICULTY = Collections.unmodifiableMap(d);
     }
@@ -391,7 +405,7 @@ public class MonsterRoster {
         // MARKSMAN - pure ranged
         for (String n : Arrays.asList(
             "Spiritual ranger","Crazy Archaeologist","Deranged Archaeologist","Smoke devil",
-            "Dagannoth Supreme","Xarpus","Vespula","Karil the Tainted","TzKal-Zuk"
+            "Dagannoth Supreme","Xarpus","Karil the Tainted","TzKal-Zuk"
         )) { a.put(n, MARKSMAN); }
 
         // BATTLEMAGE - melee + magic
@@ -462,6 +476,15 @@ public class MonsterRoster {
         a.put("Shellbane gryphon", WARDEN);     // melee + ranged
         a.put("Mammoth",           WARRIOR);    // stab melee
         a.put("Ghoul",             WARRIOR);    // crush melee
+
+        // #196 additions (2026-09-22)
+        a.put("Cockatrice",        WARRIOR);    // stab melee
+        a.put("Cyclops",           WARRIOR);    // crush melee
+        a.put("Sulphur Nagua",     WARRIOR);    // slash melee
+        a.put("Frost Nagua",       MAGE);       // pure magic
+        a.put("Earthen Nagua",     WARRIOR);    // stab melee
+        a.put("Venator",           WARDEN);     // melee + ranged
+        a.put("Frost dragon",      BATTLEMAGE); // melee + dragonfire
 
         COMBAT_CLASSES = Collections.unmodifiableMap(a);
     }
@@ -656,7 +679,6 @@ public class MonsterRoster {
         b.put("Verac the Defiled", new int[]{40, 30, 50, 1, 10, 30});
         b.put("Tekton", new int[]{90, 90, 70, 5, 50, 5});
         b.put("Great Olm", new int[]{75, 75, 65, 85, 85, 15});
-        b.put("Vespula", new int[]{1, 1, 26, 26, 60, 75});
         b.put("Maiden of Sugadinti", new int[]{40, 40, 70, 80, 80, 1});
         b.put("Pestilent Bloat", new int[]{55, 60, 75, 45, 70, 48});
         b.put("Sotetseg", new int[]{75, 75, 66, 75, 75, 15});
@@ -710,6 +732,15 @@ public class MonsterRoster {
         b.put("Shellbane gryphon",     new int[]{48, 63, 36, 30, 45, 40});
         b.put("Mammoth",               new int[]{17, 18, 15,  1,  1, 15});
         b.put("Ghoul",                 new int[]{ 9, 12,  9,  1,  1, 30});
+
+        // #196 additions (2026-09-22)
+        b.put("Cockatrice",            new int[]{20, 28, 26,  1,  1, 40});
+        b.put("Cyclops",               new int[]{30, 34, 21,  1,  1, 18});
+        b.put("Sulphur Nagua",         new int[]{42, 46, 32, 24,  1, 30});
+        b.put("Frost Nagua",           new int[]{ 1,  1, 32, 46,  1, 30});
+        b.put("Earthen Nagua",         new int[]{48, 50, 32, 24,  1, 25});
+        b.put("Venator",               new int[]{62, 63, 51, 41, 44, 26});
+        b.put("Frost dragon",          new int[]{64, 64, 64, 61,  1, 39});
 
         STAT_BASES = Collections.unmodifiableMap(b);
     }
@@ -909,7 +940,6 @@ public class MonsterRoster {
         h.put("Verac the Defiled",   100);
         h.put("Tekton",              300);
         h.put("Great Olm",           800);
-        h.put("Vespula",             200);
         h.put("Maiden of Sugadinti", 2500);
         h.put("Pestilent Bloat",     2000);
         h.put("Sotetseg",            450);
@@ -961,6 +991,14 @@ public class MonsterRoster {
         h.put("Shellbane gryphon",     400);
         h.put("Mammoth",               130);
         h.put("Ghoul",                  50);
+        // #196 additions (2026-09-22)
+        h.put("Cockatrice",             37);
+        h.put("Cyclops",                75);
+        h.put("Sulphur Nagua",         100);
+        h.put("Frost Nagua",           120);
+        h.put("Earthen Nagua",         160);
+        h.put("Venator",               345);
+        h.put("Frost dragon",          230);
         HITPOINTS = Collections.unmodifiableMap(h);
     }
 
@@ -1030,7 +1068,7 @@ public class MonsterRoster {
         // INSECT — true insects (six-legged / bug-type creatures)
         for (String n : Arrays.asList(
             "Cave bug", "Cave crawler", "Cave slime", "Flesh Crawler",
-            "Vespula", "Kephri"
+            "Kephri"
         )) { s.put(n, INSECT); }
 
         // ARACHNID — spiders and scorpions
@@ -1056,7 +1094,6 @@ public class MonsterRoster {
             "Crawling Hand",
             "Ankou", "Banshee", "Twisted banshee",
             "Aberrant spectre", "Deviant spectre",
-            "Vyrewatch Sentinel",
             "Spiritual warrior", "Spiritual mage", "Spiritual ranger",
             "Vet'ion", "Calvar'ion",
             "Verzik Vitur", "Xarpus", "Pestilent Bloat",
@@ -1065,6 +1102,7 @@ public class MonsterRoster {
             "Revenant dark beast", "Revenant knight", "Revenant dragon"
         )) { s.put(n, UNDEAD); }
         // Barrows brothers are NOT undead (common misconception) → left unlisted, fall back to OTHER.
+        // Vyrewatch Sentinel likewise unlisted → OTHER (user review 2026-09-22).
 
         // WYRM — reptilian magical creatures (hydras, wyverns, wyrms)
         for (String n : Arrays.asList(
@@ -1108,6 +1146,13 @@ public class MonsterRoster {
         s.put("Shellbane gryphon", ANIMAL);
         s.put("Mammoth",           ANIMAL);
         s.put("Ghoul",             HUMAN);   // OSRS ghouls are living, not undead
+
+        // #196 additions (2026-09-22)
+        s.put("Cockatrice",        ANIMAL);
+        s.put("Cyclops",           GIANT);
+        s.put("Frost dragon",      DRAGON);
+        // Sulphur/Frost/Earthen Nagua + Venator intentionally OTHER (spectral / vampyre
+        // hound — no fitting species) → left unlisted, fall back to OTHER via getSpecies().
 
         // All unlisted monsters fall back to OTHER via getSpecies()
         SPECIES = Collections.unmodifiableMap(s);
@@ -1258,7 +1303,7 @@ public class MonsterRoster {
         "Yama", "Vasa Nistirio", "Corrupted Hunllef",
         "Duke Sucellus", "The Leviathan", "Vardorvis", "The Whisperer",
         "Sol Heredit",
-        "Tekton", "Great Olm", "Vespula",
+        "Tekton", "Great Olm",
         "Maiden of Sugadinti", "Pestilent Bloat", "Sotetseg", "Xarpus", "Verzik Vitur",
         "Akkha", "Ba-Ba", "Kephri", "Zebak", "Tumeken's Warden", "Elidinis' Warden",
         "Maggot King"
@@ -1394,7 +1439,6 @@ public class MonsterRoster {
         p.put("Verac the Defiled", 66);
         p.put("Tekton", 65);
         p.put("Great Olm", 80);
-        p.put("Vespula", 49);
         p.put("Maiden of Sugadinti", 65);
         p.put("Pestilent Bloat", 65);
         p.put("Sotetseg", 65);
@@ -1440,6 +1484,15 @@ public class MonsterRoster {
         p.put("Shellbane gryphon", 20);
         p.put("Araxyte", 5);
         p.put("Mammoth", 3);
+
+        // #196 additions (2026-09-22)
+        p.put("Cockatrice", 2);
+        p.put("Cyclops", 3);
+        p.put("Sulphur Nagua", 12);
+        p.put("Frost Nagua", 20);
+        p.put("Earthen Nagua", 15);
+        p.put("Venator", 23);
+        p.put("Frost dragon", 28);
 
         PRAYER = Collections.unmodifiableMap(p);
     }
@@ -1644,7 +1697,6 @@ public class MonsterRoster {
         c.put("Verac the Defiled",   115);
         c.put("Tekton",              450);
         c.put("Great Olm",           750);
-        c.put("Vespula",             452);
         c.put("Maiden of Sugadinti", 940);
         c.put("Pestilent Bloat",     870);
         c.put("Sotetseg",            995);
@@ -1676,6 +1728,14 @@ public class MonsterRoster {
         c.put("Branda the Fire Queen", 350);
         c.put("Mad Angel",             270);
         c.put("Maggot King",           741);
+        // #196 additions (2026-09-22)
+        c.put("Cockatrice",             37);
+        c.put("Cyclops",               106);
+        c.put("Sulphur Nagua",          98);
+        c.put("Frost Nagua",           104);
+        c.put("Earthen Nagua",         128);
+        c.put("Venator",               246);
+        c.put("Frost dragon",          202);
         COMBAT_LEVELS = Collections.unmodifiableMap(c);
     }
 
