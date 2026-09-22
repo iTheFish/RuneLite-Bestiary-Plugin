@@ -112,6 +112,45 @@ public class BestiaryCollection {
         return true;
     }
 
+    /** True if any owned card has a user-assigned nickname. */
+    public boolean hasNamedCard() {
+        return creatures.stream().anyMatch(c -> c.nickname != null && !c.nickname.trim().isEmpty());
+    }
+
+    /** True if any card was rerolled while shiny (a shiny state appears in its reroll history). */
+    public boolean hasRerolledShiny() {
+        for (CapturedCreature c : creatures) {
+            for (CapturedCreature.RerollState s : c.rerollHistory) {
+                if (s.shiny) return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * True if a card that was <i>naturally caught</i> at the given rarity has been rerolled. The
+     * earliest reroll-history snapshot (index 0) is the original caught state, so this excludes
+     * cards that were merely rolled up to that rarity.
+     */
+    public boolean hasRerolledNatural(CreatureRarity rarity) {
+        for (CapturedCreature c : creatures) {
+            if (!c.rerollHistory.isEmpty() && c.rerollHistory.get(0).rarity == rarity) return true;
+        }
+        return false;
+    }
+
+    /** True once every monster on the roster has at least one capture of the given rarity. */
+    public boolean hasFullRarityDex(CreatureRarity rarity) {
+        java.util.Set<String> haveRarity = new java.util.HashSet<>();
+        for (CapturedCreature c : creatures) {
+            if (c.rarity == rarity) haveRarity.add(c.npcName);
+        }
+        for (String name : MonsterRoster.ROSTER) {
+            if (!haveRarity.contains(name)) return false;
+        }
+        return true;
+    }
+
     // --- mutators called by BestiaryDataService ---
 
     public void addCapture(CapturedCreature c) {

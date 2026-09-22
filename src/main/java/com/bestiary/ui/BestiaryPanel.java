@@ -250,6 +250,7 @@ public class BestiaryPanel extends PluginPanel {
                 dataService.bonusRerollShinyChance(), dataService.bonusRerollRarityChance(), () -> {
             com.bestiary.model.CapturedCreature nc =
                     dataService.rerollCard(cap, progressionService.getLevel());
+            checkAndNotifyAchievements();   // reroll-based achievements (shiny / natty legendary+mythic)
             refresh();
             AlbumDialog.refreshOpenAlbum();
             if (nc != null) {

@@ -263,6 +263,12 @@ public class ProgressionService {
                 return collection.totalRerolls() >= a.countThreshold;
             case REROLL_RANK_UP:
                 return collection.hasRerollRankUp();
+            case REROLL_SHINY:
+                return collection.hasRerolledShiny();
+            case REROLL_NATTY_LEG:
+                return collection.hasRerolledNatural(CreatureRarity.LEGENDARY);
+            case REROLL_NATTY_MYTH:
+                return collection.hasRerolledNatural(CreatureRarity.MYTHIC);
 
             // Collection milestones
             case POWERHOUSE:
@@ -275,6 +281,16 @@ public class ProgressionService {
                 return collection.isAlbumComplete();
             case CURATED:
                 return collection.hasFavourite();
+            case NAME_A_CARD:
+                return collection.hasNamedCard();
+
+            // Per-rarity dex completion
+            case DEX_COMMON:     return collection.hasFullRarityDex(CreatureRarity.COMMON);
+            case DEX_UNCOMMON:   return collection.hasFullRarityDex(CreatureRarity.UNCOMMON);
+            case DEX_RARE:       return collection.hasFullRarityDex(CreatureRarity.RARE);
+            case DEX_EPIC:       return collection.hasFullRarityDex(CreatureRarity.EPIC);
+            case DEX_LEGENDARY:  return collection.hasFullRarityDex(CreatureRarity.LEGENDARY);
+            case DEX_MYTHIC:     return collection.hasFullRarityDex(CreatureRarity.MYTHIC);
 
             default: return false;
         }
