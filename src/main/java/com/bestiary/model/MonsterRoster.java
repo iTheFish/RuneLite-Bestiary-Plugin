@@ -63,7 +63,7 @@ public class MonsterRoster {
         "Gargoyle",
         "Hellhound",
         "Hydra",
-        "Ice troll", "Mountain troll", "Troll",
+        "Mountain troll",
         "Infernal mage",
         "Jelly", "Warped jelly",
         "Kalphite soldier", "Kalphite guardian", "Kalphite worker",
@@ -237,10 +237,10 @@ public class MonsterRoster {
             "Spiritual warrior", "Spiritual mage", "Spiritual ranger",
             "Lizardman", "Lizardman brute",
             "Mogre",
-            "Smoke devil", "Dust devil", "Infernal mage",
+            "Dust devil", "Infernal mage",
             "Zombie pirate",
             "Warped tortoise",
-            "Troll", "Ice troll", "Mountain troll",
+            "Mountain troll",
             "Dagannoth",
             "Greater demon", "Aberrant spectre", "Wyrm"
         )) { d.put(n, MEDIUM); }
@@ -268,6 +268,7 @@ public class MonsterRoster {
         for (String n : Arrays.asList(
             "Adamant dragon", "Rune dragon",
             "Hydra",
+            "Smoke devil",
             "Tormented Demon",
             "Basilisk knight"
         )) { d.put(n, ELITE); }
@@ -364,7 +365,7 @@ public class MonsterRoster {
             "Crawling Hand",
             "Rockslug","Kurask","Dust devil","Nechryael","Greater nechryael","Abyssal demon",
             "Feral vampyre","Dagannoth","Cave horror","Vyrewatch Sentinel","Hellhound",
-            "Troll","Mountain troll","Ice troll","Zombie pirate","Dharok the Wretched",
+            "Mountain troll","Zombie pirate","Dharok the Wretched",
             "Guthan the Infested","Verac the Defiled","Baby blue dragon","Baby green dragon",
             "Scorpia","Ba-Ba","Suqah","Desert lizard","King scorpion"
         )) { a.put(n, WARRIOR); }
@@ -548,9 +549,7 @@ public class MonsterRoster {
         b.put("Gargoyle", new int[]{35, 35, 32, 1, 1, 42});
         b.put("Hellhound", new int[]{32, 31, 31, 1, 1, 45});
         b.put("Hydra", new int[]{1, 1, 30, 63, 63, 30});
-        b.put("Ice troll", new int[]{30, 30, 36, 1, 1, 15});
         b.put("Mountain troll", new int[]{12, 23, 12, 1, 1, 15});
-        b.put("Troll", new int[]{11, 17, 9, 1, 1, 15});
         b.put("Infernal mage", new int[]{1, 1, 18, 23, 1, 45});
         b.put("Jelly", new int[]{14, 14, 36, 14, 1, 30});
         b.put("Warped jelly", new int[]{29, 27, 21, 29, 1, 30});
@@ -800,9 +799,7 @@ public class MonsterRoster {
         h.put("Gargoyle",            105);
         h.put("Hellhound",           116);
         h.put("Hydra",               300);
-        h.put("Ice troll",           130);
         h.put("Mountain troll",      84);
-        h.put("Troll",               89);
         h.put("Infernal mage",       60);
         h.put("Jelly",               75);
         h.put("Warped jelly",        150);
@@ -1050,7 +1047,7 @@ public class MonsterRoster {
 
         // TROLL — trolls
         for (String n : Arrays.asList(
-            "Troll", "Ice troll", "Mountain troll"
+            "Mountain troll"
         )) { s.put(n, TROLL); }
 
         // UNDEAD — reanimated or spectral creatures
@@ -1537,9 +1534,7 @@ public class MonsterRoster {
         c.put("Gargoyle",            111);
         c.put("Hellhound",           122);
         c.put("Hydra",               194);
-        c.put("Ice troll",           82);
         c.put("Mountain troll",      69);
-        c.put("Troll",               69);
         c.put("Infernal mage",       66);
         c.put("Jelly",               78);
         c.put("Warped jelly",        112);
