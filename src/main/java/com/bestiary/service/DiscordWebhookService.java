@@ -44,11 +44,19 @@ public class DiscordWebhookService {
         this.gson = gson;
     }
 
-    /** True if {@code url} looks like a usable Discord webhook endpoint. */
+    /**
+     * True only for an https Discord webhook endpoint. The host is restricted to Discord's own
+     * domains so a pasted URL can never make the plugin POST capture data to an arbitrary server
+     * (mirrors the hardcoded wiki-host allowlist used for image downloads).
+     */
     public static boolean looksLikeWebhook(String url) {
         if (url == null) return false;
-        String u = url.trim();
-        return u.startsWith("https://") && u.contains("/api/webhooks/");
+        okhttp3.HttpUrl parsed = okhttp3.HttpUrl.parse(url.trim());
+        if (parsed == null || !"https".equals(parsed.scheme())) return false;
+        String host = parsed.host().toLowerCase();
+        boolean discordHost = host.equals("discord.com")    || host.endsWith(".discord.com")
+                           || host.equals("discordapp.com") || host.endsWith(".discordapp.com");
+        return discordHost && parsed.encodedPath().contains("/api/webhooks/");
     }
 
     /**
