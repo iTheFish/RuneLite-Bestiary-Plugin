@@ -152,7 +152,7 @@ public class MonsterRoster {
         "Karil the Tainted",  "Torag the Corrupted",  "Verac the Defiled",
 
         // === CoX bosses ===
-        "Tekton", "Great Olm", "Vespula",
+        "Tekton", "Great Olm",
 
         // === ToB bosses ===
         "Maiden of Sugadinti", "Pestilent Bloat", "Sotetseg",
@@ -304,7 +304,7 @@ public class MonsterRoster {
             "Araxxor", "Hueycoatl", "Sol Heredit", "Amoxliatl",
             "Ahrim the Blighted", "Dharok the Wretched", "Guthan the Infested",
             "Karil the Tainted",  "Torag the Corrupted",  "Verac the Defiled",
-            "Tekton", "Great Olm", "Vespula",
+            "Tekton", "Great Olm",
             "Maiden of Sugadinti", "Pestilent Bloat", "Sotetseg",
             "Xarpus", "Verzik Vitur",
             "Akkha", "Ba-Ba", "Kephri", "Zebak",
@@ -405,7 +405,7 @@ public class MonsterRoster {
         // MARKSMAN - pure ranged
         for (String n : Arrays.asList(
             "Spiritual ranger","Crazy Archaeologist","Deranged Archaeologist","Smoke devil",
-            "Dagannoth Supreme","Xarpus","Vespula","Karil the Tainted","TzKal-Zuk"
+            "Dagannoth Supreme","Xarpus","Karil the Tainted","TzKal-Zuk"
         )) { a.put(n, MARKSMAN); }
 
         // BATTLEMAGE - melee + magic
@@ -679,7 +679,6 @@ public class MonsterRoster {
         b.put("Verac the Defiled", new int[]{40, 30, 50, 1, 10, 30});
         b.put("Tekton", new int[]{90, 90, 70, 5, 50, 5});
         b.put("Great Olm", new int[]{75, 75, 65, 85, 85, 15});
-        b.put("Vespula", new int[]{1, 1, 26, 26, 60, 75});
         b.put("Maiden of Sugadinti", new int[]{40, 40, 70, 80, 80, 1});
         b.put("Pestilent Bloat", new int[]{55, 60, 75, 45, 70, 48});
         b.put("Sotetseg", new int[]{75, 75, 66, 75, 75, 15});
@@ -941,7 +940,6 @@ public class MonsterRoster {
         h.put("Verac the Defiled",   100);
         h.put("Tekton",              300);
         h.put("Great Olm",           800);
-        h.put("Vespula",             200);
         h.put("Maiden of Sugadinti", 2500);
         h.put("Pestilent Bloat",     2000);
         h.put("Sotetseg",            450);
@@ -1070,7 +1068,7 @@ public class MonsterRoster {
         // INSECT — true insects (six-legged / bug-type creatures)
         for (String n : Arrays.asList(
             "Cave bug", "Cave crawler", "Cave slime", "Flesh Crawler",
-            "Vespula", "Kephri"
+            "Kephri"
         )) { s.put(n, INSECT); }
 
         // ARACHNID — spiders and scorpions
@@ -1305,7 +1303,7 @@ public class MonsterRoster {
         "Yama", "Vasa Nistirio", "Corrupted Hunllef",
         "Duke Sucellus", "The Leviathan", "Vardorvis", "The Whisperer",
         "Sol Heredit",
-        "Tekton", "Great Olm", "Vespula",
+        "Tekton", "Great Olm",
         "Maiden of Sugadinti", "Pestilent Bloat", "Sotetseg", "Xarpus", "Verzik Vitur",
         "Akkha", "Ba-Ba", "Kephri", "Zebak", "Tumeken's Warden", "Elidinis' Warden",
         "Maggot King"
@@ -1441,7 +1439,6 @@ public class MonsterRoster {
         p.put("Verac the Defiled", 66);
         p.put("Tekton", 65);
         p.put("Great Olm", 80);
-        p.put("Vespula", 49);
         p.put("Maiden of Sugadinti", 65);
         p.put("Pestilent Bloat", 65);
         p.put("Sotetseg", 65);
@@ -1700,7 +1697,6 @@ public class MonsterRoster {
         c.put("Verac the Defiled",   115);
         c.put("Tekton",              450);
         c.put("Great Olm",           750);
-        c.put("Vespula",             452);
         c.put("Maiden of Sugadinti", 940);
         c.put("Pestilent Bloat",     870);
         c.put("Sotetseg",            995);
