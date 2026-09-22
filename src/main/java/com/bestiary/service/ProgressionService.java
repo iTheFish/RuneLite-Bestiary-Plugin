@@ -263,10 +263,21 @@ public class ProgressionService {
                 return collection.totalRerolls() >= a.countThreshold;
             case REROLL_RANK_UP:
                 return collection.hasRerollRankUp();
+            case REROLL_SHINY:
+                return collection.hasRerolledShiny();
+            case REROLL_NATTY_LEG:
+                return collection.hasRerolledNatural(CreatureRarity.LEGENDARY);
+            case REROLL_NATTY_MYTH:
+                return collection.hasRerolledNatural(CreatureRarity.MYTHIC);
 
             // Collection milestones
             case POWERHOUSE:
                 return collection.maxPowerLevel() >= 150;
+            case PWR_300:  return collection.maxPowerLevel() >= 300;
+            case PWR_500:  return collection.maxPowerLevel() >= 500;
+            case PWR_700:  return collection.maxPowerLevel() >= 700;
+            case PWR_800:  return collection.maxPowerLevel() >= 800;
+            case PWR_1000: return collection.maxPowerLevel() >= 1000;
             case FULL_HOUSE:
                 return collection.hasFullRaritySet();
             case CHROMATIC:
@@ -275,6 +286,16 @@ public class ProgressionService {
                 return collection.isAlbumComplete();
             case CURATED:
                 return collection.hasFavourite();
+            case NAME_A_CARD:
+                return collection.hasNamedCard();
+
+            // Per-rarity dex completion
+            case DEX_COMMON:     return collection.hasFullRarityDex(CreatureRarity.COMMON);
+            case DEX_UNCOMMON:   return collection.hasFullRarityDex(CreatureRarity.UNCOMMON);
+            case DEX_RARE:       return collection.hasFullRarityDex(CreatureRarity.RARE);
+            case DEX_EPIC:       return collection.hasFullRarityDex(CreatureRarity.EPIC);
+            case DEX_LEGENDARY:  return collection.hasFullRarityDex(CreatureRarity.LEGENDARY);
+            case DEX_MYTHIC:     return collection.hasFullRarityDex(CreatureRarity.MYTHIC);
 
             default: return false;
         }

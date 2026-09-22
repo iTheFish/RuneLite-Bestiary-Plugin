@@ -517,6 +517,7 @@ public class AlbumCard extends JPanel {
             }
             c.nickname = val.isBlank() ? null : val;
             if (onSaved != null) onSaved.run();
+            BestiaryPanel.recheckAchievements();   // "Personal Touch" — name a card
             dlg.dispose();
         });
         cancelBtn.addActionListener(ae -> dlg.dispose());

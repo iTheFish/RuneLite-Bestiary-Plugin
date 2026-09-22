@@ -467,6 +467,7 @@ public class CreatureDetailDialog extends JDialog {
                         c.nickname = val.isBlank() ? null : val;
                         buildList(currentSort);
                         if (saveCallback != null) saveCallback.run();
+                        BestiaryPanel.recheckAchievements();   // "Personal Touch" — name a card
                         nickDlg.dispose();
                     });
                     cancelBtn.addActionListener(ae -> nickDlg.dispose());
