@@ -96,6 +96,21 @@ public class WikiImageService {
         WIKI_IMAGE_NAMES = java.util.Collections.unmodifiableMap(m);
     }
 
+    /**
+     * Maps an in-game NPC name to a specific wiki <b>File</b> when the page's lead image can't be
+     * used. Some pages' lead art is served as WebP, which {@link ImageIO} can't decode (e.g. the
+     * active Mad Angel image), so no art ever appears. These entries are resolved via the
+     * {@code imageinfo} API — which returns a thumbnail for that exact file — instead of
+     * {@code pageimages}, letting us point at a decodable PNG/JPG upload of the same monster.
+     */
+    private static final java.util.Map<String, String> WIKI_IMAGE_FILES;
+    static {
+        java.util.Map<String, String> m = new java.util.HashMap<>();
+        // Active Mad Angel art is a WebP (undecodable); the dormant version is a PNG.
+        m.put("Mad Angel", "File:Mad Angel (dormant).png");
+        WIKI_IMAGE_FILES = java.util.Collections.unmodifiableMap(m);
+    }
+
     private final Map<String, BufferedImage>  cache            = new ConcurrentHashMap<>();
     private final Set<String>                pending          = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private final Set<String>                failed           = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -384,10 +399,20 @@ public class WikiImageService {
     }
 
     private Map<String, String> fetchThumbUrlBatch(List<String> names) throws Exception {
+        // Names with a specific-file override resolve via imageinfo, not pageimages.
+        Map<String, String> result = new LinkedHashMap<>();
+        List<String> pageImageNames = new ArrayList<>();
+        List<String> fileOverrideNames = new ArrayList<>();
+        for (String n : names) {
+            (WIKI_IMAGE_FILES.containsKey(n) ? fileOverrideNames : pageImageNames).add(n);
+        }
+        if (!fileOverrideNames.isEmpty()) result.putAll(fetchFileThumbUrls(fileOverrideNames));
+        if (pageImageNames.isEmpty()) return result;
+
         // Translate NPC names to wiki page titles; keep a reverse map for results
         Map<String, String> lowerToName = new LinkedHashMap<>();
         List<String> queryTitles = new ArrayList<>();
-        for (String n : names) {
+        for (String n : pageImageNames) {
             String wikiTitle = WIKI_IMAGE_NAMES.getOrDefault(n, n);
             queryTitles.add(wikiTitle);
             lowerToName.put(wikiTitle.toLowerCase(), n);
@@ -406,13 +431,13 @@ public class WikiImageService {
         String json;
         Request request = new Request.Builder().url(urlStr).header("User-Agent", USER_AGENT).build();
         try (Response resp = httpClient.newCall(request).execute()) {
-            if (!resp.isSuccessful() || resp.body() == null) return Collections.emptyMap();
+            if (!resp.isSuccessful() || resp.body() == null) return result;
             json = resp.body().string();
         }
 
         JsonObject root  = new JsonParser().parse(json).getAsJsonObject();
         JsonObject query = root.has("query") ? root.getAsJsonObject("query") : null;
-        if (query == null) return Collections.emptyMap();
+        if (query == null) return result;
 
         if (query.has("normalized")) {
             JsonArray normalised = query.getAsJsonArray("normalized");
@@ -427,7 +452,6 @@ public class WikiImageService {
             }
         }
 
-        Map<String, String> result = new LinkedHashMap<>();
         JsonObject pages = query.has("pages") ? query.getAsJsonObject("pages") : null;
         if (pages == null) return result;
 
@@ -443,6 +467,76 @@ public class WikiImageService {
                 } else {
                     log.warn("WikiImageService: ignoring off-host image URL for '{}': {}", origName, source);
                 }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Resolves NPC names that use a specific wiki File (see {@link #WIKI_IMAGE_FILES}) via the
+     * {@code imageinfo} API, which returns a thumbnail URL for that exact file — unlike
+     * {@code pageimages}, which only ever returns a page's lead image.
+     */
+    private Map<String, String> fetchFileThumbUrls(List<String> names) throws Exception {
+        Map<String, String> fileToName = new LinkedHashMap<>();
+        List<String> titles = new ArrayList<>();
+        for (String n : names) {
+            String file = WIKI_IMAGE_FILES.get(n);
+            titles.add(file);
+            fileToName.put(file.toLowerCase(), n);
+        }
+
+        StringBuilder titlesParam = new StringBuilder();
+        for (int i = 0; i < titles.size(); i++) {
+            if (i > 0) titlesParam.append("%7C");
+            titlesParam.append(URLEncoder.encode(titles.get(i), StandardCharsets.UTF_8.name()));
+        }
+
+        String urlStr = API_BASE + "?action=query&titles=" + titlesParam
+                + "&prop=imageinfo&iiprop=url&iiurlwidth=" + THUMB_W + "&format=json";
+
+        String json;
+        Request request = new Request.Builder().url(urlStr).header("User-Agent", USER_AGENT).build();
+        try (Response resp = httpClient.newCall(request).execute()) {
+            if (!resp.isSuccessful() || resp.body() == null) return Collections.emptyMap();
+            json = resp.body().string();
+        }
+
+        JsonObject root  = new JsonParser().parse(json).getAsJsonObject();
+        JsonObject query = root.has("query") ? root.getAsJsonObject("query") : null;
+        if (query == null) return Collections.emptyMap();
+
+        if (query.has("normalized")) {
+            for (JsonElement el : query.getAsJsonArray("normalized")) {
+                JsonObject norm = el.getAsJsonObject();
+                String from = norm.get("from").getAsString().toLowerCase();
+                String to   = norm.get("to").getAsString().toLowerCase();
+                String originalName = fileToName.get(from);
+                if (originalName != null) fileToName.put(to, originalName);
+            }
+        }
+
+        Map<String, String> result = new LinkedHashMap<>();
+        JsonObject pages = query.has("pages") ? query.getAsJsonObject("pages") : null;
+        if (pages == null) return result;
+
+        for (Map.Entry<String, JsonElement> entry : pages.entrySet()) {
+            JsonObject page = entry.getValue().getAsJsonObject();
+            if (page.has("missing") || !page.has("imageinfo")) continue;
+            String pageTitle = page.get("title").getAsString();
+            String origName  = fileToName.get(pageTitle.toLowerCase());
+            if (origName == null) continue;
+            JsonArray info = page.getAsJsonArray("imageinfo");
+            if (info.size() == 0) continue;
+            JsonObject ii = info.get(0).getAsJsonObject();
+            // iiurlwidth yields a scaled "thumburl"; fall back to the full-size "url".
+            String source = ii.has("thumburl") ? ii.get("thumburl").getAsString()
+                          : ii.has("url")      ? ii.get("url").getAsString() : null;
+            if (source == null) continue;
+            if (isAllowedImageUrl(source)) {
+                result.put(origName, source);
+            } else {
+                log.warn("WikiImageService: ignoring off-host image URL for '{}': {}", origName, source);
             }
         }
         return result;
