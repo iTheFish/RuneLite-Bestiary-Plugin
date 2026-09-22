@@ -89,7 +89,7 @@ Core mechanics:
 - **Power Level** — a card's headline number: its seven rolled stats plus the monster's factual
   Hitpoints and combat level (at reduced weight), so bosses outclass trash mobs.
 - **Overlay & chat notifications** — an on-screen capture animation, level-up banners, and
-  configurable chat messages, plus an optional Discord webhook that posts a card image on Legendary+
+  configurable chat messages, plus an optional Discord webhook that posts a card image on Legendary+ (or shiny Epic+)
   captures.
 
 Tabs & views:
@@ -140,7 +140,7 @@ notes each default in brackets.
 - **Notify on Achievement** *(on)* — post a chat message when you unlock an achievement.
 - **Notify on Level Up** *(on)* — post a chat message when your Capture Level increases.
 - **Discord Webhook** *(blank / off)* — paste a Discord channel webhook URL to auto-post a card
-  image to that channel when you capture a **Legendary or better** creature. Leave it blank to
+  image to that channel when you capture a **Legendary+** creature (or a **shiny Epic+**). Leave it blank to
   disable — nothing is ever sent without a URL. Only the card image and capture details are sent
   (no account data). Touches the network; see *Data & privacy* below.
 
@@ -178,7 +178,7 @@ notes each default in brackets.
   OSRS Wiki (`oldschool.runescape.wiki`) — only the monster's name is requested, no account or personal
   data is sent, and images are cached to disk.
 - Setting a **Discord Webhook** (blank by default) makes the plugin post to the Discord URL *you*
-  provide, and only when *you* capture a Legendary or better creature. It sends only your own
+  provide, and only when *you* capture a Legendary+ creature (or a shiny Epic+). It sends only your own
   capture — the card image, plus the monster, rarity and the RSN shown on the card — to your own
   webhook. No data about other players is ever sent, and nothing is sent while the field is blank.
 

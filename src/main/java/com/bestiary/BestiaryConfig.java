@@ -102,7 +102,7 @@ public interface BestiaryConfig extends Config {
             keyName = "discordWebhookUrl",
             name = "Discord Webhook",
             description = "<html>Paste a Discord channel webhook URL to post a card image<br>"
-                        + "when you capture a Legendary or better creature.<br>"
+                        + "when you capture a Legendary+ creature or a shiny Epic+.<br>"
                         + "Leave blank to disable — nothing is ever sent without a URL.<br>"
                         + "Only the card image and capture details are sent; no account data.</html>",
             section = notificationsSection,

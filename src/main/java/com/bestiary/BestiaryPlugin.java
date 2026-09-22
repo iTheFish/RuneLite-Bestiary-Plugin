@@ -468,6 +468,9 @@ public class BestiaryPlugin extends Plugin {
     /** Minimum rarity that triggers a Discord webhook alert (Legendary and above). */
     private static final com.bestiary.model.CreatureRarity DISCORD_MIN_RARITY =
             com.bestiary.model.CreatureRarity.LEGENDARY;
+    /** Shinies are rare enough to be worth a shout one rarity tier earlier. */
+    private static final com.bestiary.model.CreatureRarity DISCORD_MIN_RARITY_SHINY =
+            com.bestiary.model.CreatureRarity.EPIC;
 
     /**
      * Posts a Legendary+ capture to the user's Discord webhook, if one is set. The card is rendered
@@ -477,12 +480,19 @@ public class BestiaryPlugin extends Plugin {
     private void maybeSendDiscordAlert(CapturedCreature creature) {
         String url = config.discordWebhookUrl();
         if (url == null || url.trim().isEmpty()) return;                          // disabled — no URL
-        if (creature.rarity.ordinal() < DISCORD_MIN_RARITY.ordinal()) return;     // below threshold
+        if (!qualifiesForDiscordAlert(creature)) return;                          // below threshold
         if (!com.bestiary.service.DiscordWebhookService.looksLikeWebhook(url)) return;
         SwingUtilities.invokeLater(() -> {
             java.awt.image.BufferedImage card = CardExportDialog.renderCardImage(creature);
             if (card != null) discordWebhook.sendCaptureAlert(url, creature, card);
         });
+    }
+
+    /** Legendary+ always fires; a shiny fires from Epic up (one tier earlier). */
+    private static boolean qualifiesForDiscordAlert(CapturedCreature creature) {
+        int rarity = creature.rarity.ordinal();
+        if (rarity >= DISCORD_MIN_RARITY.ordinal()) return true;
+        return creature.isShiny() && rarity >= DISCORD_MIN_RARITY_SHINY.ordinal();
     }
 
     /**
