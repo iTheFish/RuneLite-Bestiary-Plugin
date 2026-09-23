@@ -1098,7 +1098,8 @@ public class MonsterRoster {
             "Chaos druid", "Dark warrior",
             "Ice warrior", "Earth warrior", "Infernal mage",
             "Crazy Archaeologist", "Deranged Archaeologist", "Chaos Fanatic",
-            "Sol Heredit", "Maiden of Sugadinti"
+            "Sol Heredit", "Maiden of Sugadinti",
+            "Deathly ranger", "Deathly mage"
         )) { s.put(n, HUMAN); }
 
         // INSECT — true insects (six-legged / bug-type creatures)
@@ -1190,8 +1191,8 @@ public class MonsterRoster {
         s.put("Frost dragon",      DRAGON);
         // Sulphur/Frost/Earthen Nagua + Venator intentionally OTHER (spectral / vampyre
         // hound — no fitting species) → left unlisted, fall back to OTHER via getSpecies().
-        // CoX (2026-09-23): Skeletal Mystic → UNDEAD (above); Deathly ranger/mage + Vanguard +
-        // Guardian are Xerician constructs with no fitting species → left unlisted, fall back to OTHER.
+        // CoX (2026-09-23): Skeletal Mystic → UNDEAD, Deathly ranger/mage → HUMAN (humanoid figures);
+        // Vanguard + Guardian are Xerician constructs with no fitting species → OTHER via fallback.
 
         // All unlisted monsters fall back to OTHER via getSpecies()
         SPECIES = Collections.unmodifiableMap(s);
