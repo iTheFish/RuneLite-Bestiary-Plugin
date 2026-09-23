@@ -353,6 +353,11 @@ public class BestiaryPlugin extends Plugin {
                 }
             }
 
+            // Keen Instinct proc (shop upgrade): the double-roll kept a better rarity — announce it.
+            if (creature.keenInstinctKept != null && config.notifyOnCapture()) {
+                sendKeenInstinctMessage(creature);
+            }
+
             // Fortune's Favour proc (shop upgrade): a rare, exciting rarity climb — always worth a
             // shout, ring-of-wealth style, whenever capture notifications are on.
             if (creature.fortuneBumped && config.notifyOnCapture()) {
@@ -536,6 +541,28 @@ public class BestiaryPlugin extends Plugin {
      * The Fortune's Favour proc line, ring-of-wealth style: "shines brightly" glows gold and the
      * new rarity is drawn in its own rarity colour.
      */
+    /**
+     * The Keen Instinct proc line: the double-roll kept a better rarity than it first landed. Both
+     * rarities are drawn in their own rarity colour, e.g. "Your keen instinct captured a Legendary
+     * over an Epic!".
+     */
+    private void sendKeenInstinctMessage(CapturedCreature creature) {
+        String formatted = new ChatMessageBuilder()
+                .append(ChatColorType.HIGHLIGHT)
+                .append("Your keen instinct captured a ")
+                .append(creature.keenInstinctKept.displayColor, creature.keenInstinctKept.label)
+                .append(ChatColorType.HIGHLIGHT)
+                .append(" over a ")
+                .append(creature.keenInstinctFrom.displayColor, creature.keenInstinctFrom.label)
+                .append(ChatColorType.HIGHLIGHT)
+                .append("!")
+                .build();
+        chatMessageManager.queue(QueuedMessage.builder()
+                .type(ChatMessageType.GAMEMESSAGE)
+                .runeLiteFormattedMessage(formatted)
+                .build());
+    }
+
     private void sendFortuneMessage(CapturedCreature creature) {
         String formatted = new ChatMessageBuilder()
                 .append(ChatColorType.HIGHLIGHT)

@@ -70,9 +70,15 @@ public class CaptureService {
         // Keen Instinct (shop): a chance to roll the rarity a second time and keep the better of the
         // two. Only happens if the player owns the upgrade (doubleRollChance > 0) — the short-circuit
         // means an unowned upgrade consumes no RNG, keeping the roll sequence stable.
+        CreatureRarity keenKept = null;
+        CreatureRarity keenFrom = null;
         if (doubleRollChance > 0 && rng.nextDouble() < doubleRollChance) {
             CreatureRarity second = RarityRoller.roll(rng, captureLevel);
-            if (second.ordinal() > rarity.ordinal()) rarity = second;
+            if (second.ordinal() > rarity.ordinal()) {
+                keenFrom = rarity;    // the rejected (lower) roll
+                rarity   = second;    // keep the better
+                keenKept = second;
+            }
         }
         // Fortune's Favour (shop): a chance to climb one rarity higher than the roll landed. Only
         // happens if the player owns the upgrade (rarityUpChance > 0); Mythic can't climb further.
@@ -107,6 +113,8 @@ public class CaptureService {
                 .playerName(playerName != null ? playerName : "")
                 .build();
         creature.fortuneBumped = fortuneBumped;
+        creature.keenInstinctKept = keenKept;
+        creature.keenInstinctFrom = keenFrom;
 
         log.info("Captured {} [{}] difficulty={}{}", creature.npcName, creature.rarity.label,
                 difficulty.label, fortuneBumped ? " (Fortune's Favour bumped)" : "");
