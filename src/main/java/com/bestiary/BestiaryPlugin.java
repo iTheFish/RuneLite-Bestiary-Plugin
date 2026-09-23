@@ -542,24 +542,28 @@ public class BestiaryPlugin extends Plugin {
      * new rarity is drawn in its own rarity colour.
      */
     /**
-     * The Keen Instinct proc line: the double-roll kept a better rarity than it first landed. Both
-     * rarities are drawn in their own rarity colour, e.g. "Your keen instinct captured a Legendary
-     * over an Epic!".
+     * The Keen Instinct proc line: the second capture attempt beat the first. If the first attempt was
+     * a miss it "rescued" the capture; otherwise it landed a higher rarity. Rarities are drawn in their
+     * own rarity colour, e.g. "Your keen instinct captured a Legendary over an Epic!".
      */
     private void sendKeenInstinctMessage(CapturedCreature creature) {
-        String formatted = new ChatMessageBuilder()
+        ChatMessageBuilder b = new ChatMessageBuilder()
                 .append(ChatColorType.HIGHLIGHT)
                 .append("Your keen instinct captured a ")
-                .append(creature.keenInstinctKept.displayColor, creature.keenInstinctKept.label)
-                .append(ChatColorType.HIGHLIGHT)
-                .append(" over a ")
-                .append(creature.keenInstinctFrom.displayColor, creature.keenInstinctFrom.label)
-                .append(ChatColorType.HIGHLIGHT)
-                .append("!")
-                .build();
+                .append(creature.keenInstinctKept.displayColor, creature.keenInstinctKept.label);
+        if (creature.keenInstinctFrom == null) {
+            // The first attempt missed — Keen Instinct saved the capture.
+            b.append(ChatColorType.HIGHLIGHT).append(" that would have got away!");
+        } else {
+            b.append(ChatColorType.HIGHLIGHT)
+                    .append(" over a ")
+                    .append(creature.keenInstinctFrom.displayColor, creature.keenInstinctFrom.label)
+                    .append(ChatColorType.HIGHLIGHT)
+                    .append("!");
+        }
         chatMessageManager.queue(QueuedMessage.builder()
                 .type(ChatMessageType.GAMEMESSAGE)
-                .runeLiteFormattedMessage(formatted)
+                .runeLiteFormattedMessage(b.build())
                 .build());
     }
 

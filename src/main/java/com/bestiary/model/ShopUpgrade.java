@@ -53,8 +53,9 @@ public enum ShopUpgrade {
      */
     CAPTURE_DOUBLE_ROLL(
             "Keen Instinct",
-            "Gives every capture a chance to roll its rarity twice and keep the better result. Buying "
-                    + "the first tier unlocks the double roll; further tiers raise the chance.",
+            "Gives every kill a chance to attempt the capture twice and keep the better outcome, even "
+                    + "turning a miss into a catch. Buying the first tier unlocks it; further tiers "
+                    + "raise the chance.",
             ShopCategory.MECHANICS, 5, new long[]{25000, 10000, 15000, 20000, 25000}, 0.02),
 
     /** Adds to the passive shiny chance on every capture. */

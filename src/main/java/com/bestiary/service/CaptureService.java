@@ -53,6 +53,28 @@ public class CaptureService {
                                                      String regionName, String playerName,
                                                      int observedDamage, double shinyBonus,
                                                      double rarityUpChance, double doubleRollChance) {
+        // First full capture attempt (catch/miss roll + rarity + shiny + quality).
+        Optional<CapturedCreature> first = singleAttempt(npc, location, captureLevel, killCount,
+                regionName, playerName, observedDamage, shinyBonus, rarityUpChance);
+
+        // Keen Instinct (shop): a chance to run the WHOLE attempt a second time — including the
+        // catch/miss roll — and keep the better outcome (a capture beats a miss; between two captures
+        // the higher rarity, then Power Level, wins). Only when owned (doubleRollChance > 0); the
+        // short-circuit means an unowned upgrade consumes no RNG, so the roll sequence stays stable.
+        if (doubleRollChance > 0 && rng.nextDouble() < doubleRollChance) {
+            Optional<CapturedCreature> second = singleAttempt(npc, location, captureLevel, killCount,
+                    regionName, playerName, observedDamage, shinyBonus, rarityUpChance);
+            return keenKeepBetter(first, second);
+        }
+        return first;
+    }
+
+    /** One independent capture attempt: rolls catch/miss, then rarity + Fortune's Favour, shiny, quality. */
+    private Optional<CapturedCreature> singleAttempt(NPC npc, WorldPoint location,
+                                                     int captureLevel, int killCount,
+                                                     String regionName, String playerName,
+                                                     int observedDamage, double shinyBonus,
+                                                     double rarityUpChance) {
         String npcName = npc.getName() != null ? npc.getName() : "Unknown";
         DifficultyTier difficulty = MonsterRoster.getDifficulty(npcName, npc.getCombatLevel());
 
@@ -67,19 +89,6 @@ public class CaptureService {
         }
 
         CreatureRarity rarity = RarityRoller.roll(rng, captureLevel);
-        // Keen Instinct (shop): a chance to roll the rarity a second time and keep the better of the
-        // two. Only happens if the player owns the upgrade (doubleRollChance > 0) — the short-circuit
-        // means an unowned upgrade consumes no RNG, keeping the roll sequence stable.
-        CreatureRarity keenKept = null;
-        CreatureRarity keenFrom = null;
-        if (doubleRollChance > 0 && rng.nextDouble() < doubleRollChance) {
-            CreatureRarity second = RarityRoller.roll(rng, captureLevel);
-            if (second.ordinal() > rarity.ordinal()) {
-                keenFrom = rarity;    // the rejected (lower) roll
-                rarity   = second;    // keep the better
-                keenKept = second;
-            }
-        }
         // Fortune's Favour (shop): a chance to climb one rarity higher than the roll landed. Only
         // happens if the player owns the upgrade (rarityUpChance > 0); Mythic can't climb further.
         boolean fortuneBumped = false;
@@ -113,12 +122,43 @@ public class CaptureService {
                 .playerName(playerName != null ? playerName : "")
                 .build();
         creature.fortuneBumped = fortuneBumped;
-        creature.keenInstinctKept = keenKept;
-        creature.keenInstinctFrom = keenFrom;
 
         log.info("Captured {} [{}] difficulty={}{}", creature.npcName, creature.rarity.label,
                 difficulty.label, fortuneBumped ? " (Fortune's Favour bumped)" : "");
         return Optional.of(creature);
+    }
+
+    /**
+     * Keeps the better of two Keen Instinct capture attempts. Ranking: a capture beats a miss; between
+     * two captures the higher rarity wins, then the higher Power Level. When the SECOND attempt is the
+     * one kept (i.e. Keen Instinct actually improved on the first roll) and it either rescued a would-be
+     * miss or landed a strictly higher rarity, the kept card is tagged so the plugin announces the proc.
+     */
+    private Optional<CapturedCreature> keenKeepBetter(Optional<CapturedCreature> first,
+                                                      Optional<CapturedCreature> second) {
+        boolean secondBetter;
+        if (!second.isPresent()) {
+            secondBetter = false;
+        } else if (!first.isPresent()) {
+            secondBetter = true;
+        } else {
+            int cmp = Integer.compare(second.get().rarity.ordinal(), first.get().rarity.ordinal());
+            if (cmp == 0) cmp = Integer.compare(second.get().powerLevel(), first.get().powerLevel());
+            secondBetter = cmp > 0;
+        }
+
+        if (secondBetter) {
+            CapturedCreature kept = second.get();
+            boolean firstMiss = !first.isPresent();
+            // Only a rescued miss or a genuine rarity upgrade is worth a chat shout (a mere Power Level
+            // tiebreak win is kept silently).
+            if (firstMiss || kept.rarity.ordinal() > first.get().rarity.ordinal()) {
+                kept.keenInstinctKept = kept.rarity;
+                kept.keenInstinctFrom = firstMiss ? null : first.get().rarity;   // null = rescued a miss
+            }
+            return second;
+        }
+        return first;
     }
 
     /**
