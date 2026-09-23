@@ -289,6 +289,13 @@ public class ProgressionService {
             case NAME_A_CARD:
                 return collection.hasNamedCard();
 
+            // Discard milestones (recorded going-forward at discard time)
+            case DISCARD_SHINY:     return collection.discardedShiny;
+            case DISCARD_LEGENDARY: return collection.discardedLegendary;
+            case DISCARD_MYTHIC:    return collection.discardedMythic;
+            case DISCARD_1K: case DISCARD_5K: case DISCARD_10K:
+                return collection.largestDiscardBatch >= a.countThreshold;
+
             // Per-rarity dex completion
             case DEX_COMMON:     return collection.hasFullRarityDex(CreatureRarity.COMMON);
             case DEX_UNCOMMON:   return collection.hasFullRarityDex(CreatureRarity.UNCOMMON);

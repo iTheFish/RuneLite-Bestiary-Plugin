@@ -6,7 +6,11 @@ package com.bestiary.model;
  */
 public enum ShopCategory {
     PROGRESSION("Progression"),
-    REROLLS("Rerolls");
+    REROLLS("Rerolls"),
+    /** Upgrades that alter the capture roll itself (rarity/shiny/double-roll). */
+    MECHANICS("Mechanics"),
+    /** Endgame shop — placeholder for now; consumables unlock at Capture Level 99. */
+    LEVEL_99("Level 99");
 
     public final String label;
 

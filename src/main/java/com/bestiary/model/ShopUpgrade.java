@@ -44,13 +44,25 @@ public enum ShopUpgrade {
             "Gives every capture a chance to roll one rarity higher than it landed (Mythic can't "
                     + "climb further). Buying the first tier unlocks the roll; further tiers raise "
                     + "the chance. A proc is announced in chat.",
-            ShopCategory.PROGRESSION, 5, new long[]{7500, 1500, 3000, 4500, 6000}, 0.01),
+            ShopCategory.MECHANICS, 5, new long[]{7500, 1500, 3000, 4500, 6000}, 0.01),
+
+    /**
+     * Chance that a capture rolls its rarity TWICE and keeps the better result. Owning any tier is
+     * what enables the second roll — with zero tiers it never happens, which is why the first tier is
+     * the priciest. effect = added double-roll chance/tier (2% → 10%).
+     */
+    CAPTURE_DOUBLE_ROLL(
+            "Keen Instinct",
+            "Gives every kill a chance to attempt the capture twice and keep the better outcome, even "
+                    + "turning a miss into a catch. Buying the first tier unlocks it; further tiers "
+                    + "raise the chance.",
+            ShopCategory.MECHANICS, 5, new long[]{25000, 10000, 15000, 20000, 25000}, 0.02),
 
     /** Adds to the passive shiny chance on every capture. */
     SHINY_CHANCE(
             "Shiny Charm",
             "Raises your passive shiny chance on every capture.",
-            ShopCategory.PROGRESSION, 5, 1500, 0.001),
+            ShopCategory.MECHANICS, 5, 1500, 0.001),
 
     /** Adds to the shiny chance rolled when a card is rerolled. */
     REROLL_SHINY(

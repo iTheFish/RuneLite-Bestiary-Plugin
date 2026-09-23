@@ -294,7 +294,8 @@ public class BestiaryPlugin extends Plugin {
         String playerName = client.getLocalPlayer() != null ? client.getLocalPlayer().getName() : "";
         Optional<CapturedCreature> result = captureService.attemptCapture(
                 npc, location, captureLevel, killCount, region, playerName, observedDamage,
-                dataService.bonusShinyChance(), dataService.bonusCaptureRarityChance());
+                dataService.bonusShinyChance(), dataService.bonusCaptureRarityChance(),
+                dataService.bonusDoubleRollChance());
 
         // Overlay / animation
         if (config.showCaptureAnimation()) {
@@ -350,6 +351,11 @@ public class BestiaryPlugin extends Plugin {
                         notifyCapture(creature, baseCredits, bonusCredits);
                     }
                 }
+            }
+
+            // Keen Instinct proc (shop upgrade): the double-roll kept a better rarity — announce it.
+            if (creature.keenInstinctKept != null && config.notifyOnCapture()) {
+                sendKeenInstinctMessage(creature);
             }
 
             // Fortune's Favour proc (shop upgrade): a rare, exciting rarity climb — always worth a
@@ -535,6 +541,32 @@ public class BestiaryPlugin extends Plugin {
      * The Fortune's Favour proc line, ring-of-wealth style: "shines brightly" glows gold and the
      * new rarity is drawn in its own rarity colour.
      */
+    /**
+     * The Keen Instinct proc line: the second capture attempt beat the first. If the first attempt was
+     * a miss it "rescued" the capture; otherwise it landed a higher rarity. Rarities are drawn in their
+     * own rarity colour, e.g. "Your keen instinct captured a Legendary over an Epic!".
+     */
+    private void sendKeenInstinctMessage(CapturedCreature creature) {
+        ChatMessageBuilder b = new ChatMessageBuilder()
+                .append(ChatColorType.HIGHLIGHT)
+                .append("Your keen instinct captured a ")
+                .append(creature.keenInstinctKept.displayColor, creature.keenInstinctKept.label);
+        if (creature.keenInstinctFrom == null) {
+            // The first attempt missed — Keen Instinct saved the capture.
+            b.append(ChatColorType.HIGHLIGHT).append(" that would have got away!");
+        } else {
+            b.append(ChatColorType.HIGHLIGHT)
+                    .append(" over a ")
+                    .append(creature.keenInstinctFrom.displayColor, creature.keenInstinctFrom.label)
+                    .append(ChatColorType.HIGHLIGHT)
+                    .append("!");
+        }
+        chatMessageManager.queue(QueuedMessage.builder()
+                .type(ChatMessageType.GAMEMESSAGE)
+                .runeLiteFormattedMessage(b.build())
+                .build());
+    }
+
     private void sendFortuneMessage(CapturedCreature creature) {
         String formatted = new ChatMessageBuilder()
                 .append(ChatColorType.HIGHLIGHT)

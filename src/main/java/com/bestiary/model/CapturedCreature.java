@@ -138,6 +138,14 @@ public class CapturedCreature {
      */
     public transient boolean fortuneBumped;
 
+    /**
+     * Transient (NEVER persisted): when Keen Instinct rolled the rarity twice and kept the better,
+     * these hold the kept (winning) and rejected (losing) rarities. Both null unless the double-roll
+     * actually improved the result. Drives the one-off "keen instinct" chat proc only.
+     */
+    public transient CreatureRarity keenInstinctKept;
+    public transient CreatureRarity keenInstinctFrom;
+
     private CapturedCreature(Builder b) {
         this.id                = b.id;
         this.npcId             = b.npcId;

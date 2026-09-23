@@ -85,7 +85,7 @@ public class MonsterRoster {
         "Zombie pirate",
 
         // === Dragons ===
-        "Baby blue dragon", "Baby green dragon",
+        "Baby blue dragon", "Baby green dragon", "Baby red dragon", "Baby black dragon",
         "Green dragon", "Blue dragon", "Red dragon", "Black dragon", "Lava dragon",
         "Bronze dragon", "Iron dragon", "Steel dragon",
         "Mithril dragon", "Adamant dragon", "Rune dragon",
@@ -226,7 +226,7 @@ public class MonsterRoster {
             "Hill giant", "Moss giant", "Ice giant", "Earth warrior",
             "Ankou",
             "Basilisk", "Black knight",
-            "Baby blue dragon", "Baby green dragon",
+            "Baby blue dragon", "Baby green dragon", "Baby red dragon", "Baby black dragon",
             "Kalphite worker", "White knight"
         )) { d.put(n, EASY); }
 
@@ -381,6 +381,7 @@ public class MonsterRoster {
             "Feral vampyre","Dagannoth","Cave horror","Vyrewatch Sentinel","Hellhound",
             "Mountain troll","Zombie pirate","Dharok the Wretched",
             "Guthan the Infested","Verac the Defiled","Baby blue dragon","Baby green dragon",
+            "Baby red dragon","Baby black dragon",
             "Scorpia","Ba-Ba","Suqah","Desert lizard","King scorpion"
         )) { a.put(n, WARRIOR); }
 
@@ -605,6 +606,8 @@ public class MonsterRoster {
         b.put("Zombie pirate", new int[]{6, 3, 6, 1, 1, 15});
         b.put("Baby blue dragon", new int[]{12, 12, 12, 5, 1, 22});
         b.put("Baby green dragon", new int[]{12, 12, 12, 5, 1, 22});
+        b.put("Baby red dragon", new int[]{16, 16, 16, 5, 1, 24});
+        b.put("Baby black dragon", new int[]{20, 20, 20, 5, 1, 26});
         b.put("Green dragon", new int[]{20, 20, 20, 55, 1, 35});
         b.put("Blue dragon", new int[]{29, 29, 29, 55, 1, 45});
         b.put("Red dragon", new int[]{39, 39, 39, 55, 1, 35});
@@ -864,6 +867,8 @@ public class MonsterRoster {
         // Dragons
         h.put("Baby blue dragon",    60);
         h.put("Baby green dragon",   55);
+        h.put("Baby red dragon",     65);
+        h.put("Baby black dragon",   70);
         h.put("Green dragon",        75);
         h.put("Blue dragon",         105);
         h.put("Red dragon",          140);
@@ -1033,7 +1038,7 @@ public class MonsterRoster {
 
         // DRAGON — true dragons and dragon-kind
         for (String n : Arrays.asList(
-            "Baby blue dragon", "Baby green dragon",
+            "Baby blue dragon", "Baby green dragon", "Baby red dragon", "Baby black dragon",
             "Green dragon", "Blue dragon", "Red dragon", "Black dragon", "Lava dragon",
             "Bronze dragon", "Iron dragon", "Steel dragon",
             "Mithril dragon", "Adamant dragon", "Rune dragon",
@@ -1472,6 +1477,8 @@ public class MonsterRoster {
         p.put("Basilisk knight", 5);
         p.put("Baby blue dragon", 2);
         p.put("Baby green dragon", 2);
+        p.put("Baby red dragon", 3);
+        p.put("Baby black dragon", 3);
         p.put("Cave horror", 2);
         p.put("Chaos Fanatic", 5);
         p.put("Dark wizard", 5);
@@ -1621,6 +1628,8 @@ public class MonsterRoster {
         // Dragons
         c.put("Baby blue dragon",    48);
         c.put("Baby green dragon",   44);
+        c.put("Baby red dragon",     65);
+        c.put("Baby black dragon",   83);
         c.put("Green dragon",        88);
         c.put("Blue dragon",         111);
         c.put("Red dragon",          152);

@@ -255,6 +255,7 @@ public class DiscardDialog extends JDialog {
                 "Confirm discard", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
         if (choice != JOptionPane.YES_OPTION) return;
         dataService.discardCaptures(cards);
+        BestiaryPanel.recheckAchievements();   // discard milestones (shiny/Mythic/value tiers)
         if (onDone != null) onDone.run();
         recompute();
     }
