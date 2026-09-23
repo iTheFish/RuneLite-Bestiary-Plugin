@@ -174,18 +174,6 @@ public interface BestiaryConfig extends Config {
         return OverlayPos.TOP_CENTER;
     }
 
-    @Range(min = 150, max = 300)
-    @ConfigItem(
-            keyName = "overlayWidth",
-            name = "Overlay Width",
-            description = "Width of the capture overlay panel in pixels (150–300)",
-            section = overlaySection,
-            position = 5
-    )
-    default int overlayWidth() {
-        return 200;
-    }
-
     @Range(min = 50, max = 150)
     @ConfigItem(
             keyName = "overlayScale",
@@ -194,7 +182,7 @@ public interface BestiaryConfig extends Config {
                         + "text) as a percentage (50–150). Lower makes the<br>"
                         + "alert smaller and less intrusive.</html>",
             section = overlaySection,
-            position = 6
+            position = 5
     )
     default int overlayScale() {
         return 100;
@@ -208,7 +196,7 @@ public interface BestiaryConfig extends Config {
                         + "as a percentage (20–100). Lower is more<br>"
                         + "see-through, so it blocks less of the screen.</html>",
             section = overlaySection,
-            position = 7
+            position = 6
     )
     default int overlayOpacity() {
         return 75;
