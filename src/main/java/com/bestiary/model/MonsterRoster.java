@@ -353,10 +353,10 @@ public class MonsterRoster {
         d.put("Venator",           ELITE);
         d.put("Frost dragon",      ELITE);
 
-        // CoX additions (2026-09-23)
-        d.put("Skeletal Mystic",   ELITE);
-        d.put("Deathly ranger",    ELITE);
-        d.put("Deathly mage",      ELITE);
+        // CoX additions (2026-09-23) — all boss-tier raid monsters
+        d.put("Skeletal Mystic",   BOSS);
+        d.put("Deathly ranger",    BOSS);
+        d.put("Deathly mage",      BOSS);
         d.put("Vanguard",          BOSS);
 
         DIFFICULTY = Collections.unmodifiableMap(d);
