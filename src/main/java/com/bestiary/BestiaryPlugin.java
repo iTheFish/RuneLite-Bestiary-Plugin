@@ -294,7 +294,8 @@ public class BestiaryPlugin extends Plugin {
         String playerName = client.getLocalPlayer() != null ? client.getLocalPlayer().getName() : "";
         Optional<CapturedCreature> result = captureService.attemptCapture(
                 npc, location, captureLevel, killCount, region, playerName, observedDamage,
-                dataService.bonusShinyChance(), dataService.bonusCaptureRarityChance());
+                dataService.bonusShinyChance(), dataService.bonusCaptureRarityChance(),
+                dataService.bonusDoubleRollChance());
 
         // Overlay / animation
         if (config.showCaptureAnimation()) {

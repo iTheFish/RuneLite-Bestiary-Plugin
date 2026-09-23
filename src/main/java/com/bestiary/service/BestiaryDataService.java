@@ -608,6 +608,15 @@ public class BestiaryDataService {
                 collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.CAPTURE_RARITY));
     }
 
+    /**
+     * Passive double-roll chance from the Keen Instinct upgrade. 0 when unowned — with no tier the
+     * capture never rolls its rarity twice.
+     */
+    public double bonusDoubleRollChance() {
+        return com.bestiary.model.ShopUpgrade.CAPTURE_DOUBLE_ROLL.effectFor(
+                collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.CAPTURE_DOUBLE_ROLL));
+    }
+
     /** Passive reroll-cost discount (0..0.20) from the Haggler upgrade. */
     public double rerollDiscount() {
         return com.bestiary.model.ShopUpgrade.REROLL_COST.effectFor(

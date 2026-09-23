@@ -146,7 +146,9 @@ public class ShopTab extends JPanel {
     /** Info-tab-style toggle-button bar, one per shop category. */
     private JPanel buildTabBar() {
         ShopCategory[] cats = ShopCategory.values();
-        JPanel bar = new JPanel(new GridLayout(1, cats.length, 4, 0));
+        // Two columns so the tabs wrap into a tidy grid (e.g. 4 categories → 2×2) rather than
+        // cramming every tab into one row in the narrow side panel.
+        JPanel bar = new JPanel(new GridLayout(0, 2, 4, 4));
         bar.setOpaque(false);
         bar.setBorder(new EmptyBorder(2, 4, 4, 4));
         for (int i = 0; i < cats.length; i++) {
@@ -194,15 +196,55 @@ public class ShopTab extends JPanel {
                 any = true;
             }
             if (!any) {
-                JLabel none = new JLabel("Nothing here yet.");
-                none.setFont(FontManager.getRunescapeSmallFont());
-                none.setForeground(DIM);
-                none.setAlignmentX(LEFT_ALIGNMENT);
-                inner.add(none);
+                inner.add(cat == ShopCategory.LEVEL_99 ? level99Teaser() : emptyLabel("Nothing here yet."));
             }
             inner.revalidate();
             inner.repaint();
         }
+    }
+
+    private JLabel emptyLabel(String text) {
+        JLabel l = new JLabel(text);
+        l.setFont(FontManager.getRunescapeSmallFont());
+        l.setForeground(DIM);
+        l.setAlignmentX(LEFT_ALIGNMENT);
+        return l;
+    }
+
+    /** "Coming soon" teaser card for the placeholder Level 99 endgame shop. */
+    private JPanel level99Teaser() {
+        JPanel card = new JPanel();
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(new Color(255, 165, 0, 70), 1, true),
+                new EmptyBorder(10, 10, 10, 10)));
+        card.setAlignmentX(LEFT_ALIGNMENT);
+
+        JLabel title = new JLabel("🔒 Endgame Shop");
+        title.setFont(FontManager.getRunescapeBoldFont());
+        title.setForeground(GOLD);
+        title.setAlignmentX(LEFT_ALIGNMENT);
+        card.add(title);
+
+        JTextArea body = new JTextArea(
+                "Coming soon — an endgame shop that unlocks at Capture Level 99.\n\n"
+                        + "Spend your hard-earned credits on powerful one-use consumables: guaranteed "
+                        + "shinies, rarity boosts, perfect rolls and more.");
+        body.setEditable(false);
+        body.setFocusable(false);
+        body.setLineWrap(true);
+        body.setWrapStyleWord(true);
+        body.setOpaque(false);
+        body.setFont(FontManager.getRunescapeSmallFont());
+        body.setForeground(DIM);
+        JPanel wrap = new JPanel(new BorderLayout());
+        wrap.setOpaque(false);
+        wrap.setAlignmentX(LEFT_ALIGNMENT);
+        wrap.setBorder(new EmptyBorder(4, 0, 0, 0));
+        wrap.add(body, BorderLayout.CENTER);
+        card.add(wrap);
+        return card;
     }
 
     private JPanel upgradeCard(ShopUpgrade u) {

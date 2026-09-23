@@ -52,7 +52,7 @@ public class CaptureService {
                                                      int captureLevel, int killCount,
                                                      String regionName, String playerName,
                                                      int observedDamage, double shinyBonus,
-                                                     double rarityUpChance) {
+                                                     double rarityUpChance, double doubleRollChance) {
         String npcName = npc.getName() != null ? npc.getName() : "Unknown";
         DifficultyTier difficulty = MonsterRoster.getDifficulty(npcName, npc.getCombatLevel());
 
@@ -67,6 +67,13 @@ public class CaptureService {
         }
 
         CreatureRarity rarity = RarityRoller.roll(rng, captureLevel);
+        // Keen Instinct (shop): a chance to roll the rarity a second time and keep the better of the
+        // two. Only happens if the player owns the upgrade (doubleRollChance > 0) — the short-circuit
+        // means an unowned upgrade consumes no RNG, keeping the roll sequence stable.
+        if (doubleRollChance > 0 && rng.nextDouble() < doubleRollChance) {
+            CreatureRarity second = RarityRoller.roll(rng, captureLevel);
+            if (second.ordinal() > rarity.ordinal()) rarity = second;
+        }
         // Fortune's Favour (shop): a chance to climb one rarity higher than the roll landed. Only
         // happens if the player owns the upgrade (rarityUpChance > 0); Mythic can't climb further.
         boolean fortuneBumped = false;
