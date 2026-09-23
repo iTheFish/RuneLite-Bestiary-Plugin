@@ -190,7 +190,10 @@ public class MonsterRoster {
         // === #196 additions (2026-09-22) ===
         "Cockatrice", "Cyclops",
         "Sulphur Nagua", "Frost Nagua", "Earthen Nagua",
-        "Venator", "Frost dragon"
+        "Venator", "Frost dragon",
+
+        // === CoX additions (2026-09-23) ===
+        "Skeletal Mystic", "Deathly ranger", "Deathly mage", "Vanguard"
     );
 
     // -------------------------------------------------------------------------
@@ -350,6 +353,12 @@ public class MonsterRoster {
         d.put("Venator",           ELITE);
         d.put("Frost dragon",      ELITE);
 
+        // CoX additions (2026-09-23)
+        d.put("Skeletal Mystic",   ELITE);
+        d.put("Deathly ranger",    ELITE);
+        d.put("Deathly mage",      ELITE);
+        d.put("Vanguard",          BOSS);
+
         DIFFICULTY = Collections.unmodifiableMap(d);
     }
 
@@ -485,6 +494,12 @@ public class MonsterRoster {
         a.put("Earthen Nagua",     WARRIOR);    // stab melee
         a.put("Venator",           WARDEN);     // melee + ranged
         a.put("Frost dragon",      BATTLEMAGE); // melee + dragonfire
+
+        // CoX additions (2026-09-23)
+        a.put("Skeletal Mystic",   BATTLEMAGE); // magic + melee
+        a.put("Deathly ranger",    MARKSMAN);   // ranged
+        a.put("Deathly mage",      MAGE);       // pure magic
+        a.put("Vanguard",          APEX);       // tribrid (melee/magic/ranged trio)
 
         COMBAT_CLASSES = Collections.unmodifiableMap(a);
     }
@@ -741,6 +756,12 @@ public class MonsterRoster {
         b.put("Earthen Nagua",         new int[]{48, 50, 32, 24,  1, 25});
         b.put("Venator",               new int[]{62, 63, 51, 41, 44, 26});
         b.put("Frost dragon",          new int[]{64, 64, 64, 61,  1, 39});
+
+        // CoX additions (2026-09-23)
+        b.put("Skeletal Mystic",       new int[]{45, 45, 75, 60,  1, 15});
+        b.put("Deathly ranger",        new int[]{ 1,  1, 60, 55, 80, 30});
+        b.put("Deathly mage",          new int[]{ 1,  1, 60, 80,  1, 30});
+        b.put("Vanguard",              new int[]{60, 60, 65, 60, 60, 25});
 
         STAT_BASES = Collections.unmodifiableMap(b);
     }
@@ -999,6 +1020,12 @@ public class MonsterRoster {
         h.put("Earthen Nagua",         160);
         h.put("Venator",               345);
         h.put("Frost dragon",          230);
+
+        // CoX additions (2026-09-23)
+        h.put("Skeletal Mystic",       160);
+        h.put("Deathly ranger",        120);
+        h.put("Deathly mage",          120);
+        h.put("Vanguard",              180);
         HITPOINTS = Collections.unmodifiableMap(h);
     }
 
@@ -1099,7 +1126,8 @@ public class MonsterRoster {
             "Verzik Vitur", "Xarpus", "Pestilent Bloat",
             "Revenant imp", "Revenant goblin", "Revenant pyrefiend", "Revenant hobgoblin",
             "Revenant cyclops", "Revenant hellhound", "Revenant demon", "Revenant ork",
-            "Revenant dark beast", "Revenant knight", "Revenant dragon"
+            "Revenant dark beast", "Revenant knight", "Revenant dragon",
+            "Skeletal Mystic"
         )) { s.put(n, UNDEAD); }
         // Barrows brothers are NOT undead (common misconception) → left unlisted, fall back to OTHER.
         // Vyrewatch Sentinel likewise unlisted → OTHER (user review 2026-09-22).
@@ -1153,6 +1181,8 @@ public class MonsterRoster {
         s.put("Frost dragon",      DRAGON);
         // Sulphur/Frost/Earthen Nagua + Venator intentionally OTHER (spectral / vampyre
         // hound — no fitting species) → left unlisted, fall back to OTHER via getSpecies().
+        // CoX (2026-09-23): Skeletal Mystic → UNDEAD (above); Deathly ranger/mage + Vanguard are
+        // Xerician constructs with no fitting species → left unlisted, fall back to OTHER.
 
         // All unlisted monsters fall back to OTHER via getSpecies()
         SPECIES = Collections.unmodifiableMap(s);
@@ -1494,6 +1524,12 @@ public class MonsterRoster {
         p.put("Venator", 23);
         p.put("Frost dragon", 28);
 
+        // CoX additions (2026-09-23)
+        p.put("Skeletal Mystic", 30);
+        p.put("Deathly ranger", 15);
+        p.put("Deathly mage", 15);
+        p.put("Vanguard", 20);
+
         PRAYER = Collections.unmodifiableMap(p);
     }
 
@@ -1736,6 +1772,12 @@ public class MonsterRoster {
         c.put("Earthen Nagua",         128);
         c.put("Venator",               246);
         c.put("Frost dragon",          202);
+
+        // CoX additions (2026-09-23) — scaling monsters; representative combat levels
+        c.put("Skeletal Mystic",       244);
+        c.put("Deathly ranger",        178);
+        c.put("Deathly mage",          178);
+        c.put("Vanguard",              195);
         COMBAT_LEVELS = Collections.unmodifiableMap(c);
     }
 
