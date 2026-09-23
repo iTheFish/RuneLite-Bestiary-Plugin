@@ -193,7 +193,7 @@ public class MonsterRoster {
         "Venator", "Frost dragon",
 
         // === CoX additions (2026-09-23) ===
-        "Skeletal Mystic", "Deathly ranger", "Deathly mage", "Vanguard"
+        "Skeletal Mystic", "Deathly ranger", "Deathly mage", "Vanguard", "Guardian"
     );
 
     // -------------------------------------------------------------------------
@@ -358,6 +358,7 @@ public class MonsterRoster {
         d.put("Deathly ranger",    BOSS);
         d.put("Deathly mage",      BOSS);
         d.put("Vanguard",          BOSS);
+        d.put("Guardian",          BOSS);
 
         DIFFICULTY = Collections.unmodifiableMap(d);
     }
@@ -500,6 +501,7 @@ public class MonsterRoster {
         a.put("Deathly ranger",    MARKSMAN);   // ranged
         a.put("Deathly mage",      MAGE);       // pure magic
         a.put("Vanguard",          APEX);       // tribrid (melee/magic/ranged trio)
+        a.put("Guardian",          WARRIOR);    // pickaxe-mined statue; melee
 
         COMBAT_CLASSES = Collections.unmodifiableMap(a);
     }
@@ -762,6 +764,7 @@ public class MonsterRoster {
         b.put("Deathly ranger",        new int[]{ 1,  1, 60, 55, 80, 30});
         b.put("Deathly mage",          new int[]{ 1,  1, 60, 80,  1, 30});
         b.put("Vanguard",              new int[]{60, 60, 65, 60, 60, 25});
+        b.put("Guardian",              new int[]{60, 65, 50,  1,  1,  5});
 
         STAT_BASES = Collections.unmodifiableMap(b);
     }
@@ -1026,6 +1029,7 @@ public class MonsterRoster {
         h.put("Deathly ranger",        120);
         h.put("Deathly mage",          120);
         h.put("Vanguard",              180);
+        h.put("Guardian",              250);
         HITPOINTS = Collections.unmodifiableMap(h);
     }
 
@@ -1181,8 +1185,8 @@ public class MonsterRoster {
         s.put("Frost dragon",      DRAGON);
         // Sulphur/Frost/Earthen Nagua + Venator intentionally OTHER (spectral / vampyre
         // hound — no fitting species) → left unlisted, fall back to OTHER via getSpecies().
-        // CoX (2026-09-23): Skeletal Mystic → UNDEAD (above); Deathly ranger/mage + Vanguard are
-        // Xerician constructs with no fitting species → left unlisted, fall back to OTHER.
+        // CoX (2026-09-23): Skeletal Mystic → UNDEAD (above); Deathly ranger/mage + Vanguard +
+        // Guardian are Xerician constructs with no fitting species → left unlisted, fall back to OTHER.
 
         // All unlisted monsters fall back to OTHER via getSpecies()
         SPECIES = Collections.unmodifiableMap(s);
@@ -1529,6 +1533,7 @@ public class MonsterRoster {
         p.put("Deathly ranger", 15);
         p.put("Deathly mage", 15);
         p.put("Vanguard", 20);
+        p.put("Guardian", 1);
 
         PRAYER = Collections.unmodifiableMap(p);
     }
@@ -1778,6 +1783,7 @@ public class MonsterRoster {
         c.put("Deathly ranger",        178);
         c.put("Deathly mage",          178);
         c.put("Vanguard",              195);
+        c.put("Guardian",              198);
         COMBAT_LEVELS = Collections.unmodifiableMap(c);
     }
 
