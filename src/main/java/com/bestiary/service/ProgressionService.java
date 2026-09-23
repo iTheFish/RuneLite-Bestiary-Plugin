@@ -293,7 +293,7 @@ public class ProgressionService {
             case DISCARD_SHINY:     return collection.discardedShiny;
             case DISCARD_LEGENDARY: return collection.discardedLegendary;
             case DISCARD_MYTHIC:    return collection.discardedMythic;
-            case DISCARD_1K: case DISCARD_5K: case DISCARD_10K: case DISCARD_25K: case DISCARD_50K:
+            case DISCARD_1K: case DISCARD_5K: case DISCARD_10K:
                 return collection.largestDiscardBatch >= a.countThreshold;
 
             // Per-rarity dex completion

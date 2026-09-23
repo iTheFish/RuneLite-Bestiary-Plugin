@@ -26,7 +26,7 @@ public enum Achievement {
     FIVE_SPECIES       ("Scout",                 "Capture 5 different species",          5,    true,  new Color(255, 215, 0),   100),
     TWENTY_SPECIES     ("Naturalist",            "Capture 20 different species",         20,   true,  new Color(255, 215, 0),   400),
     FIFTY_SPECIES      ("Zoologist",             "Capture 50 different species",         50,   true,  new Color(255, 215, 0),  2000),
-    UNCOMMON_CATCH     ("Getting Started",       "Capture an Uncommon or better",        0,    false, new Color(80,  200, 80),   50),
+    UNCOMMON_CATCH     ("Getting Started",       "Capture an Uncommon+",                 0,    false, new Color(80,  200, 80),   50),
     RARE_CATCH         ("Lucky Strike",          "Capture a Rare or better",             0,    false, new Color(80,  140, 255),  150),
     EPIC_CATCH         ("Storm Chaser",          "Capture an Epic or better",            0,    false, new Color(100, 180, 255),  400),
     LEGENDARY_CATCH    ("Fortune's Favourite",   "Capture a Legendary",                  0,    false, new Color(255, 165, 0),  1000),
@@ -58,12 +58,12 @@ public enum Achievement {
     LEVEL_120          ("Beyond Mortal",         "Reach Capture Level 120",              0,    false, new Color(255, 100, 40),50000),
 
     // --- Total XP milestones (post-99 grind) ---
-    XP_25M             ("Experienced",           "Reach 25M total Capture XP",           25_000_000,  false, new Color(150, 120, 235),  8000),
-    XP_35M             ("Well Travelled",        "Reach 35M total Capture XP",           35_000_000,  false, new Color(160, 120, 235), 12000),
-    XP_50M             ("Prolific",              "Reach 50M total Capture XP",           50_000_000,  false, new Color(175, 120, 235), 18000),
-    XP_100M            ("Centurion",             "Reach 100M total Capture XP",          100_000_000, false, new Color(190, 120, 235), 35000),
-    XP_150M            ("Relentless",            "Reach 150M total Capture XP",          150_000_000, false, new Color(210, 120, 235), 60000),
-    XP_200M            ("Two Hundred Million",   "Reach the 200M Capture XP cap",        200_000_000, false, new Color(255, 120, 20),100000),
+    XP_25M             ("Experienced",           "Reach 25M total XP",                   25_000_000,  false, new Color(150, 120, 235),  8000),
+    XP_35M             ("Well Travelled",        "Reach 35M total XP",                   35_000_000,  false, new Color(160, 120, 235), 12000),
+    XP_50M             ("Prolific",              "Reach 50M total XP",                   50_000_000,  false, new Color(175, 120, 235), 18000),
+    XP_100M            ("Centurion",             "Reach 100M total XP",                  100_000_000, false, new Color(190, 120, 235), 35000),
+    XP_150M            ("Relentless",            "Reach 150M total XP",                  150_000_000, false, new Color(210, 120, 235), 60000),
+    XP_200M            ("Two Hundred Million",   "Reach the 200M XP cap",                200_000_000, false, new Color(255, 120, 20),100000),
 
     // --- Credits earned (lifetime) ---
     EARN_1K            ("Coin Purse",             "Earn 1,000 credits",                   1000,   false, new Color(255, 215, 0),  100),
@@ -80,46 +80,44 @@ public enum Achievement {
     SPEND_100K         ("Big Spender",            "Spend 100,000 credits",                100000, false, new Color(255, 165, 0), 3000),
 
     // --- Rerolls ---
-    REROLL_FIRST       ("Second Chances",         "Reroll a card for the first time",     1,      false, new Color(80,  140, 255),  50),
+    REROLL_FIRST       ("Second Chances",         "Reroll your first card",               1,      false, new Color(80,  140, 255),  50),
     REROLL_5           ("Do-Over",                "Reroll 5 cards",                       5,      false, new Color(80,  140, 255), 100),
     REROLL_10          ("Tinkerer",               "Reroll 10 cards",                      10,     false, new Color(80,  140, 255), 250),
     REROLL_25          ("Perfectionist",          "Reroll 25 cards",                      25,     false, new Color(100, 180, 255), 500),
     REROLL_50          ("Reroll Addict",          "Reroll 50 cards",                      50,     false, new Color(100, 180, 255),1000),
-    REROLL_RANK_UP     ("Against the Odds",       "Rank a card up a rarity by rerolling", 0,      false, new Color(170, 120, 235),2000),
+    REROLL_RANK_UP     ("Against the Odds",       "Reroll a card up a rarity",            0,      false, new Color(170, 120, 235),2000),
     REROLL_SHINY       ("Gilded Gambler",         "Reroll a shiny card",                  0,      false, new Color(255, 240, 150), 300),
-    REROLL_NATTY_LEG   ("Tempting Fate",          "Reroll a naturally-caught Legendary",  0,      false, new Color(255, 165, 0),   200),
-    REROLL_NATTY_MYTH  ("No Regrets",             "Reroll a naturally-caught Mythic",     0,      false, new Color(255, 50,  50),  300),
+    REROLL_NATTY_LEG   ("Tempting Fate",          "Reroll a natural Legendary",           0,      false, new Color(255, 165, 0),   200),
+    REROLL_NATTY_MYTH  ("No Regrets",             "Reroll a natural Mythic",              0,      false, new Color(255, 50,  50),  300),
 
     // --- Collection milestones ---
-    POWERHOUSE         ("Powerhouse",             "Own a card with Power Level 150+",     0,      false, new Color(240, 150, 45),  150),
-    PWR_300            ("Colossus",               "Own a card with Power Level 300+",     0,      false, new Color(245, 140, 40),  500),
-    PWR_500            ("Behemoth",               "Own a card with Power Level 500+",     0,      false, new Color(250, 110, 40), 1500),
-    PWR_700            ("Titan",                  "Own a card with Power Level 700+",     0,      false, new Color(255, 85,  45), 3000),
-    PWR_800            ("Godlike",                "Own a card with Power Level 800+",     0,      false, new Color(255, 65,  50), 5000),
-    PWR_1000           ("Off the Charts",         "Own a card with Power Level 1000+",    0,      false, new Color(255, 45,  45),10000),
-    FULL_HOUSE         ("Full House",             "Catch all six rarities of one monster",0,      false, new Color(255, 165, 0), 6000),
+    POWERHOUSE         ("Powerhouse",             "Own a Power Level 150+ card",          0,      false, new Color(240, 150, 45),  150),
+    PWR_300            ("Colossus",               "Own a Power Level 300+ card",          0,      false, new Color(245, 140, 40),  500),
+    PWR_500            ("Behemoth",               "Own a Power Level 500+ card",          0,      false, new Color(250, 110, 40), 1500),
+    PWR_700            ("Titan",                  "Own a Power Level 700+ card",          0,      false, new Color(255, 85,  45), 3000),
+    PWR_800            ("Godlike",                "Own a Power Level 800+ card",          0,      false, new Color(255, 65,  50), 5000),
+    PWR_1000           ("Off the Charts",         "Own a Power Level 1000+ card",         0,      false, new Color(255, 45,  45),10000),
+    FULL_HOUSE         ("Full House",             "All 6 rarities of a monster",          0,      false, new Color(255, 165, 0), 6000),
     CHROMATIC          ("Chromatic",              "Capture 5 shiny creatures",            5,      false, new Color(255, 240, 150),1500),
-    COMPLETIONIST      ("Completionist",          "Catch every monster in the album",     0,      false, new Color(255, 120, 20),25000),
+    COMPLETIONIST      ("Completionist",          "Complete the album",                   0,      false, new Color(255, 120, 20),25000),
     CURATED            ("Curated",                "Favourite a card",                     1,      false, new Color(255, 215, 0),   10),
     NAME_A_CARD        ("Personal Touch",         "Give a card a nickname",               0,      false, new Color(255, 215, 0),   50),
 
     // --- Per-rarity dex completion (own that rarity of every monster) ---
-    DEX_COMMON         ("Common Ground",          "Own a Common of every monster",        0,      false, new Color(180, 180, 180), 5000),
-    DEX_UNCOMMON       ("Uncommonly Thorough",    "Own an Uncommon of every monster",     0,      false, new Color(80,  200, 80),  8000),
-    DEX_RARE           ("Rare Form",              "Own a Rare of every monster",          0,      false, new Color(80,  140, 255), 12000),
-    DEX_EPIC           ("Epic Completionist",     "Own an Epic of every monster",         0,      false, new Color(190, 80,  220), 20000),
-    DEX_LEGENDARY      ("Legendary Completionist","Own a Legendary of every monster",     0,      false, new Color(255, 165, 0),  35000),
-    DEX_MYTHIC         ("Mythic Madness",         "Own a Mythic of every monster",        0,      false, new Color(255, 50,  50), 75000),
+    DEX_COMMON         ("Common Ground",          "Every monster as Common",              0,      false, new Color(180, 180, 180), 5000),
+    DEX_UNCOMMON       ("Uncommonly Thorough",    "Every monster as Uncommon",            0,      false, new Color(80,  200, 80),  8000),
+    DEX_RARE           ("Rare Form",              "Every monster as Rare",                0,      false, new Color(80,  140, 255), 12000),
+    DEX_EPIC           ("Epic Completionist",     "Every monster as Epic",                0,      false, new Color(190, 80,  220), 20000),
+    DEX_LEGENDARY      ("Legendary Completionist","Every monster as Legendary",           0,      false, new Color(255, 165, 0),  35000),
+    DEX_MYTHIC         ("Mythic Madness",         "Every monster as Mythic",              0,      false, new Color(255, 50,  50), 75000),
 
     // --- Discard milestones (recorded going-forward; can't backfill once a card is gone) ---
     DISCARD_SHINY      ("Heartless",              "Discard a shiny card",                 0,      false, new Color(210, 120, 120),  200),
     DISCARD_LEGENDARY  ("Cold Blooded",           "Discard a Legendary card",             0,      false, new Color(225, 105, 95),   350),
     DISCARD_MYTHIC     ("No Sentiment",           "Discard a Mythic card",                0,      false, new Color(220, 90,  90),   500),
-    DISCARD_1K         ("Spring Cleaning",        "Earn 1,000 credits from one discard",  1000,   false, new Color(200, 110, 90),   200),
-    DISCARD_5K         ("Purge",                  "Earn 5,000 credits from one discard",  5000,   false, new Color(210, 100, 80),   500),
-    DISCARD_10K        ("Fire Sale",              "Earn 10,000 credits from one discard", 10000,  false, new Color(220, 90,  70),  1000),
-    DISCARD_25K        ("Mass Extinction",        "Earn 25,000 credits from one discard", 25000,  false, new Color(230, 75,  60),  2500),
-    DISCARD_50K        ("Scorched Earth",         "Earn 50,000 credits from one discard", 50000,  false, new Color(240, 60,  50),  5000);
+    DISCARD_1K         ("Spring Cleaning",        "Earn 1,000 from one discard",          1000,   false, new Color(200, 110, 90),   200),
+    DISCARD_5K         ("Purge",                  "Earn 5,000 from one discard",          5000,   false, new Color(210, 100, 80),   500),
+    DISCARD_10K        ("Fire Sale",              "Earn 10,000 from one discard",         10000,  false, new Color(220, 90,  70),  1000);
 
     public final String title;
     public final String description;
