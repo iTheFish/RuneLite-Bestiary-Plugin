@@ -33,7 +33,8 @@ public final class PanelIcon {
                     source = ImageIO.read(in);
                 }
             } catch (Exception e) {
-                System.err.println("Failed to load bundled logo " + RESOURCE + ": " + e);
+                // Silent: render() falls back to a drawn placeholder if the resource can't be loaded.
+                source = null;
             }
         }
         return source;
@@ -76,6 +77,5 @@ public final class PanelIcon {
         // The Plugin Hub caps the listing icon at 48x72px, so render at 48. The in-client sidebar
         // button doesn't use this file — it calls render(s) at the nav-button size directly.
         ImageIO.write(render(48), "png", new File(out));
-        System.out.println("Wrote " + out);
     }
 }
