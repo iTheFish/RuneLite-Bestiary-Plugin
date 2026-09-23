@@ -186,6 +186,20 @@ public interface BestiaryConfig extends Config {
         return 200;
     }
 
+    @Range(min = 50, max = 150)
+    @ConfigItem(
+            keyName = "overlayScale",
+            name = "Overlay Scale",
+            description = "<html>Scales the whole capture overlay (graphics and<br>"
+                        + "text) as a percentage (50–150). Lower makes the<br>"
+                        + "alert smaller and less intrusive.</html>",
+            section = overlaySection,
+            position = 6
+    )
+    default int overlayScale() {
+        return 100;
+    }
+
     @Range(min = 20, max = 100)
     @ConfigItem(
             keyName = "overlayOpacity",
@@ -194,7 +208,7 @@ public interface BestiaryConfig extends Config {
                         + "as a percentage (20–100). Lower is more<br>"
                         + "see-through, so it blocks less of the screen.</html>",
             section = overlaySection,
-            position = 6
+            position = 7
     )
     default int overlayOpacity() {
         return 75;
