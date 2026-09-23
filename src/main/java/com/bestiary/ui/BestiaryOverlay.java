@@ -33,7 +33,8 @@ import java.util.Random;
 @Singleton
 public class BestiaryOverlay extends Overlay {
 
-    private int panelW = 200;
+    /** Base panel width; the whole overlay is resized via the Overlay Scale config, not this. */
+    private static final int panelW = 200;
     /** Capture-card background opacity (0–255), driven by the Overlay Opacity config. */
     private int bgAlpha = 191;
     /** Uniform scale for the whole overlay (graphics + text), driven by the Overlay Scale config. */
@@ -74,7 +75,6 @@ public class BestiaryOverlay extends Overlay {
 
     public void applyConfig(BestiaryConfig config) {
         setPosition(toOverlayPosition(config.overlayPosition()));
-        panelW = config.overlayWidth();
         bgAlpha = Math.max(0, Math.min(255, Math.round(config.overlayOpacity() / 100f * 255f)));
         scale = Math.max(0.1f, config.overlayScale() / 100f);
     }
