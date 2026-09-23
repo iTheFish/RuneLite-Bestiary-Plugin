@@ -11,6 +11,7 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
@@ -32,9 +33,12 @@ import java.util.Random;
 @Singleton
 public class BestiaryOverlay extends Overlay {
 
-    private int panelW = 200;
+    /** Base panel width; the whole overlay is resized via the Overlay Scale config, not this. */
+    private static final int panelW = 200;
     /** Capture-card background opacity (0–255), driven by the Overlay Opacity config. */
     private int bgAlpha = 191;
+    /** Uniform scale for the whole overlay (graphics + text), driven by the Overlay Scale config. */
+    private float scale = 1f;
 
     // Shared phase timings (ms)
     private static final long FLY_MS      = 500;
@@ -71,8 +75,8 @@ public class BestiaryOverlay extends Overlay {
 
     public void applyConfig(BestiaryConfig config) {
         setPosition(toOverlayPosition(config.overlayPosition()));
-        panelW = config.overlayWidth();
         bgAlpha = Math.max(0, Math.min(255, Math.round(config.overlayOpacity() / 100f * 255f)));
+        scale = Math.max(0.1f, config.overlayScale() / 100f);
     }
 
     private static OverlayPosition toOverlayPosition(OverlayPos pos) {
@@ -135,11 +139,23 @@ public class BestiaryOverlay extends Overlay {
             }
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            // Scale the whole alert uniformly: draw at native coordinates under a scale transform, then
+            // report the scaled size so RuneLite reserves the right amount of screen space. This scales
+            // every shape, stroke and font in the sub-renders without touching their layout math.
+            AffineTransform savedTx = g.getTransform();
+            if (scale != 1f) g.scale(scale, scale);
+            Dimension d;
             switch (e.kind) {
-                case CAPTURE:  return renderCapture(g, e, elapsed);
-                case MISS:     return renderMiss(g, elapsed);
-                case LEVEL_UP: return renderLevelUp(g, e.level, elapsed);
+                case CAPTURE:  d = renderCapture(g, e, elapsed); break;
+                case MISS:     d = renderMiss(g, elapsed); break;
+                case LEVEL_UP: d = renderLevelUp(g, e.level, elapsed); break;
+                default:       d = null;
             }
+            g.setTransform(savedTx);
+            if (d != null && scale != 1f) {
+                d = new Dimension(Math.round(d.width * scale), Math.round(d.height * scale));
+            }
+            return d;
         }
         return null;
     }

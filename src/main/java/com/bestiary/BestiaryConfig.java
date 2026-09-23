@@ -174,16 +174,18 @@ public interface BestiaryConfig extends Config {
         return OverlayPos.TOP_CENTER;
     }
 
-    @Range(min = 150, max = 300)
+    @Range(min = 50, max = 150)
     @ConfigItem(
-            keyName = "overlayWidth",
-            name = "Overlay Width",
-            description = "Width of the capture overlay panel in pixels (150–300)",
+            keyName = "overlayScale",
+            name = "Overlay Scale",
+            description = "<html>Scales the whole capture overlay (graphics and<br>"
+                        + "text) as a percentage (50–150). Lower makes the<br>"
+                        + "alert smaller and less intrusive.</html>",
             section = overlaySection,
             position = 5
     )
-    default int overlayWidth() {
-        return 200;
+    default int overlayScale() {
+        return 100;
     }
 
     @Range(min = 20, max = 100)

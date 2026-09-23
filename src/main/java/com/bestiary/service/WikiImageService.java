@@ -92,6 +92,7 @@ public class WikiImageService {
         m.put("Crazy Archaeologist", "Crazy archaeologist");
         m.put("Deranged Archaeologist","Deranged archaeologist");
         m.put("Hueycoatl",           "The Hueycoatl");
+        m.put("Guardian",            "Guardian (Chambers of Xeric)"); // disambiguation (CoX statue)
         // "Troll" has no usable representative page — omit so it gets no image gracefully
         WIKI_IMAGE_NAMES = java.util.Collections.unmodifiableMap(m);
     }

@@ -139,6 +139,10 @@ public class BestiaryDataService {
         col.shopUpgrades = new HashMap<>(d.shopUpgrades);
         col.lifetimeCardsSent = d.lifetimeCardsSent;
         col.lifetimeCardsDiscarded = d.lifetimeCardsDiscarded;
+        col.discardedShiny = d.discardedShiny;
+        col.discardedLegendary = d.discardedLegendary;
+        col.discardedMythic = d.discardedMythic;
+        col.largestDiscardBatch = d.largestDiscardBatch;
 
         // Lifetime captures: prefer the stored counter, but baseline it from the cards this account
         // actually caught (not traded-in) so pre-#N accounts don't read 0. Because own-caught-held can
@@ -461,6 +465,9 @@ public class BestiaryDataService {
         long credits = discardValue(c);
         addCredits(credits);
         collection.lifetimeCardsDiscarded++;
+        recordDiscardMilestones(c.isShiny(),
+                c.rarity.ordinal() >= CreatureRarity.LEGENDARY.ordinal(),
+                c.rarity == CreatureRarity.MYTHIC, credits);
         persistNow();
         return credits;
     }
@@ -469,14 +476,33 @@ public class BestiaryDataService {
     public long discardCaptures(java.util.Collection<CapturedCreature> cards) {
         if (isViewing()) return 0;   // read-only while viewing another account
         long total = 0;
+        boolean anyShiny = false;
+        boolean anyLegendary = false;
+        boolean anyMythic = false;
         for (CapturedCreature c : cards) {
             if (!collection.removeCapture(c)) continue;
             total += discardValue(c);
             collection.lifetimeCardsDiscarded++;
+            anyShiny     |= c.isShiny();
+            anyLegendary |= c.rarity.ordinal() >= CreatureRarity.LEGENDARY.ordinal();
+            anyMythic    |= c.rarity == CreatureRarity.MYTHIC;
         }
         addCredits(total);
+        recordDiscardMilestones(anyShiny, anyLegendary, anyMythic, total);
         persistNow();
         return total;
+    }
+
+    /**
+     * Records the going-forward discard flags/counter that back the discard achievements. Discard
+     * achievements can't backfill (the card is deleted with no log), so we capture the fact here at the
+     * moment of discard. {@code batchCredits} is the credits from THIS discard action, for the value tiers.
+     */
+    private void recordDiscardMilestones(boolean shiny, boolean legendary, boolean mythic, long batchCredits) {
+        if (shiny)     collection.discardedShiny = true;
+        if (legendary) collection.discardedLegendary = true;
+        if (mythic)    collection.discardedMythic = true;
+        collection.largestDiscardBatch = Math.max(collection.largestDiscardBatch, batchCredits);
     }
 
     public void saveProgressionState() {
@@ -608,6 +634,15 @@ public class BestiaryDataService {
                 collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.CAPTURE_RARITY));
     }
 
+    /**
+     * Passive double-roll chance from the Keen Instinct upgrade. 0 when unowned — with no tier the
+     * capture never rolls its rarity twice.
+     */
+    public double bonusDoubleRollChance() {
+        return com.bestiary.model.ShopUpgrade.CAPTURE_DOUBLE_ROLL.effectFor(
+                collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.CAPTURE_DOUBLE_ROLL));
+    }
+
     /** Passive reroll-cost discount (0..0.20) from the Haggler upgrade. */
     public double rerollDiscount() {
         return com.bestiary.model.ShopUpgrade.REROLL_COST.effectFor(
@@ -708,6 +743,10 @@ public class BestiaryDataService {
         d.lifetimeCapturesByNpc = new LinkedHashMap<>(collection.lifetimeCapturesByNpc);
         d.lifetimeCardsSent     = collection.lifetimeCardsSent;
         d.lifetimeCardsDiscarded = collection.lifetimeCardsDiscarded;
+        d.discardedShiny        = collection.discardedShiny;
+        d.discardedLegendary    = collection.discardedLegendary;
+        d.discardedMythic       = collection.discardedMythic;
+        d.largestDiscardBatch   = collection.largestDiscardBatch;
         d.shopUpgrades = new LinkedHashMap<>(collection.shopUpgrades);
         d.totalXp     = progressionState.totalXp;
         d.achievements = progressionState.unlockedAchievements.stream()

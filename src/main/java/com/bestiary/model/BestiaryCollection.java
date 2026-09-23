@@ -37,6 +37,18 @@ public class BestiaryCollection {
     /** Total cards this account has discarded for credits (for the Caught dashboard line). */
     public long lifetimeCardsDiscarded = 0;
 
+    /** True once this account has ever discarded a shiny card. Drives the "discard a shiny" achievement. */
+    public boolean discardedShiny = false;
+
+    /** True once this account has ever discarded a Legendary-or-better card. Drives the "discard a Legendary" achievement. */
+    public boolean discardedLegendary = false;
+
+    /** True once this account has ever discarded a Mythic card. Drives the "discard a Mythic" achievement. */
+    public boolean discardedMythic = false;
+
+    /** Largest credit haul from a single discard action (one card or one bulk discard). Drives the discard-value achievements. */
+    public long largestDiscardBatch = 0;
+
     /** Bestiary Credits — earned on capture, spent in the Shop. */
     public long credits = 0;
 

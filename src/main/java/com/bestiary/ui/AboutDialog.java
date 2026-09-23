@@ -39,6 +39,25 @@ public class AboutDialog extends JDialog {
 
     // Newest first. Future releases get prepended above v1.0.0.
     private static final Release[] RELEASES = {
+        new Release("v1.1.0", "Shop, alerts & more monsters", new String[][]{
+            {"New shop: Mechanics tab", "A new Mechanics category with Keen Instinct, a chance for "
+                + "every kill to attempt the capture twice and keep the better result, even turning a "
+                + "miss into a catch. Fortune's Favour and Shiny Charm moved here too."},
+            {"More achievements", "Added discard, reroll, per-rarity album and Power Level milestones, "
+                + "plus big kill, capture and XP goals. The tab now shows how many you've unlocked."},
+            {"New monsters", "Baby red & black dragons, three Naguas, Cockatrice, Venator, Frost "
+                + "dragon, Cyclops, and the Chambers of Xeric monsters: Skeletal Mystic, Deathly ranger "
+                + "& mage, Vanguard and Guardian."},
+            {"Album: Shinies filter", "A new shortcut to see every shiny you've caught across all monsters."},
+            {"Discord alerts", "Optionally post your best captures (Legendary+, or shiny Epic+) straight "
+                + "to a Discord channel via a webhook."},
+            {"Scalable overlay", "A new Overlay Scale setting resizes the whole capture alert, graphics "
+                + "and text, so you can make it as big or subtle as you like."},
+            {"Roster fixes & new look", "Removed some uncatchable monsters, retiered a few, fixed the Mad "
+                + "Angel's artwork, and gave the plugin a shiny new golden crest icon."},
+            {"Endgame shop (coming soon)", "A new Level 99 shop is on the way. Tell us what you'd like "
+                + "to see in the Discord."},
+        }),
         new Release("v1.0.2", "Bug fixes", new String[][]{
             {"Finisher-item kills now count", "Monsters you finish off with a special item — "
                 + "gargoyles (rock hammer), rockslugs (bag of salt), the Grotesque Guardians and "
