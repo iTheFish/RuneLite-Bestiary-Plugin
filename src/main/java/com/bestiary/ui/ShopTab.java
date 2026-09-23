@@ -229,8 +229,8 @@ public class ShopTab extends JPanel {
 
         JTextArea body = new JTextArea(
                 "Coming soon — an endgame shop that unlocks at Capture Level 99.\n\n"
-                        + "Spend your hard-earned credits on powerful one-use consumables: guaranteed "
-                        + "shinies, rarity boosts, perfect rolls and more.");
+                        + "Got ideas for what it should offer? Share them in the suggestions channel "
+                        + "on our Discord — community suggestions help shape what gets built.");
         body.setEditable(false);
         body.setFocusable(false);
         body.setLineWrap(true);
