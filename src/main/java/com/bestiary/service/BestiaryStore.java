@@ -77,6 +77,11 @@ public class BestiaryStore {
 
         /** Total cards this account has discarded for credits. */
         public long lifetimeCardsDiscarded;
+        /** True once a shiny / a Mythic has ever been discarded (discard achievements can't backfill). */
+        public boolean discardedShiny;
+        public boolean discardedMythic;
+        /** Largest credit haul from a single discard action. */
+        public long largestDiscardBatch;
         public long totalXp;
         public List<String> achievements = new ArrayList<>();
         public Map<String, Integer> shopUpgrades = new LinkedHashMap<>();

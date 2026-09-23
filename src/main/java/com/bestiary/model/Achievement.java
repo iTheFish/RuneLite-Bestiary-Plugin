@@ -109,7 +109,16 @@ public enum Achievement {
     DEX_RARE           ("Rare Form",              "Own a Rare of every monster",          0,      false, new Color(80,  140, 255), 12000),
     DEX_EPIC           ("Epic Completionist",     "Own an Epic of every monster",         0,      false, new Color(190, 80,  220), 20000),
     DEX_LEGENDARY      ("Legendary Completionist","Own a Legendary of every monster",     0,      false, new Color(255, 165, 0),  35000),
-    DEX_MYTHIC         ("Mythic Madness",         "Own a Mythic of every monster",        0,      false, new Color(255, 50,  50), 75000);
+    DEX_MYTHIC         ("Mythic Madness",         "Own a Mythic of every monster",        0,      false, new Color(255, 50,  50), 75000),
+
+    // --- Discard milestones (recorded going-forward; can't backfill once a card is gone) ---
+    DISCARD_SHINY      ("Heartless",              "Discard a shiny card",                 0,      false, new Color(210, 120, 120),  200),
+    DISCARD_MYTHIC     ("No Sentiment",           "Discard a Mythic card",                0,      false, new Color(220, 90,  90),   500),
+    DISCARD_1K         ("Spring Cleaning",        "Earn 1,000 credits from one discard",  1000,   false, new Color(200, 110, 90),   200),
+    DISCARD_5K         ("Purge",                  "Earn 5,000 credits from one discard",  5000,   false, new Color(210, 100, 80),   500),
+    DISCARD_10K        ("Fire Sale",              "Earn 10,000 credits from one discard", 10000,  false, new Color(220, 90,  70),  1000),
+    DISCARD_25K        ("Mass Extinction",        "Earn 25,000 credits from one discard", 25000,  false, new Color(230, 75,  60),  2500),
+    DISCARD_50K        ("Scorched Earth",         "Earn 50,000 credits from one discard", 50000,  false, new Color(240, 60,  50),  5000);
 
     public final String title;
     public final String description;

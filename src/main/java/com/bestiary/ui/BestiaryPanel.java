@@ -112,6 +112,7 @@ public class BestiaryPanel extends PluginPanel {
             if (choice == JOptionPane.YES_OPTION) {
                 dataService.discardCapture(cap);
                 refresh();
+                recheckAchievements();   // discard milestones (shiny/Mythic/value tiers)
                 AlbumDialog.refreshOpenAlbum();
                 DiscardDialog.refreshOpen();
             }
