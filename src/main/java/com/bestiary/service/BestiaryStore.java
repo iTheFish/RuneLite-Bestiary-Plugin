@@ -77,8 +77,9 @@ public class BestiaryStore {
 
         /** Total cards this account has discarded for credits. */
         public long lifetimeCardsDiscarded;
-        /** True once a shiny / a Mythic has ever been discarded (discard achievements can't backfill). */
+        /** True once a shiny / a Legendary+ / a Mythic has ever been discarded (discard achievements can't backfill). */
         public boolean discardedShiny;
+        public boolean discardedLegendary;
         public boolean discardedMythic;
         /** Largest credit haul from a single discard action. */
         public long largestDiscardBatch;

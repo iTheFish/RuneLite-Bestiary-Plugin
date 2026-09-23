@@ -40,6 +40,9 @@ public class BestiaryCollection {
     /** True once this account has ever discarded a shiny card. Drives the "discard a shiny" achievement. */
     public boolean discardedShiny = false;
 
+    /** True once this account has ever discarded a Legendary-or-better card. Drives the "discard a Legendary" achievement. */
+    public boolean discardedLegendary = false;
+
     /** True once this account has ever discarded a Mythic card. Drives the "discard a Mythic" achievement. */
     public boolean discardedMythic = false;
 

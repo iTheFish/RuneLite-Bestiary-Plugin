@@ -113,6 +113,7 @@ public enum Achievement {
 
     // --- Discard milestones (recorded going-forward; can't backfill once a card is gone) ---
     DISCARD_SHINY      ("Heartless",              "Discard a shiny card",                 0,      false, new Color(210, 120, 120),  200),
+    DISCARD_LEGENDARY  ("Cold Blooded",           "Discard a Legendary card",             0,      false, new Color(225, 105, 95),   350),
     DISCARD_MYTHIC     ("No Sentiment",           "Discard a Mythic card",                0,      false, new Color(220, 90,  90),   500),
     DISCARD_1K         ("Spring Cleaning",        "Earn 1,000 credits from one discard",  1000,   false, new Color(200, 110, 90),   200),
     DISCARD_5K         ("Purge",                  "Earn 5,000 credits from one discard",  5000,   false, new Color(210, 100, 80),   500),

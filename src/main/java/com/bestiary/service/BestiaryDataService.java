@@ -140,6 +140,7 @@ public class BestiaryDataService {
         col.lifetimeCardsSent = d.lifetimeCardsSent;
         col.lifetimeCardsDiscarded = d.lifetimeCardsDiscarded;
         col.discardedShiny = d.discardedShiny;
+        col.discardedLegendary = d.discardedLegendary;
         col.discardedMythic = d.discardedMythic;
         col.largestDiscardBatch = d.largestDiscardBatch;
 
@@ -464,7 +465,9 @@ public class BestiaryDataService {
         long credits = discardValue(c);
         addCredits(credits);
         collection.lifetimeCardsDiscarded++;
-        recordDiscardMilestones(c.isShiny(), c.rarity == CreatureRarity.MYTHIC, credits);
+        recordDiscardMilestones(c.isShiny(),
+                c.rarity.ordinal() >= CreatureRarity.LEGENDARY.ordinal(),
+                c.rarity == CreatureRarity.MYTHIC, credits);
         persistNow();
         return credits;
     }
@@ -474,16 +477,18 @@ public class BestiaryDataService {
         if (isViewing()) return 0;   // read-only while viewing another account
         long total = 0;
         boolean anyShiny = false;
+        boolean anyLegendary = false;
         boolean anyMythic = false;
         for (CapturedCreature c : cards) {
             if (!collection.removeCapture(c)) continue;
             total += discardValue(c);
             collection.lifetimeCardsDiscarded++;
-            anyShiny  |= c.isShiny();
-            anyMythic |= c.rarity == CreatureRarity.MYTHIC;
+            anyShiny     |= c.isShiny();
+            anyLegendary |= c.rarity.ordinal() >= CreatureRarity.LEGENDARY.ordinal();
+            anyMythic    |= c.rarity == CreatureRarity.MYTHIC;
         }
         addCredits(total);
-        recordDiscardMilestones(anyShiny, anyMythic, total);
+        recordDiscardMilestones(anyShiny, anyLegendary, anyMythic, total);
         persistNow();
         return total;
     }
@@ -493,9 +498,10 @@ public class BestiaryDataService {
      * achievements can't backfill (the card is deleted with no log), so we capture the fact here at the
      * moment of discard. {@code batchCredits} is the credits from THIS discard action, for the value tiers.
      */
-    private void recordDiscardMilestones(boolean shiny, boolean mythic, long batchCredits) {
-        if (shiny)  collection.discardedShiny = true;
-        if (mythic) collection.discardedMythic = true;
+    private void recordDiscardMilestones(boolean shiny, boolean legendary, boolean mythic, long batchCredits) {
+        if (shiny)     collection.discardedShiny = true;
+        if (legendary) collection.discardedLegendary = true;
+        if (mythic)    collection.discardedMythic = true;
         collection.largestDiscardBatch = Math.max(collection.largestDiscardBatch, batchCredits);
     }
 
@@ -729,6 +735,7 @@ public class BestiaryDataService {
         d.lifetimeCardsSent     = collection.lifetimeCardsSent;
         d.lifetimeCardsDiscarded = collection.lifetimeCardsDiscarded;
         d.discardedShiny        = collection.discardedShiny;
+        d.discardedLegendary    = collection.discardedLegendary;
         d.discardedMythic       = collection.discardedMythic;
         d.largestDiscardBatch   = collection.largestDiscardBatch;
         d.shopUpgrades = new LinkedHashMap<>(collection.shopUpgrades);
