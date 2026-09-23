@@ -153,7 +153,7 @@ notes each default in brackets.
   capture animation to be enabled).
 - **Show Level-Up Banner** *(on)* — play the on-screen banner when your Capture Level increases.
 - **Overlay Position** *(Top center)* — which edge/corner of the screen the overlay appears at.
-- **Overlay Width** *(200px; range 150–300)* — width of the overlay panel.
+- **Overlay Scale** *(100%; range 50–150)* — scales the whole overlay, graphics and text. Lower makes the alert smaller and less intrusive.
 - **Overlay Opacity** *(75%; range 20–100)* — how opaque the overlay's background is. Lower is more
   see-through, so it blocks less of the screen.
 
