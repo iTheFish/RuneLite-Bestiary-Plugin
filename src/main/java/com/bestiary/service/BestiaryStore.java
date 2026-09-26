@@ -117,9 +117,18 @@ public class BestiaryStore {
 
     @Inject
     public BestiaryStore(Gson gson, ScheduledExecutorService executor) {
+        // RuneLite.RUNELITE_DIR is the canonical ~/.runelite location; prefer it over a hand-rolled
+        // user.home/.runelite path so we follow the client if it ever relocates the home dir.
+        this(gson, executor, net.runelite.client.RuneLite.RUNELITE_DIR);
+    }
+
+    /**
+     * Visible for testing: lets tests point storage at a temp directory. RUNELITE_DIR is resolved
+     * once at class load, so a runtime {@code user.home} override can't redirect it.
+     */
+    BestiaryStore(Gson gson, ScheduledExecutorService executor, File runeliteDir) {
         this.executor    = executor;
-        this.dir         = new File(System.getProperty("user.home"),
-                ".runelite" + File.separator + "bestiary");
+        this.dir         = new File(runeliteDir, "bestiary");
         this.accountsDir = new File(dir, "accounts");
         this.indexFile   = new File(accountsDir, "index.json");
         // Reuse RuneLite's Gson config, adding an Instant<->epoch-second adapter.
