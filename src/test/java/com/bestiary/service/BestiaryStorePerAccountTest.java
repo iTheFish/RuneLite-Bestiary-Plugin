@@ -3,6 +3,7 @@ package com.bestiary.service;
 import com.google.gson.Gson;
 import org.junit.Test;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Executors;
@@ -22,8 +23,7 @@ public class BestiaryStorePerAccountTest {
     @Test
     public void perAccountIsolationAndLegacyArchive() throws Exception {
         Path tmpHome = Files.createTempDirectory("bestiary-test-home");
-        String oldHome = System.getProperty("user.home");
-        System.setProperty("user.home", tmpHome.toString());
+        File runeliteDir = tmpHome.resolve(".runelite").toFile();
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         try {
             Path bestiaryDir = tmpHome.resolve(".runelite").resolve("bestiary");
@@ -31,7 +31,7 @@ public class BestiaryStorePerAccountTest {
             // A legacy global collection that must be archived (not loaded) when the store starts.
             Files.write(bestiaryDir.resolve("bestiary.json"), "{\"version\":1,\"credits\":9999}".getBytes());
 
-            BestiaryStore store = new BestiaryStore(new Gson(), executor);
+            BestiaryStore store = new BestiaryStore(new Gson(), executor, runeliteDir);
 
             // Legacy file moved aside to a dated archive; original gone.
             assertFalse("legacy global file must be archived",
@@ -77,7 +77,6 @@ public class BestiaryStorePerAccountTest {
             store.close();
         } finally {
             executor.shutdownNow();
-            if (oldHome != null) System.setProperty("user.home", oldHome);
         }
     }
 

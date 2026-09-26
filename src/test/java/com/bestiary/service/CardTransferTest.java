@@ -4,6 +4,7 @@ import com.bestiary.model.CapturedCreature;
 import com.google.gson.Gson;
 import org.junit.Test;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -25,11 +26,10 @@ public class CardTransferTest {
     @Test
     public void transferMovesCardBetweenAccountFiles() throws Exception {
         Path tmpHome = Files.createTempDirectory("bestiary-transfer-home");
-        String oldHome = System.getProperty("user.home");
-        System.setProperty("user.home", tmpHome.toString());
+        File runeliteDir = tmpHome.resolve(".runelite").toFile();
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         try {
-            BestiaryStore store = new BestiaryStore(new Gson(), executor);
+            BestiaryStore store = new BestiaryStore(new Gson(), executor, runeliteDir);
             BestiaryDataService ds = new BestiaryDataService(new ProgressionService(), store);
 
             // Register the Alt account, then play as Main and catch two cards.
@@ -83,7 +83,6 @@ public class CardTransferTest {
             store.close();
         } finally {
             executor.shutdownNow();
-            if (oldHome != null) System.setProperty("user.home", oldHome);
         }
     }
 }
