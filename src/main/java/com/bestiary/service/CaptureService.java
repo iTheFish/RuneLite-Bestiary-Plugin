@@ -92,8 +92,10 @@ public class CaptureService {
         // Fortune's Favour (shop): a chance to climb one rarity higher than the roll landed. Only
         // happens if the player owns the upgrade (rarityUpChance > 0); Mythic can't climb further.
         boolean fortuneBumped = false;
+        CreatureRarity fortuneFrom = null;
         if (rarity != CreatureRarity.MYTHIC && rarityUpChance > 0
                 && rng.nextDouble() < rarityUpChance) {
+            fortuneFrom = rarity;
             rarity = CreatureRarity.values()[rarity.ordinal() + 1];
             fortuneBumped = true;
         }
@@ -122,6 +124,7 @@ public class CaptureService {
                 .playerName(playerName != null ? playerName : "")
                 .build();
         creature.fortuneBumped = fortuneBumped;
+        creature.fortuneFrom = fortuneFrom;
 
         log.info("Captured {} [{}] difficulty={}{}", creature.npcName, creature.rarity.label,
                 difficulty.label, fortuneBumped ? " (Fortune's Favour bumped)" : "");

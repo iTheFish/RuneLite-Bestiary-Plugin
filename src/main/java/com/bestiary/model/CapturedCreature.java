@@ -139,6 +139,13 @@ public class CapturedCreature {
     public transient boolean fortuneBumped;
 
     /**
+     * Transient (NEVER persisted): the rarity this capture rolled BEFORE Fortune's Favour bumped it,
+     * so the proc line can show the before→after climb ("from Epic to Legendary"). Null unless
+     * {@link #fortuneBumped} is true.
+     */
+    public transient CreatureRarity fortuneFrom;
+
+    /**
      * Transient (NEVER persisted): when Keen Instinct rolled the rarity twice and kept the better,
      * these hold the kept (winning) and rejected (losing) rarities. Both null unless the double-roll
      * actually improved the result. Drives the one-off "keen instinct" chat proc only.

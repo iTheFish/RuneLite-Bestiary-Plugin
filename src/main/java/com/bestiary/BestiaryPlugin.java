@@ -568,19 +568,28 @@ public class BestiaryPlugin extends Plugin {
     }
 
     private void sendFortuneMessage(CapturedCreature creature) {
-        String formatted = new ChatMessageBuilder()
+        ChatMessageBuilder mb = new ChatMessageBuilder()
                 .append(ChatColorType.HIGHLIGHT)
                 .append("Fortune's Favour shines ")
                 .append(FORTUNE_CHAT_COLOR, "brightly")
                 .append(ChatColorType.HIGHLIGHT)
-                .append("! This capture climbed to ")
-                .append(creature.rarity.displayColor, creature.rarity.label)
+                .append("! This capture climbed ");
+        // Show the before→after climb so it reads clearly, especially when Keen Instinct also
+        // procced and every line otherwise ends in the same final rarity.
+        if (creature.fortuneFrom != null) {
+            mb.append("from ")
+                    .append(creature.fortuneFrom.displayColor, creature.fortuneFrom.label)
+                    .append(ChatColorType.HIGHLIGHT)
+                    .append(" to ");
+        } else {
+            mb.append("to ");
+        }
+        mb.append(creature.rarity.displayColor, creature.rarity.label)
                 .append(ChatColorType.HIGHLIGHT)
-                .append(".")
-                .build();
+                .append(".");
         chatMessageManager.queue(QueuedMessage.builder()
                 .type(ChatMessageType.GAMEMESSAGE)
-                .runeLiteFormattedMessage(formatted)
+                .runeLiteFormattedMessage(mb.build())
                 .build());
     }
 
