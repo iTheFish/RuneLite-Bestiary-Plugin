@@ -350,8 +350,11 @@ public class AlbumCard extends JPanel {
                 repaint();
             }
 
-            @Override
-            public void mouseReleased(MouseEvent e) {
+            // macOS delivers the popup trigger on press, Windows/Linux on release — handle both.
+            @Override public void mousePressed(MouseEvent e)  { maybeShowMenu(e); }
+            @Override public void mouseReleased(MouseEvent e) { maybeShowMenu(e); }
+
+            private void maybeShowMenu(MouseEvent e) {
                 if (e.isPopupTrigger() && !locked && captures != null) {
                     showExportMenu(e);   // read-only view shows only Copy + Card info/export (#48)
                 }

@@ -374,6 +374,11 @@ public class CreatureDetailDialog extends JDialog {
         qualLabel.setForeground(qualColor);
 
         row.addMouseListener(new MouseAdapter() {
+            // macOS delivers the popup trigger on press, Windows/Linux on release — handle both.
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.isPopupTrigger() && !BestiaryPanel.isReadOnly()) showRowMenu(e);
+            }
             @Override
             public void mouseReleased(MouseEvent e) {
                 if (e.isPopupTrigger() && !BestiaryPanel.isReadOnly()) showRowMenu(e);
