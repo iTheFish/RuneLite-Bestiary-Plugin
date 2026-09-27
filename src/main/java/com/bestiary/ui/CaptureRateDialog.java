@@ -24,17 +24,17 @@ public class CaptureRateDialog extends JDialog {
 
     private static CaptureRateDialog current;
 
-    public static void open(Window owner, ProgressionService ps, double shinyBonus) {
-        open(owner, ps.getLevel(), shinyBonus);
+    public static void open(Window owner, ProgressionService ps, double shinyBonus, double[] catchBonusByTier) {
+        open(owner, ps.getLevel(), shinyBonus, catchBonusByTier);
     }
 
     /** Opens for a specific bestiary level — used so a viewed account shows ITS rates, not yours (#48). */
-    public static void open(Window owner, int level, double shinyBonus) {
+    public static void open(Window owner, int level, double shinyBonus, double[] catchBonusByTier) {
         if (current != null) current.dispose();
-        current = new CaptureRateDialog(owner, level, shinyBonus);
+        current = new CaptureRateDialog(owner, level, shinyBonus, catchBonusByTier);
     }
 
-    private CaptureRateDialog(Window owner, int level, double shinyBonus) {
+    private CaptureRateDialog(Window owner, int level, double shinyBonus, double[] catchBonusByTier) {
         super(owner, "Capture Rates", ModalityType.MODELESS);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setResizable(false);
@@ -53,7 +53,15 @@ public class CaptureRateDialog extends JDialog {
 
         root.add(sectionHeader("CATCH CHANCE BY DIFFICULTY"));
         root.add(Box.createVerticalStrut(4));
-        root.add(buildCatchTable(level));
+        root.add(buildCatchTable(level, catchBonusByTier));
+        boolean anyCatchBoost = false;
+        if (catchBonusByTier != null) {
+            for (double b : catchBonusByTier) if (b > 0) anyCatchBoost = true;
+        }
+        if (anyCatchBoost) {
+            root.add(Box.createVerticalStrut(2));
+            root.add(noteRow("★ includes your Level 99 shop catch-rate boost."));
+        }
         root.add(Box.createVerticalStrut(14));
 
         root.add(sectionHeader("RARITY ODDS AT YOUR LEVEL"));
@@ -90,18 +98,21 @@ public class CaptureRateDialog extends JDialog {
     // Catch chance table
     // -------------------------------------------------------------------------
 
-    private static JPanel buildCatchTable(int level) {
+    private static JPanel buildCatchTable(int level, double[] catchBonusByTier) {
         JPanel panel = col();
         panel.add(tableRow("Difficulty", "Your level", "Max (cap)", new Color(180, 180, 180), true));
         panel.add(Box.createVerticalStrut(2));
 
         // Read straight from the live formula (level 99 = the max) so the table can never drift.
         for (DifficultyTier tier : DifficultyTier.values()) {
-            double rate = com.bestiary.service.CaptureService.calculateCatchRate(level, tier);
-            double max  = com.bestiary.service.CaptureService.calculateCatchRate(99, tier);
+            double bonus = (catchBonusByTier != null && tier.ordinal() < catchBonusByTier.length)
+                    ? catchBonusByTier[tier.ordinal()] : 0.0;
+            double rate = com.bestiary.service.CaptureService.calculateCatchRate(level, tier, bonus);
+            double max  = com.bestiary.service.CaptureService.calculateCatchRate(99, tier, bonus);
             String cur  = String.format("%.1f%%", rate * 100);
             String cap  = String.format("%.0f%%", max * 100);
-            panel.add(tableRow("● " + tier.label, cur, cap, tier.displayColor, false));
+            String name = "● " + tier.label + (bonus > 0 ? " ★" : "");
+            panel.add(tableRow(name, cur, cap, tier.displayColor, false));
             panel.add(Box.createVerticalStrut(1));
         }
         return panel;

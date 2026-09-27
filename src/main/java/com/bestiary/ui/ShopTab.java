@@ -188,6 +188,12 @@ public class ShopTab extends JPanel {
         for (ShopCategory cat : ShopCategory.values()) {
             JPanel inner = categoryPanels.get(cat);
             inner.removeAll();
+            if (cat == ShopCategory.LEVEL_99) {
+                buildLevel99Into(inner);   // locked teaser, or Passive/Consumable sub-tabs
+                inner.revalidate();
+                inner.repaint();
+                continue;
+            }
             boolean any = false;
             for (ShopUpgrade u : ShopUpgrade.values()) {
                 if (u.category != cat) continue;
@@ -196,11 +202,88 @@ public class ShopTab extends JPanel {
                 any = true;
             }
             if (!any) {
-                inner.add(cat == ShopCategory.LEVEL_99 ? level99Teaser() : emptyLabel("Nothing here yet."));
+                inner.add(emptyLabel("Nothing here yet."));
             }
             inner.revalidate();
             inner.repaint();
         }
+    }
+
+    /** Which Level 99 sub-tab is showing: 0 = Passive, 1 = Consumable. Remembered across rebuilds. */
+    private int level99Sub = 0;
+
+    /**
+     * Level 99 endgame shop: locked until Capture Level 99, then two sub-tabs — Passive (the endgame
+     * upgrades) and Consumable (coming soon).
+     */
+    private void buildLevel99Into(JPanel inner) {
+        if (!dataService.isLevel99Unlocked()) {
+            inner.add(level99Teaser());   // "reach level 99 to unlock" card
+            return;
+        }
+
+        JPanel subBar = new JPanel(new GridLayout(1, 2, 4, 4));
+        subBar.setOpaque(false);
+        subBar.setAlignmentX(LEFT_ALIGNMENT);
+        subBar.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
+        JToggleButton passiveBtn    = subTabButton("Passive");
+        JToggleButton consumableBtn = subTabButton("Consumable");
+
+        CardLayout sub = new CardLayout();
+        JPanel subContent = new JPanel(sub);
+        subContent.setOpaque(false);
+        subContent.setAlignmentX(LEFT_ALIGNMENT);
+
+        JPanel passivePanel = vbox();
+        for (ShopUpgrade u : ShopUpgrade.values()) {
+            if (u.category != ShopCategory.LEVEL_99) continue;
+            passivePanel.add(upgradeCard(u));
+            passivePanel.add(Box.createVerticalStrut(8));
+        }
+        JPanel consumablePanel = vbox();
+        consumablePanel.add(consumableTeaser());
+
+        subContent.add(passivePanel,    "P");
+        subContent.add(consumablePanel, "C");
+
+        passiveBtn.addActionListener(e -> {
+            level99Sub = 0; sub.show(subContent, "P"); styleSub(passiveBtn, consumableBtn);
+        });
+        consumableBtn.addActionListener(e -> {
+            level99Sub = 1; sub.show(subContent, "C"); styleSub(passiveBtn, consumableBtn);
+        });
+
+        subBar.add(passiveBtn);
+        subBar.add(consumableBtn);
+        inner.add(subBar);
+        inner.add(Box.createVerticalStrut(8));
+        inner.add(subContent);
+
+        styleSub(passiveBtn, consumableBtn);
+        sub.show(subContent, level99Sub == 0 ? "P" : "C");
+    }
+
+    private JToggleButton subTabButton(String text) {
+        JToggleButton b = new JToggleButton(text);
+        b.setFont(FontManager.getRunescapeSmallFont());
+        b.setFocusPainted(false);
+        b.setBorderPainted(false);
+        b.setMargin(new Insets(2, 2, 2, 2));
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        return b;
+    }
+
+    private void styleSub(JToggleButton passive, JToggleButton consumable) {
+        styleTab(passive,    level99Sub == 0); passive.setSelected(level99Sub == 0);
+        styleTab(consumable, level99Sub == 1); consumable.setSelected(level99Sub == 1);
+    }
+
+    private static JPanel vbox() {
+        JPanel p = new JPanel();
+        p.setOpaque(false);
+        p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+        p.setAlignmentX(LEFT_ALIGNMENT);
+        return p;
     }
 
     private JLabel emptyLabel(String text) {
@@ -221,16 +304,53 @@ public class ShopTab extends JPanel {
                 new EmptyBorder(10, 10, 10, 10)));
         card.setAlignmentX(LEFT_ALIGNMENT);
 
-        JLabel title = new JLabel("🔒 Endgame Shop");
+        JLabel title = new JLabel("🔒 Level 99 Shop");
         title.setFont(FontManager.getRunescapeBoldFont());
         title.setForeground(GOLD);
         title.setAlignmentX(LEFT_ALIGNMENT);
         card.add(title);
 
         JTextArea body = new JTextArea(
-                "Coming soon. An endgame shop that unlocks at Capture Level 99.\n\n"
+                "Reach Capture Level 99 to unlock the endgame shop — prestige passive upgrades now, "
+                        + "with activatable consumables coming soon.\n\n"
                         + "Got ideas for what it should offer? Share them in the suggestions channel "
                         + "on our Discord. Community suggestions help shape what gets built.");
+        body.setEditable(false);
+        body.setFocusable(false);
+        body.setLineWrap(true);
+        body.setWrapStyleWord(true);
+        body.setOpaque(false);
+        body.setFont(FontManager.getRunescapeSmallFont());
+        body.setForeground(DIM);
+        JPanel wrap = new JPanel(new BorderLayout());
+        wrap.setOpaque(false);
+        wrap.setAlignmentX(LEFT_ALIGNMENT);
+        wrap.setBorder(new EmptyBorder(4, 0, 0, 0));
+        wrap.add(body, BorderLayout.CENTER);
+        card.add(wrap);
+        return card;
+    }
+
+    /** "Coming soon" card for the Level 99 Consumable sub-tab (the mechanic is still being designed). */
+    private JPanel consumableTeaser() {
+        JPanel card = new JPanel();
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(new Color(255, 165, 0, 70), 1, true),
+                new EmptyBorder(10, 10, 10, 10)));
+        card.setAlignmentX(LEFT_ALIGNMENT);
+
+        JLabel title = new JLabel("🧪 Consumables");
+        title.setFont(FontManager.getRunescapeBoldFont());
+        title.setForeground(GOLD);
+        title.setAlignmentX(LEFT_ALIGNMENT);
+        card.add(title);
+
+        JTextArea body = new JTextArea(
+                "Coming soon. One-time boosts you buy and activate for a temporary edge — being "
+                        + "designed now.\n\nGot ideas for what they should do? Share them in the "
+                        + "suggestions channel on our Discord.");
         body.setEditable(false);
         body.setFocusable(false);
         body.setLineWrap(true);
@@ -420,6 +540,8 @@ public class ShopTab extends JPanel {
         for (ShopUpgrade u : ShopUpgrade.values()) {
             sig = sig * 31 + dataService.getUpgradeTier(u);
         }
+        // Fold in the Level 99 unlock so reaching level 99 rebuilds the shop (revealing the tab).
+        sig = sig * 31 + (dataService.isLevel99Unlocked() ? 1 : 0);
         return sig;
     }
 

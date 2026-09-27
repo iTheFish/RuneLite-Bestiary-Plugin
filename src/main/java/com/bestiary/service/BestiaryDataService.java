@@ -412,22 +412,57 @@ public class BestiaryDataService {
         collection.lifetimeCreditsSpent += amount;
     }
 
-    /** Flat capture-credit bonus from the Hunter's Bounty upgrade (+2 credits per tier). */
+    /** Flat capture-credit bonus from Hunter's Bounty (+2/tier) plus its Level 99 extension (+10/tier). */
     public long captureCreditFlatBonus() {
-        return (long) com.bestiary.model.ShopUpgrade.CREDIT_CAPTURE.effectFor(
-                collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.CREDIT_CAPTURE));
+        return (long) (com.bestiary.model.ShopUpgrade.CREDIT_CAPTURE.effectFor(
+                        collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.CREDIT_CAPTURE))
+                + com.bestiary.model.ShopUpgrade.CREDIT_CAPTURE_II.effectFor(
+                        collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.CREDIT_CAPTURE_II)));
     }
 
-    /** Flat bonus XP added to every kill from the Hunter's Focus upgrade (+5 per tier). */
+    /** Flat kill XP from Hunter's Focus (+5/tier) plus its Level 99 extension (+5/tier). */
     public long killXpFlatBonus() {
-        return (long) com.bestiary.model.ShopUpgrade.KILL_XP.effectFor(
-                collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.KILL_XP));
+        return (long) (com.bestiary.model.ShopUpgrade.KILL_XP.effectFor(
+                        collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.KILL_XP))
+                + com.bestiary.model.ShopUpgrade.KILL_XP_II.effectFor(
+                        collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.KILL_XP_II)));
     }
 
-    /** Capture-XP percentage bonus (fraction, e.g. 0.25 = +25%) from the Scholar's Insight upgrade. */
+    /** Capture-XP percentage bonus from Scholar's Insight plus its Level 99 extension (both +5%/tier). */
     public double captureXpBonus() {
         return com.bestiary.model.ShopUpgrade.CAPTURE_XP.effectFor(
-                collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.CAPTURE_XP));
+                        collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.CAPTURE_XP))
+                + com.bestiary.model.ShopUpgrade.CAPTURE_XP_II.effectFor(
+                        collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.CAPTURE_XP_II));
+    }
+
+    /**
+     * Per-tier catch-rate bonus (index = {@link com.bestiary.model.DifficultyTier} ordinal) from the
+     * Level 99 Elite/Boss Tracker upgrades. Applied to the played account's live capture rolls.
+     */
+    public double[] catchRateBonusByTier() {
+        return catchRateBonusByTier(collection);
+    }
+
+    /** As {@link #catchRateBonusByTier()} but for the viewed account (#48) — used by the Catch Rates screen. */
+    public double[] displayCatchRateBonusByTier() {
+        return catchRateBonusByTier(getCollection());
+    }
+
+    private static double[] catchRateBonusByTier(BestiaryCollection c) {
+        double[] out = new double[com.bestiary.model.DifficultyTier.values().length];
+        out[com.bestiary.model.DifficultyTier.ELITE.ordinal()] =
+                com.bestiary.model.ShopUpgrade.CATCH_RATE_ELITE.effectFor(
+                        c.getUpgradeTier(com.bestiary.model.ShopUpgrade.CATCH_RATE_ELITE));
+        out[com.bestiary.model.DifficultyTier.BOSS.ordinal()] =
+                com.bestiary.model.ShopUpgrade.CATCH_RATE_BOSS.effectFor(
+                        c.getUpgradeTier(com.bestiary.model.ShopUpgrade.CATCH_RATE_BOSS));
+        return out;
+    }
+
+    /** True once the played account has reached Capture Level 99 — gates the Level 99 shop tab. */
+    public boolean isLevel99Unlocked() {
+        return progressionService.getLevel() >= 99;
     }
 
     /** Passive discard-credit bonus from the Salvager's Eye upgrade. */
@@ -587,6 +622,8 @@ public class BestiaryDataService {
      */
     public boolean purchaseUpgrade(com.bestiary.model.ShopUpgrade u) {
         if (isViewing()) return false;   // read-only while viewing another account
+        // Level 99 shop is locked until the played account reaches Capture Level 99.
+        if (u.category == com.bestiary.model.ShopCategory.LEVEL_99 && !isLevel99Unlocked()) return false;
         int owned = collection.getUpgradeTier(u);
         if (owned >= u.maxTier) return false;
         long cost = u.costForNextTier(owned);

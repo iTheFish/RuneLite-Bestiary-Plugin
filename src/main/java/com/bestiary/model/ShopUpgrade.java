@@ -81,7 +81,44 @@ public enum ShopUpgrade {
             "Haggler",
             "Haggles down the credit cost of every Card Reroller use, stacking to a 20% discount "
                     + "at max tier.",
-            ShopCategory.REROLLS, 5, new long[]{1500, 3000, 4500, 6000, 7500}, 0.04);
+            ShopCategory.REROLLS, 5, new long[]{1500, 3000, 4500, 6000, 7500}, 0.04),
+
+    // --- Level 99 endgame shop (all gated behind Capture Level 99; see purchaseUpgrade) ---
+
+    /** Scholar's Insight II — extends the capture-XP % boost past the base upgrade (stacks additively). */
+    CAPTURE_XP_II(
+            "Scholar's Insight II",
+            "Endgame extension of Scholar's Insight: further increases the XP earned from every "
+                    + "successful capture, stacking on top of the base upgrade.",
+            ShopCategory.LEVEL_99, 5, new long[]{5000, 10000, 20000, 40000, 80000}, 0.05),
+
+    /** Hunter's Focus II — extends the flat kill-XP bonus (stacks additively). */
+    KILL_XP_II(
+            "Hunter's Focus II",
+            "Endgame extension of Hunter's Focus: adds further flat bonus XP to every kill, stacking "
+                    + "on top of the base upgrade.",
+            ShopCategory.LEVEL_99, 5, new long[]{5000, 10000, 20000, 40000, 80000}, 5.0),
+
+    /** Hunter's Bounty II — extends the flat capture-credit bonus (stacks additively). */
+    CREDIT_CAPTURE_II(
+            "Hunter's Bounty II",
+            "Endgame extension of Hunter's Bounty: adds further flat bonus credits to every capture, "
+                    + "stacking on top of the base upgrade.",
+            ShopCategory.LEVEL_99, 5, new long[]{2500, 5000, 10000, 20000, 40000}, 10.0),
+
+    /** Raises catch rate on ELITE-tier monsters (+2%/tier → +10% at max). */
+    CATCH_RATE_ELITE(
+            "Elite Tracker",
+            "Raises your catch rate against Elite-tier monsters. Elite tops out at 35% at Capture "
+                    + "Level 99 — this adds up to a further +10% on top.",
+            ShopCategory.LEVEL_99, 5, new long[]{20000, 40000, 60000, 80000, 100000}, 0.02),
+
+    /** Raises catch rate on BOSS-tier monsters (+2%/tier → +10% at max). */
+    CATCH_RATE_BOSS(
+            "Boss Tracker",
+            "Raises your catch rate against Boss-tier monsters. Boss tops out at 25% at Capture "
+                    + "Level 99 — this adds up to a further +10% on top.",
+            ShopCategory.LEVEL_99, 5, new long[]{30000, 60000, 90000, 120000, 150000}, 0.02);
 
     public final String       title;
     public final String       description;
@@ -131,11 +168,11 @@ public enum ShopUpgrade {
 
     /** True if {@link #effectFor} is a flat credit amount (vs. a fractional percentage). */
     public boolean isFlatCredits() {
-        return this == CREDIT_CAPTURE;
+        return this == CREDIT_CAPTURE || this == CREDIT_CAPTURE_II;
     }
 
     /** True if {@link #effectFor} is a flat XP amount (vs. a fractional percentage). */
     public boolean isFlatXp() {
-        return this == KILL_XP;
+        return this == KILL_XP || this == KILL_XP_II;
     }
 }
