@@ -10,6 +10,8 @@ import net.runelite.client.game.NpcUtil;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -41,37 +43,98 @@ public class KillTrackerTest {
         tracker.onHitsplatApplied(e);
     }
 
+    private void die() {
+        tracker.onActorDeath(new ActorDeath(npc));
+    }
+
+    private void despawn() {
+        tracker.onNpcDespawned(new NpcDespawned(npc)).ifPresent(k -> {
+            throw new AssertionError("despawn credited an already-settled kill");
+        });
+    }
+
     @Test
-    public void hitDuringDeathAnimationDoesNotCreditKillTwice() {
+    public void hitThenDeathOrder_creditsOnceWithFullDamage() {
+        // RuneLite <= 1.12.39: killing hitsplat, then ActorDeath.
         hit(60);
         hit(37);
-        assertTrue(tracker.onActorDeath(new ActorDeath(npc)).isPresent());
-        assertEquals(97, tracker.getLastKillDamage());
+        die();
+        List<KillTracker.Kill> kills = tracker.onGameTick();
+        assertEquals(1, kills.size());
+        assertEquals(97, kills.get(0).damage);
+    }
 
-        // Next attack lands on the corpse mid death-animation, then it despawns while "dying".
+    @Test
+    public void deathThenHitOrder_includesKillingBlow() {
+        // RuneLite 1.13.0: ActorDeath arrives before the killing hitsplat in the same tick.
+        hit(87);
+        die();
+        hit(10);
+        List<KillTracker.Kill> kills = tracker.onGameTick();
+        assertEquals(1, kills.size());
+        assertEquals(97, kills.get(0).damage);
+
+        when(npcUtil.isDying(npc)).thenReturn(true);
+        despawn();
+    }
+
+    @Test
+    public void oneHitKillWithDeathFirst_stillCredited() {
+        die();
+        hit(40);
+        assertEquals(40, tracker.onGameTick().get(0).damage);
+    }
+
+    @Test
+    public void hitDuringDeathAnimation_doesNotCreditTwice() {
+        hit(97);
+        die();
+        assertEquals(1, tracker.onGameTick().size());
+
+        // Next attack / cannon ball lands on the corpse a tick later, then it despawns "dying".
         hit(12);
         when(npcUtil.isDying(npc)).thenReturn(true);
-        assertFalse(tracker.onNpcDespawned(new NpcDespawned(npc)).isPresent());
-        assertEquals(97, tracker.getLastKillDamage());
+        despawn();
+        assertTrue(tracker.onGameTick().isEmpty());
     }
 
     @Test
-    public void finisherKillStillCreditedOnDespawn() {
+    public void deathWithoutPlayerDamage_isNotCredited() {
+        die();
+        assertTrue(tracker.onGameTick().isEmpty());
+    }
+
+    @Test
+    public void finisherKill_stillCreditedOnDespawn() {
         hit(40);
         when(npcUtil.isDying(npc)).thenReturn(true);
-        assertTrue(tracker.onNpcDespawned(new NpcDespawned(npc)).isPresent());
-        assertEquals(40, tracker.getLastKillDamage());
+        KillTracker.Kill kill = tracker.onNpcDespawned(new NpcDespawned(npc)).orElse(null);
+        assertTrue(kill != null);
+        assertEquals(40, kill.damage);
     }
 
     @Test
-    public void reusedIndexIsTrackedAfterDespawn() {
+    public void deathAndDespawnInSameTick_creditedOnce() {
+        hit(40);
+        die();
+        KillTracker.Kill kill = tracker.onNpcDespawned(new NpcDespawned(npc)).orElse(null);
+        assertTrue(kill != null);
+        assertEquals(40, kill.damage);
+        assertTrue(tracker.onGameTick().isEmpty());
+    }
+
+    @Test
+    public void reusedIndex_isTrackedAfterDespawn() {
         hit(97);
-        tracker.onActorDeath(new ActorDeath(npc));
+        die();
+        tracker.onGameTick();
         tracker.onNpcDespawned(new NpcDespawned(npc));
 
         // A fresh NPC spawns into the same index and is killed normally.
         hit(50);
-        assertTrue(tracker.onActorDeath(new ActorDeath(npc)).isPresent());
-        assertEquals(50, tracker.getLastKillDamage());
+        die();
+        List<KillTracker.Kill> kills = tracker.onGameTick();
+        assertFalse(kills.isEmpty());
+        assertEquals(50, kills.get(0).damage);
     }
 }
