@@ -44,6 +44,7 @@ public class KillTrackerTest {
     }
 
     private void die() {
+        when(npc.isDead()).thenReturn(true); // RuneLite sets isDead() as the health bar hits 0
         tracker.onActorDeath(new ActorDeath(npc));
     }
 
@@ -99,6 +100,22 @@ public class KillTrackerTest {
     }
 
     @Test
+    public void transformInPlace_secondFormCreditedAgain() {
+        // Kalphite Queen style: phase 1 dies, then the same NPC refills and fights on (no despawn).
+        hit(255);
+        die();
+        assertEquals(255, tracker.onGameTick().get(0).damage);
+
+        when(npc.isDead()).thenReturn(false); // health bar refilled -> RuneLite clears isDead()
+        hit(100);
+        hit(155);
+        die();
+        List<KillTracker.Kill> kills = tracker.onGameTick();
+        assertEquals(1, kills.size());
+        assertEquals(255, kills.get(0).damage);
+    }
+
+    @Test
     public void deathWithoutPlayerDamage_isNotCredited() {
         die();
         assertTrue(tracker.onGameTick().isEmpty());
@@ -131,6 +148,7 @@ public class KillTrackerTest {
         tracker.onNpcDespawned(new NpcDespawned(npc));
 
         // A fresh NPC spawns into the same index and is killed normally.
+        when(npc.isDead()).thenReturn(false);
         hit(50);
         die();
         List<KillTracker.Kill> kills = tracker.onGameTick();

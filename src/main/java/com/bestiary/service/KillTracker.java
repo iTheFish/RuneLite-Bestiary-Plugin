@@ -93,7 +93,12 @@ public class KillTracker {
         }
         NPC npc = (NPC) actor;
         if (settledDeaths.contains(npc.getIndex())) {
-            return; // corpse of a kill already settled — ignore post-death hits
+            if (npc.isDead()) {
+                return; // corpse of a kill already settled — ignore post-death hits
+            }
+            // Health bar refilled without a despawn (e.g. Kalphite Queen phase 2, Phantom Muspah):
+            // RuneLite clears isDead(), so treat it as a new life that can be killed again.
+            settledDeaths.remove(npc.getIndex());
         }
         attackedNpcs.put(npc.getIndex(), npc);
         damageDealt.merge(npc.getIndex(), event.getHitsplat().getAmount(), Integer::sum);
