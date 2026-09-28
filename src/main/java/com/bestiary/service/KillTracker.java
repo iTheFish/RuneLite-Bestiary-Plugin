@@ -14,8 +14,10 @@ import net.runelite.client.game.NpcUtil;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Tracks which NPCs the local player is fighting and confirms kills.
@@ -42,6 +44,14 @@ public class KillTracker {
     /** Total damage the local player has dealt to each NPC (by index) — the "observed HP". */
     private final Map<Integer, Integer> damageDealt = new HashMap<>();
 
+    /**
+     * NPCs already credited via {@link #onActorDeath} that haven't despawned yet (by index).
+     * A hit landing during the death animation (next attack, cannon ball, thrall) must NOT
+     * re-track the corpse — otherwise the finisher path in {@link #onNpcDespawned} sees a
+     * tracked, dying NPC and credits the same kill a second time.
+     */
+    private final Set<Integer> creditedDeaths = new HashSet<>();
+
     /** Damage the player dealt to the most recently confirmed kill. */
     private int lastKillDamage = 0;
     public int getLastKillDamage() { return lastKillDamage; }
@@ -65,6 +75,9 @@ public class KillTracker {
             return;
         }
         NPC npc = (NPC) actor;
+        if (creditedDeaths.contains(npc.getIndex())) {
+            return; // corpse of a kill we already credited — ignore post-death hits
+        }
         attackedNpcs.put(npc.getIndex(), npc);
         damageDealt.merge(npc.getIndex(), event.getHitsplat().getAmount(), Integer::sum);
         log.debug("Hitsplat on {} (index {})", npc.getName(), npc.getIndex());
@@ -83,6 +96,7 @@ public class KillTracker {
         if (tracked == null) {
             return Optional.empty();
         }
+        creditedDeaths.add(npc.getIndex());
         Integer dmg = damageDealt.remove(npc.getIndex());
         lastKillDamage = dmg != null ? dmg : 0;
         log.debug("Kill confirmed via ActorDeath: {} (ID {}), player damage {}",
@@ -106,10 +120,12 @@ public class KillTracker {
         int index = npc.getIndex();
         boolean tracked = attackedNpcs.containsKey(index);
         // Always clear tracking for this NPC — whether or not it counts as a kill.
+        // The index is free for reuse after despawn, so the credited-death guard ends here too.
         attackedNpcs.remove(index);
         Integer dmg = damageDealt.remove(index);
+        boolean alreadyCredited = creditedDeaths.remove(index);
 
-        if (tracked && npcUtil.isDying(npc)) {
+        if (tracked && !alreadyCredited && npcUtil.isDying(npc)) {
             lastKillDamage = dmg != null ? dmg : 0;
             log.debug("Kill confirmed via NpcDespawned (finisher item): {} (ID {}), player damage {}",
                     npc.getName(), npc.getId(), lastKillDamage);
@@ -124,6 +140,7 @@ public class KillTracker {
         if (state == GameState.LOGIN_SCREEN || state == GameState.HOPPING) {
             attackedNpcs.clear();
             damageDealt.clear();
+            creditedDeaths.clear();
         }
     }
 }
