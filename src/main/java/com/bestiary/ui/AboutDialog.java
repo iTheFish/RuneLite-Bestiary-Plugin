@@ -39,6 +39,11 @@ public class AboutDialog extends JDialog {
 
     // Newest first. Future releases get prepended above v1.0.0.
     private static final Release[] RELEASES = {
+        new Release("v1.1.1", "Kill tracking fix", new String[][]{
+            {"Kills count once again", "A recent RuneLite update changed the order the game reports a "
+                + "monster's death and your final hit. That made kills count twice and gave cards the "
+                + "wrong HP. Every kill now counts once, with your full damage."},
+        }),
         new Release("v1.1.0", "Shop, alerts & more monsters", new String[][]{
             {"New shop: Mechanics tab", "A new Mechanics category with Keen Instinct, a chance for "
                 + "every kill to attempt the capture twice and keep the better result, even turning a "
