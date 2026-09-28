@@ -13,38 +13,65 @@ import net.runelite.client.game.NpcUtil;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Tracks which NPCs the local player is fighting and confirms kills.
  *
  * Kill signal:     {@link ActorDeath} fires when any actor's health hits 0.
- * Combat tracking: {@link HitsplatApplied} with {@code hitsplat.isMine()} \u2014 only NPCs the
+ * Combat tracking: {@link HitsplatApplied} with {@code hitsplat.isMine()} — only NPCs the
  *                  local player has dealt at least 1 damage to are eligible for a kill credit.
  *                  InteractingChanged is intentionally NOT used: clicking a monster in
  *                  single combat (0 damage dealt) must not award a kill.
+ *
+ * Event order: the game decides whether the killing blow's hitsplat or the health bar hitting 0
+ * (→ ActorDeath) is processed first within a tick, and it flipped in RuneLite 1.13.0 (death now
+ * arrives BEFORE the killing hitsplat). So a death is only noted when it arrives and settled on
+ * {@link #onGameTick()}, once every hitsplat of that tick has landed — correct in either order.
  */
 @Slf4j
 @Singleton
 public class KillTracker {
+
+    /** A confirmed player kill and the total damage the player dealt to it ("observed HP"). */
+    public static final class Kill {
+        public final NPC npc;
+        public final int damage;
+
+        Kill(NPC npc, int damage) {
+            this.npc = npc;
+            this.damage = damage;
+        }
+    }
 
     private final Client client;
     private final NpcUtil npcUtil;
 
     /**
      * NPCs the local player has dealt damage to, keyed by NPC index.
-     * An NPC present here when ActorDeath fires is attributed as a player kill.
+     * An NPC present here when its death settles is attributed as a player kill.
      */
     private final Map<Integer, NPC> attackedNpcs = new HashMap<>();
 
     /** Total damage the local player has dealt to each NPC (by index) — the "observed HP". */
     private final Map<Integer, Integer> damageDealt = new HashMap<>();
 
-    /** Damage the player dealt to the most recently confirmed kill. */
-    private int lastKillDamage = 0;
-    public int getLastKillDamage() { return lastKillDamage; }
+    /** NPCs whose ActorDeath arrived this tick, waiting for the tick's remaining hitsplats. */
+    private final Map<Integer, NPC> pendingDeaths = new LinkedHashMap<>();
+
+    /**
+     * NPCs whose death has settled but that haven't despawned yet (by index). A hit landing during
+     * the death animation (next attack, cannon ball) must NOT re-track the corpse — otherwise the
+     * finisher path in {@link #onNpcDespawned} sees a tracked, dying NPC and credits it again.
+     */
+    private final Set<Integer> settledDeaths = new HashSet<>();
 
     @Inject
     public KillTracker(Client client, NpcUtil npcUtil) {
@@ -65,29 +92,65 @@ public class KillTracker {
             return;
         }
         NPC npc = (NPC) actor;
+        if (settledDeaths.contains(npc.getIndex())) {
+            if (npc.isDead()) {
+                return; // corpse of a kill already settled — ignore post-death hits
+            }
+            // Health bar refilled without a despawn (e.g. Kalphite Queen phase 2, Phantom Muspah):
+            // RuneLite clears isDead(), so treat it as a new life that can be killed again.
+            settledDeaths.remove(npc.getIndex());
+        }
         attackedNpcs.put(npc.getIndex(), npc);
         damageDealt.merge(npc.getIndex(), event.getHitsplat().getAmount(), Integer::sum);
         log.debug("Hitsplat on {} (index {})", npc.getName(), npc.getIndex());
     }
 
     /**
-     * Primary kill confirmation. Returns the NPC if the local player caused the kill.
+     * Notes an NPC death. Not credited yet — the killing blow's hitsplat may still arrive later
+     * in this same tick. {@link #onGameTick()} settles it.
      */
-    public Optional<NPC> onActorDeath(ActorDeath event) {
+    public void onActorDeath(ActorDeath event) {
         Actor actor = event.getActor();
         if (!(actor instanceof NPC)) {
-            return Optional.empty();
+            return;
         }
         NPC npc = (NPC) actor;
-        NPC tracked = attackedNpcs.remove(npc.getIndex());
-        if (tracked == null) {
-            return Optional.empty();
+        if (!settledDeaths.contains(npc.getIndex())) {
+            pendingDeaths.put(npc.getIndex(), npc);
         }
-        Integer dmg = damageDealt.remove(npc.getIndex());
-        lastKillDamage = dmg != null ? dmg : 0;
+    }
+
+    /**
+     * Settles this tick's deaths, by which point all of the tick's hitsplats have landed.
+     * Returns the ones the local player caused.
+     */
+    public List<Kill> onGameTick() {
+        if (pendingDeaths.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        List<Kill> kills = new ArrayList<>();
+        for (Map.Entry<Integer, NPC> e : pendingDeaths.entrySet()) {
+            Kill kill = settle(e.getKey(), e.getValue());
+            if (kill != null) {
+                kills.add(kill);
+            }
+        }
+        pendingDeaths.clear();
+        return kills;
+    }
+
+    /** Marks a death as settled and returns it as a kill if the player had damaged it. */
+    private Kill settle(int index, NPC npc) {
+        settledDeaths.add(index);
+        NPC tracked = attackedNpcs.remove(index);
+        Integer dmg = damageDealt.remove(index);
+        if (tracked == null) {
+            return null;
+        }
+        int damage = dmg != null ? dmg : 0;
         log.debug("Kill confirmed via ActorDeath: {} (ID {}), player damage {}",
-                npc.getName(), npc.getId(), lastKillDamage);
-        return Optional.of(npc);
+                npc.getName(), npc.getId(), damage);
+        return new Kill(npc, damage);
     }
 
     /**
@@ -97,23 +160,34 @@ public class KillTracker {
      * dying state and then despawn. {@link NpcUtil#isDying(NPC)} knows every such NPC, so if a
      * tracked (player-damaged) NPC is dying when it despawns, credit the kill here.
      *
-     * <p>Normal kills are already removed from {@link #attackedNpcs} by {@link #onActorDeath}, so
-     * their later despawn finds nothing tracked — no double count. This path only fires for the
-     * finisher NPCs (and any death we somehow missed). Otherwise this is pure cleanup.
+     * <p>Normal kills are settled on the tick after their ActorDeath and remembered in
+     * {@link #settledDeaths}, so their later despawn is never credited again. Otherwise this is
+     * pure cleanup.
      */
-    public Optional<NPC> onNpcDespawned(NpcDespawned event) {
+    public Optional<Kill> onNpcDespawned(NpcDespawned event) {
         NPC npc = event.getNpc();
         int index = npc.getIndex();
+
+        // Died and despawned within the same tick: settle it now, before the index is reused.
+        NPC pending = pendingDeaths.remove(index);
+        if (pending != null) {
+            Kill kill = settle(index, pending);
+            settledDeaths.remove(index);
+            return Optional.ofNullable(kill);
+        }
+
         boolean tracked = attackedNpcs.containsKey(index);
         // Always clear tracking for this NPC — whether or not it counts as a kill.
+        // The index is free for reuse after despawn, so the settled-death guard ends here too.
         attackedNpcs.remove(index);
         Integer dmg = damageDealt.remove(index);
+        boolean alreadySettled = settledDeaths.remove(index);
 
-        if (tracked && npcUtil.isDying(npc)) {
-            lastKillDamage = dmg != null ? dmg : 0;
+        if (tracked && !alreadySettled && npcUtil.isDying(npc)) {
+            int damage = dmg != null ? dmg : 0;
             log.debug("Kill confirmed via NpcDespawned (finisher item): {} (ID {}), player damage {}",
-                    npc.getName(), npc.getId(), lastKillDamage);
-            return Optional.of(npc);
+                    npc.getName(), npc.getId(), damage);
+            return Optional.of(new Kill(npc, damage));
         }
         return Optional.empty();
     }
@@ -124,7 +198,8 @@ public class KillTracker {
         if (state == GameState.LOGIN_SCREEN || state == GameState.HOPPING) {
             attackedNpcs.clear();
             damageDealt.clear();
+            pendingDeaths.clear();
+            settledDeaths.clear();
         }
     }
 }
-

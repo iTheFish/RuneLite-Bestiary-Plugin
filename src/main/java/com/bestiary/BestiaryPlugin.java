@@ -57,7 +57,7 @@ import java.util.concurrent.TimeUnit;
 public class BestiaryPlugin extends Plugin {
 
     /** Plugin version, shown in the panel footer. Keep in sync with build.gradle's {@code version}. */
-    public static final String VERSION = "1.1.0";
+    public static final String VERSION = "1.1.1";
 
     @Inject private Client client;
     @Inject private BestiaryConfig config;
@@ -199,8 +199,8 @@ public class BestiaryPlugin extends Plugin {
 
     @Subscribe
     public void onActorDeath(ActorDeath event) {
-        Optional<NPC> kill = killTracker.onActorDeath(event);
-        kill.ifPresent(npc -> handleKill(npc, killTracker.getLastKillDamage()));
+        // Only noted here — settled on the next GameTick, once the killing blow's hitsplat has landed.
+        killTracker.onActorDeath(event);
     }
 
     @Subscribe
@@ -211,9 +211,8 @@ public class BestiaryPlugin extends Plugin {
     @Subscribe
     public void onNpcDespawned(NpcDespawned event) {
         // Catches finisher-item kills (gargoyles, rockslugs, Grotesque Guardians, …) that never
-        // fire ActorDeath. Normal kills were already handled in onActorDeath, so no double count.
-        Optional<NPC> kill = killTracker.onNpcDespawned(event);
-        kill.ifPresent(npc -> handleKill(npc, killTracker.getLastKillDamage()));
+        // fire ActorDeath. Normal kills are settled on GameTick and never credited again here.
+        killTracker.onNpcDespawned(event).ifPresent(k -> handleKill(k.npc, k.damage));
     }
 
     @Subscribe
@@ -231,6 +230,11 @@ public class BestiaryPlugin extends Plugin {
 
     @Subscribe
     public void onGameTick(net.runelite.api.events.GameTick event) {
+        // Settle this tick's NPC deaths now that all of the tick's hitsplats have landed.
+        for (KillTracker.Kill k : killTracker.onGameTick()) {
+            handleKill(k.npc, k.damage);
+        }
+
         // Load (or switch to) this account's own collection, keyed by the stable accountHash.
         // Done on a tick — not on LOGGED_IN — because the accountHash (and RSN) aren't reliably
         // populated the instant the LOGGED_IN state fires. switchAccount no-ops on the same
