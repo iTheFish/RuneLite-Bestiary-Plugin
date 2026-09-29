@@ -47,10 +47,13 @@ public class AboutDialog extends JDialog {
                 + "Catch Rates."},
             {"Mac right-click fix", "Right-click menus, including Reroll, now open properly on macOS."},
             {"Protect shinies", "Discard duplicates now has a Protect shinies option, on by default."},
-            {"Hide complete achievements", "A new checkbox on the Progress tab hides the achievements "
+            {"Hide complete achievements", "A new toggle on the Progress tab hides the achievements "
                 + "you've already unlocked."},
-            {"Tidier Info tab", "All the Info text has been trimmed and brought up to date. The Reset "
-                + "button now lives at the bottom of Info → Progress."},
+            {"Bigger XP milestone rewards", "The post-99 XP achievements (25M up to 200M) now pay out "
+                + "far more credits, topping out at 150,000 for hitting the 200M cap."},
+            {"Tidier Info tab & new tab look", "All the Info text has been trimmed, brought up to date and "
+                + "now covers every feature. The main tabs have a fresh gold style, and the Reset button now "
+                + "lives at the bottom of Info → Progress."},
         }),
         new Release("v1.1.1", "Kill tracking fix", new String[][]{
             {"Kills count once again", "A recent RuneLite update changed the order the game reports a "
