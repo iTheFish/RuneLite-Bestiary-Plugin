@@ -111,10 +111,15 @@ public class ProgressTab extends JPanel {
         hideCompleteBox.setToolTipText("Only show achievements you haven't unlocked yet");
         hideCompleteBox.addActionListener(e -> refresh());
 
-        JPanel achTop = new JPanel(new BorderLayout(4, 0));
+        // Own row above the header: sharing a row with "Achievements (x / y)" clipped the checkbox
+        // in the narrow side panel.
+        hideCompleteBox.setAlignmentX(LEFT_ALIGNMENT);
+        hideCompleteBox.setBorder(new EmptyBorder(2, 0, 0, 0));
+        JPanel achTop = new JPanel();
         achTop.setOpaque(false);
-        achTop.add(achievementHeader, BorderLayout.WEST);
-        achTop.add(hideCompleteBox,   BorderLayout.EAST);
+        achTop.setLayout(new BoxLayout(achTop, BoxLayout.Y_AXIS));
+        achTop.add(hideCompleteBox);
+        achTop.add(achievementHeader);
 
         JPanel centerPanel = new JPanel(new BorderLayout());
         centerPanel.setOpaque(false);
