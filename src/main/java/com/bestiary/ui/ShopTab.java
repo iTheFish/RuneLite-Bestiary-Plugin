@@ -267,31 +267,14 @@ public class ShopTab extends JPanel {
 
     private JToggleButton subTabButton(String text) {
         JToggleButton b = new JToggleButton(text);
-        b.setFont(FontManager.getRunescapeSmallFont());
-        b.setFocusPainted(false);
-        b.setContentAreaFilled(false);
-        b.setOpaque(true);
-        b.setMargin(new Insets(2, 2, 2, 2));
-        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        TabStyle.prepare(b);
         return b;
     }
 
     private void styleSub(JToggleButton passive, JToggleButton consumable) {
-        styleSubTab(passive,    level99Sub == 0); passive.setSelected(level99Sub == 0);
-        styleSubTab(consumable, level99Sub == 1); consumable.setSelected(level99Sub == 1);
+        TabStyle.style(passive,    level99Sub == 0); passive.setSelected(level99Sub == 0);
+        TabStyle.style(consumable, level99Sub == 1); consumable.setSelected(level99Sub == 1);
     }
-
-    /** Level 99 sub-tabs: selected = gold text on a warm dark fill with a gold underline. */
-    private static void styleSubTab(JToggleButton b, boolean active) {
-        b.setBackground(active ? SUB_ACTIVE_BG : ColorScheme.DARKER_GRAY_COLOR);
-        b.setForeground(active ? SUB_ACTIVE_FG : ColorScheme.LIGHT_GRAY_COLOR);
-        b.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 0, 2, 0, active ? SUB_ACTIVE_FG : ColorScheme.DARKER_GRAY_COLOR),
-                new EmptyBorder(3, 4, 1, 4)));
-    }
-
-    private static final Color SUB_ACTIVE_BG = new Color(62, 50, 24);
-    private static final Color SUB_ACTIVE_FG = new Color(255, 210, 100);
 
     /** A padlocked Level 99 upgrade slot, styled like an uncaught album card (details hidden). */
     private JPanel lockedUpgradeCard() {
@@ -375,8 +358,11 @@ public class ShopTab extends JPanel {
 
     /** "Coming soon" card for the Level 99 Consumable sub-tab (the mechanic is still being designed). */
     private JPanel consumableTeaser() {
-        JPanel card = new JPanel();
-        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        JPanel card = new JPanel(new BorderLayout(0, 4)) {
+            @Override public Dimension getMaximumSize() {
+                return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
+            }
+        };
         card.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         card.setBorder(BorderFactory.createCompoundBorder(
                 new LineBorder(new Color(255, 165, 0, 70), 1, true),
@@ -386,8 +372,7 @@ public class ShopTab extends JPanel {
         JLabel title = new JLabel("🧪 Consumables");
         title.setFont(FontManager.getRunescapeBoldFont());
         title.setForeground(GOLD);
-        title.setAlignmentX(LEFT_ALIGNMENT);
-        card.add(title);
+        card.add(title, BorderLayout.NORTH);
 
         JTextArea body = new JTextArea(
                 "Coming soon. One-time boosts you buy and activate for a temporary edge, being "
@@ -405,16 +390,18 @@ public class ShopTab extends JPanel {
         wrap.setAlignmentX(LEFT_ALIGNMENT);
         wrap.setBorder(new EmptyBorder(4, 0, 0, 0));
         wrap.add(body, BorderLayout.CENTER);
-        card.add(wrap);
+        card.add(wrap, BorderLayout.CENTER);
 
         JButton discord = new JButton("Discord");
         discord.setFont(FontManager.getRunescapeSmallFont());
         discord.setFocusPainted(false);
         discord.setToolTipText(AboutDialog.DISCORD_URL);
-        discord.setAlignmentX(LEFT_ALIGNMENT);
         discord.addActionListener(e -> net.runelite.client.util.LinkBrowser.browse(AboutDialog.DISCORD_URL));
-        card.add(Box.createVerticalStrut(8));
-        card.add(discord);
+        JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        btnRow.setOpaque(false);
+        btnRow.setBorder(new EmptyBorder(4, 0, 0, 0));
+        btnRow.add(discord);
+        card.add(btnRow, BorderLayout.SOUTH);
         return card;
     }
 

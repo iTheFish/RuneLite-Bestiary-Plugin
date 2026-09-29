@@ -24,7 +24,7 @@ public class ProgressTab extends JPanel {
     private final JLabel xpLabel;
     private final JPanel achievementPanel;
     private final JLabel achievementHeader = new JLabel("Achievements");
-    private final JCheckBox hideCompleteBox = new JCheckBox("Hide complete");
+    private final JToggleButton hideCompleteBox = new JToggleButton("Hide complete");
 
     public ProgressTab(ProgressionService progressionService, SessionTracker sessionTracker,
                        Runnable showDashboard) {
@@ -104,17 +104,18 @@ public class ProgressTab extends JPanel {
         achievementHeader.setAlignmentX(LEFT_ALIGNMENT);
 
         // "Hide complete" filter — hides unlocked achievements so the remaining goals are easy to scan.
-        hideCompleteBox.setFont(FontManager.getRunescapeSmallFont());
-        hideCompleteBox.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-        hideCompleteBox.setOpaque(false);
-        hideCompleteBox.setFocusPainted(false);
+        TabStyle.prepare(hideCompleteBox);
+        TabStyle.style(hideCompleteBox, false);
         hideCompleteBox.setToolTipText("Only show achievements you haven't unlocked yet");
-        hideCompleteBox.addActionListener(e -> refresh());
+        hideCompleteBox.addActionListener(e -> {
+            TabStyle.style(hideCompleteBox, hideCompleteBox.isSelected());
+            hideCompleteBox.setText(hideCompleteBox.isSelected() ? "✔ Hide complete" : "Hide complete");
+            refresh();
+        });
 
         // Own row above the header: sharing a row with "Achievements (x / y)" clipped the checkbox
         // in the narrow side panel.
         hideCompleteBox.setAlignmentX(LEFT_ALIGNMENT);
-        hideCompleteBox.setBorder(new EmptyBorder(2, 0, 0, 0));
         JPanel achTop = new JPanel();
         achTop.setOpaque(false);
         achTop.setLayout(new BoxLayout(achTop, BoxLayout.Y_AXIS));
