@@ -687,6 +687,18 @@ public class BestiaryDataService {
                 collection.getUpgradeTier(com.bestiary.model.ShopUpgrade.CAPTURE_DOUBLE_ROLL));
     }
 
+    /** Fortune's Favour chance for the DISPLAYED collection (viewed account when viewing, #48). */
+    public double displayCaptureRarityChance() {
+        return com.bestiary.model.ShopUpgrade.CAPTURE_RARITY.effectFor(
+                getCollection().getUpgradeTier(com.bestiary.model.ShopUpgrade.CAPTURE_RARITY));
+    }
+
+    /** Keen Instinct chance for the DISPLAYED collection (viewed account when viewing, #48). */
+    public double displayDoubleRollChance() {
+        return com.bestiary.model.ShopUpgrade.CAPTURE_DOUBLE_ROLL.effectFor(
+                getCollection().getUpgradeTier(com.bestiary.model.ShopUpgrade.CAPTURE_DOUBLE_ROLL));
+    }
+
     /** Passive reroll-cost discount (0..0.20) from the Haggler upgrade. */
     public double rerollDiscount() {
         return com.bestiary.model.ShopUpgrade.REROLL_COST.effectFor(

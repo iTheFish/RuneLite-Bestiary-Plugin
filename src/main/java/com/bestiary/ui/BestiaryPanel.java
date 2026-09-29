@@ -194,7 +194,8 @@ public class BestiaryPanel extends PluginPanel {
                 () -> SessionRecapDialog.open(SwingUtilities.getWindowAncestor(this), sessionTracker),
                 () -> CaptureRateDialog.open(SwingUtilities.getWindowAncestor(this),
                         dataService.getDisplayLevel(), dataService.displayBonusShinyChance(),
-                        dataService.displayCatchRateBonusByTier()),
+                        dataService.displayCatchRateBonusByTier(),
+                        dataService.displayCaptureRarityChance(), dataService.displayDoubleRollChance()),
                 view -> DashboardDialog.open(SwingUtilities.getWindowAncestor(this), dataService, progressionService, view),
                 view -> DashboardDialog.copyViewToClipboard(dataService, progressionService, view),
                 this::confirmWipe);

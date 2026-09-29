@@ -2,7 +2,6 @@ package com.bestiary.ui;
 
 import com.bestiary.model.CreatureRarity;
 import com.bestiary.model.DifficultyTier;
-import com.bestiary.service.ProgressionService;
 import net.runelite.client.ui.FontManager;
 
 import javax.swing.*;
@@ -24,17 +23,16 @@ public class CaptureRateDialog extends JDialog {
 
     private static CaptureRateDialog current;
 
-    public static void open(Window owner, ProgressionService ps, double shinyBonus, double[] catchBonusByTier) {
-        open(owner, ps.getLevel(), shinyBonus, catchBonusByTier);
-    }
-
     /** Opens for a specific bestiary level — used so a viewed account shows ITS rates, not yours (#48). */
-    public static void open(Window owner, int level, double shinyBonus, double[] catchBonusByTier) {
+    public static void open(Window owner, int level, double shinyBonus, double[] catchBonusByTier,
+                            double fortuneChance, double doubleRollChance) {
         if (current != null) current.dispose();
-        current = new CaptureRateDialog(owner, level, shinyBonus, catchBonusByTier);
+        current = new CaptureRateDialog(owner, level, shinyBonus, catchBonusByTier,
+                fortuneChance, doubleRollChance);
     }
 
-    private CaptureRateDialog(Window owner, int level, double shinyBonus, double[] catchBonusByTier) {
+    private CaptureRateDialog(Window owner, int level, double shinyBonus, double[] catchBonusByTier,
+                              double fortuneChance, double doubleRollChance) {
         super(owner, "Capture Rates", ModalityType.MODELESS);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setResizable(false);
@@ -67,6 +65,16 @@ public class CaptureRateDialog extends JDialog {
         root.add(sectionHeader("RARITY ODDS AT YOUR LEVEL"));
         root.add(Box.createVerticalStrut(4));
         root.add(buildRarityTable(level));
+        // Shop Mechanics unlocks act on top of the table above — only shown once owned.
+        if (fortuneChance > 0 || doubleRollChance > 0) root.add(Box.createVerticalStrut(2));
+        if (fortuneChance > 0) {
+            root.add(noteRow(String.format("★ Fortune's Favour: %.0f%% chance a capture climbs one rarity.",
+                    fortuneChance * 100.0)));
+        }
+        if (doubleRollChance > 0) {
+            root.add(noteRow(String.format("★ Keen Instinct: %.0f%% chance to roll twice, keep the better.",
+                    doubleRollChance * 100.0)));
+        }
         root.add(Box.createVerticalStrut(12));
 
         root.add(noteRow("These are separate rolls: first the catch lands (or doesn't),"));
