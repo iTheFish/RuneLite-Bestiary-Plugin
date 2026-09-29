@@ -58,12 +58,12 @@ public enum Achievement {
     LEVEL_120          ("Beyond Mortal",         "Reach Capture Level 120",              0,    false, new Color(255, 100, 40),50000),
 
     // --- Total XP milestones (post-99 grind) ---
-    XP_25M             ("Experienced",           "Reach 25M total XP",                   25_000_000,  false, new Color(150, 120, 235),  8000),
-    XP_35M             ("Well Travelled",        "Reach 35M total XP",                   35_000_000,  false, new Color(160, 120, 235), 12000),
-    XP_50M             ("Prolific",              "Reach 50M total XP",                   50_000_000,  false, new Color(175, 120, 235), 18000),
-    XP_100M            ("Centurion",             "Reach 100M total XP",                  100_000_000, false, new Color(190, 120, 235), 35000),
-    XP_150M            ("Relentless",            "Reach 150M total XP",                  150_000_000, false, new Color(210, 120, 235), 60000),
-    XP_200M            ("Two Hundred Million",   "Reach the 200M XP cap",                200_000_000, false, new Color(255, 120, 20),100000),
+    XP_25M             ("Experienced",           "Reach 25M total XP",                   25_000_000,  false, new Color(150, 120, 235),  20000),
+    XP_35M             ("Well Travelled",        "Reach 35M total XP",                   35_000_000,  false, new Color(160, 120, 235), 25000),
+    XP_50M             ("Prolific",              "Reach 50M total XP",                   50_000_000,  false, new Color(175, 120, 235), 30000),
+    XP_100M            ("Centurion",             "Reach 100M total XP",                  100_000_000, false, new Color(190, 120, 235), 40000),
+    XP_150M            ("Relentless",            "Reach 150M total XP",                  150_000_000, false, new Color(210, 120, 235), 70000),
+    XP_200M            ("Two Hundred Million",   "Reach the 200M XP cap",                200_000_000, false, new Color(255, 120, 20),150000),
 
     // --- Credits earned (lifetime) ---
     EARN_1K            ("Coin Purse",             "Earn 1,000 credits",                   1000,   false, new Color(255, 215, 0),  100),
