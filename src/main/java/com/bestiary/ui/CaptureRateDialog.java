@@ -42,7 +42,7 @@ public class CaptureRateDialog extends JDialog {
         root.setBackground(BG);
         root.setBorder(new EmptyBorder(12, 14, 14, 14));
 
-        JLabel title = new JLabel("CAPTURE RATES  —  LEVEL " + level);
+        JLabel title = new JLabel("CAPTURE RATES  ·  LEVEL " + level);
         title.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         title.setForeground(ORANGE);
         title.setAlignmentX(LEFT_ALIGNMENT);
@@ -77,7 +77,7 @@ public class CaptureRateDialog extends JDialog {
         }
         root.add(Box.createVerticalStrut(12));
 
-        root.add(noteRow("These are separate rolls: first the catch lands (or doesn't),"));
+        root.add(noteRow("Catch and rarity are separate rolls: first the catch lands (or not),"));
         root.add(noteRow("then rarity is decided. Both improve as your level rises."));
         root.add(Box.createVerticalStrut(8));
 
@@ -91,7 +91,7 @@ public class CaptureRateDialog extends JDialog {
         shinyTitle.setForeground(new Color(255, 235, 120));
         shinyTitle.setAlignmentX(LEFT_ALIGNMENT);
         root.add(shinyTitle);
-        root.add(noteRow("A third independent roll — any rarity can be shiny (0.2% at"));
+        root.add(noteRow("A third independent roll: any rarity can be shiny (0.2% at"));
         root.add(noteRow("Lv 1, up to 2% at Lv 99). A shiny always rolls near-max stats."));
 
         setContentPane(root);

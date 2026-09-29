@@ -28,8 +28,8 @@ final class OddsBreakdownPanel {
 
         // Stats
         root.add(header(r.shiny
-                ? "Stats — shiny roll bands (above " + r.rarity.label + ")"
-                : "Stats — " + r.rarity.label + " roll bands", bodyBold));
+                ? "Stats: shiny roll bands (above " + r.rarity.label + ")"
+                : "Stats: " + r.rarity.label + " roll bands", bodyBold));
         root.add(statsTable(r, body, bodyBold));
 
         root.add(Box.createVerticalStrut(10));

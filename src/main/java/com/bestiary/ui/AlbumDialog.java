@@ -857,11 +857,11 @@ public class AlbumDialog extends JDialog {
 
         // Update header label and pagination
         if (isFavouritesDetail()) {
-            String suffix = detailFilterRarity != null ? " — " + detailFilterRarity.label : "";
+            String suffix = detailFilterRarity != null ? " · " + detailFilterRarity.label : "";
             detailTitleLabel.setText("★ Favourites (" + total + ")" + suffix);
             detailTitleLabel.setForeground(new Color(255, 195, 40));
         } else if (isShiniesDetail()) {
-            String suffix = detailFilterRarity != null ? " — " + detailFilterRarity.label : "";
+            String suffix = detailFilterRarity != null ? " · " + detailFilterRarity.label : "";
             detailTitleLabel.setText("✦ Shinies (" + total + ")" + suffix);
             detailTitleLabel.setForeground(new Color(150, 225, 255));
         } else {
@@ -869,8 +869,8 @@ public class AlbumDialog extends JDialog {
                     : total > 0 ? filtered.stream().map(c -> c.rarity)
                             .max(Comparator.comparingInt(Enum::ordinal)).orElse(CreatureRarity.COMMON)
                     : CreatureRarity.COMMON;
-            String suffix = detailFilterRarity != null ? " — " + detailFilterRarity.label
-                    : detailFilterCapture != null ? " — single capture" : "";
+            String suffix = detailFilterRarity != null ? " · " + detailFilterRarity.label
+                    : detailFilterCapture != null ? " · single capture" : "";
             detailTitleLabel.setText(detailMonsterName + " (" + total + ")" + suffix);
             detailTitleLabel.setForeground(best.displayColor);
         }
@@ -1305,7 +1305,7 @@ public class AlbumDialog extends JDialog {
         String playerName = page.stream()
                 .map(c -> c.playerName).filter(n -> n != null && !n.isEmpty())
                 .findFirst().orElse("Unknown");
-        String headerText = detailMonsterName != null ? detailMonsterName + " — " + count + " card" + (count == 1 ? "" : "s") : count + " cards";
+        String headerText = detailMonsterName != null ? detailMonsterName + " · " + count + " card" + (count == 1 ? "" : "s") : count + " cards";
 
         final int HEADER_H = 34;
         int logW = cols * AlbumCard.CARD_W + (cols - 1) * GAP + PAD * 2;

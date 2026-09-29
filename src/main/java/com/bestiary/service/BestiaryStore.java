@@ -183,11 +183,11 @@ public class BestiaryStore {
         StoreData d = tryRead(file);
         if (d == null) {
             d = tryRead(backup);
-            if (d != null) log.warn("Bestiary main file unreadable — recovered from backup");
+            if (d != null) log.warn("Bestiary main file unreadable; recovered from backup");
         }
         if (d == null) return new StoreData();
         if (d.version != VERSION) {
-            log.info("Bestiary store version {} != {} — starting this account fresh (data reset)",
+            log.info("Bestiary store version {} != {}; starting this account fresh (data reset)",
                     d.version, VERSION);
             return new StoreData();
         }
@@ -398,7 +398,7 @@ public class BestiaryStore {
             Map<String, AccountEntry> m = gson.fromJson(json, t);
             return m != null ? m : new LinkedHashMap<>();
         } catch (Exception e) {
-            log.warn("Failed to read account registry — starting fresh", e);
+            log.warn("Failed to read account registry; starting fresh", e);
             return new LinkedHashMap<>();
         }
     }

@@ -299,7 +299,7 @@ public class BestiaryDataService {
         }
         if (!store.writeAccountNow(targetHash, target)) {
             for (CapturedCreature c : moving) c.currentOwner = priorOwner.get(c);
-            log.warn("Card transfer aborted — could not write target account {}", targetHash);
+            log.warn("Card transfer aborted: could not write target account {}", targetHash);
             return 0;
         }
 

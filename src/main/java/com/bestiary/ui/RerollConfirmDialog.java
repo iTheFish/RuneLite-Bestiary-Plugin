@@ -44,7 +44,7 @@ public class RerollConfirmDialog extends JDialog {
         title.setForeground(card.rarity.displayColor);
         title.setAlignmentX(Component.LEFT_ALIGNMENT);
         root.add(title);
-        JLabel sub = new JLabel("Current roll — a reroll re-rolls the stats & shiny at the same rarity.");
+        JLabel sub = new JLabel("Current roll. A reroll re-rolls the stats & shiny at the same rarity.");
         sub.setFont(FontManager.getRunescapeSmallFont());
         sub.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
         sub.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -69,7 +69,7 @@ public class RerollConfirmDialog extends JDialog {
                 : String.format("<font color='#78dc78'>shiny %.1f%%</font>%s", shinyPct, shinyBonusStr);
         JLabel chances = new JLabel(String.format("<html>This reroll: %s"
                 + " &nbsp;·&nbsp; <font color='#ffd24d'>rank up %s</font> (at level %d)</html>",
-                shinyStr, card.rarity == CreatureRarity.MYTHIC ? "— (already Mythic)"
+                shinyStr, card.rarity == CreatureRarity.MYTHIC ? "n/a (already Mythic)"
                         : String.format("%.0f%%%s", rankPct, rankBonusStr),
                 currentLevel));
         chances.setFont(FontManager.getRunescapeSmallFont());
@@ -77,7 +77,7 @@ public class RerollConfirmDialog extends JDialog {
         chances.setAlignmentX(Component.LEFT_ALIGNMENT);
         root.add(chances);
         JLabel warn = new JLabel("<html><div style='width:300px'><i>Disclaimer: rerolling marks this card as "
-                + "rerolled — it's no longer a raw pull.</i></div></html>");
+                + "rerolled, so it's no longer a raw pull.</i></div></html>");
         warn.setFont(FontManager.getRunescapeSmallFont());
         warn.setForeground(new Color(224, 170, 90));
         warn.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -85,7 +85,7 @@ public class RerollConfirmDialog extends JDialog {
         root.add(warn);
 
         root.add(Box.createVerticalStrut(12));
-        JButton reroll = new JButton("Reroll — " + cost + " credits");
+        JButton reroll = new JButton("Reroll: " + cost + " credits");
         reroll.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         reroll.setBackground(new Color(60, 120, 60));
         reroll.setForeground(Color.WHITE);

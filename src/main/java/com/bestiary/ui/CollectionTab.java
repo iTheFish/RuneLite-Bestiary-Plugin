@@ -402,7 +402,7 @@ public class CollectionTab extends JPanel {
     private void addOverflowNote(int shown, int total) {
         if (shown >= total) return;
         JLabel note = new JLabel("<html><center>Showing " + shown + " of " + total
-                + " — refine your search,<br>or open the Album for the full list.</center></html>");
+                + ". Refine your search,<br>or open the Album for the full list.</center></html>");
         note.setForeground(new Color(150, 150, 150));
         note.setFont(FontManager.getRunescapeSmallFont());
         note.setAlignmentX(Component.CENTER_ALIGNMENT);

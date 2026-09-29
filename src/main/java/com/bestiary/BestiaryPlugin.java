@@ -146,7 +146,7 @@ public class BestiaryPlugin extends Plugin {
             if (pingSent.get() != pongSeen.get()) {
                 long waited = System.currentTimeMillis() - pingSent.get();
                 if (waited > 5000 && reported.compareAndSet(false, true)) {
-                    log.error("Bestiary EDT watchdog: UI unresponsive for ~{}ms — dumping AWT stack", waited);
+                    log.error("Bestiary EDT watchdog: UI unresponsive for ~{}ms, dumping AWT stack", waited);
                     for (Map.Entry<Thread, StackTraceElement[]> e : Thread.getAllStackTraces().entrySet()) {
                         if (!e.getKey().getName().startsWith("AWT-EventQueue")) continue;
                         StringBuilder sb = new StringBuilder("FROZEN ").append(e.getKey().getName()).append(":\n");

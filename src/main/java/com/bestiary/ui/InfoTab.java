@@ -295,6 +295,12 @@ public class InfoTab extends JPanel {
                 "A separate roll, so any rarity can be shiny: 0.2% at level 1, rising to 2% at 99 " +
                 "(Shiny Charm adds up to +0.5%). Shinies roll near-max stats, get a golden card and " +
                 "are always announced in chat."));
+        c.add(tile("Shop boosts",
+                "Two Mechanics unlocks from the Shop add extra rolls on top:\n" +
+                "• Fortune's Favour: a chance for a capture to climb one rarity after it lands.\n" +
+                "• Keen Instinct: a chance to roll the capture twice and keep the better result, " +
+                "which can even turn a miss into a catch.\n\n" +
+                "Once you own them, your chances show in Catch Rates."));
     }
 
     private void fillCards(JPanel c) {
@@ -354,17 +360,12 @@ public class InfoTab extends JPanel {
                 "Tier 1 of Fortune's Favour and Keen Instinct costs the most, because it's what " +
                 "unlocks the roll."));
         c.add(tile("Level 99 shop",
-                "Unlocks at Capture Level 99.\n" +
-                "• Scholar's Insight II, Hunter's Focus II, Hunter's Bounty II: stack on top of the " +
-                "originals (+5% capture XP, +5 kill XP and +10 credits per tier)\n" +
-                "• Elite Tracker / Boss Tracker: +2% catch rate per tier against Elite / Boss " +
-                "monsters (max +10%)\n\n" +
-                "Consumables are coming soon."));
+                "Unlocks at Capture Level 99. Find out what's inside when you get there!"));
         c.add(tile("No real-world value",
-                "Bestiary is a free, fan-made minigame. Credits, cards, rarities, shinies and Power " +
-                "Levels live only inside this plugin: they have no real-world or in-game value, can't " +
-                "be bought, sold or traded for real money, RuneScape GP or items, and give no " +
-                "advantage in Old School RuneScape.\n\n" +
+                "Bestiary is a free, fan-made minigame, and it's all just for fun. Bestiary Credits, " +
+                "cards, rarities, shinies and Power Levels live entirely inside this plugin: they have " +
+                "no real-world or in-game value, can't be bought, sold or traded for real money, " +
+                "RuneScape GP or items, and give no advantage in Old School RuneScape.\n\n" +
                 "Bestiary isn't affiliated with or endorsed by Jagex. Old School RuneScape is a trademark " +
                 "of Jagex Ltd; all monster names and artwork belong to Jagex and the OSRS Wiki."));
     }
@@ -376,8 +377,7 @@ public class InfoTab extends JPanel {
                 "Kill XP by difficulty: Beginner 5, Easy 10, Medium 15, Hard 20, Elite 25, Boss 30.\n\n" +
                 "Capture XP = combat level × 10 (min 10, capped at combat 100) × rarity: Common 1×, " +
                 "Uncommon 2×, Rare 5×, Epic 10×, Legendary 25×, Mythic 50×. A Rare catch of a " +
-                "level-50 monster = 2,500 XP.\n\n" +
-                "Low-level monsters are best for cards and credits; high-level kills give steady XP."));
+                "level-50 monster = 2,500 XP."));
         c.add(tile("Achievements",
                 "The Progress tab lists every achievement; hover one to see its credit reward. Tick " +
                 "'Hide complete' to see only what's left."));
@@ -419,6 +419,10 @@ public class InfoTab extends JPanel {
                 "Batched: repeat captures of the same monster and rarity are grouped into one message " +
                 "after 9 seconds of quiet.\n\n" +
                 "Shinies always announce straight away."));
+        c.add(tile("Discord alerts",
+                "Paste a Discord channel webhook URL into 'Discord Webhook' in Config to post a card " +
+                "image whenever you catch a Legendary or better, or a shiny Epic or better. Leave it " +
+                "blank to turn it off. Only the card image and capture details are sent."));
         c.add(tile("Level-up alerts",
                 "A gold banner plays when you level up, plus a chat message you can turn off with " +
                 "'Notify On Level Up' in Config."));
@@ -511,7 +515,7 @@ public class InfoTab extends JPanel {
                     if (openDashboard != null) openDashboard.accept(view);
                 } else if (e.getButton() == MouseEvent.BUTTON3) {
                     JPopupMenu menu = new JPopupMenu();
-                    JMenuItem open = new JMenuItem("Open Dashboard — " + view.label);
+                    JMenuItem open = new JMenuItem("Open Dashboard: " + view.label);
                     open.addActionListener(ev -> { if (openDashboard != null) openDashboard.accept(view); });
                     JMenuItem copy = new JMenuItem("Copy " + view.label + " Card");
                     copy.addActionListener(ev -> { if (exportDashboard != null) exportDashboard.accept(view); });

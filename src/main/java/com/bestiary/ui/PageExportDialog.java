@@ -46,7 +46,7 @@ public class PageExportDialog extends JDialog {
     public PageExportDialog(Window parent, List<CapturedCreature> captures, String monsterName,
                             Map<String, Integer> dexNumbers, WikiImageService imageService,
                             BestiaryCollection collection) {
-        super(parent, "Export Page — " + monsterName, ModalityType.MODELESS);
+        super(parent, "Export Page: " + monsterName, ModalityType.MODELESS);
         this.captures    = captures;
         this.monsterName = monsterName;
         this.dexNumbers  = dexNumbers;
@@ -207,7 +207,7 @@ public class PageExportDialog extends JDialog {
         String playerName = captures.stream()
                 .map(c -> c.playerName).filter(n -> n != null && !n.isEmpty())
                 .findFirst().orElse("Unknown");
-        String headerText = monsterName + " — " + count + " card" + (count == 1 ? "" : "s");
+        String headerText = monsterName + " · " + count + " card" + (count == 1 ? "" : "s");
 
         int logW = cols * AlbumCard.CARD_W + (cols - 1) * GAP + PAD * 2;
         int logH = HEADER_H + PAD + rows * SLOT_H + (rows - 1) * GAP + PAD;

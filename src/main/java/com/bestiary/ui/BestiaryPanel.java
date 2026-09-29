@@ -276,7 +276,7 @@ public class BestiaryPanel extends PluginPanel {
             this.hash = hash; this.rsn = rsn; this.played = played;
         }
         @Override public String toString() {
-            if (hash == null) return "— Not logged in —";
+            if (hash == null) return "Not logged in";
             String name = rsn != null && !rsn.isEmpty() ? rsn : "Unknown";
             return played ? "★ " + name + " (you)" : "👁 " + name;
         }
@@ -296,7 +296,7 @@ public class BestiaryPanel extends PluginPanel {
                 AccountItem sel = (AccountItem) accountSwitcher.getSelectedItem();
                 if (sel == null) return;
                 if (sel.hash == null) {
-                    // "— Not logged in —" placeholder: stop viewing if we were (matches the Return button).
+                    // "Not logged in" placeholder: stop viewing if we were (matches the Return button).
                     if (dataService.isViewing()) {
                         dataService.clearView();
                         closeAllBestiaryWindows();
@@ -372,7 +372,7 @@ public class BestiaryPanel extends PluginPanel {
                         toSelect = item;
                     }
                 }
-                // Logged out and not viewing → show the placeholder ("— Not logged in —").
+                // Logged out and not viewing → show the placeholder ("Not logged in").
                 if (toSelect == null && placeholder != null) toSelect = placeholder;
                 if (toSelect != null) accountSwitcher.setSelectedItem(toSelect);
             } finally {
@@ -548,7 +548,7 @@ public class BestiaryPanel extends PluginPanel {
         version.setAlignmentX(CENTER_ALIGNMENT);
         version.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
         version.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        version.setToolTipText("What's new — version log");
+        version.setToolTipText("What's new: version log");
         java.util.function.Consumer<Boolean> style = hot -> {
             version.setForeground(hot ? hotFg : idleFg);
             version.setBackground(hot ? hotBg : idleBg);
@@ -660,7 +660,7 @@ public class BestiaryPanel extends PluginPanel {
             String who = dataService.getViewedAccountName();
             viewingBannerLabel.setText("<html><span style='color:#7FB8E6;'>👁 Viewing "
                     + "<b>" + (who == null || who.isEmpty() ? "another account" : who)
-                    + "</b> — read-only</span></html>");
+                    + "</b> (read-only)</span></html>");
         } else {
             // Achievements only fire for the played account (never while browsing someone else's cards).
             checkAndNotifyAchievements();
