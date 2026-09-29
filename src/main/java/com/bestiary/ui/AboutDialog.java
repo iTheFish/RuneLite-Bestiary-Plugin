@@ -39,6 +39,20 @@ public class AboutDialog extends JDialog {
 
     // Newest first. Future releases get prepended above v1.0.0.
     private static final Release[] RELEASES = {
+        new Release("v1.1.2", "Level 99 shop & polish", new String[][]{
+            {"Level 99 shop", "Reach Capture Level 99 to unlock a new shop tab: stronger II versions of "
+                + "Scholar's Insight, Hunter's Focus and Hunter's Bounty that stack with the originals, plus "
+                + "Elite and Boss Tracker for better catch rates on the toughest monsters. Consumables are "
+                + "coming soon."},
+            {"Fortune's Favour, shown", "When Fortune's Favour bumps a capture, chat now shows the rarity "
+                + "it climbed from and to. Your Fortune's Favour and Keen Instinct chances also show in "
+                + "Catch Rates."},
+            {"Mac right-click fix", "Right-click menus, including Reroll, now open properly on macOS."},
+            {"Hide complete achievements", "A new checkbox on the Progress tab hides the achievements "
+                + "you've already unlocked."},
+            {"Tidier Info tab", "All the Info text has been trimmed and brought up to date. The Reset "
+                + "button now lives at the bottom of Info → Progress."},
+        }),
         new Release("v1.1.1", "Kill tracking fix", new String[][]{
             {"Kills count once again", "A recent RuneLite update changed the order the game reports a "
                 + "monster's death and your final hit. That made kills count twice and gave cards the "
