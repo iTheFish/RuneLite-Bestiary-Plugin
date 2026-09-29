@@ -184,6 +184,7 @@ public class BestiaryPanel extends PluginPanel {
                         progressionService, DashboardDialog.DashView.ECONOMY));
 
         tabs = new JTabbedPane();
+        TabStyle.apply(tabs);
         tabs.setBackground(ColorScheme.DARK_GRAY_COLOR);
         tabs.setForeground(Color.WHITE);
         tabs.setFont(FontManager.getRunescapeSmallFont());
