@@ -233,13 +233,13 @@ public class ShopTab extends JPanel {
 
         JPanel passivePanel = vbox();
         if (!unlocked) {
-            passivePanel.add(emptyLabel("Reach Capture Level 99 to reveal these upgrades."));
+            passivePanel.add(emptyLabel("Reach Capture Level 99 to unlock these upgrades."));
             passivePanel.add(Box.createVerticalStrut(8));
         }
         for (ShopUpgrade u : ShopUpgrade.values()) {
             if (u.category != ShopCategory.LEVEL_99) continue;
-            // Locked: same dark padlock look as an uncaught album card, contents hidden.
-            passivePanel.add(unlocked ? upgradeCard(u) : lockedUpgradeCard());
+            // Locked: same dark padlock look as an uncaught album card, name only.
+            passivePanel.add(unlocked ? upgradeCard(u) : lockedUpgradeCard(u));
             passivePanel.add(Box.createVerticalStrut(8));
         }
         JPanel consumablePanel = vbox();
@@ -276,8 +276,8 @@ public class ShopTab extends JPanel {
         TabStyle.style(consumable, level99Sub == 1); consumable.setSelected(level99Sub == 1);
     }
 
-    /** A padlocked Level 99 upgrade slot, styled like an uncaught album card (details hidden). */
-    private JPanel lockedUpgradeCard() {
+    /** A padlocked Level 99 upgrade slot, styled like an uncaught album card (name only). */
+    private JPanel lockedUpgradeCard(ShopUpgrade u) {
         JPanel card = new JPanel(new BorderLayout(10, 0)) {
             @Override public Dimension getMaximumSize() {
                 return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
@@ -301,7 +301,7 @@ public class ShopTab extends JPanel {
 
         JPanel text = new JPanel(new GridLayout(2, 1, 0, 2));
         text.setOpaque(false);
-        JLabel title = new JLabel("???");
+        JLabel title = new JLabel(u.title);
         title.setFont(FontManager.getRunescapeBoldFont());
         title.setForeground(new Color(110, 110, 110));
         JLabel sub = new JLabel("Unlocks at Capture Level 99");
