@@ -111,7 +111,7 @@ public enum ShopUpgrade {
             "Elite Tracker",
             "Raises your catch rate against Elite-tier monsters. Elite tops out at 35% at Capture "
                     + "Level 99 — this adds up to a further +10% on top.",
-            ShopCategory.LEVEL_99, 5, new long[]{20000, 35000, 50000, 40000, 50000}, 0.02),
+            ShopCategory.LEVEL_99, 5, new long[]{20000, 30000, 40000, 50000, 60000}, 0.02),
 
     /** Raises catch rate on BOSS-tier monsters (+2%/tier → +10% at max). */
     CATCH_RATE_BOSS(
