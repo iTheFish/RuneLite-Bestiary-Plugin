@@ -182,7 +182,7 @@ public class DashboardDialog extends JDialog {
         root.add(sectionHeader("RARITY BREAKDOWN"));
         root.add(buildRarityBars(col));
         root.add(gap(10));
-        root.add(sectionHeader("ACHIEVEMENTS  —  " + unlocked.size() + " / " + Achievement.values().length));
+        root.add(sectionHeader("ACHIEVEMENTS  ·  " + unlocked.size() + " / " + Achievement.values().length));
         root.add(buildAchievementGrid(unlocked));
         root.add(gap(16));
         return root;
@@ -284,7 +284,7 @@ public class DashboardDialog extends JDialog {
         long caught = col.lifetimeCaptures;
         int  held   = col.totalCaptures();
         int  kills  = col.totalKills();
-        String ratio = caught > 0 ? String.format("%.1f:1", (double) kills / caught) : "—";
+        String ratio = caught > 0 ? String.format("%.1f:1", (double) kills / caught) : "-";
 
         grid.add(miniCard("Species", String.valueOf(col.uniqueSpeciesCount())));
         grid.add(miniCard("Caught",  FMT.format(caught)));
@@ -1396,7 +1396,7 @@ public class DashboardDialog extends JDialog {
         // Pre-measure section heights to set total card height
         int kills = col.totalKills(), held = col.totalCaptures();
         long caught = col.lifetimeCaptures;
-        String ratio = caught > 0 ? String.format("%.1f:1", (double) kills / caught) : "—";
+        String ratio = caught > 0 ? String.format("%.1f:1", (double) kills / caught) : "-";
         Map<CreatureRarity, Long> rarityCounts = col.creatures.stream()
                 .collect(Collectors.groupingBy(c -> c.rarity, Collectors.counting()));
         // Export only the top 16 "most impressive" achievements (by credit reward) so the card
@@ -1556,7 +1556,7 @@ public class DashboardDialog extends JDialog {
         y += 8;
 
         // --- ACHIEVEMENTS section ---
-        String achHeader = "ACHIEVEMENTS  —  " + unlocked.size() + " / " + Achievement.values().length
+        String achHeader = "ACHIEVEMENTS  ·  " + unlocked.size() + " / " + Achievement.values().length
                 + (unlocked.size() > unlockedList.size() ? "   (top " + unlockedList.size() + ")" : "");
         y = drawCardSectionHeader(g, achHeader, y, W, PAD);
         y += 6;
@@ -1949,7 +1949,7 @@ public class DashboardDialog extends JDialog {
         for (Double v : avgQuality.values()) avgScaleMax = Math.max(avgScaleMax, (int) Math.round(v));
         for (CreatureRarity r : rarOrder) {
             if (!avgQuality.containsKey(r)) {
-                y = drawCardBarRow(g, r.label, r.displayColor, 0, avgScaleMax, "—", "", y, PAD, W);
+                y = drawCardBarRow(g, r.label, r.displayColor, 0, avgScaleMax, "-", "", y, PAD, W);
             } else {
                 int avg = (int) Math.round(avgQuality.get(r));
                 y = drawCardBarRow(g, r.label, r.displayColor, avg, avgScaleMax, String.valueOf(avg), "", y, PAD, W);

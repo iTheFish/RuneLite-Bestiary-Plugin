@@ -24,9 +24,10 @@ public class ProgressTab extends JPanel {
     private final JLabel xpLabel;
     private final JPanel achievementPanel;
     private final JLabel achievementHeader = new JLabel("Achievements");
+    private final JToggleButton hideCompleteBox = new JToggleButton("Hide complete");
 
     public ProgressTab(ProgressionService progressionService, SessionTracker sessionTracker,
-                       Runnable showDashboard, Runnable onReset) {
+                       Runnable showDashboard) {
         this.progressionService = progressionService;
         this.sessionTracker     = sessionTracker;
         setLayout(new BorderLayout(0, 8));
@@ -102,23 +103,23 @@ public class ProgressTab extends JPanel {
         achievementHeader.setBorder(new EmptyBorder(4, 0, 4, 0));
         achievementHeader.setAlignmentX(LEFT_ALIGNMENT);
 
-        // Reset Collection — moved here from the panel footer (was too close to the version link).
-        JButton resetBtn = new JButton("Reset Progress & Collection?");
-        resetBtn.setFont(FontManager.getRunescapeSmallFont());
-        resetBtn.setBackground(new Color(80, 20, 20));
-        resetBtn.setForeground(new Color(220, 100, 100));
-        resetBtn.setBorderPainted(false);
-        resetBtn.setFocusPainted(false);
-        resetBtn.setToolTipText("Permanently delete all captures and progression");
-        resetBtn.setAlignmentX(LEFT_ALIGNMENT);
-        resetBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
-        resetBtn.addActionListener(e -> { if (onReset != null) onReset.run(); });
+        // "Hide complete" filter — hides unlocked achievements so the remaining goals are easy to scan.
+        TabStyle.prepare(hideCompleteBox);
+        TabStyle.style(hideCompleteBox, false);
+        hideCompleteBox.setToolTipText("Only show achievements you haven't unlocked yet");
+        hideCompleteBox.addActionListener(e -> {
+            TabStyle.style(hideCompleteBox, hideCompleteBox.isSelected());
+            hideCompleteBox.setText(hideCompleteBox.isSelected() ? "✔ Hide complete" : "Hide complete");
+            refresh();
+        });
 
+        // Own row above the header: sharing a row with "Achievements (x / y)" clipped the checkbox
+        // in the narrow side panel.
+        hideCompleteBox.setAlignmentX(LEFT_ALIGNMENT);
         JPanel achTop = new JPanel();
         achTop.setOpaque(false);
         achTop.setLayout(new BoxLayout(achTop, BoxLayout.Y_AXIS));
-        achTop.add(resetBtn);
-        achTop.add(Box.createVerticalStrut(6));
+        achTop.add(hideCompleteBox);
         achTop.add(achievementHeader);
 
         JPanel centerPanel = new JPanel(new BorderLayout());
@@ -166,10 +167,18 @@ public class ProgressTab extends JPanel {
         int unlocked = state.unlockedAchievements.size();
         achievementHeader.setText("Achievements  (" + unlocked + " / " + total + ")");
 
+        boolean hideComplete = hideCompleteBox.isSelected();
         for (Achievement a : Achievement.values()) {
             boolean done = state.unlockedAchievements.contains(a);
+            if (done && hideComplete) continue;
             achievementPanel.add(buildAchievementRow(a, done));
             achievementPanel.add(Box.createVerticalStrut(2));
+        }
+        if (hideComplete && unlocked == total) {
+            JLabel allDone = new JLabel("All achievements complete!");
+            allDone.setFont(FontManager.getRunescapeSmallFont());
+            allDone.setForeground(new Color(80, 200, 80));
+            achievementPanel.add(allDone);
         }
 
         achievementPanel.revalidate();

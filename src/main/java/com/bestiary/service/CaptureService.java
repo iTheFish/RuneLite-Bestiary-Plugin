@@ -52,10 +52,11 @@ public class CaptureService {
                                                      int captureLevel, int killCount,
                                                      String regionName, String playerName,
                                                      int observedDamage, double shinyBonus,
-                                                     double rarityUpChance, double doubleRollChance) {
+                                                     double rarityUpChance, double doubleRollChance,
+                                                     double[] catchRateBonusByTier) {
         // First full capture attempt (catch/miss roll + rarity + shiny + quality).
         Optional<CapturedCreature> first = singleAttempt(npc, location, captureLevel, killCount,
-                regionName, playerName, observedDamage, shinyBonus, rarityUpChance);
+                regionName, playerName, observedDamage, shinyBonus, rarityUpChance, catchRateBonusByTier);
 
         // Keen Instinct (shop): a chance to run the WHOLE attempt a second time — including the
         // catch/miss roll — and keep the better outcome (a capture beats a miss; between two captures
@@ -63,7 +64,7 @@ public class CaptureService {
         // short-circuit means an unowned upgrade consumes no RNG, so the roll sequence stays stable.
         if (doubleRollChance > 0 && rng.nextDouble() < doubleRollChance) {
             Optional<CapturedCreature> second = singleAttempt(npc, location, captureLevel, killCount,
-                    regionName, playerName, observedDamage, shinyBonus, rarityUpChance);
+                    regionName, playerName, observedDamage, shinyBonus, rarityUpChance, catchRateBonusByTier);
             return keenKeepBetter(first, second);
         }
         return first;
@@ -74,11 +75,13 @@ public class CaptureService {
                                                      int captureLevel, int killCount,
                                                      String regionName, String playerName,
                                                      int observedDamage, double shinyBonus,
-                                                     double rarityUpChance) {
+                                                     double rarityUpChance, double[] catchRateBonusByTier) {
         String npcName = npc.getName() != null ? npc.getName() : "Unknown";
         DifficultyTier difficulty = MonsterRoster.getDifficulty(npcName, npc.getCombatLevel());
 
-        double catchRate = calculateCatchRate(captureLevel, difficulty);
+        double catchBonus = (catchRateBonusByTier != null && difficulty.ordinal() < catchRateBonusByTier.length)
+                ? catchRateBonusByTier[difficulty.ordinal()] : 0.0;
+        double catchRate = calculateCatchRate(captureLevel, difficulty, catchBonus);
         double roll = rng.nextDouble();
 
         log.debug("Capture roll for {} [{}]: roll={} catchRate={}", npcName, difficulty.label,
@@ -92,8 +95,10 @@ public class CaptureService {
         // Fortune's Favour (shop): a chance to climb one rarity higher than the roll landed. Only
         // happens if the player owns the upgrade (rarityUpChance > 0); Mythic can't climb further.
         boolean fortuneBumped = false;
+        CreatureRarity fortuneFrom = null;
         if (rarity != CreatureRarity.MYTHIC && rarityUpChance > 0
                 && rng.nextDouble() < rarityUpChance) {
+            fortuneFrom = rarity;
             rarity = CreatureRarity.values()[rarity.ordinal() + 1];
             fortuneBumped = true;
         }
@@ -122,6 +127,7 @@ public class CaptureService {
                 .playerName(playerName != null ? playerName : "")
                 .build();
         creature.fortuneBumped = fortuneBumped;
+        creature.fortuneFrom = fortuneFrom;
 
         log.info("Captured {} [{}] difficulty={}{}", creature.npcName, creature.rarity.label,
                 difficulty.label, fortuneBumped ? " (Fortune's Favour bumped)" : "");
@@ -172,6 +178,15 @@ public class CaptureService {
      *   BOSS:      3% → 25%
      */
     public static double calculateCatchRate(int captureLevel, DifficultyTier difficulty) {
+        return calculateCatchRate(captureLevel, difficulty, 0.0);
+    }
+
+    /**
+     * Catch rate as above, plus a flat shop catch-rate {@code bonus} (the Level 99 Elite/Boss Tracker
+     * upgrades). The bonus is added after the level scaling and the whole thing is clamped below 100%
+     * so a catch is never guaranteed.
+     */
+    public static double calculateCatchRate(int captureLevel, DifficultyTier difficulty, double bonus) {
         double base, max;
         switch (difficulty) {
             case BEGINNER: base = 0.25; max = 0.70; break;
@@ -183,7 +198,8 @@ public class CaptureService {
             default:       base = 0.15; max = 0.55; break;
         }
         double perLevel = (max - base) / 98.0;   // reaches the max exactly at level 99
-        return Math.min(base + (captureLevel - 1) * perLevel, max);
+        double rate = Math.min(base + (captureLevel - 1) * perLevel, max);
+        return Math.min(rate + Math.max(0.0, bonus), 0.95);
     }
 
     /**

@@ -52,11 +52,17 @@ public class InfoTab extends JPanel {
     private final List<JPanel> statBoxes = new ArrayList<>();
     private boolean interactiveEnabled = true;
 
+    /** Wipes the played collection (double-confirmed by the panel). Lives at the bottom of Progress. */
+    private final Runnable onReset;
+    private JButton resetBtn;
+
     public InfoTab(BestiaryDataService dataService, ProgressionService progressionService,
                    Runnable openAlbum, Runnable openFavourites, Runnable openRecap,
                    Runnable openCatchRates,
                    Consumer<DashboardDialog.DashView> openDashboard,
-                   Consumer<DashboardDialog.DashView> exportDashboard) {
+                   Consumer<DashboardDialog.DashView> exportDashboard,
+                   Runnable onReset) {
+        this.onReset            = onReset;
         this.dataService        = dataService;
         this.progressionService = progressionService;
         this.openDashboard      = openDashboard;
@@ -238,56 +244,30 @@ public class InfoTab extends JPanel {
     private void fillGuide(JPanel c) {
         c.add(sectionTitle("Your guide to Bestiary"));
         c.add(tile("The short version",
-                "Bestiary turns your everyday kills into a collectible card game. Every monster you " +
-                "fight is a chance to 'capture' it as a card, rolled with its own stats, a rarity, " +
-                "and a small chance to be shiny. Catch them, level up, and build an album to show off.\n\n" +
-                "It can feel like a lot at first, but it clicks quickly, and before long you'll be on " +
-                "your way to 99 Bestiary and sharing sick cards with your friends. The other Info " +
-                "tabs go deep on every system; this one is the quick tour."));
-        c.add(tile("Starting off",
-                "There's nothing you have to configure to begin, just fight monsters. In the RuneLite " +
-                "Config panel under Bestiary you can tune the capture overlay, animations and chat " +
-                "notifications to taste (level-up alerts are on by default).\n\n" +
-                "What you'll notice straight away: a capture notification (with an optional " +
-                "collection-jar animation) on each kill, new catches landing in the Cards tab, your " +
-                "Capture Level ticking up, and Bestiary Credits building. Only catalogued roster " +
-                "monsters are tracked.\n\n" +
-                "To find and share your cards, open the Album (button at the top), click a card for " +
-                "its details, right-click to Favourite it, and use Export to save or copy a card " +
-                "image to post to your friends."));
+                "Every kill of a roster monster is a chance to capture it as a card, with rolled " +
+                "stats, a rarity and a small chance to be shiny. Catch them, level up and fill your album."));
+        c.add(tile("Getting started",
+                "Nothing to set up, just fight. New catches land in the Cards tab, and you earn XP " +
+                "and credits as you go. Overlay, animation and chat options are under Bestiary in " +
+                "RuneLite's Config panel.\n\n" +
+                "Open the Album to browse your cards. Left-click a card to export it; right-click " +
+                "for everything else (favourite, rename, reroll, discard)."));
         c.add(tile("Early levels",
-                "Low-level monsters have the best catch rates, so beginner and easy mobs are the " +
-                "quickest way to fill your album and bank early captures. Two shop unlocks are worth " +
-                "grabbing as soon as you can: Hunter's Bounty (more credits per capture) and " +
-                "Salvager's Eye (more credits when you discard). Both are cheap and snowball your " +
-                "credit income for everything else.\n\n" +
-                "Remember catching pays cards, credits and XP, while high-level kills give steady XP " +
-                "even without a catch, so mix in tougher monsters if you're chasing levels."));
+                "Beginner and Easy monsters have the best catch rates, so start there. Hunter's " +
+                "Bounty and Salvager's Eye are cheap and boost your credit income, so buy them early. " +
+                "Tougher monsters give more XP, even when you miss the catch."));
         c.add(tile("Mid game",
-                "You've probably found the Favourites star and the card export by now, so copy your " +
-                "best cards and share them around. You're likely sitting on a stack of duplicates " +
-                "too: use Discard (right-click a card, or bulk-discard from the Album) to turn them " +
-                "into credits and keep your album tidy. Caught a shiny you don't need? Either upgrade " +
-                "that shiny Uncommon or discard it for a guaranteed +500 credits.\n\n" +
-                "Around level 50 your catch rates are much healthier (beginners near 50%, mediums " +
-                "near 35%). How's your RNG treating you? Tap any stat box at the top to open the " +
-                "dashboards and see your rarity spread, species progress and economy at a glance."));
-        c.add(tile("Late mid-game",
-                "Credits piling up? Time to spend them. The Card Reroller re-rolls a card's stats " +
-                "and shiny at the same monster and rarity, a shot at a better roll, a shiny, or even " +
-                "a rarity rank-up (raised by the Reroll Fortune and Reroll Shine unlocks). Rerolled " +
-                "cards keep a history you can view, and the Economy dashboard tracks your reroll " +
-                "activity.\n\n" +
-                "This is the stage to chase perfect versions of your favourite monsters and hunt " +
-                "shinies in earnest, while you wait on the pricier shop unlocks."));
+                "Discard duplicates for credits (right-click, or bulk from the Album). Shinies are " +
+                "worth a flat +500 when discarded. By level 50 catch rates are much healthier. Click " +
+                "a stat box above to see your dashboards."));
+        c.add(tile("Late game",
+                "Spend credits on the Card Reroller to chase better stats, shinies and rarity " +
+                "rank-ups, and save up for the bigger Mechanics unlocks like Fortune's Favour and " +
+                "Keen Instinct."));
         c.add(tile("End game",
-                "Did that level 92 achievement bring back some memories? You're deep in it now, but " +
-                "level 92 is only halfway to 99 in XP. The last stretch is all about the best " +
-                "XP-per-hour and the rarest catches.\n\n" +
-                "Catch rates cap out (beginner 70%, boss 25%), high-value captures are capped at the " +
-                "combat-100 XP scale, and top rarities and shinies stay genuinely rare, so the " +
-                "album's final slots and the flashiest cards are a real flex. Keep at it: 99 " +
-                "Bestiary and a full album await."));
+                "Level 92 is only halfway to 99 in XP. At 99 the Level 99 shop unlocks, and virtual " +
+                "levels carry on to 126 (200M XP). Top rarities and shinies stay genuinely rare, so a " +
+                "full album is a real flex."));
     }
 
     private void fillCapturing(JPanel c) {
@@ -299,125 +279,102 @@ public class InfoTab extends JPanel {
         c.add(Box.createVerticalStrut(8));
         c.add(sectionTitle("How capturing works"));
         c.add(tile("Catch rate",
-                "Each kill rolls a capture attempt. The chance depends on two things: " +
-                "the monster's difficulty tier and your current Capture Level.\n\n" +
-                "Beginner (cows, goblins): 25% at level 1, rising to 70% at level 99.\n" +
-                "Easy (skeletons, hobgoblins): 20% → 65%.\n" +
-                "Medium (fire giants, bloodvelds): 15% → 55%.\n" +
-                "Hard (hellhounds, gargoyles): 10% → 50%.\n" +
-                "Elite (Adamant/Rune dragons): 5% → 35%.\n" +
-                "Boss (Cerberus, Callisto, etc.): 3% → 25%.\n\n" +
-                "Only catalogued roster monsters are tracked — off-roster NPCs are ignored."));
+                "Each kill rolls a capture. The chance depends on the monster's difficulty and your " +
+                "Capture Level (level 1 → 99):\n" +
+                "• Beginner 25% → 70%\n" +
+                "• Easy 20% → 65%\n" +
+                "• Medium 15% → 55%\n" +
+                "• Hard 10% → 50%\n" +
+                "• Elite 5% → 35%\n" +
+                "• Boss 3% → 25%\n\n" +
+                "Only roster monsters are tracked."));
         c.add(tile("Rarity",
-                "When a capture succeeds, a second weighted roll picks the rarity. " +
-                "At level 1 the weights match the base percentages in the table above; " +
-                "each level shifts weight toward rarer outcomes.\n\n" +
-                "Example: Mythic goes from 0.1% at level 1 to ~1.5% at level 99 — " +
-                "about 15× more likely. Common drops from ~75% to ~46% over the same range."));
+                "A successful capture then rolls its rarity. Each level shifts the odds toward rarer " +
+                "results: Mythic goes from 0.1% at level 1 to about 1.5% at 99."));
         c.add(tile("Shiny",
-                "After rarity, a third independent roll decides whether the capture is shiny. " +
-                "It is orthogonal to rarity — any rarity can be shiny, from a Common to a Mythic.\n\n" +
-                "The chance scales with your level: 0.2% at level 1 up to 2% at level 99. The " +
-                "Shiny Charm shop unlock adds up to +0.5% on top (a separate Reroll Shine unlock " +
-                "raises shiny odds when you reroll).\n\n" +
-                "A shiny always rolls near-max stats (the top of its band), gets a golden card " +
-                "with twinkling sparkles, and is announced in chat with a ✦ SHINY ✦ marker."));
+                "A separate roll, so any rarity can be shiny: 0.2% at level 1, rising to 2% at 99 " +
+                "(Shiny Charm adds up to +0.5%). Shinies roll near-max stats, get a golden card and " +
+                "are always announced in chat."));
+        c.add(tile("Shop boosts",
+                "Two Mechanics unlocks from the Shop add extra rolls on top:\n" +
+                "• Fortune's Favour: a chance for a capture to climb one rarity after it lands.\n" +
+                "• Keen Instinct: a chance to roll the capture twice and keep the better result, " +
+                "which can even turn a miss into a catch.\n\n" +
+                "Once you own them, your chances show in Catch Rates."));
     }
 
     private void fillCards(JPanel c) {
         c.add(sectionTitle("Reading a card"));
         c.add(tile("Power Level",
-                "Power Level is a card's headline number. It blends two factual OSRS attributes of the " +
-                "monster — its Hitpoints and its combat level — with the seven rolled stats.\n\n" +
-                "Power Level = average of the 7 stats + HP ÷ 6 + combat level ÷ 6.\n\n" +
-                "The stat average stays on the 1–99 scale, while HP and combat level are added " +
-                "separately (equal weight) so they separate the difficulty tiers: HP adds ~+13 at 80 HP " +
-                "and ~+165 at 1000 HP; combat level adds ~+21 at 124 and ~+233 at 1400. " +
-                "The rolled stats are mostly flavour — difficulty drives power."));
+                "A card's headline number:\n" +
+                "average of the 7 stats + HP ÷ 6 + combat level ÷ 6\n\n" +
+                "HP and combat level do most of the work, so a boss scores far higher than a perfect " +
+                "goblin. The rolled stats are mostly flavour."));
         c.add(tile("Stats",
-                "Every capture rolls seven stats — Attack, Strength, Defence, Magic, Ranged, Agility " +
-                "and Prayer (Prayer and Agility roll on a smaller scale).\n\n" +
-                "Each stat is rolled from that monster's own base value for it — so a hard-hitting " +
-                "monster tends to roll high Attack/Strength, a caster high Magic, and so on. Rarity " +
-                "then lifts the whole roll toward 99 (higher rarity = higher lift), and shiny cards " +
-                "anchor to the very top of the band plus a bonus. Within each band there's random " +
-                "wiggle room, and the bands overlap — so a lucky Rare can beat an unlucky Epic."));
+                "Attack, Strength, Defence, Magic, Ranged, Agility and Prayer (the last two on a " +
+                "smaller scale). Each rolls from the monster's own base value, then rarity lifts it " +
+                "toward 99. The ranges overlap, so a lucky Rare can beat an unlucky Epic."));
         c.add(tile("Album",
-                "A full album grid of every capturable species. Open it via 'Open Album' (in all " +
-                "Collection views and on this tab).\n\n" +
-                "Clicking a species card opens a detail view of all your captures of it, paginated " +
-                "(8 / 12 / 16 per page) with a sort dropdown and rarity filter. Each catalog card " +
-                "shows the species image, combat level, difficulty tier, and rarity dots for " +
-                "rarities you have caught. Search or filter by difficulty to narrow the catalog."));
+                "Every capturable monster in one grid. Search or filter by difficulty, or click a " +
+                "monster to see all your copies, with sorting, rarity filters and pages."));
+        c.add(tile("Card Info",
+                "Left-click a card (or right-click → Card info + export) for its details: Overview, " +
+                "Odds, a stat Graph and its Reroll history, plus the export options."));
+        c.add(tile("Album cover & nicknames",
+                "Right-click a card → Set as album cover to choose which card represents that " +
+                "monster in the Album. Right-click → Name capture to give a card a nickname (up to " +
+                "20 characters)."));
         c.add(tile("Favourites",
-                "Right-click any card or row → 'Add to Favourites' to star it (up to 20). " +
-                "Remove a star the same way.\n\n" +
-                "The ★ Favourites button in the Collection header shows all starred cards. In the " +
-                "Album, a ★ Favourites shortcut opens a detail view of every starred capture."));
+                "Right-click a card → Add to Favourites (up to 20). Starred cards appear under " +
+                "★ Favourites here, in the Cards tab and in the Album."));
         c.add(tile("Export",
-                "Left-click a card, or right-click → 'Card info + export'. The card window opens on " +
-                "its Export tab: a scaled preview with Copy Image / Save PNG. Each footer shows the " +
-                "card's unique ID, the player who captured it, a 'Rerolled N times' line if it has " +
-                "been rerolled, and the OSRS | Bestiary stamp.\n\n" +
-                "Right-click → 'Copy' still copies the card straight to the clipboard without opening " +
-                "the window. In the Album detail view, 'Export Page' saves the current page as a grid."));
+                "Left-click a card (or right-click → Card info + export), then Copy Image or Save " +
+                "PNG. Right-click → Copy is a quick clipboard copy, and the Album's Export Page " +
+                "saves a whole page as a grid."));
     }
 
     private void fillEconomy(JPanel c) {
         c.add(sectionTitle("Credits & the shop"));
         c.add(tile("Bestiary Credits",
-                "You earn Bestiary Credits on every successful capture. The award scales with " +
-                "difficulty × rarity, and a shiny doubles it.\n\n" +
-                "Rough guide: a Beginner Common is worth a couple of credits; a Boss Mythic is " +
-                "worth about 480 (960 if shiny).\n\n" +
-                "You also earn credits from progression: every Capture Level pays a bounty of " +
-                "level × 10 (Lv50 = 500), and each achievement grants a one-off reward scaled to " +
-                "its grind — from 10 for favouriting a card up to tens of thousands for the big " +
-                "milestones.\n\n" +
-                "Spend them in the Shop on the Card Reroller and passive unlocks below. Your lifetime " +
-                "earned and spent totals are tracked in the Economy dashboard."));
+                "Earned on every capture, scaled by difficulty × rarity (shiny doubles it): about 2 " +
+                "for a Beginner Common, up to ~480 for a Boss Mythic. Level-ups pay level × 10, and " +
+                "achievements pay one-off rewards. Lifetime totals are on the Economy dashboard."));
         c.add(tile("Card Reroller",
-                "Right-click a card → 'Reroll (shop)…' to re-roll its stats and shiny at the " +
-                "same monster and rarity — a chance to improve a roll or hit a shiny.\n\n" +
-                "The cost scales with the card's difficulty × rarity (shiny doesn't change it): from " +
-                "20 credits for a Beginner Common up to 1,200 for a Boss Mythic. The Haggler shop " +
-                "unlock cuts this cost by up to 20%.\n\n" +
-                "A shiny stays shiny; a non-shiny gets a fresh shiny roll (raised by the Reroll Shine " +
-                "shop unlock). Non-Mythic cards have a 5% base chance to rank up one rarity " +
-                "(raised by the Reroll Fortune shop unlock). Your " +
-                "favourite, nickname and album cover are kept. A rerolled card is marked " +
-                "'Rerolled N times' and shows a before/after result with a 'What were the odds?' " +
-                "breakdown — remember those odds describe a raw pull, not a rerolled card."));
+                "Right-click a card → Reroll to re-roll its stats and shiny at the same rarity. Costs " +
+                "20 (Beginner Common) up to 1,200 (Boss Mythic); Haggler takes up to 20% off.\n\n" +
+                "Non-Mythic cards have a 5% chance to rank up a rarity. Shinies stay shiny, and the " +
+                "favourite, nickname and album cover are kept."));
         c.add(tile("Discard",
-                "Don't want a card? Right-click → 'Discard…' to trade it for credits — the refund is " +
-                "its base capture value, and shinies are worth a guaranteed +500 credits. From the Album you can " +
-                "multi-select to discard several at once.\n\n" +
-                "Discarding is permanent: the card is removed from your collection."));
-        c.add(tile("Shop",
-                "The Shop tab is where credits are spent. It offers the Card Reroller (right-click a " +
-                "card) and the passive unlocks below, grouped into Progression and Rerolls " +
-                "categories; more tools are on the way."));
-        c.add(tile("Passive unlocks",
-                "The Shop tab sells permanent passive upgrades in two categories (cost rises per " +
-                "tier):\n\n" +
-                "Progression:\n" +
-                "• Hunter's Bounty — +2 credits per tier (up to +10) added to every capture reward.\n" +
-                "• Salvager's Eye — +2% per tier to credits earned from discarding cards.\n" +
-                "• Hunter's Focus — +5 XP per tier (up to +25) added to every kill's XP.\n" +
-                "• Scholar's Insight — +5% per tier (up to +25%) to the XP from every capture.\n" +
-                "• Shiny Charm — +0.1% per tier (up to +0.5%) to your capture shiny chance.\n" +
-                "• Fortune's Favour — +1% per tier (up to +5%) chance a capture rolls one rarity " +
-                "higher. Owning any tier is what enables the roll, so tier 1 costs the most.\n\n" +
-                "Rerolls:\n" +
-                "• Reroll Shine — +0.1% per tier to the shiny chance when you reroll a card.\n" +
-                "• Reroll Fortune — +1% per tier to the chance a reroll ranks a card up one rarity.\n" +
-                "• Haggler — 4% per tier (up to 20%) off the credit cost of every Card Reroller use.\n\n" +
-                "Each card shows its current bonus and what the next tier upgrades it to before you buy."));
+                "Right-click → Discard to trade a card for its base capture value (shinies +500). " +
+                "Discarding is permanent.\n\n" +
+                "For bulk clear-outs, use Discard duplicates in the Album: it keeps your best copy of " +
+                "each monster and rarity, and can protect favourites, album covers and shinies."));
+        c.add(tile("Shop unlocks",
+                "Permanent upgrades bought with credits. Each shows your current and next-tier " +
+                "bonus before you buy.\n\n" +
+                "Progression\n" +
+                "• Hunter's Bounty: +2 credits per capture per tier (max +10)\n" +
+                "• Salvager's Eye: +2% discard credits per tier (max +10%)\n" +
+                "• Hunter's Focus: +5 kill XP per tier (max +25)\n" +
+                "• Scholar's Insight: +5% capture XP per tier (max +25%)\n\n" +
+                "Mechanics\n" +
+                "• Fortune's Favour: +1% per tier that a capture rolls one rarity higher (max 5%)\n" +
+                "• Keen Instinct: +2% per tier to roll a capture twice and keep the better result, " +
+                "even turning a miss into a catch (max 10%)\n" +
+                "• Shiny Charm: +0.1% shiny chance per tier (max +0.5%)\n\n" +
+                "Rerolls\n" +
+                "• Reroll Shine: +0.1% reroll shiny chance per tier\n" +
+                "• Reroll Fortune: +1% reroll rank-up chance per tier\n" +
+                "• Haggler: -4% reroll cost per tier (max -20%)\n\n" +
+                "Tier 1 of Fortune's Favour and Keen Instinct costs the most, because it's what " +
+                "unlocks the roll."));
+        c.add(tile("Level 99 shop",
+                "Unlocks at Capture Level 99. Find out what's inside when you get there!"));
         c.add(tile("No real-world value",
-                "Bestiary is a free, fan-made minigame — it's all just for fun. Bestiary Credits, cards, " +
-                "rarities, shinies and Power Levels live entirely inside this plugin: they have no " +
-                "real-world or in-game value, can't be bought, sold or traded for real money, RuneScape " +
-                "GP or items, and give no advantage in Old School RuneScape.\n\n" +
+                "Bestiary is a free, fan-made minigame, and it's all just for fun. Bestiary Credits, " +
+                "cards, rarities, shinies and Power Levels live entirely inside this plugin: they have " +
+                "no real-world or in-game value, can't be bought, sold or traded for real money, " +
+                "RuneScape GP or items, and give no advantage in Old School RuneScape.\n\n" +
                 "Bestiary isn't affiliated with or endorsed by Jagex. Old School RuneScape is a trademark " +
                 "of Jagex Ltd; all monster names and artwork belong to Jagex and the OSRS Wiki."));
     }
@@ -425,54 +382,63 @@ public class InfoTab extends JPanel {
     private void fillProgress(JPanel c) {
         c.add(sectionTitle("Progress & stats"));
         c.add(tile("XP & levels",
-                "You earn experience from kills and captures. Your Capture Level runs 1–99 " +
-                "(with virtual levels beyond).\n\n" +
-                "Kill XP is a flat amount by difficulty tier: Beginner 5, Easy 10, Medium 15, " +
-                "Hard 20, Elite 25, Boss 30. Only monsters in the roster award XP.\n\n" +
-                "Capture XP is a much bigger bonus: base × rarity multiplier, where base = the " +
-                "monster's combat level × 10 (minimum 10), capped at combat level 100. Multipliers: " +
-                "Common 1×, Uncommon 2×, Rare 5×, Epic 10×, Legendary 25×, Mythic 50×.\n\n" +
-                "Examples: a Common catch of a level-2 mob = 20 XP; a Rare catch of a level-50 mob = " +
-                "500 × 5 = 2,500 XP. The cap means any monster level 100+ pays the same ceiling — up " +
-                "to Mythic 50,000. For reference, level 99 is 13,034,431 XP.\n\n" +
-                "So low-level mobs are best caught for cards + credits, while high-level kills are a " +
-                "steady XP source even when you don't land the catch."));
+                "Capture Level runs 1–99, then virtual levels to 126.\n\n" +
+                "Kill XP by difficulty: Beginner 5, Easy 10, Medium 15, Hard 20, Elite 25, Boss 30.\n\n" +
+                "Capture XP = combat level × 10 (min 10, capped at combat 100) × rarity: Common 1×, " +
+                "Uncommon 2×, Rare 5×, Epic 10×, Legendary 25×, Mythic 50×. A Rare catch of a " +
+                "level-50 monster = 2,500 XP."));
+        c.add(tile("Achievements",
+                "The Progress tab lists every achievement; hover one to see its credit reward. Tick " +
+                "'Hide complete' to see only what's left."));
         c.add(tile("Dashboards",
-                "The four stat boxes at the top of this tab are clickable — each opens a dashboard: " +
-                "Progression, Economy, Species and Caught.\n\n" +
-                "They break down your collection with bar charts and top-10 tables. The Economy " +
-                "dashboard shows lifetime credits earned/spent, reroll activity and your owned shop " +
-                "upgrades. Right-click a box to copy that dashboard as a shareable card image."));
+                "Click a stat box at the top for its dashboard (Progression, Economy, Species, " +
+                "Caught). Right-click one to copy it as an image."));
+        c.add(tile("Multiple accounts",
+                "Each account keeps its own collection. Use the dropdown at the top of the panel to " +
+                "view another account's collection (read-only). Transfer cards in the Album moves " +
+                "cards between your own accounts."));
         c.add(tile("Session Recap",
-                "A button on the Progress tab shows every capture made since you last logged in, " +
-                "with rarity (colour-coded), Power Level, region and time, plus a rarity summary.\n\n" +
-                "'Copy Summary' places the list on your clipboard as a code block so it pastes " +
-                "cleanly into Discord."));
+                "Lists every capture since you logged in. 'Copy Summary' pastes cleanly into Discord."));
+        c.add(Box.createVerticalStrut(10));
+        c.add(tile("Reset Progress & Collection",
+                "Permanently deletes all captures, kill counts, XP, levels and achievements for the " +
+                "account you're logged in on. You'll be asked to confirm twice."));
+        resetBtn = new JButton("Reset Progress & Collection?");
+        resetBtn.setFont(FontManager.getRunescapeSmallFont());
+        resetBtn.setBackground(new Color(80, 20, 20));
+        resetBtn.setForeground(new Color(220, 100, 100));
+        resetBtn.setBorderPainted(false);
+        resetBtn.setFocusPainted(false);
+        resetBtn.setToolTipText("Permanently delete all captures and progression");
+        resetBtn.setAlignmentX(LEFT_ALIGNMENT);
+        resetBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
+        resetBtn.addActionListener(e -> { if (onReset != null) onReset.run(); });
+        c.add(resetBtn);
+    }
+
+    /** Reset acts on the PLAYED account — only enabled when logged in and not viewing another account. */
+    public void setResetEnabled(boolean enabled) {
+        if (resetBtn != null) resetBtn.setEnabled(enabled);
     }
 
     private void fillAlerts(JPanel c) {
-        c.add(sectionTitle("Notifications & data"));
+        c.add(sectionTitle("Notifications"));
         c.add(tile("Capture overlay",
-                "A small notification panel appears on screen each time a capture succeeds. " +
-                "Position and width are configurable in the RuneLite Config panel under Bestiary.\n\n" +
-                "An optional collection-jar animation can play on every kill attempt before the " +
-                "result is revealed — toggle 'Show Capture Animation' in Config. Rapid kills queue " +
-                "so every result still plays."));
+                "A notification appears on each capture; set its position and width in Config. The " +
+                "optional collection-jar animation plays on every kill attempt, and rapid kills queue " +
+                "so none are skipped."));
         c.add(tile("Chat notifications",
-                "Two modes, selected in Config under 'Chat Notification Mode':\n\n" +
-                "Verbose — one message per capture with rarity, NPC name, kill number and Power " +
-                "Level. The kill number keeps messages unique (RuneLite drops duplicates).\n\n" +
-                "Batched — repeated NPC+rarity kills are held for 9 seconds of inactivity then sent " +
-                "as one summary (e.g. '3× Common Goblin captured!  Kill #42  PWR:28, 35, 41'). " +
-                "Shinies always announce immediately."));
+                "Verbose: one message per capture.\n" +
+                "Batched: repeat captures of the same monster and rarity are grouped into one message " +
+                "after 9 seconds of quiet.\n\n" +
+                "Shinies always announce straight away."));
+        c.add(tile("Discord alerts",
+                "Paste a Discord channel webhook URL into 'Discord Webhook' in Config to post a card " +
+                "image whenever you catch a Legendary or better, or a shiny Epic or better. Leave it " +
+                "blank to turn it off. Only the card image and capture details are sent."));
         c.add(tile("Level-up alerts",
-                "When your Capture Level increases, a gold banner plays on the overlay and a message " +
-                "is sent to your chatbox.\n\n" +
-                "The chat message is controlled by 'Notify On Level Up' in Config (on by default) — " +
-                "turn it off if you only want the on-screen banner."));
-        c.add(tile("Reset Progress & Collection",
-                "The 'Reset Progress & Collection?' button on the Progress tab permanently deletes all " +
-                "captures, kill counts, XP, levels and achievements. You are asked to confirm twice."));
+                "A gold banner plays when you level up, plus a chat message you can turn off with " +
+                "'Notify On Level Up' in Config."));
     }
 
     // -------------------------------------------------------------------------
@@ -562,7 +528,7 @@ public class InfoTab extends JPanel {
                     if (openDashboard != null) openDashboard.accept(view);
                 } else if (e.getButton() == MouseEvent.BUTTON3) {
                     JPopupMenu menu = new JPopupMenu();
-                    JMenuItem open = new JMenuItem("Open Dashboard — " + view.label);
+                    JMenuItem open = new JMenuItem("Open Dashboard: " + view.label);
                     open.addActionListener(ev -> { if (openDashboard != null) openDashboard.accept(view); });
                     JMenuItem copy = new JMenuItem("Copy " + view.label + " Card");
                     copy.addActionListener(ev -> { if (exportDashboard != null) exportDashboard.accept(view); });

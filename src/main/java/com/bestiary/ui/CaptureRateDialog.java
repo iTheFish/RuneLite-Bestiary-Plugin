@@ -2,7 +2,6 @@ package com.bestiary.ui;
 
 import com.bestiary.model.CreatureRarity;
 import com.bestiary.model.DifficultyTier;
-import com.bestiary.service.ProgressionService;
 import net.runelite.client.ui.FontManager;
 
 import javax.swing.*;
@@ -24,17 +23,16 @@ public class CaptureRateDialog extends JDialog {
 
     private static CaptureRateDialog current;
 
-    public static void open(Window owner, ProgressionService ps, double shinyBonus) {
-        open(owner, ps.getLevel(), shinyBonus);
-    }
-
     /** Opens for a specific bestiary level — used so a viewed account shows ITS rates, not yours (#48). */
-    public static void open(Window owner, int level, double shinyBonus) {
+    public static void open(Window owner, int level, double shinyBonus, double[] catchBonusByTier,
+                            double fortuneChance, double doubleRollChance) {
         if (current != null) current.dispose();
-        current = new CaptureRateDialog(owner, level, shinyBonus);
+        current = new CaptureRateDialog(owner, level, shinyBonus, catchBonusByTier,
+                fortuneChance, doubleRollChance);
     }
 
-    private CaptureRateDialog(Window owner, int level, double shinyBonus) {
+    private CaptureRateDialog(Window owner, int level, double shinyBonus, double[] catchBonusByTier,
+                              double fortuneChance, double doubleRollChance) {
         super(owner, "Capture Rates", ModalityType.MODELESS);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setResizable(false);
@@ -44,7 +42,7 @@ public class CaptureRateDialog extends JDialog {
         root.setBackground(BG);
         root.setBorder(new EmptyBorder(12, 14, 14, 14));
 
-        JLabel title = new JLabel("CAPTURE RATES  —  LEVEL " + level);
+        JLabel title = new JLabel("CAPTURE RATES  ·  LEVEL " + level);
         title.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         title.setForeground(ORANGE);
         title.setAlignmentX(LEFT_ALIGNMENT);
@@ -53,15 +51,33 @@ public class CaptureRateDialog extends JDialog {
 
         root.add(sectionHeader("CATCH CHANCE BY DIFFICULTY"));
         root.add(Box.createVerticalStrut(4));
-        root.add(buildCatchTable(level));
+        root.add(buildCatchTable(level, catchBonusByTier));
+        boolean anyCatchBoost = false;
+        if (catchBonusByTier != null) {
+            for (double b : catchBonusByTier) if (b > 0) anyCatchBoost = true;
+        }
+        if (anyCatchBoost) {
+            root.add(Box.createVerticalStrut(2));
+            root.add(noteRow("★ includes your Level 99 shop catch-rate boost."));
+        }
         root.add(Box.createVerticalStrut(14));
 
         root.add(sectionHeader("RARITY ODDS AT YOUR LEVEL"));
         root.add(Box.createVerticalStrut(4));
         root.add(buildRarityTable(level));
+        // Shop Mechanics unlocks act on top of the table above — only shown once owned.
+        if (fortuneChance > 0 || doubleRollChance > 0) root.add(Box.createVerticalStrut(2));
+        if (fortuneChance > 0) {
+            root.add(noteRow(String.format("★ Fortune's Favour: %.0f%% chance a capture climbs one rarity.",
+                    fortuneChance * 100.0)));
+        }
+        if (doubleRollChance > 0) {
+            root.add(noteRow(String.format("★ Keen Instinct: %.0f%% chance to roll twice, keep the better.",
+                    doubleRollChance * 100.0)));
+        }
         root.add(Box.createVerticalStrut(12));
 
-        root.add(noteRow("These are separate rolls: first the catch lands (or doesn't),"));
+        root.add(noteRow("Catch and rarity are separate rolls: first the catch lands (or not),"));
         root.add(noteRow("then rarity is decided. Both improve as your level rises."));
         root.add(Box.createVerticalStrut(8));
 
@@ -75,7 +91,7 @@ public class CaptureRateDialog extends JDialog {
         shinyTitle.setForeground(new Color(255, 235, 120));
         shinyTitle.setAlignmentX(LEFT_ALIGNMENT);
         root.add(shinyTitle);
-        root.add(noteRow("A third independent roll — any rarity can be shiny (0.2% at"));
+        root.add(noteRow("A third independent roll: any rarity can be shiny (0.2% at"));
         root.add(noteRow("Lv 1, up to 2% at Lv 99). A shiny always rolls near-max stats."));
 
         setContentPane(root);
@@ -90,18 +106,21 @@ public class CaptureRateDialog extends JDialog {
     // Catch chance table
     // -------------------------------------------------------------------------
 
-    private static JPanel buildCatchTable(int level) {
+    private static JPanel buildCatchTable(int level, double[] catchBonusByTier) {
         JPanel panel = col();
         panel.add(tableRow("Difficulty", "Your level", "Max (cap)", new Color(180, 180, 180), true));
         panel.add(Box.createVerticalStrut(2));
 
         // Read straight from the live formula (level 99 = the max) so the table can never drift.
         for (DifficultyTier tier : DifficultyTier.values()) {
-            double rate = com.bestiary.service.CaptureService.calculateCatchRate(level, tier);
-            double max  = com.bestiary.service.CaptureService.calculateCatchRate(99, tier);
+            double bonus = (catchBonusByTier != null && tier.ordinal() < catchBonusByTier.length)
+                    ? catchBonusByTier[tier.ordinal()] : 0.0;
+            double rate = com.bestiary.service.CaptureService.calculateCatchRate(level, tier, bonus);
+            double max  = com.bestiary.service.CaptureService.calculateCatchRate(99, tier, bonus);
             String cur  = String.format("%.1f%%", rate * 100);
             String cap  = String.format("%.0f%%", max * 100);
-            panel.add(tableRow("● " + tier.label, cur, cap, tier.displayColor, false));
+            String name = "● " + tier.label + (bonus > 0 ? " ★" : "");
+            panel.add(tableRow(name, cur, cap, tier.displayColor, false));
             panel.add(Box.createVerticalStrut(1));
         }
         return panel;

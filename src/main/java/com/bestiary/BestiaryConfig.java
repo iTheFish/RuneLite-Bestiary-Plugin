@@ -103,7 +103,7 @@ public interface BestiaryConfig extends Config {
             name = "Discord Webhook",
             description = "<html>Paste a Discord channel webhook URL to post a card image<br>"
                         + "when you capture a Legendary+ creature or a shiny Epic+.<br>"
-                        + "Leave blank to disable — nothing is ever sent without a URL.<br>"
+                        + "Leave blank to disable; nothing is ever sent without a URL.<br>"
                         + "Only the card image and capture details are sent; no account data.</html>",
             section = notificationsSection,
             position = 5,
@@ -221,11 +221,11 @@ public interface BestiaryConfig extends Config {
             name = "Fetch NPC images from the Wiki",
             description = "<html>Downloads monster artwork from the OSRS Wiki<br>"
                         + "(oldschool.runescape.wiki) to show on cards and in the album.<br>"
-                        + "Only the monster's name is requested — no account or personal<br>"
-                        + "data is sent — and images are cached to disk.<br>"
+                        + "Only the monster's name is requested (no account or personal<br>"
+                        + "data is sent), and images are cached to disk.<br>"
                         + "Already-downloaded artwork keeps showing even if you<br>"
                         + "turn this off; the toggle only controls new downloads.<br>"
-                        + "<b>Off by default</b> — turn it on for the best album experience.</html>",
+                        + "<b>Off by default</b>: turn it on for the best album experience.</html>",
             section = albumSection,
             position = 1
     )

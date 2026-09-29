@@ -178,13 +178,13 @@ public class BestiaryPanel extends PluginPanel {
         collectionTab = new CollectionTab(dataService, imageService);
         progressTab   = new ProgressTab(progressionService, sessionTracker,
                 () -> DashboardDialog.open(SwingUtilities.getWindowAncestor(this), dataService,
-                        progressionService, DashboardDialog.DashView.PROGRESSION),
-                this::confirmWipe);
+                        progressionService, DashboardDialog.DashView.PROGRESSION));
         shopTab       = new ShopTab(dataService, progressionService,
                 () -> DashboardDialog.open(SwingUtilities.getWindowAncestor(this), dataService,
                         progressionService, DashboardDialog.DashView.ECONOMY));
 
         tabs = new JTabbedPane();
+        TabStyle.apply(tabs);
         tabs.setBackground(ColorScheme.DARK_GRAY_COLOR);
         tabs.setForeground(Color.WHITE);
         tabs.setFont(FontManager.getRunescapeSmallFont());
@@ -194,9 +194,12 @@ public class BestiaryPanel extends PluginPanel {
                 () -> { if (tabs.getTabCount() > 1) { tabs.setSelectedIndex(1); collectionTab.showFavourites(); } },
                 () -> SessionRecapDialog.open(SwingUtilities.getWindowAncestor(this), sessionTracker),
                 () -> CaptureRateDialog.open(SwingUtilities.getWindowAncestor(this),
-                        dataService.getDisplayLevel(), dataService.displayBonusShinyChance()),
+                        dataService.getDisplayLevel(), dataService.displayBonusShinyChance(),
+                        dataService.displayCatchRateBonusByTier(),
+                        dataService.displayCaptureRarityChance(), dataService.displayDoubleRollChance()),
                 view -> DashboardDialog.open(SwingUtilities.getWindowAncestor(this), dataService, progressionService, view),
-                view -> DashboardDialog.copyViewToClipboard(dataService, progressionService, view));
+                view -> DashboardDialog.copyViewToClipboard(dataService, progressionService, view),
+                this::confirmWipe);
 
         tabs.addTab("Info",     infoTab);
         tabs.addTab("Cards",    collectionTab);
@@ -274,7 +277,7 @@ public class BestiaryPanel extends PluginPanel {
             this.hash = hash; this.rsn = rsn; this.played = played;
         }
         @Override public String toString() {
-            if (hash == null) return "— Not logged in —";
+            if (hash == null) return "Not logged in";
             String name = rsn != null && !rsn.isEmpty() ? rsn : "Unknown";
             return played ? "★ " + name + " (you)" : "👁 " + name;
         }
@@ -294,7 +297,7 @@ public class BestiaryPanel extends PluginPanel {
                 AccountItem sel = (AccountItem) accountSwitcher.getSelectedItem();
                 if (sel == null) return;
                 if (sel.hash == null) {
-                    // "— Not logged in —" placeholder: stop viewing if we were (matches the Return button).
+                    // "Not logged in" placeholder: stop viewing if we were (matches the Return button).
                     if (dataService.isViewing()) {
                         dataService.clearView();
                         closeAllBestiaryWindows();
@@ -370,7 +373,7 @@ public class BestiaryPanel extends PluginPanel {
                         toSelect = item;
                     }
                 }
-                // Logged out and not viewing → show the placeholder ("— Not logged in —").
+                // Logged out and not viewing → show the placeholder ("Not logged in").
                 if (toSelect == null && placeholder != null) toSelect = placeholder;
                 if (toSelect != null) accountSwitcher.setSelectedItem(toSelect);
             } finally {
@@ -471,6 +474,7 @@ public class BestiaryPanel extends PluginPanel {
         infoTab.setInteractiveEnabled(state != PanelState.LOCKED);
         // While viewing another account, disable the "your play" shortcuts (Session Recap, Favourites).
         infoTab.setViewingAnotherAccount(state == PanelState.VIEWING);
+        infoTab.setResetEnabled(state == PanelState.NORMAL);
     }
 
     /** Rebuilds the tab set to match {@code state}. Only called on transitions (see {@link #applyState}). */
@@ -545,7 +549,7 @@ public class BestiaryPanel extends PluginPanel {
         version.setAlignmentX(CENTER_ALIGNMENT);
         version.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
         version.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        version.setToolTipText("What's new — version log");
+        version.setToolTipText("What's new: version log");
         java.util.function.Consumer<Boolean> style = hot -> {
             version.setForeground(hot ? hotFg : idleFg);
             version.setBackground(hot ? hotBg : idleBg);
@@ -565,7 +569,7 @@ public class BestiaryPanel extends PluginPanel {
         return panel;
     }
 
-    /** Confirms (twice) and permanently wipes the played collection. Triggered from the Progress tab. */
+    /** Confirms (twice) and permanently wipes the played collection. Triggered from Info → Progress. */
     void confirmWipe() {
         int first = JOptionPane.showConfirmDialog(
                 this,
@@ -657,7 +661,7 @@ public class BestiaryPanel extends PluginPanel {
             String who = dataService.getViewedAccountName();
             viewingBannerLabel.setText("<html><span style='color:#7FB8E6;'>👁 Viewing "
                     + "<b>" + (who == null || who.isEmpty() ? "another account" : who)
-                    + "</b> — read-only</span></html>");
+                    + "</b> (read-only)</span></html>");
         } else {
             // Achievements only fire for the played account (never while browsing someone else's cards).
             checkAndNotifyAchievements();

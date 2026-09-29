@@ -216,7 +216,7 @@ public class SessionRecapDialog extends JDialog {
         nameLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
         nameLabel.setForeground(c.rarity.displayColor);
 
-        JLabel rarLabel = new JLabel("— " + c.rarity.label);
+        JLabel rarLabel = new JLabel("· " + c.rarity.label);
         rarLabel.setFont(FontManager.getRunescapeSmallFont());
         rarLabel.setForeground(new Color(
                 c.rarity.displayColor.getRed(),

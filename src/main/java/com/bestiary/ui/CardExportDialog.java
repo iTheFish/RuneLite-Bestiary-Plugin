@@ -118,7 +118,7 @@ public final class CardExportDialog {
         };
         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(t, null);
         if (onCopyAction != null) {
-            onCopyAction.accept("Card copied: " + capture.npcName + " — " + cardId);
+            onCopyAction.accept("Card copied: " + capture.npcName + " · " + cardId);
         }
     }
 

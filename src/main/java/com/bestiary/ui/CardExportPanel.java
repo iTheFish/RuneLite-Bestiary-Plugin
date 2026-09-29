@@ -228,7 +228,7 @@ public class CardExportPanel extends JPanel {
         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(t, null);
         java.util.function.Consumer<String> onCopy = CardExportDialog.onCopyAction();
         if (onCopy != null) {
-            onCopy.accept("Card exported to clipboard for " + npcName + " — ID: " + cardId);
+            onCopy.accept("Card exported to clipboard for " + npcName + ", ID: " + cardId);
         }
     }
 

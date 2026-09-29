@@ -82,7 +82,7 @@ public class CardDataDialog extends JDialog {
     private final JComponent bottomBar;
 
     private CardDataDialog(Window owner, CapturedCreature capture) {
-        super(owner, "Card data — " + capture.npcName, ModalityType.MODELESS);
+        super(owner, "Card data: " + capture.npcName, ModalityType.MODELESS);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         float base = FontManager.getRunescapeSmallFont().getSize2D();
         this.body     = FontManager.getRunescapeSmallFont().deriveFont(base + 1f);
@@ -293,7 +293,7 @@ public class CardDataDialog extends JDialog {
         p.add(kv("Region", c.regionName != null && !c.regionName.isEmpty() ? c.regionName : "Unknown", Color.WHITE));
         p.add(kv("Bestiary level", String.valueOf(c.captureLevel), Color.WHITE));
         p.add(kv("Kills before catch", String.valueOf(c.killsBeforeCapture), Color.WHITE));
-        p.add(kv("Combat level", c.npcCombatLevel >= 0 ? String.valueOf(c.npcCombatLevel) : "—", Color.WHITE));
+        p.add(kv("Combat level", c.npcCombatLevel >= 0 ? String.valueOf(c.npcCombatLevel) : "-", Color.WHITE));
 
         // Use the ORIGINAL rarity/shiny (the first reroll snapshot) so a rerolled/upgraded card still
         // reports the reward + XP it earned when first caught, not its current form.
@@ -369,7 +369,7 @@ public class CardDataDialog extends JDialog {
         JPanel p = column();
 
         if (c.rerollCount() == 0) {
-            JLabel none = new JLabel("This card has never been rerolled — it's a raw pull.");
+            JLabel none = new JLabel("This card has never been rerolled, so it's a raw pull.");
             none.setFont(body);
             none.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
             none.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -423,7 +423,7 @@ public class CardDataDialog extends JDialog {
         }
         // Current (latest) state
         addRerollRow(t, g, row, "Current", c.rarity.label, c.rarity.displayColor,
-                c.powerLevel(), c.isShiny(), "—", "now");
+                c.powerLevel(), c.isShiny(), "-", "now");
 
         t.setMaximumSize(new Dimension(Integer.MAX_VALUE, t.getPreferredSize().height));
         p.add(t);

@@ -20,7 +20,7 @@ public class AboutDialog extends JDialog {
 
     private static final Color ORANGE = new Color(255, 165, 0);
     private static final String GITHUB_URL  = "https://github.com/iTheFish/RuneLite-Bestiary-Plugin";
-    private static final String DISCORD_URL = "https://discord.gg/2HWSHH4mS5";
+    static final String DISCORD_URL = "https://discord.gg/2HWSHH4mS5";
     private static AboutDialog current;
 
     public static void open(Window owner) {
@@ -39,6 +39,22 @@ public class AboutDialog extends JDialog {
 
     // Newest first. Future releases get prepended above v1.0.0.
     private static final Release[] RELEASES = {
+        new Release("v1.1.2", "Level 99 shop & polish", new String[][]{
+            {"Level 99 shop", "Reach Capture Level 99 to unlock a new tab of endgame upgrades. Find out "
+                + "what's inside when you get there! Consumables are coming soon."},
+            {"Fortune's Favour, shown", "When Fortune's Favour bumps a capture, chat now shows the rarity "
+                + "it climbed from and to. Your Fortune's Favour and Keen Instinct chances also show in "
+                + "Catch Rates."},
+            {"Mac right-click fix", "Right-click menus, including Reroll, now open properly on macOS."},
+            {"Protect shinies", "Discard duplicates now has a Protect shinies option, on by default."},
+            {"Hide complete achievements", "A new toggle on the Progress tab hides the achievements "
+                + "you've already unlocked."},
+            {"Bigger XP milestone rewards", "The post-99 XP achievements (25M up to 200M) now pay out "
+                + "far more credits, topping out at 150,000 for hitting the 200M cap."},
+            {"Tidier Info tab & new tab look", "All the Info text has been trimmed, brought up to date and "
+                + "now covers every feature. The main tabs have a fresh gold style, and the Reset button now "
+                + "lives at the bottom of Info → Progress."},
+        }),
         new Release("v1.1.1", "Kill tracking fix", new String[][]{
             {"Kills count once again", "A recent RuneLite update changed the order the game reports a "
                 + "monster's death and your final hit. That made kills count twice and gave cards the "
@@ -64,9 +80,9 @@ public class AboutDialog extends JDialog {
                 + "to see in the Discord."},
         }),
         new Release("v1.0.2", "Bug fixes", new String[][]{
-            {"Finisher-item kills now count", "Monsters you finish off with a special item — "
+            {"Finisher-item kills now count", "Monsters you finish off with a special item ("
                 + "gargoyles (rock hammer), rockslugs (bag of salt), the Grotesque Guardians and "
-                + "more — are now captured properly instead of being missed."},
+                + "more) are now captured properly instead of being missed."},
             {"Fixed monsters", "Rockslugs and Flesh Crawlers weren't being recognised and are now "
                 + "catchable."},
             {"New monster", "Added the Al Kharid warrior, and gave the Warrior card its correct "
@@ -78,7 +94,7 @@ public class AboutDialog extends JDialog {
         }),
         new Release("v1.0.0", "First release", new String[][]{
             {"Capturing", "Every kill rolls a catch chance (by difficulty tier and your Capture Level), "
-                + "then a weighted rarity from Common to Mythic — plus an independent shiny roll."},
+                + "then a weighted rarity from Common to Mythic, plus an independent shiny roll."},
             {"Cards & Power Level", "Each capture is a card with 7 rolled stats and the monster's "
                 + "real Hitpoints, combat class and species. Its headline Power Level blends the stats "
                 + "with HP and combat level, so bosses outclass trash mobs."},
@@ -195,7 +211,7 @@ public class AboutDialog extends JDialog {
         footer.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         footer.setBorder(new EmptyBorder(10, 14, 12, 14));
 
-        JTextArea thanks = new JTextArea("Thank you for installing Bestiary — I hope it makes every "
+        JTextArea thanks = new JTextArea("Thank you for installing Bestiary! I hope it makes every "
                 + "kill a little more exciting. Happy hunting! - Fish");
         thanks.setEditable(false);
         thanks.setLineWrap(true);

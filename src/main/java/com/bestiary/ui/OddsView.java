@@ -41,7 +41,7 @@ public class OddsView extends JPanel implements Scrollable {
         boolean rerolled = capture.rerolledBy != null && !capture.rerolledBy.isEmpty();
         Box titleRow = Box.createHorizontalBox();
         titleRow.setAlignmentX(Component.LEFT_ALIGNMENT);
-        JLabel title = new JLabel(capture.npcName + "  —  " + r.rarity.label + (r.shiny ? "  ✦ SHINY" : ""));
+        JLabel title = new JLabel(capture.npcName + "  ·  " + r.rarity.label + (r.shiny ? "  ✦ SHINY" : ""));
         title.setFont(FontManager.getRunescapeBoldFont());
         title.setForeground(r.rarity.displayColor);
         titleRow.add(title);
@@ -57,7 +57,7 @@ public class OddsView extends JPanel implements Scrollable {
         add(sub);
 
         if (rerolled) {
-            add(paragraph("This card was rerolled — the odds below describe a raw pull at this rarity, "
+            add(paragraph("This card was rerolled, so the odds below describe a raw pull at this rarity, "
                     + "not how this particular card was produced.", new Color(150, 120, 200)));
         }
 
@@ -88,17 +88,17 @@ public class OddsView extends JPanel implements Scrollable {
         add(perKill);
         add(paragraph("<i>Per capture = how often a capture is this rarity at level " + r.level
                 + " (high levels make rarities much more common). Per kill folds in the catch chance. "
-                + "Stat rolls are flavour — they don't affect these odds.</i>"));
+                + "Stat rolls are flavour; they don't affect these odds.</i>"));
 
         add(Box.createVerticalStrut(10));
 
         // Stats
         add(sectionHeader(r.shiny
-                ? "Stats — shiny roll bands (above " + r.rarity.label + ")"
-                : "Stats — " + r.rarity.label + " roll bands"));
+                ? "Stats: shiny roll bands (above " + r.rarity.label + ")"
+                : "Stats: " + r.rarity.label + " roll bands"));
         add(statsTable());
         add(paragraph("Higher rarities lift the roll toward 99 (bigger lift for low stats); "
-                + "lower rarities can dip below the base — never under 1. Bands overlap, so a lucky Rare "
+                + "lower rarities can dip below the base (never under 1). Bands overlap, so a lucky Rare "
                 + "can beat an unlucky Epic. Prayer and Agility roll the same way at half scale. "
                 + "<font color='#a0a0a0'>Example, base&nbsp;50: Common&nbsp;37–50, Uncommon&nbsp;41–52, "
                 + "Rare&nbsp;45–53, Epic&nbsp;50–61, Legendary&nbsp;56–74, Mythic&nbsp;70–90.</font>"));
@@ -141,7 +141,7 @@ public class OddsView extends JPanel implements Scrollable {
 
         add(paragraph("Power Level = the 7-stat average + the monster's HP and combat level, each at "
                 + "1/6 weight. HP and combat level aren't on the 1–99 scale, so they're added "
-                + "separately — <font color='#a0a0a0'>negligible for a weak creature (stats decide), but "
+                + "separately. <font color='#a0a0a0'>Negligible for a weak creature (stats decide), but "
                 + "dominant for a boss (1200&nbsp;HP adds ~200, a 1400 combat level ~233).</font>"));
     }
 

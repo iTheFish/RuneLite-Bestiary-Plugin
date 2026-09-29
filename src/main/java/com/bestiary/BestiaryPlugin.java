@@ -57,7 +57,7 @@ import java.util.concurrent.TimeUnit;
 public class BestiaryPlugin extends Plugin {
 
     /** Plugin version, shown in the panel footer. Keep in sync with build.gradle's {@code version}. */
-    public static final String VERSION = "1.1.1";
+    public static final String VERSION = "1.1.2";
 
     @Inject private Client client;
     @Inject private BestiaryConfig config;
@@ -146,7 +146,7 @@ public class BestiaryPlugin extends Plugin {
             if (pingSent.get() != pongSeen.get()) {
                 long waited = System.currentTimeMillis() - pingSent.get();
                 if (waited > 5000 && reported.compareAndSet(false, true)) {
-                    log.error("Bestiary EDT watchdog: UI unresponsive for ~{}ms — dumping AWT stack", waited);
+                    log.error("Bestiary EDT watchdog: UI unresponsive for ~{}ms, dumping AWT stack", waited);
                     for (Map.Entry<Thread, StackTraceElement[]> e : Thread.getAllStackTraces().entrySet()) {
                         if (!e.getKey().getName().startsWith("AWT-EventQueue")) continue;
                         StringBuilder sb = new StringBuilder("FROZEN ").append(e.getKey().getName()).append(":\n");
@@ -299,7 +299,7 @@ public class BestiaryPlugin extends Plugin {
         Optional<CapturedCreature> result = captureService.attemptCapture(
                 npc, location, captureLevel, killCount, region, playerName, observedDamage,
                 dataService.bonusShinyChance(), dataService.bonusCaptureRarityChance(),
-                dataService.bonusDoubleRollChance());
+                dataService.bonusDoubleRollChance(), dataService.catchRateBonusByTier());
 
         // Overlay / animation
         if (config.showCaptureAnimation()) {
@@ -572,19 +572,28 @@ public class BestiaryPlugin extends Plugin {
     }
 
     private void sendFortuneMessage(CapturedCreature creature) {
-        String formatted = new ChatMessageBuilder()
+        ChatMessageBuilder mb = new ChatMessageBuilder()
                 .append(ChatColorType.HIGHLIGHT)
                 .append("Fortune's Favour shines ")
                 .append(FORTUNE_CHAT_COLOR, "brightly")
                 .append(ChatColorType.HIGHLIGHT)
-                .append("! This capture climbed to ")
-                .append(creature.rarity.displayColor, creature.rarity.label)
+                .append("! This capture climbed ");
+        // Show the before→after climb so it reads clearly, especially when Keen Instinct also
+        // procced and every line otherwise ends in the same final rarity.
+        if (creature.fortuneFrom != null) {
+            mb.append("from ")
+                    .append(creature.fortuneFrom.displayColor, creature.fortuneFrom.label)
+                    .append(ChatColorType.HIGHLIGHT)
+                    .append(" to ");
+        } else {
+            mb.append("to ");
+        }
+        mb.append(creature.rarity.displayColor, creature.rarity.label)
                 .append(ChatColorType.HIGHLIGHT)
-                .append(".")
-                .build();
+                .append(".");
         chatMessageManager.queue(QueuedMessage.builder()
                 .type(ChatMessageType.GAMEMESSAGE)
-                .runeLiteFormattedMessage(formatted)
+                .runeLiteFormattedMessage(mb.build())
                 .build());
     }
 

@@ -288,7 +288,7 @@ public class AlbumCard extends JPanel {
         String rarityHex = String.format("#%06x", c.rarity.displayColor.getRGB() & 0xFFFFFF);
         String region = c.regionName != null && !c.regionName.isEmpty() ? c.regionName : "Unknown";
         StringBuilder sb = new StringBuilder("<html><b>").append(c.npcName)
-                .append("</b> — <font color='").append(rarityHex).append("'>").append(c.rarity.label)
+                .append("</b> · <font color='").append(rarityHex).append("'>").append(c.rarity.label)
                 .append("</font>").append(c.isShiny() ? " ✦" : "")
                 .append("<br>Caught: ").append(TIP_DATE.format(c.captureTime))
                 .append("<br>Region: ").append(region)
@@ -350,8 +350,11 @@ public class AlbumCard extends JPanel {
                 repaint();
             }
 
-            @Override
-            public void mouseReleased(MouseEvent e) {
+            // macOS delivers the popup trigger on press, Windows/Linux on release — handle both.
+            @Override public void mousePressed(MouseEvent e)  { maybeShowMenu(e); }
+            @Override public void mouseReleased(MouseEvent e) { maybeShowMenu(e); }
+
+            private void maybeShowMenu(MouseEvent e) {
                 if (e.isPopupTrigger() && !locked && captures != null) {
                     showExportMenu(e);   // read-only view shows only Copy + Card info/export (#48)
                 }
@@ -510,7 +513,7 @@ public class AlbumCard extends JPanel {
         okBtn.addActionListener(ae -> {
             String val = field.getText().trim();
             if (com.bestiary.util.ProfanityFilter.isProfane(val)) {
-                warn.setText("Let's keep it clean — try another name");
+                warn.setText("Let's keep it clean. Try another name");
                 warn.setVisible(true);
                 dlg.pack();
                 return;

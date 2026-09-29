@@ -188,6 +188,12 @@ public class ShopTab extends JPanel {
         for (ShopCategory cat : ShopCategory.values()) {
             JPanel inner = categoryPanels.get(cat);
             inner.removeAll();
+            if (cat == ShopCategory.LEVEL_99) {
+                buildLevel99Into(inner);   // locked teaser, or Passive/Consumable sub-tabs
+                inner.revalidate();
+                inner.repaint();
+                continue;
+            }
             boolean any = false;
             for (ShopUpgrade u : ShopUpgrade.values()) {
                 if (u.category != cat) continue;
@@ -196,11 +202,150 @@ public class ShopTab extends JPanel {
                 any = true;
             }
             if (!any) {
-                inner.add(cat == ShopCategory.LEVEL_99 ? level99Teaser() : emptyLabel("Nothing here yet."));
+                inner.add(emptyLabel("Nothing here yet."));
             }
             inner.revalidate();
             inner.repaint();
         }
+    }
+
+    /** Which Level 99 sub-tab is showing: 0 = Passive, 1 = Consumable. Remembered across rebuilds. */
+    private int level99Sub = 0;
+
+    /**
+     * Level 99 endgame shop: locked until Capture Level 99, then two sub-tabs — Passive (the endgame
+     * upgrades) and Consumable (coming soon).
+     */
+    private void buildLevel99Into(JPanel inner) {
+        boolean unlocked = dataService.isLevel99Unlocked();
+
+        JPanel subBar = new JPanel(new GridLayout(1, 2, 4, 4));
+        subBar.setOpaque(false);
+        subBar.setAlignmentX(LEFT_ALIGNMENT);
+        subBar.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
+        JToggleButton passiveBtn    = subTabButton("Passive");
+        JToggleButton consumableBtn = subTabButton("Consumable");
+
+        CardLayout sub = new CardLayout();
+        JPanel subContent = new JPanel(sub);
+        subContent.setOpaque(false);
+        subContent.setAlignmentX(LEFT_ALIGNMENT);
+
+        JPanel passivePanel = vbox();
+        if (!unlocked) {
+            passivePanel.add(emptyLabel("Reach Capture Level 99 to unlock these upgrades."));
+            passivePanel.add(Box.createVerticalStrut(8));
+        }
+        for (ShopUpgrade u : ShopUpgrade.values()) {
+            if (u.category != ShopCategory.LEVEL_99) continue;
+            // Locked: same dark padlock look as an uncaught album card, name only.
+            passivePanel.add(unlocked ? upgradeCard(u) : lockedUpgradeCard(u));
+            passivePanel.add(Box.createVerticalStrut(8));
+        }
+        JPanel consumablePanel = vbox();
+        consumablePanel.add(consumableTeaser());
+
+        subContent.add(passivePanel,    "P");
+        subContent.add(consumablePanel, "C");
+
+        passiveBtn.addActionListener(e -> {
+            level99Sub = 0; sub.show(subContent, "P"); styleSub(passiveBtn, consumableBtn);
+        });
+        consumableBtn.addActionListener(e -> {
+            level99Sub = 1; sub.show(subContent, "C"); styleSub(passiveBtn, consumableBtn);
+        });
+
+        subBar.add(passiveBtn);
+        subBar.add(consumableBtn);
+        inner.add(subBar);
+        inner.add(Box.createVerticalStrut(8));
+        inner.add(subContent);
+
+        styleSub(passiveBtn, consumableBtn);
+        sub.show(subContent, level99Sub == 0 ? "P" : "C");
+    }
+
+    private JToggleButton subTabButton(String text) {
+        JToggleButton b = new JToggleButton(text);
+        TabStyle.prepare(b);
+        return b;
+    }
+
+    private void styleSub(JToggleButton passive, JToggleButton consumable) {
+        TabStyle.style(passive,    level99Sub == 0); passive.setSelected(level99Sub == 0);
+        TabStyle.style(consumable, level99Sub == 1); consumable.setSelected(level99Sub == 1);
+    }
+
+    /** A padlocked Level 99 upgrade slot, styled like an uncaught album card (name only). */
+    private JPanel lockedUpgradeCard(ShopUpgrade u) {
+        JPanel card = new JPanel(new BorderLayout(10, 0)) {
+            @Override public Dimension getMaximumSize() {
+                return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
+            }
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(LOCKED_BG);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.setColor(LOCKED_ACCENT);
+                g2.fillRoundRect(0, 0, 4, getHeight(), 4, 4);
+                g2.dispose();
+            }
+        };
+        card.setOpaque(false);
+        card.setBorder(new EmptyBorder(8, 12, 8, 8));
+        card.setAlignmentX(LEFT_ALIGNMENT);
+
+        JLabel lock = new JLabel(new PadlockIcon());
+        card.add(lock, BorderLayout.WEST);
+
+        JPanel text = new JPanel(new GridLayout(2, 1, 0, 2));
+        text.setOpaque(false);
+        JLabel title = new JLabel(u.title);
+        title.setFont(FontManager.getRunescapeBoldFont());
+        title.setForeground(new Color(110, 110, 110));
+        JLabel sub = new JLabel("Unlocks at Capture Level 99");
+        sub.setFont(FontManager.getRunescapeSmallFont());
+        sub.setForeground(new Color(95, 95, 95));
+        text.add(title);
+        text.add(sub);
+        card.add(text, BorderLayout.CENTER);
+        return card;
+    }
+
+    private static final Color LOCKED_BG     = new Color(22, 22, 22);
+    private static final Color LOCKED_ACCENT = new Color(48, 48, 48);
+
+    /** Small grey padlock matching the album's locked-card padlock. */
+    private static final class PadlockIcon implements Icon {
+        @Override public int getIconWidth()  { return 22; }
+        @Override public int getIconHeight() { return 26; }
+        @Override public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int bodyW = 20, bodyH = 14, bodyX = x + 1, bodyY = y + 11;
+            int cx = bodyX + bodyW / 2;
+            g2.setColor(new Color(70, 70, 70));
+            g2.setStroke(new BasicStroke(3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            g2.drawArc(cx - 6, y + 2, 12, 16, 0, 180);
+            g2.setColor(new Color(60, 60, 60));
+            g2.fillRoundRect(bodyX, bodyY, bodyW, bodyH, 4, 4);
+            g2.setStroke(new BasicStroke(1f));
+            g2.setColor(new Color(90, 90, 90));
+            g2.drawRoundRect(bodyX, bodyY, bodyW, bodyH, 4, 4);
+            g2.setColor(new Color(30, 30, 30));
+            g2.fillOval(cx - 2, bodyY + 4, 4, 4);
+            g2.fillRect(cx - 1, bodyY + 7, 2, 4);
+            g2.dispose();
+        }
+    }
+
+    private static JPanel vbox() {
+        JPanel p = new JPanel();
+        p.setOpaque(false);
+        p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+        p.setAlignmentX(LEFT_ALIGNMENT);
+        return p;
     }
 
     private JLabel emptyLabel(String text) {
@@ -211,26 +356,28 @@ public class ShopTab extends JPanel {
         return l;
     }
 
-    /** "Coming soon" teaser card for the placeholder Level 99 endgame shop. */
-    private JPanel level99Teaser() {
-        JPanel card = new JPanel();
-        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+    /** "Coming soon" card for the Level 99 Consumable sub-tab (the mechanic is still being designed). */
+    private JPanel consumableTeaser() {
+        JPanel card = new JPanel(new BorderLayout(0, 4)) {
+            @Override public Dimension getMaximumSize() {
+                return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
+            }
+        };
         card.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         card.setBorder(BorderFactory.createCompoundBorder(
                 new LineBorder(new Color(255, 165, 0, 70), 1, true),
                 new EmptyBorder(10, 10, 10, 10)));
         card.setAlignmentX(LEFT_ALIGNMENT);
 
-        JLabel title = new JLabel("🔒 Endgame Shop");
+        JLabel title = new JLabel("🧪 Consumables");
         title.setFont(FontManager.getRunescapeBoldFont());
         title.setForeground(GOLD);
-        title.setAlignmentX(LEFT_ALIGNMENT);
-        card.add(title);
+        card.add(title, BorderLayout.NORTH);
 
         JTextArea body = new JTextArea(
-                "Coming soon. An endgame shop that unlocks at Capture Level 99.\n\n"
-                        + "Got ideas for what it should offer? Share them in the suggestions channel "
-                        + "on our Discord. Community suggestions help shape what gets built.");
+                "Coming soon. One-time boosts you buy and activate for a temporary edge, being "
+                        + "designed now.\n\nGot ideas for what they should do? Share them in the "
+                        + "suggestions channel on our Discord.");
         body.setEditable(false);
         body.setFocusable(false);
         body.setLineWrap(true);
@@ -243,7 +390,18 @@ public class ShopTab extends JPanel {
         wrap.setAlignmentX(LEFT_ALIGNMENT);
         wrap.setBorder(new EmptyBorder(4, 0, 0, 0));
         wrap.add(body, BorderLayout.CENTER);
-        card.add(wrap);
+        card.add(wrap, BorderLayout.CENTER);
+
+        JButton discord = new JButton("Discord");
+        discord.setFont(FontManager.getRunescapeSmallFont());
+        discord.setFocusPainted(false);
+        discord.setToolTipText(AboutDialog.DISCORD_URL);
+        discord.addActionListener(e -> net.runelite.client.util.LinkBrowser.browse(AboutDialog.DISCORD_URL));
+        JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        btnRow.setOpaque(false);
+        btnRow.setBorder(new EmptyBorder(4, 0, 0, 0));
+        btnRow.add(discord);
+        card.add(btnRow, BorderLayout.SOUTH);
         return card;
     }
 
@@ -324,7 +482,7 @@ public class ShopTab extends JPanel {
             buy.setForeground(PIP_ON);
         } else {
             boolean afford = dataService.getCredits() >= cost;
-            buy.setText("Buy tier " + (owned + 1) + "  —  " + cost + " credits");
+            buy.setText("Buy tier " + (owned + 1) + "  ·  " + cost + " credits");
             buy.setEnabled(afford);
             buy.setForeground(afford ? GOLD : DIM);
             buy.addActionListener(e -> {
@@ -420,6 +578,8 @@ public class ShopTab extends JPanel {
         for (ShopUpgrade u : ShopUpgrade.values()) {
             sig = sig * 31 + dataService.getUpgradeTier(u);
         }
+        // Fold in the Level 99 unlock so reaching level 99 rebuilds the shop (revealing the tab).
+        sig = sig * 31 + (dataService.isLevel99Unlocked() ? 1 : 0);
         return sig;
     }
 

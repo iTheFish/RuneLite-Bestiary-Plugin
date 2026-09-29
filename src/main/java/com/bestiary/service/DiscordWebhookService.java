@@ -67,7 +67,7 @@ public class DiscordWebhookService {
                                  java.util.function.Consumer<String> onError) {
         if (capture == null || cardImage == null) return;
         if (!looksLikeWebhook(webhookUrl)) {
-            log.debug("Discord webhook skipped — URL blank or not a webhook");
+            log.debug("Discord webhook skipped: URL blank or not a webhook");
             return;
         }
 
@@ -104,7 +104,7 @@ public class DiscordWebhookService {
             public void onResponse(Call call, Response response) {
                 try (Response r = response) {
                     if (!r.isSuccessful()) {
-                        log.warn("Discord webhook: HTTP {} — {}", r.code(), r.message());
+                        log.warn("Discord webhook: HTTP {}: {}", r.code(), r.message());
                         if (onError != null) onError.accept("HTTP " + r.code());
                     }
                 }

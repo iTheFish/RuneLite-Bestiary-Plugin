@@ -142,7 +142,7 @@ public class CreatureDetailDialog extends JDialog {
 
         String titleText = multiRarity
                 ? sample.npcName + " (" + captures.size() + " capture" + (captures.size() == 1 ? "" : "s") + ")"
-                : sample.npcName + " — " + sample.rarity.label
+                : sample.npcName + " · " + sample.rarity.label
                         + " (" + captures.size() + " capture" + (captures.size() == 1 ? "" : "s") + ")";
         JLabel titleLabel = new JLabel(titleText);
         titleLabel.setFont(FontManager.getRunescapeBoldFont());
@@ -213,7 +213,7 @@ public class CreatureDetailDialog extends JDialog {
 
         int kills    = collection.getKillCount(sample.npcName);
         int totalCap = collection.getCaptureCount(sample.npcName);
-        String ratio = kills > 0 ? "1 in " + Math.round((double) kills / Math.max(1, totalCap)) : "—";
+        String ratio = kills > 0 ? "1 in " + Math.round((double) kills / Math.max(1, totalCap)) : "-";
         JLabel statsLabel = new JLabel(String.format(
                 "Total kills: %,d  |  All captures: %d  |  Kill ratio: %s", kills, totalCap, ratio));
         statsLabel.setFont(FontManager.getRunescapeSmallFont());
@@ -374,6 +374,11 @@ public class CreatureDetailDialog extends JDialog {
         qualLabel.setForeground(qualColor);
 
         row.addMouseListener(new MouseAdapter() {
+            // macOS delivers the popup trigger on press, Windows/Linux on release — handle both.
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.isPopupTrigger() && !BestiaryPanel.isReadOnly()) showRowMenu(e);
+            }
             @Override
             public void mouseReleased(MouseEvent e) {
                 if (e.isPopupTrigger() && !BestiaryPanel.isReadOnly()) showRowMenu(e);
@@ -459,7 +464,7 @@ public class CreatureDetailDialog extends JDialog {
                     okBtn.addActionListener(ae -> {
                         String val = field.getText().trim();
                         if (com.bestiary.util.ProfanityFilter.isProfane(val)) {
-                            warn.setText("Let's keep it clean — try another name");
+                            warn.setText("Let's keep it clean. Try another name");
                             warn.setVisible(true);
                             nickDlg.pack();
                             return;

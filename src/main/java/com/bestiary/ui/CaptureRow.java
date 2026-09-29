@@ -92,8 +92,11 @@ public class CaptureRow extends JPanel {
                 capture.quality.magic, capture.quality.ranged, capture.quality.agility));
 
         addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mouseReleased(java.awt.event.MouseEvent e) {
+            // macOS delivers the popup trigger on press, Windows/Linux on release — handle both.
+            @Override public void mousePressed(java.awt.event.MouseEvent e)  { maybeShowMenu(e); }
+            @Override public void mouseReleased(java.awt.event.MouseEvent e) { maybeShowMenu(e); }
+
+            private void maybeShowMenu(java.awt.event.MouseEvent e) {
                 if (e.isPopupTrigger() && !BestiaryPanel.isReadOnly()) {
                     JPopupMenu menu = new JPopupMenu();
 

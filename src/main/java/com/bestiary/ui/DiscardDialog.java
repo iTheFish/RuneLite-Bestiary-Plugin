@@ -27,6 +27,7 @@ public class DiscardDialog extends JDialog {
     private final Runnable onDone;
     private final Map<CreatureRarity, JCheckBox> rarityBoxes = new LinkedHashMap<>();
     private JCheckBox protectBox;
+    private JCheckBox protectShinyBox;
     private JPanel groupsPanel;
     private JLabel totalLabel;
     private JButton discardBtn;
@@ -93,6 +94,14 @@ public class DiscardDialog extends JDialog {
         root.add(Box.createVerticalStrut(4));
         root.add(protectBox);
 
+        protectShinyBox = new JCheckBox("Protect shinies", true);
+        protectShinyBox.setOpaque(false);
+        protectShinyBox.setForeground(new Color(255, 225, 120));
+        protectShinyBox.setFont(FontManager.getRunescapeSmallFont());
+        protectShinyBox.setAlignmentX(Component.LEFT_ALIGNMENT);
+        protectShinyBox.addActionListener(e -> recompute());
+        root.add(protectShinyBox);
+
         root.add(Box.createVerticalStrut(8));
         root.add(header("DUPLICATE GROUPS FOUND"));
         groupsPanel = new JPanel();
@@ -153,6 +162,7 @@ public class DiscardDialog extends JDialog {
             byKey.computeIfAbsent(c.npcName + "|" + c.rarity.name(), k -> new ArrayList<>()).add(c);
         }
         boolean protect = protectBox.isSelected();
+        boolean protectShiny = protectShinyBox.isSelected();
         List<Group> out = new ArrayList<>();
         for (List<CapturedCreature> list : byKey.values()) {
             if (list.size() <= 1) continue;
@@ -163,6 +173,7 @@ public class DiscardDialog extends JDialog {
             for (int i = 1; i < list.size(); i++) {
                 CapturedCreature c = list.get(i);
                 if (protect && (c.favourite || c.albumCover)) continue;
+                if (protectShiny && c.isShiny()) continue;
                 g.discard.add(c);
             }
             if (!g.discard.isEmpty()) out.add(g);
@@ -189,7 +200,7 @@ public class DiscardDialog extends JDialog {
             rowP.setAlignmentX(Component.LEFT_ALIGNMENT);
             rowP.setMaximumSize(new Dimension(Integer.MAX_VALUE, 22));
             rowP.setBorder(new EmptyBorder(1, 2, 1, 2));
-            String main = g.npc + "  ·  " + g.rarity.label + "  — discard " + g.discard.size()
+            String main = g.npc + "  ·  " + g.rarity.label + "  ·  discard " + g.discard.size()
                     + "  (+" + base + "cr)";
             String html = "<html><span style='color:" + hex(g.rarity.displayColor) + "'>" + main + "</span>"
                     + (bonus > 0 ? "<span style='color:" + hex(BONUS_COLOR) + "'> (+" + bonus + ")</span>" : "")
