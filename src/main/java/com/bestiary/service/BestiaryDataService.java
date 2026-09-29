@@ -464,7 +464,7 @@ public class BestiaryDataService {
      * TEMP (v1.1.2 testing): bypasses the Level 99 gate so the shop can be previewed at any level.
      * MUST be set back to false before release.
      */
-    private static final boolean TEMP_UNGATE_LEVEL_99 = true;
+    private static final boolean TEMP_UNGATE_LEVEL_99 = false;
 
     /** True once the played account has reached Capture Level 99 — gates the Level 99 shop tab. */
     public boolean isLevel99Unlocked() {
