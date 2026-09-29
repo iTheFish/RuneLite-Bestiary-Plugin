@@ -217,10 +217,7 @@ public class ShopTab extends JPanel {
      * upgrades) and Consumable (coming soon).
      */
     private void buildLevel99Into(JPanel inner) {
-        if (!dataService.isLevel99Unlocked()) {
-            inner.add(level99Teaser());   // "reach level 99 to unlock" card
-            return;
-        }
+        boolean unlocked = dataService.isLevel99Unlocked();
 
         JPanel subBar = new JPanel(new GridLayout(1, 2, 4, 4));
         subBar.setOpaque(false);
@@ -235,9 +232,14 @@ public class ShopTab extends JPanel {
         subContent.setAlignmentX(LEFT_ALIGNMENT);
 
         JPanel passivePanel = vbox();
+        if (!unlocked) {
+            passivePanel.add(emptyLabel("Reach Capture Level 99 to reveal these upgrades."));
+            passivePanel.add(Box.createVerticalStrut(8));
+        }
         for (ShopUpgrade u : ShopUpgrade.values()) {
             if (u.category != ShopCategory.LEVEL_99) continue;
-            passivePanel.add(upgradeCard(u));
+            // Locked: same dark padlock look as an uncaught album card, contents hidden.
+            passivePanel.add(unlocked ? upgradeCard(u) : lockedUpgradeCard());
             passivePanel.add(Box.createVerticalStrut(8));
         }
         JPanel consumablePanel = vbox();
@@ -267,15 +269,92 @@ public class ShopTab extends JPanel {
         JToggleButton b = new JToggleButton(text);
         b.setFont(FontManager.getRunescapeSmallFont());
         b.setFocusPainted(false);
-        b.setBorderPainted(false);
+        b.setContentAreaFilled(false);
+        b.setOpaque(true);
         b.setMargin(new Insets(2, 2, 2, 2));
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         return b;
     }
 
     private void styleSub(JToggleButton passive, JToggleButton consumable) {
-        styleTab(passive,    level99Sub == 0); passive.setSelected(level99Sub == 0);
-        styleTab(consumable, level99Sub == 1); consumable.setSelected(level99Sub == 1);
+        styleSubTab(passive,    level99Sub == 0); passive.setSelected(level99Sub == 0);
+        styleSubTab(consumable, level99Sub == 1); consumable.setSelected(level99Sub == 1);
+    }
+
+    /** Level 99 sub-tabs: selected = gold text on a warm dark fill with a gold underline. */
+    private static void styleSubTab(JToggleButton b, boolean active) {
+        b.setBackground(active ? SUB_ACTIVE_BG : ColorScheme.DARKER_GRAY_COLOR);
+        b.setForeground(active ? SUB_ACTIVE_FG : ColorScheme.LIGHT_GRAY_COLOR);
+        b.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 2, 0, active ? SUB_ACTIVE_FG : ColorScheme.DARKER_GRAY_COLOR),
+                new EmptyBorder(3, 4, 1, 4)));
+    }
+
+    private static final Color SUB_ACTIVE_BG = new Color(62, 50, 24);
+    private static final Color SUB_ACTIVE_FG = new Color(255, 210, 100);
+
+    /** A padlocked Level 99 upgrade slot, styled like an uncaught album card (details hidden). */
+    private JPanel lockedUpgradeCard() {
+        JPanel card = new JPanel(new BorderLayout(10, 0)) {
+            @Override public Dimension getMaximumSize() {
+                return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
+            }
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(LOCKED_BG);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.setColor(LOCKED_ACCENT);
+                g2.fillRoundRect(0, 0, 4, getHeight(), 4, 4);
+                g2.dispose();
+            }
+        };
+        card.setOpaque(false);
+        card.setBorder(new EmptyBorder(8, 12, 8, 8));
+        card.setAlignmentX(LEFT_ALIGNMENT);
+
+        JLabel lock = new JLabel(new PadlockIcon());
+        card.add(lock, BorderLayout.WEST);
+
+        JPanel text = new JPanel(new GridLayout(2, 1, 0, 2));
+        text.setOpaque(false);
+        JLabel title = new JLabel("???");
+        title.setFont(FontManager.getRunescapeBoldFont());
+        title.setForeground(new Color(110, 110, 110));
+        JLabel sub = new JLabel("Unlocks at Capture Level 99");
+        sub.setFont(FontManager.getRunescapeSmallFont());
+        sub.setForeground(new Color(95, 95, 95));
+        text.add(title);
+        text.add(sub);
+        card.add(text, BorderLayout.CENTER);
+        return card;
+    }
+
+    private static final Color LOCKED_BG     = new Color(22, 22, 22);
+    private static final Color LOCKED_ACCENT = new Color(48, 48, 48);
+
+    /** Small grey padlock matching the album's locked-card padlock. */
+    private static final class PadlockIcon implements Icon {
+        @Override public int getIconWidth()  { return 22; }
+        @Override public int getIconHeight() { return 26; }
+        @Override public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int bodyW = 20, bodyH = 14, bodyX = x + 1, bodyY = y + 11;
+            int cx = bodyX + bodyW / 2;
+            g2.setColor(new Color(70, 70, 70));
+            g2.setStroke(new BasicStroke(3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            g2.drawArc(cx - 6, y + 2, 12, 16, 0, 180);
+            g2.setColor(new Color(60, 60, 60));
+            g2.fillRoundRect(bodyX, bodyY, bodyW, bodyH, 4, 4);
+            g2.setStroke(new BasicStroke(1f));
+            g2.setColor(new Color(90, 90, 90));
+            g2.drawRoundRect(bodyX, bodyY, bodyW, bodyH, 4, 4);
+            g2.setColor(new Color(30, 30, 30));
+            g2.fillOval(cx - 2, bodyY + 4, 4, 4);
+            g2.fillRect(cx - 1, bodyY + 7, 2, 4);
+            g2.dispose();
+        }
     }
 
     private static JPanel vbox() {
@@ -292,43 +371,6 @@ public class ShopTab extends JPanel {
         l.setForeground(DIM);
         l.setAlignmentX(LEFT_ALIGNMENT);
         return l;
-    }
-
-    /** "Coming soon" teaser card for the placeholder Level 99 endgame shop. */
-    private JPanel level99Teaser() {
-        JPanel card = new JPanel();
-        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        card.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-        card.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(new Color(255, 165, 0, 70), 1, true),
-                new EmptyBorder(10, 10, 10, 10)));
-        card.setAlignmentX(LEFT_ALIGNMENT);
-
-        JLabel title = new JLabel("🔒 Level 99 Shop");
-        title.setFont(FontManager.getRunescapeBoldFont());
-        title.setForeground(GOLD);
-        title.setAlignmentX(LEFT_ALIGNMENT);
-        card.add(title);
-
-        JTextArea body = new JTextArea(
-                "Reach Capture Level 99 to unlock the endgame shop — prestige passive upgrades now, "
-                        + "with activatable consumables coming soon.\n\n"
-                        + "Got ideas for what it should offer? Share them in the suggestions channel "
-                        + "on our Discord. Community suggestions help shape what gets built.");
-        body.setEditable(false);
-        body.setFocusable(false);
-        body.setLineWrap(true);
-        body.setWrapStyleWord(true);
-        body.setOpaque(false);
-        body.setFont(FontManager.getRunescapeSmallFont());
-        body.setForeground(DIM);
-        JPanel wrap = new JPanel(new BorderLayout());
-        wrap.setOpaque(false);
-        wrap.setAlignmentX(LEFT_ALIGNMENT);
-        wrap.setBorder(new EmptyBorder(4, 0, 0, 0));
-        wrap.add(body, BorderLayout.CENTER);
-        card.add(wrap);
-        return card;
     }
 
     /** "Coming soon" card for the Level 99 Consumable sub-tab (the mechanic is still being designed). */
@@ -348,7 +390,7 @@ public class ShopTab extends JPanel {
         card.add(title);
 
         JTextArea body = new JTextArea(
-                "Coming soon. One-time boosts you buy and activate for a temporary edge — being "
+                "Coming soon. One-time boosts you buy and activate for a temporary edge, being "
                         + "designed now.\n\nGot ideas for what they should do? Share them in the "
                         + "suggestions channel on our Discord.");
         body.setEditable(false);
@@ -364,6 +406,15 @@ public class ShopTab extends JPanel {
         wrap.setBorder(new EmptyBorder(4, 0, 0, 0));
         wrap.add(body, BorderLayout.CENTER);
         card.add(wrap);
+
+        JButton discord = new JButton("Discord");
+        discord.setFont(FontManager.getRunescapeSmallFont());
+        discord.setFocusPainted(false);
+        discord.setToolTipText(AboutDialog.DISCORD_URL);
+        discord.setAlignmentX(LEFT_ALIGNMENT);
+        discord.addActionListener(e -> net.runelite.client.util.LinkBrowser.browse(AboutDialog.DISCORD_URL));
+        card.add(Box.createVerticalStrut(8));
+        card.add(discord);
         return card;
     }
 
@@ -444,7 +495,7 @@ public class ShopTab extends JPanel {
             buy.setForeground(PIP_ON);
         } else {
             boolean afford = dataService.getCredits() >= cost;
-            buy.setText("Buy tier " + (owned + 1) + "  —  " + cost + " credits");
+            buy.setText("Buy tier " + (owned + 1) + "  ·  " + cost + " credits");
             buy.setEnabled(afford);
             buy.setForeground(afford ? GOLD : DIM);
             buy.addActionListener(e -> {
