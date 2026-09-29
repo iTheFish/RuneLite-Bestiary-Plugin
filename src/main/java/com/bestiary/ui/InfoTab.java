@@ -317,6 +317,16 @@ public class InfoTab extends JPanel {
         c.add(tile("Album",
                 "Every capturable monster in one grid. Search or filter by difficulty, or click a " +
                 "monster to see all your copies, with sorting, rarity filters and pages."));
+        c.add(tile("Card Info",
+                "Left-click a card (or right-click → Card info + export) for its details: Overview, " +
+                "Odds, a stat Graph and its Reroll history, plus the export options."));
+        c.add(tile("Album padlocks",
+                "A padlock means you've never killed that monster. Kill one to reveal its slot. " +
+                "Monster art needs 'Fetch NPC images from the Wiki' in Config (off by default)."));
+        c.add(tile("Album cover & nicknames",
+                "Right-click a card → Set as album cover to choose which card represents that " +
+                "monster in the Album. Right-click → Name capture to give a card a nickname (up to " +
+                "20 characters)."));
         c.add(tile("Favourites",
                 "Right-click a card → Add to Favourites (up to 20). Starred cards appear under " +
                 "★ Favourites here, in the Cards tab and in the Album."));
@@ -339,7 +349,9 @@ public class InfoTab extends JPanel {
                 "favourite, nickname and album cover are kept."));
         c.add(tile("Discard",
                 "Right-click → Discard to trade a card for its base capture value (shinies +500). " +
-                "Multi-select in the Album to discard in bulk. Discarding is permanent."));
+                "Discarding is permanent.\n\n" +
+                "For bulk clear-outs, use Discard duplicates in the Album: it keeps your best copy of " +
+                "each monster and rarity, and can protect favourites, album covers and shinies."));
         c.add(tile("Shop unlocks",
                 "Permanent upgrades bought with credits. Each shows your current and next-tier " +
                 "bonus before you buy.\n\n" +
@@ -384,6 +396,10 @@ public class InfoTab extends JPanel {
         c.add(tile("Dashboards",
                 "Click a stat box at the top for its dashboard (Progression, Economy, Species, " +
                 "Caught). Right-click one to copy it as an image."));
+        c.add(tile("Multiple accounts",
+                "Each account keeps its own collection. Use the dropdown at the top of the panel to " +
+                "view another account's collection (read-only). Transfer cards in the Album moves " +
+                "cards between your own accounts."));
         c.add(tile("Session Recap",
                 "Lists every capture since you logged in. 'Copy Summary' pastes cleanly into Discord."));
         c.add(Box.createVerticalStrut(10));
