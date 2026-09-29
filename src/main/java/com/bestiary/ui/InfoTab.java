@@ -320,9 +320,6 @@ public class InfoTab extends JPanel {
         c.add(tile("Card Info",
                 "Left-click a card (or right-click → Card info + export) for its details: Overview, " +
                 "Odds, a stat Graph and its Reroll history, plus the export options."));
-        c.add(tile("Album padlocks",
-                "A padlock means you've never killed that monster. Kill one to reveal its slot. " +
-                "Monster art needs 'Fetch NPC images from the Wiki' in Config (off by default)."));
         c.add(tile("Album cover & nicknames",
                 "Right-click a card → Set as album cover to choose which card represents that " +
                 "monster in the Album. Right-click → Name capture to give a card a nickname (up to " +
