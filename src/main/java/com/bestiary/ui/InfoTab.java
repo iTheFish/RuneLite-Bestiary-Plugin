@@ -52,11 +52,17 @@ public class InfoTab extends JPanel {
     private final List<JPanel> statBoxes = new ArrayList<>();
     private boolean interactiveEnabled = true;
 
+    /** Wipes the played collection (double-confirmed by the panel). Lives at the bottom of Progress. */
+    private final Runnable onReset;
+    private JButton resetBtn;
+
     public InfoTab(BestiaryDataService dataService, ProgressionService progressionService,
                    Runnable openAlbum, Runnable openFavourites, Runnable openRecap,
                    Runnable openCatchRates,
                    Consumer<DashboardDialog.DashView> openDashboard,
-                   Consumer<DashboardDialog.DashView> exportDashboard) {
+                   Consumer<DashboardDialog.DashView> exportDashboard,
+                   Runnable onReset) {
+        this.onReset            = onReset;
         this.dataService        = dataService;
         this.progressionService = progressionService;
         this.openDashboard      = openDashboard;
@@ -448,6 +454,26 @@ public class InfoTab extends JPanel {
                 "with rarity (colour-coded), Power Level, region and time, plus a rarity summary.\n\n" +
                 "'Copy Summary' places the list on your clipboard as a code block so it pastes " +
                 "cleanly into Discord."));
+        c.add(Box.createVerticalStrut(10));
+        c.add(tile("Reset Progress & Collection",
+                "Permanently deletes all captures, kill counts, XP, levels and achievements for the " +
+                "account you're logged in on. You'll be asked to confirm twice."));
+        resetBtn = new JButton("Reset Progress & Collection?");
+        resetBtn.setFont(FontManager.getRunescapeSmallFont());
+        resetBtn.setBackground(new Color(80, 20, 20));
+        resetBtn.setForeground(new Color(220, 100, 100));
+        resetBtn.setBorderPainted(false);
+        resetBtn.setFocusPainted(false);
+        resetBtn.setToolTipText("Permanently delete all captures and progression");
+        resetBtn.setAlignmentX(LEFT_ALIGNMENT);
+        resetBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
+        resetBtn.addActionListener(e -> { if (onReset != null) onReset.run(); });
+        c.add(resetBtn);
+    }
+
+    /** Reset acts on the PLAYED account — only enabled when logged in and not viewing another account. */
+    public void setResetEnabled(boolean enabled) {
+        if (resetBtn != null) resetBtn.setEnabled(enabled);
     }
 
     private void fillAlerts(JPanel c) {
@@ -470,9 +496,6 @@ public class InfoTab extends JPanel {
                 "is sent to your chatbox.\n\n" +
                 "The chat message is controlled by 'Notify On Level Up' in Config (on by default) — " +
                 "turn it off if you only want the on-screen banner."));
-        c.add(tile("Reset Progress & Collection",
-                "The 'Reset Progress & Collection?' button on the Progress tab permanently deletes all " +
-                "captures, kill counts, XP, levels and achievements. You are asked to confirm twice."));
     }
 
     // -------------------------------------------------------------------------

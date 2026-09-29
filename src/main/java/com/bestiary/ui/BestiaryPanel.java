@@ -178,8 +178,7 @@ public class BestiaryPanel extends PluginPanel {
         collectionTab = new CollectionTab(dataService, imageService);
         progressTab   = new ProgressTab(progressionService, sessionTracker,
                 () -> DashboardDialog.open(SwingUtilities.getWindowAncestor(this), dataService,
-                        progressionService, DashboardDialog.DashView.PROGRESSION),
-                this::confirmWipe);
+                        progressionService, DashboardDialog.DashView.PROGRESSION));
         shopTab       = new ShopTab(dataService, progressionService,
                 () -> DashboardDialog.open(SwingUtilities.getWindowAncestor(this), dataService,
                         progressionService, DashboardDialog.DashView.ECONOMY));
@@ -197,7 +196,8 @@ public class BestiaryPanel extends PluginPanel {
                         dataService.getDisplayLevel(), dataService.displayBonusShinyChance(),
                         dataService.displayCatchRateBonusByTier()),
                 view -> DashboardDialog.open(SwingUtilities.getWindowAncestor(this), dataService, progressionService, view),
-                view -> DashboardDialog.copyViewToClipboard(dataService, progressionService, view));
+                view -> DashboardDialog.copyViewToClipboard(dataService, progressionService, view),
+                this::confirmWipe);
 
         tabs.addTab("Info",     infoTab);
         tabs.addTab("Cards",    collectionTab);
@@ -472,6 +472,7 @@ public class BestiaryPanel extends PluginPanel {
         infoTab.setInteractiveEnabled(state != PanelState.LOCKED);
         // While viewing another account, disable the "your play" shortcuts (Session Recap, Favourites).
         infoTab.setViewingAnotherAccount(state == PanelState.VIEWING);
+        infoTab.setResetEnabled(state == PanelState.NORMAL);
     }
 
     /** Rebuilds the tab set to match {@code state}. Only called on transitions (see {@link #applyState}). */
@@ -566,7 +567,7 @@ public class BestiaryPanel extends PluginPanel {
         return panel;
     }
 
-    /** Confirms (twice) and permanently wipes the played collection. Triggered from the Progress tab. */
+    /** Confirms (twice) and permanently wipes the played collection. Triggered from Info → Progress. */
     void confirmWipe() {
         int first = JOptionPane.showConfirmDialog(
                 this,
