@@ -16,10 +16,13 @@ import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -265,14 +268,21 @@ public class BestiaryStore {
         if (d != null && f != null) writeTo(f, b, d);
     }
 
-    /** Crash-safe write of {@code d} to {@code target} (temp file → back up previous → atomic rename). */
+    /**
+     * Crash-safe write of {@code d} to {@code target} (temp file → back up previous → atomic rename).
+     *
+     * <p>The temp file and the backup are forced to disk before the rename. Without that, a full
+     * system crash (BSOD / power loss) can persist the rename but not the file's contents, leaving
+     * an empty or zero-filled save that silently falls back to the older {@code .bak} on next load.
+     */
     private synchronized boolean writeTo(File target, File bak, StoreData d) {
         try {
             Files.createDirectories(accountsDir.toPath());
             Path tmp = target.toPath().resolveSibling(target.getName() + ".tmp");
-            Files.write(tmp, gson.toJson(d).getBytes(StandardCharsets.UTF_8));
+            writeDurably(tmp, gson.toJson(d).getBytes(StandardCharsets.UTF_8));
             if (target.exists()) {
                 Files.copy(target.toPath(), bak.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                forceToDisk(bak.toPath());
             }
             try {
                 Files.move(tmp, target.toPath(),
@@ -280,10 +290,40 @@ public class BestiaryStore {
             } catch (IOException atomicUnsupported) {
                 Files.move(tmp, target.toPath(), StandardCopyOption.REPLACE_EXISTING);
             }
+            forceDirectoryToDisk(accountsDir.toPath());
             return true;
         } catch (IOException e) {
             log.error("Failed to write bestiary store {}", target, e);
             return false;
+        }
+    }
+
+    /** Writes {@code bytes} to {@code p} (replacing any leftover content) and forces it to disk. */
+    private static void writeDurably(Path p, byte[] bytes) throws IOException {
+        try (FileChannel ch = FileChannel.open(p, StandardOpenOption.CREATE, StandardOpenOption.WRITE,
+                StandardOpenOption.TRUNCATE_EXISTING)) {
+            ByteBuffer buf = ByteBuffer.wrap(bytes);
+            while (buf.hasRemaining()) ch.write(buf);
+            ch.force(true);
+        }
+    }
+
+    /** Forces an existing file's contents to disk (opened for write: Windows needs that to flush). */
+    private static void forceToDisk(Path p) throws IOException {
+        try (FileChannel ch = FileChannel.open(p, StandardOpenOption.WRITE)) {
+            ch.force(true);
+        }
+    }
+
+    /**
+     * Best-effort flush of the directory entry so the rename itself survives a crash. Supported on
+     * Linux/macOS; Windows can't open a directory as a channel (NTFS journals renames anyway).
+     */
+    private static void forceDirectoryToDisk(Path dir) {
+        try (FileChannel ch = FileChannel.open(dir, StandardOpenOption.READ)) {
+            ch.force(true);
+        } catch (IOException | UnsupportedOperationException ignored) {
+            // Not supported on this platform — nothing more we can do.
         }
     }
 
