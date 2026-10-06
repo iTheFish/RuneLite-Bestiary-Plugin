@@ -203,10 +203,18 @@ public class BestiaryStore {
             d = tryRead(b);
             if (d != null) log.warn("Bestiary main file unreadable; recovered from backup");
         }
-        if (d == null) {
-            keepSafetyCopy(b);   // backup unusable too: keep it before we start this account empty
-            return new StoreData();
+        if (d == null && (f.exists() || b.exists())) {
+            // Save AND backup unreadable: keep the backup too, then fall back to the safety copy with
+            // the most progress rather than starting at level 0. (Only when a save existed — a brand
+            // new account has none, so it simply starts fresh.)
+            keepSafetyCopy(b);
+            File best = bestSafetyCopy(sortedSafetyCopies(accountOf(f.getName())));
+            if (best != null) {
+                d = parse(best);
+                log.warn("Bestiary save and backup unreadable; recovered from safety copy {}", best);
+            }
         }
+        if (d == null) return new StoreData();
         if (d.version != VERSION) {
             keepSafetyCopy(f);
             keepSafetyCopy(b);
@@ -225,10 +233,20 @@ public class BestiaryStore {
     private StoreData tryRead(File f) {
         if (f == null || !f.exists()) return null;
         try {
-            String json = new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
-            return gson.fromJson(json, StoreData.class);
+            return gson.fromJson(new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8),
+                    StoreData.class);
         } catch (Exception e) {
             log.error("Failed to read bestiary store {}", f, e);
+            return null;
+        }
+    }
+
+    /** Like {@link #tryRead} but silent, for probing safety copies (some are expected to be junk). */
+    private StoreData parse(File f) {
+        try {
+            return gson.fromJson(new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8),
+                    StoreData.class);
+        } catch (Exception e) {
             return null;
         }
     }
@@ -329,39 +347,73 @@ public class BestiaryStore {
 
     /**
      * Copies {@code f} (an account's save or its backup) to {@code <hash>.safety-<yyyyMMdd-HHmmss>[-n].json}
-     * next to it, then keeps only the account's newest {@link #KEEP_SAFETY_COPIES} safety copies. The
-     * name ends in {@code .json} so it shows as a plain JSON file, never mistaken for the live save.
+     * next to it, then prunes the account's safety copies (see {@link #pruneSafetyCopies}). The name
+     * ends in {@code .json} so it shows as a plain JSON file, never mistaken for the live save.
+     * Files with no data in them (empty, or all zero bytes as a crash can leave) aren't worth a copy.
      */
-    private static void keepSafetyCopy(File f) {
-        if (f == null || !f.exists()) return;
-        File dir = f.getParentFile();
+    private void keepSafetyCopy(File f) {
+        if (f == null || !f.exists() || !hasData(f)) return;
         String account = accountOf(f.getName());
         try {
             String stamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
             // Same-second copies get a counter above any existing one, so names always sort in the
             // order they were made (a pruned name is never reused and mistaken for the oldest).
             int next = 0;
-            for (File c : safetyCopies(dir, account)) {
+            for (File c : sortedSafetyCopies(account)) {
                 if (safetyStamp(c).equals(stamp)) next = Math.max(next, safetyCounter(c) + 1);
             }
-            File copy = new File(dir, account + SAFETY + stamp + (next == 0 ? "" : "-" + next) + ".json");
+            File copy = new File(accountsDir, account + SAFETY + stamp + (next == 0 ? "" : "-" + next) + ".json");
             Files.copy(f.toPath(), copy.toPath());
             forceToDisk(copy.toPath());
             log.warn("Kept a safety copy of bestiary save {} at {}", f, copy);
         } catch (IOException e) {
             log.error("Failed to keep a safety copy of {}", f, e);
         }
-        pruneSafetyCopies(dir, account);
+        pruneSafetyCopies(account);
     }
 
-    /** Deletes all but the newest {@link #KEEP_SAFETY_COPIES} safety copies for one account. */
-    private static void pruneSafetyCopies(File dir, String account) {
-        List<File> copies = safetyCopies(dir, account);
+    /**
+     * Keeps the account's newest {@link #KEEP_SAFETY_COPIES} safety copies, <b>plus</b> its best one
+     * (see {@link #bestSafetyCopy}) wherever it sits, and deletes the rest. However many junk or
+     * low-progress copies pile up, they can never push out the player's furthest-along save.
+     */
+    private void pruneSafetyCopies(String account) {
+        List<File> copies = sortedSafetyCopies(account);
         if (copies.size() <= KEEP_SAFETY_COPIES) return;
-        copies.sort(Comparator.comparing(BestiaryStore::safetyStamp)
-                .thenComparingInt(BestiaryStore::safetyCounter));
+        File best = bestSafetyCopy(copies);
         for (File old : copies.subList(0, copies.size() - KEEP_SAFETY_COPIES)) {
+            if (old.equals(best)) continue;
             if (!old.delete()) log.warn("Could not delete old bestiary safety copy {}", old);
+        }
+    }
+
+    /**
+     * The safety copy with the most progress: the readable, current-version copy with the highest
+     * total XP (XP only ever goes up, so this is the furthest-along save). Ties go to the newest.
+     * Null if none is readable. {@code copies} must be sorted oldest first.
+     */
+    private File bestSafetyCopy(List<File> copies) {
+        File best = null;
+        long bestXp = -1;
+        for (File c : copies) {
+            StoreData d = parse(c);
+            if (d != null && d.version == VERSION && d.totalXp >= bestXp) {
+                best = c;
+                bestXp = d.totalXp;
+            }
+        }
+        return best;
+    }
+
+    /** False for an empty file or one that is only zero bytes / whitespace (nothing to recover). */
+    private static boolean hasData(File f) {
+        try {
+            for (byte x : Files.readAllBytes(f.toPath())) {
+                if (x != 0 && x != ' ' && x != '\n' && x != '\r' && x != '\t') return true;
+            }
+            return false;
+        } catch (IOException e) {
+            return true;   // can't tell (e.g. locked): err on the side of keeping it
         }
     }
 
@@ -371,9 +423,13 @@ public class BestiaryStore {
         return i < 0 ? fileName : fileName.substring(0, i);
     }
 
-    private static List<File> safetyCopies(File dir, String account) {
-        File[] found = dir.listFiles((d, n) -> n.startsWith(account + SAFETY) && n.endsWith(".json"));
-        return found == null ? new ArrayList<>() : new ArrayList<>(Arrays.asList(found));
+    /** The account's safety copies, oldest first. */
+    private List<File> sortedSafetyCopies(String account) {
+        File[] found = accountsDir.listFiles((d, n) -> n.startsWith(account + SAFETY) && n.endsWith(".json"));
+        List<File> copies = found == null ? new ArrayList<>() : new ArrayList<>(Arrays.asList(found));
+        copies.sort(Comparator.comparing(BestiaryStore::safetyStamp)
+                .thenComparingInt(BestiaryStore::safetyCounter));
+        return copies;
     }
 
     /** The part of a safety copy's name after {@code .safety-}, without {@code .json}. */

@@ -57,28 +57,98 @@ public class BestiaryStoreCrashSafetyTest {
         }
     }
 
-    /** The level-106-to-0 scenario: save + backup both unreadable, so the account loads empty. */
+    /** A crash-damaged save that still has data is kept; an all-zero one has nothing to recover. */
     @Test
-    public void unreadableSaveIsKeptBeforeAnEmptyCollectionOverwritesIt() throws Exception {
+    public void damagedSavesWithDataAreKeptButEmptyOnesAreNot() throws Exception {
         Path home = Files.createTempDirectory("bestiary-wipe-test");
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         try {
             Path accounts = home.resolve(".runelite").resolve("bestiary").resolve("accounts");
             Files.createDirectories(accounts);
-            byte[] damaged = new byte[600 * 1024];   // a 600KB save zero-filled by a crash
-            Files.write(accounts.resolve("7.json"), damaged);
-            Files.write(accounts.resolve("7.json.bak"), "{\"version\":".getBytes(StandardCharsets.UTF_8));
+            byte[] truncated = "{\"version\":2,\"captures\":[{\"npcName\":\"Rat\"".getBytes(StandardCharsets.UTF_8);
+            Files.write(accounts.resolve("7.json"), truncated);              // cut off mid-write
+            Files.write(accounts.resolve("7.json.bak"), new byte[600 * 1024]); // zero-filled by a crash
 
             BestiaryStore store = new BestiaryStore(new Gson(), executor, home.resolve(".runelite").toFile());
             store.setActiveAccount(7L, "Player");
-            assertEquals(0L, store.load().credits);
+            assertEquals(0L, store.load().totalXp);
             store.saveNow(new BestiaryStore.StoreData());   // the save that used to destroy everything
 
             List<Path> kept = safetyCopies(accounts);
-            assertTrue("the damaged save is kept byte-for-byte", kept.stream().anyMatch(p -> sameBytes(p, damaged)));
+            assertEquals("only the copy with data is kept", 1, kept.size());
+            assertTrue(sameBytes(kept.get(0), truncated));
         } finally {
             executor.shutdownNow();
         }
+    }
+
+    /** The level-106-to-0 scenario: save + backup both unreadable → load the best safety copy instead. */
+    @Test
+    public void bothFilesUnreadableFallsBackToTheBestSafetyCopy() throws Exception {
+        Path home = Files.createTempDirectory("bestiary-fallback-test");
+        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+        try {
+            Path accounts = home.resolve(".runelite").resolve("bestiary").resolve("accounts");
+            Files.createDirectories(accounts);
+            Files.write(accounts.resolve("7.safety-20200101-000000.json"), save(5_000_000));   // the real progress
+            Files.write(accounts.resolve("7.safety-20200102-000000.json"), save(1_000));       // newer, less progress
+            Files.write(accounts.resolve("7.json"), new byte[4096]);
+            Files.write(accounts.resolve("7.json.bak"), new byte[4096]);
+
+            BestiaryStore store = new BestiaryStore(new Gson(), executor, home.resolve(".runelite").toFile());
+            store.setActiveAccount(7L, "Player");
+            assertEquals(5_000_000L, store.load().totalXp);
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    public void brandNewAccountNeverLoadsASafetyCopy() throws Exception {
+        Path home = Files.createTempDirectory("bestiary-new-test");
+        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+        try {
+            Path accounts = home.resolve(".runelite").resolve("bestiary").resolve("accounts");
+            Files.createDirectories(accounts);
+            Files.write(accounts.resolve("7.safety-20200101-000000.json"), save(5_000_000));
+
+            BestiaryStore store = new BestiaryStore(new Gson(), executor, home.resolve(".runelite").toFile());
+            store.setActiveAccount(7L, "Player");
+            assertEquals("no save existed, so start fresh", 0L, store.load().totalXp);
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    /** Lots of low-progress copies (repeated crash resets) can never push out the real save. */
+    @Test
+    public void theBestCopyIsNeverPrunedByLowProgressChurn() throws Exception {
+        Path home = Files.createTempDirectory("bestiary-pin-test");
+        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+        try {
+            Path accounts = home.resolve(".runelite").resolve("bestiary").resolve("accounts");
+            Files.createDirectories(accounts);
+            Path real = accounts.resolve("7.safety-20200101-000000.json");
+            Files.write(real, save(5_000_000));
+
+            BestiaryStore store = new BestiaryStore(new Gson(), executor, home.resolve(".runelite").toFile());
+            store.setActiveAccount(7L, "Player");
+            for (int round = 0; round < 12; round++) {
+                store.saveNow(withKills(3000 + round));       // a 10KB+ save with no XP...
+                store.saveNow(new BestiaryStore.StoreData()); // ...that keeps getting reset
+            }
+
+            assertTrue("the real save survives", Files.exists(real));
+            assertEquals("newest 5 + the best one", BestiaryStore.KEEP_SAFETY_COPIES + 1,
+                    safetyCopies(accounts).size());
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    private static byte[] save(long totalXp) {
+        return ("{\"version\":" + BestiaryStore.VERSION + ",\"totalXp\":" + totalXp + "}")
+                .getBytes(StandardCharsets.UTF_8);
     }
 
     @Test
