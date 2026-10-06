@@ -328,13 +328,14 @@ public class BestiaryStore {
     }
 
     /**
-     * Copies {@code f} to {@code <name>.safety-<yyyyMMdd-HHmmss>[-n]} next to it, then keeps only the
-     * account's newest {@link #KEEP_SAFETY_COPIES} safety copies (of its save and its backup together).
+     * Copies {@code f} (an account's save or its backup) to {@code <hash>.safety-<yyyyMMdd-HHmmss>[-n].json}
+     * next to it, then keeps only the account's newest {@link #KEEP_SAFETY_COPIES} safety copies. The
+     * name ends in {@code .json} so it shows as a plain JSON file, never mistaken for the live save.
      */
     private static void keepSafetyCopy(File f) {
         if (f == null || !f.exists()) return;
         File dir = f.getParentFile();
-        String account = accountPrefix(f.getName());
+        String account = accountOf(f.getName());
         try {
             String stamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
             // Same-second copies get a counter above any existing one, so names always sort in the
@@ -343,7 +344,7 @@ public class BestiaryStore {
             for (File c : safetyCopies(dir, account)) {
                 if (safetyStamp(c).equals(stamp)) next = Math.max(next, safetyCounter(c) + 1);
             }
-            File copy = new File(dir, f.getName() + SAFETY + stamp + (next == 0 ? "" : "-" + next));
+            File copy = new File(dir, account + SAFETY + stamp + (next == 0 ? "" : "-" + next) + ".json");
             Files.copy(f.toPath(), copy.toPath());
             forceToDisk(copy.toPath());
             log.warn("Kept a safety copy of bestiary save {} at {}", f, copy);
@@ -364,26 +365,32 @@ public class BestiaryStore {
         }
     }
 
-    /** {@code "123.json"} for both {@code 123.json} and {@code 123.json.bak}. */
-    private static String accountPrefix(String fileName) {
-        int i = fileName.indexOf(".json");
-        return i < 0 ? fileName : fileName.substring(0, i + ".json".length());
+    /** {@code "123"} for both {@code 123.json} and {@code 123.json.bak}. */
+    private static String accountOf(String fileName) {
+        int i = fileName.indexOf('.');
+        return i < 0 ? fileName : fileName.substring(0, i);
     }
 
     private static List<File> safetyCopies(File dir, String account) {
-        File[] found = dir.listFiles((d, n) -> n.startsWith(account + ".") && n.contains(SAFETY));
+        File[] found = dir.listFiles((d, n) -> n.startsWith(account + SAFETY) && n.endsWith(".json"));
         return found == null ? new ArrayList<>() : new ArrayList<>(Arrays.asList(found));
+    }
+
+    /** The part of a safety copy's name after {@code .safety-}, without {@code .json}. */
+    private static String safetySuffix(File c) {
+        String n = c.getName();
+        return n.substring(n.indexOf(SAFETY) + SAFETY.length(), n.length() - ".json".length());
     }
 
     /** The {@code yyyyMMdd-HHmmss} part of a safety copy's name. */
     private static String safetyStamp(File c) {
-        String rest = c.getName().substring(c.getName().indexOf(SAFETY) + SAFETY.length());
+        String rest = safetySuffix(c);
         return rest.length() > STAMP_LEN ? rest.substring(0, STAMP_LEN) : rest;
     }
 
     /** The same-second {@code -n} counter of a safety copy's name (0 if none). */
     private static int safetyCounter(File c) {
-        String rest = c.getName().substring(c.getName().indexOf(SAFETY) + SAFETY.length());
+        String rest = safetySuffix(c);
         if (rest.length() <= STAMP_LEN + 1) return 0;
         try {
             return Integer.parseInt(rest.substring(STAMP_LEN + 1));

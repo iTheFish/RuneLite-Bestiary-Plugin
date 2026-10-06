@@ -100,6 +100,8 @@ public class BestiaryStoreCrashSafetyTest {
             List<Path> kept = safetyCopies(accounts);
             assertEquals(1, kept.size());
             assertTrue(sameBytes(kept.get(0), big));
+            assertTrue("shows as a plain .json file", kept.get(0).getFileName().toString()
+                    .matches("7\\.safety-\\d{8}-\\d{6}\\.json"));
         } finally {
             executor.shutdownNow();
         }
@@ -115,7 +117,7 @@ public class BestiaryStoreCrashSafetyTest {
 
             // Another account's safety copy must never be pruned by this one's.
             Files.createDirectories(accounts);
-            Files.write(accounts.resolve("70.json.safety-20200101-000000"), new byte[] { 1 });
+            Files.write(accounts.resolve("70.safety-20200101-000000.json"), new byte[] { 1 });
 
             // 12 mass-discard-style shrinks in a row (well within the same second).
             store.setActiveAccount(7L, "Player");
@@ -127,13 +129,13 @@ public class BestiaryStoreCrashSafetyTest {
             }
 
             List<Path> kept = safetyCopies(accounts).stream()
-                    .filter(p -> p.getFileName().toString().startsWith("7.json"))
+                    .filter(p -> p.getFileName().toString().startsWith("7.safety-"))
                     .collect(Collectors.toList());
             assertEquals(BestiaryStore.KEEP_SAFETY_COPIES, kept.size());
             final byte[] expected = newestBig;
             assertTrue("the newest copy survives pruning", kept.stream().anyMatch(p -> sameBytes(p, expected)));
             assertTrue("other accounts' copies are untouched",
-                    Files.exists(accounts.resolve("70.json.safety-20200101-000000")));
+                    Files.exists(accounts.resolve("70.safety-20200101-000000.json")));
         } finally {
             executor.shutdownNow();
         }
