@@ -69,10 +69,13 @@ public class BestiaryStore {
     /** Saves at least this big get a safety copy before being overwritten by one under half their size. */
     static final long SHRINK_GUARD_MIN_BYTES = 10 * 1024;
 
-    /** Safety copies kept per account (save + backup copies together); older ones are deleted. */
+    /** Newest safety copies kept per account, plus its best one (see pruneSafetyCopies); the rest are deleted. */
     static final int KEEP_SAFETY_COPIES = 5;
     private static final String SAFETY = ".safety-";
     private static final int STAMP_LEN = "yyyyMMdd-HHmmss".length();
+
+    /** Set once a directory flush fails (e.g. Windows can't open a directory), so we stop retrying. */
+    private static volatile boolean dirSyncUnsupported;
 
     /** Serialized snapshot of everything we persist. */
     public static class StoreData {
@@ -210,7 +213,7 @@ public class BestiaryStore {
             keepSafetyCopy(b);
             File best = bestSafetyCopy(sortedSafetyCopies(accountOf(f.getName())));
             if (best != null) {
-                d = parse(best);
+                d = parse(best, false);
                 log.warn("Bestiary save and backup unreadable; recovered from safety copy {}", best);
             }
         }
@@ -231,22 +234,16 @@ public class BestiaryStore {
     }
 
     private StoreData tryRead(File f) {
-        if (f == null || !f.exists()) return null;
-        try {
-            return gson.fromJson(new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8),
-                    StoreData.class);
-        } catch (Exception e) {
-            log.error("Failed to read bestiary store {}", f, e);
-            return null;
-        }
+        return f != null && f.exists() ? parse(f, true) : null;
     }
 
-    /** Like {@link #tryRead} but silent, for probing safety copies (some are expected to be junk). */
-    private StoreData parse(File f) {
+    /** Reads a save; null if unreadable. {@code logFailure} is off when probing safety copies (some are junk). */
+    private StoreData parse(File f, boolean logFailure) {
         try {
             return gson.fromJson(new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8),
                     StoreData.class);
         } catch (Exception e) {
+            if (logFailure) log.error("Failed to read bestiary store {}", f, e);
             return null;
         }
     }
@@ -351,7 +348,7 @@ public class BestiaryStore {
      * ends in {@code .json} so it shows as a plain JSON file, never mistaken for the live save.
      * Files with no data in them (empty, or all zero bytes as a crash can leave) aren't worth a copy.
      */
-    private void keepSafetyCopy(File f) {
+    private synchronized void keepSafetyCopy(File f) {
         if (f == null || !f.exists() || !hasData(f)) return;
         String account = accountOf(f.getName());
         try {
@@ -396,7 +393,7 @@ public class BestiaryStore {
         File best = null;
         long bestXp = -1;
         for (File c : copies) {
-            StoreData d = parse(c);
+            StoreData d = parse(c, false);
             if (d != null && d.version == VERSION && d.totalXp >= bestXp) {
                 best = c;
                 bestXp = d.totalXp;
@@ -477,10 +474,11 @@ public class BestiaryStore {
      * Linux/macOS; Windows can't open a directory as a channel (NTFS journals renames anyway).
      */
     private static void forceDirectoryToDisk(Path dir) {
+        if (dirSyncUnsupported) return;
         try (FileChannel ch = FileChannel.open(dir, StandardOpenOption.READ)) {
             ch.force(true);
-        } catch (IOException | UnsupportedOperationException ignored) {
-            // Not supported on this platform — nothing more we can do.
+        } catch (IOException | UnsupportedOperationException e) {
+            dirSyncUnsupported = true;   // e.g. Windows: don't retry (and throw) on every save
         }
     }
 
