@@ -16,14 +16,20 @@ import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +65,17 @@ public class BestiaryStore {
     public static final int VERSION = 2;
 
     private static final long DEBOUNCE_MS = 1000;
+
+    /** Saves at least this big get a safety copy before being overwritten by one under half their size. */
+    static final long SHRINK_GUARD_MIN_BYTES = 10 * 1024;
+
+    /** Newest safety copies kept per account, plus its best one (see pruneSafetyCopies); the rest are deleted. */
+    static final int KEEP_SAFETY_COPIES = 5;
+    private static final String SAFETY = ".safety-";
+    private static final int STAMP_LEN = "yyyyMMdd-HHmmss".length();
+
+    /** Set once a directory flush fails (e.g. Windows can't open a directory), so we stop retrying. */
+    private static volatile boolean dirSyncUnsupported;
 
     /** Serialized snapshot of everything we persist. */
     public static class StoreData {
@@ -179,14 +196,31 @@ public class BestiaryStore {
 
     /** Reads the active account's collection (main file then backup); empty if none active/usable. */
     public StoreData load() {
-        if (file == null) return new StoreData();
-        StoreData d = tryRead(file);
+        File f = file, b = backup;
+        if (f == null) return new StoreData();
+        StoreData d = tryRead(f);
         if (d == null) {
-            d = tryRead(backup);
+            // The save exists but couldn't be read (damaged, or briefly locked by other software).
+            // The next save will overwrite it, so keep a safety copy of it first.
+            keepSafetyCopy(f);
+            d = tryRead(b);
             if (d != null) log.warn("Bestiary main file unreadable; recovered from backup");
+        }
+        if (d == null && (f.exists() || b.exists())) {
+            // Save AND backup unreadable: keep the backup too, then fall back to the safety copy with
+            // the most progress rather than starting at level 0. (Only when a save existed — a brand
+            // new account has none, so it simply starts fresh.)
+            keepSafetyCopy(b);
+            File best = bestSafetyCopy(sortedSafetyCopies(accountOf(f.getName())));
+            if (best != null) {
+                d = parse(best, false);
+                log.warn("Bestiary save and backup unreadable; recovered from safety copy {}", best);
+            }
         }
         if (d == null) return new StoreData();
         if (d.version != VERSION) {
+            keepSafetyCopy(f);
+            keepSafetyCopy(b);
             log.info("Bestiary store version {} != {}; starting this account fresh (data reset)",
                     d.version, VERSION);
             return new StoreData();
@@ -200,12 +234,16 @@ public class BestiaryStore {
     }
 
     private StoreData tryRead(File f) {
-        if (f == null || !f.exists()) return null;
+        return f != null && f.exists() ? parse(f, true) : null;
+    }
+
+    /** Reads a save; null if unreadable. {@code logFailure} is off when probing safety copies (some are junk). */
+    private StoreData parse(File f, boolean logFailure) {
         try {
-            String json = new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
-            return gson.fromJson(json, StoreData.class);
+            return gson.fromJson(new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8),
+                    StoreData.class);
         } catch (Exception e) {
-            log.error("Failed to read bestiary store {}", f, e);
+            if (logFailure) log.error("Failed to read bestiary store {}", f, e);
             return null;
         }
     }
@@ -265,14 +303,30 @@ public class BestiaryStore {
         if (d != null && f != null) writeTo(f, b, d);
     }
 
-    /** Crash-safe write of {@code d} to {@code target} (temp file → back up previous → atomic rename). */
+    /**
+     * Crash-safe write of {@code d} to {@code target} (temp file → back up previous → atomic rename).
+     *
+     * <p>The temp file and the backup are forced to disk before the rename. Without that, a full
+     * system crash (BSOD / power loss) can persist the rename but not the file's contents, leaving
+     * an empty or zero-filled save that silently falls back to the older {@code .bak} on next load.
+     */
     private synchronized boolean writeTo(File target, File bak, StoreData d) {
         try {
             Files.createDirectories(accountsDir.toPath());
+            byte[] bytes = gson.toJson(d).getBytes(StandardCharsets.UTF_8);
+            long oldSize = target.length();   // 0 if missing
+            if (oldSize >= SHRINK_GUARD_MIN_BYTES && bytes.length < oldSize / 2) {
+                // A save that suddenly loses over half its size is almost never wanted (the usual
+                // cause is an empty collection loaded after a read failure). Keep the old one first.
+                log.info("Bestiary save {} shrinking {} -> {} bytes; keeping a safety copy",
+                        target, oldSize, bytes.length);
+                keepSafetyCopy(target);
+            }
             Path tmp = target.toPath().resolveSibling(target.getName() + ".tmp");
-            Files.write(tmp, gson.toJson(d).getBytes(StandardCharsets.UTF_8));
+            writeDurably(tmp, bytes);
             if (target.exists()) {
                 Files.copy(target.toPath(), bak.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                forceToDisk(bak.toPath());
             }
             try {
                 Files.move(tmp, target.toPath(),
@@ -280,10 +334,151 @@ public class BestiaryStore {
             } catch (IOException atomicUnsupported) {
                 Files.move(tmp, target.toPath(), StandardCopyOption.REPLACE_EXISTING);
             }
+            forceDirectoryToDisk(accountsDir.toPath());
             return true;
         } catch (IOException e) {
             log.error("Failed to write bestiary store {}", target, e);
             return false;
+        }
+    }
+
+    /**
+     * Copies {@code f} (an account's save or its backup) to {@code <hash>.safety-<yyyyMMdd-HHmmss>[-n].json}
+     * next to it, then prunes the account's safety copies (see {@link #pruneSafetyCopies}). The name
+     * ends in {@code .json} so it shows as a plain JSON file, never mistaken for the live save.
+     * Files with no data in them (empty, or all zero bytes as a crash can leave) aren't worth a copy.
+     */
+    private synchronized void keepSafetyCopy(File f) {
+        if (f == null || !f.exists() || !hasData(f)) return;
+        String account = accountOf(f.getName());
+        try {
+            String stamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
+            // Same-second copies get a counter above any existing one, so names always sort in the
+            // order they were made (a pruned name is never reused and mistaken for the oldest).
+            int next = 0;
+            for (File c : sortedSafetyCopies(account)) {
+                if (safetyStamp(c).equals(stamp)) next = Math.max(next, safetyCounter(c) + 1);
+            }
+            File copy = new File(accountsDir, account + SAFETY + stamp + (next == 0 ? "" : "-" + next) + ".json");
+            Files.copy(f.toPath(), copy.toPath());
+            forceToDisk(copy.toPath());
+            log.info("Kept a safety copy of bestiary save {} at {}", f, copy);
+        } catch (IOException e) {
+            log.error("Failed to keep a safety copy of {}", f, e);
+        }
+        pruneSafetyCopies(account);
+    }
+
+    /**
+     * Keeps the account's newest {@link #KEEP_SAFETY_COPIES} safety copies, <b>plus</b> its best one
+     * (see {@link #bestSafetyCopy}) wherever it sits, and deletes the rest. However many junk or
+     * low-progress copies pile up, they can never push out the player's furthest-along save.
+     */
+    private void pruneSafetyCopies(String account) {
+        List<File> copies = sortedSafetyCopies(account);
+        if (copies.size() <= KEEP_SAFETY_COPIES) return;
+        File best = bestSafetyCopy(copies);
+        for (File old : copies.subList(0, copies.size() - KEEP_SAFETY_COPIES)) {
+            if (old.equals(best)) continue;
+            if (!old.delete()) log.warn("Could not delete old bestiary safety copy {}", old);
+        }
+    }
+
+    /**
+     * The safety copy with the most progress: the readable, current-version copy with the highest
+     * total XP (XP only ever goes up, so this is the furthest-along save). Ties go to the newest.
+     * Null if none is readable. {@code copies} must be sorted oldest first.
+     */
+    private File bestSafetyCopy(List<File> copies) {
+        File best = null;
+        long bestXp = -1;
+        for (File c : copies) {
+            StoreData d = parse(c, false);
+            if (d != null && d.version == VERSION && d.totalXp >= bestXp) {
+                best = c;
+                bestXp = d.totalXp;
+            }
+        }
+        return best;
+    }
+
+    /** False for an empty file or one that is only zero bytes / whitespace (nothing to recover). */
+    private static boolean hasData(File f) {
+        try {
+            for (byte x : Files.readAllBytes(f.toPath())) {
+                if (x != 0 && x != ' ' && x != '\n' && x != '\r' && x != '\t') return true;
+            }
+            return false;
+        } catch (IOException e) {
+            return true;   // can't tell (e.g. locked): err on the side of keeping it
+        }
+    }
+
+    /** {@code "123"} for both {@code 123.json} and {@code 123.json.bak}. */
+    private static String accountOf(String fileName) {
+        int i = fileName.indexOf('.');
+        return i < 0 ? fileName : fileName.substring(0, i);
+    }
+
+    /** The account's safety copies, oldest first. */
+    private List<File> sortedSafetyCopies(String account) {
+        File[] found = accountsDir.listFiles((d, n) -> n.startsWith(account + SAFETY) && n.endsWith(".json"));
+        List<File> copies = found == null ? new ArrayList<>() : new ArrayList<>(Arrays.asList(found));
+        copies.sort(Comparator.comparing(BestiaryStore::safetyStamp)
+                .thenComparingInt(BestiaryStore::safetyCounter));
+        return copies;
+    }
+
+    /** The part of a safety copy's name after {@code .safety-}, without {@code .json}. */
+    private static String safetySuffix(File c) {
+        String n = c.getName();
+        return n.substring(n.indexOf(SAFETY) + SAFETY.length(), n.length() - ".json".length());
+    }
+
+    /** The {@code yyyyMMdd-HHmmss} part of a safety copy's name. */
+    private static String safetyStamp(File c) {
+        String rest = safetySuffix(c);
+        return rest.length() > STAMP_LEN ? rest.substring(0, STAMP_LEN) : rest;
+    }
+
+    /** The same-second {@code -n} counter of a safety copy's name (0 if none). */
+    private static int safetyCounter(File c) {
+        String rest = safetySuffix(c);
+        if (rest.length() <= STAMP_LEN + 1) return 0;
+        try {
+            return Integer.parseInt(rest.substring(STAMP_LEN + 1));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    /** Writes {@code bytes} to {@code p} (replacing any leftover content) and forces it to disk. */
+    private static void writeDurably(Path p, byte[] bytes) throws IOException {
+        try (FileChannel ch = FileChannel.open(p, StandardOpenOption.CREATE, StandardOpenOption.WRITE,
+                StandardOpenOption.TRUNCATE_EXISTING)) {
+            ByteBuffer buf = ByteBuffer.wrap(bytes);
+            while (buf.hasRemaining()) ch.write(buf);
+            ch.force(true);
+        }
+    }
+
+    /** Forces an existing file's contents to disk (opened for write: Windows needs that to flush). */
+    private static void forceToDisk(Path p) throws IOException {
+        try (FileChannel ch = FileChannel.open(p, StandardOpenOption.WRITE)) {
+            ch.force(true);
+        }
+    }
+
+    /**
+     * Best-effort flush of the directory entry so the rename itself survives a crash. Supported on
+     * Linux/macOS; Windows can't open a directory as a channel (NTFS journals renames anyway).
+     */
+    private static void forceDirectoryToDisk(Path dir) {
+        if (dirSyncUnsupported) return;
+        try (FileChannel ch = FileChannel.open(dir, StandardOpenOption.READ)) {
+            ch.force(true);
+        } catch (IOException | UnsupportedOperationException e) {
+            dirSyncUnsupported = true;   // e.g. Windows: don't retry (and throw) on every save
         }
     }
 

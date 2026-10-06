@@ -39,6 +39,15 @@ public class AboutDialog extends JDialog {
 
     // Newest first. Future releases get prepended above v1.0.0.
     private static final Release[] RELEASES = {
+        new Release("v1.1.3", "Safer saves", new String[][]{
+            {"Crash-proof saving", "Your collection is now fully written to disk before it replaces the "
+                + "old save, so a PC crash or power cut can no longer leave you with a blank save."},
+            {"Safety copies", "If a save ever can't be read, or is about to suddenly shrink (like after "
+                + "a reset or a huge bulk discard), a safety copy is kept first in your "
+                + ".runelite/bestiary/accounts folder. Your furthest-along copy is never thrown away."},
+            {"Automatic recovery", "If your save and its backup are ever both damaged, the plugin now "
+                + "loads your best safety copy instead of starting you from scratch."},
+        }),
         new Release("v1.1.2", "Level 99 shop & polish", new String[][]{
             {"Level 99 shop", "Reach Capture Level 99 to unlock a new tab of endgame upgrades. Find out "
                 + "what's inside when you get there! Consumables are coming soon."},
