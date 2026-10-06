@@ -318,7 +318,7 @@ public class BestiaryStore {
             if (oldSize >= SHRINK_GUARD_MIN_BYTES && bytes.length < oldSize / 2) {
                 // A save that suddenly loses over half its size is almost never wanted (the usual
                 // cause is an empty collection loaded after a read failure). Keep the old one first.
-                log.warn("Bestiary save {} shrinking {} -> {} bytes; keeping a safety copy",
+                log.info("Bestiary save {} shrinking {} -> {} bytes; keeping a safety copy",
                         target, oldSize, bytes.length);
                 keepSafetyCopy(target);
             }
@@ -362,7 +362,7 @@ public class BestiaryStore {
             File copy = new File(accountsDir, account + SAFETY + stamp + (next == 0 ? "" : "-" + next) + ".json");
             Files.copy(f.toPath(), copy.toPath());
             forceToDisk(copy.toPath());
-            log.warn("Kept a safety copy of bestiary save {} at {}", f, copy);
+            log.info("Kept a safety copy of bestiary save {} at {}", f, copy);
         } catch (IOException e) {
             log.error("Failed to keep a safety copy of {}", f, e);
         }
