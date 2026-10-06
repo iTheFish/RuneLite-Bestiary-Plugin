@@ -28,6 +28,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,6 +68,11 @@ public class BestiaryStore {
 
     /** Saves at least this big get a safety copy before being overwritten by one under half their size. */
     static final long SHRINK_GUARD_MIN_BYTES = 10 * 1024;
+
+    /** Safety copies kept per account (save + backup copies together); older ones are deleted. */
+    static final int KEEP_SAFETY_COPIES = 5;
+    private static final String SAFETY = ".safety-";
+    private static final int STAMP_LEN = "yyyyMMdd-HHmmss".length();
 
     /** Serialized snapshot of everything we persist. */
     public static class StoreData {
@@ -191,7 +198,7 @@ public class BestiaryStore {
         StoreData d = tryRead(f);
         if (d == null) {
             // The save exists but couldn't be read (damaged, or briefly locked by other software).
-            // The next save will overwrite it, so keep a copy that is never touched again.
+            // The next save will overwrite it, so keep a safety copy of it first.
             keepSafetyCopy(f);
             d = tryRead(b);
             if (d != null) log.warn("Bestiary main file unreadable; recovered from backup");
@@ -321,22 +328,67 @@ public class BestiaryStore {
     }
 
     /**
-     * Copies {@code f} to {@code <name>.safety-<yyyyMMdd-HHmmss>} next to it. Safety copies are never
-     * overwritten or deleted by the plugin, so the data in them can always be restored by hand.
+     * Copies {@code f} to {@code <name>.safety-<yyyyMMdd-HHmmss>[-n]} next to it, then keeps only the
+     * account's newest {@link #KEEP_SAFETY_COPIES} safety copies (of its save and its backup together).
      */
     private static void keepSafetyCopy(File f) {
         if (f == null || !f.exists()) return;
+        File dir = f.getParentFile();
+        String account = accountPrefix(f.getName());
         try {
             String stamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
-            File copy = new File(f.getParentFile(), f.getName() + ".safety-" + stamp);
-            for (int n = 1; copy.exists(); n++) {
-                copy = new File(f.getParentFile(), f.getName() + ".safety-" + stamp + "-" + n);
+            // Same-second copies get a counter above any existing one, so names always sort in the
+            // order they were made (a pruned name is never reused and mistaken for the oldest).
+            int next = 0;
+            for (File c : safetyCopies(dir, account)) {
+                if (safetyStamp(c).equals(stamp)) next = Math.max(next, safetyCounter(c) + 1);
             }
+            File copy = new File(dir, f.getName() + SAFETY + stamp + (next == 0 ? "" : "-" + next));
             Files.copy(f.toPath(), copy.toPath());
             forceToDisk(copy.toPath());
             log.warn("Kept a safety copy of bestiary save {} at {}", f, copy);
         } catch (IOException e) {
             log.error("Failed to keep a safety copy of {}", f, e);
+        }
+        pruneSafetyCopies(dir, account);
+    }
+
+    /** Deletes all but the newest {@link #KEEP_SAFETY_COPIES} safety copies for one account. */
+    private static void pruneSafetyCopies(File dir, String account) {
+        List<File> copies = safetyCopies(dir, account);
+        if (copies.size() <= KEEP_SAFETY_COPIES) return;
+        copies.sort(Comparator.comparing(BestiaryStore::safetyStamp)
+                .thenComparingInt(BestiaryStore::safetyCounter));
+        for (File old : copies.subList(0, copies.size() - KEEP_SAFETY_COPIES)) {
+            if (!old.delete()) log.warn("Could not delete old bestiary safety copy {}", old);
+        }
+    }
+
+    /** {@code "123.json"} for both {@code 123.json} and {@code 123.json.bak}. */
+    private static String accountPrefix(String fileName) {
+        int i = fileName.indexOf(".json");
+        return i < 0 ? fileName : fileName.substring(0, i + ".json".length());
+    }
+
+    private static List<File> safetyCopies(File dir, String account) {
+        File[] found = dir.listFiles((d, n) -> n.startsWith(account + ".") && n.contains(SAFETY));
+        return found == null ? new ArrayList<>() : new ArrayList<>(Arrays.asList(found));
+    }
+
+    /** The {@code yyyyMMdd-HHmmss} part of a safety copy's name. */
+    private static String safetyStamp(File c) {
+        String rest = c.getName().substring(c.getName().indexOf(SAFETY) + SAFETY.length());
+        return rest.length() > STAMP_LEN ? rest.substring(0, STAMP_LEN) : rest;
+    }
+
+    /** The same-second {@code -n} counter of a safety copy's name (0 if none). */
+    private static int safetyCounter(File c) {
+        String rest = c.getName().substring(c.getName().indexOf(SAFETY) + SAFETY.length());
+        if (rest.length() <= STAMP_LEN + 1) return 0;
+        try {
+            return Integer.parseInt(rest.substring(STAMP_LEN + 1));
+        } catch (NumberFormatException e) {
+            return 0;
         }
     }
 

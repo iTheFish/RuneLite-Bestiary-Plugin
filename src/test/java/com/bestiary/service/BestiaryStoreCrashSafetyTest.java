@@ -105,6 +105,40 @@ public class BestiaryStoreCrashSafetyTest {
         }
     }
 
+    @Test
+    public void onlyTheNewestFiveSafetyCopiesAreKeptPerAccount() throws Exception {
+        Path home = Files.createTempDirectory("bestiary-cap-test");
+        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+        try {
+            Path accounts = home.resolve(".runelite").resolve("bestiary").resolve("accounts");
+            BestiaryStore store = new BestiaryStore(new Gson(), executor, home.resolve(".runelite").toFile());
+
+            // Another account's safety copy must never be pruned by this one's.
+            Files.createDirectories(accounts);
+            Files.write(accounts.resolve("70.json.safety-20200101-000000"), new byte[] { 1 });
+
+            // 12 mass-discard-style shrinks in a row (well within the same second).
+            store.setActiveAccount(7L, "Player");
+            byte[] newestBig = null;
+            for (int round = 0; round < 12; round++) {
+                store.saveNow(withKills(3000 + round));
+                newestBig = Files.readAllBytes(accounts.resolve("7.json"));
+                store.saveNow(new BestiaryStore.StoreData());
+            }
+
+            List<Path> kept = safetyCopies(accounts).stream()
+                    .filter(p -> p.getFileName().toString().startsWith("7.json"))
+                    .collect(Collectors.toList());
+            assertEquals(BestiaryStore.KEEP_SAFETY_COPIES, kept.size());
+            final byte[] expected = newestBig;
+            assertTrue("the newest copy survives pruning", kept.stream().anyMatch(p -> sameBytes(p, expected)));
+            assertTrue("other accounts' copies are untouched",
+                    Files.exists(accounts.resolve("70.json.safety-20200101-000000")));
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
     private static BestiaryStore.StoreData withKills(int n) {
         BestiaryStore.StoreData d = new BestiaryStore.StoreData();
         for (int i = 0; i < n; i++) d.killCounts.put("Monster " + i, i);
