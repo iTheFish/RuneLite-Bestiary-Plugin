@@ -25,6 +25,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -62,6 +63,9 @@ public class BestiaryStore {
     public static final int VERSION = 2;
 
     private static final long DEBOUNCE_MS = 1000;
+
+    /** Saves at least this big get a safety copy before being overwritten by one under half their size. */
+    static final long SHRINK_GUARD_MIN_BYTES = 10 * 1024;
 
     /** Serialized snapshot of everything we persist. */
     public static class StoreData {
@@ -182,14 +186,23 @@ public class BestiaryStore {
 
     /** Reads the active account's collection (main file then backup); empty if none active/usable. */
     public StoreData load() {
-        if (file == null) return new StoreData();
-        StoreData d = tryRead(file);
+        File f = file, b = backup;
+        if (f == null) return new StoreData();
+        StoreData d = tryRead(f);
         if (d == null) {
-            d = tryRead(backup);
+            // The save exists but couldn't be read (damaged, or briefly locked by other software).
+            // The next save will overwrite it, so keep a copy that is never touched again.
+            keepSafetyCopy(f);
+            d = tryRead(b);
             if (d != null) log.warn("Bestiary main file unreadable; recovered from backup");
         }
-        if (d == null) return new StoreData();
+        if (d == null) {
+            keepSafetyCopy(b);   // backup unusable too: keep it before we start this account empty
+            return new StoreData();
+        }
         if (d.version != VERSION) {
+            keepSafetyCopy(f);
+            keepSafetyCopy(b);
             log.info("Bestiary store version {} != {}; starting this account fresh (data reset)",
                     d.version, VERSION);
             return new StoreData();
@@ -278,8 +291,17 @@ public class BestiaryStore {
     private synchronized boolean writeTo(File target, File bak, StoreData d) {
         try {
             Files.createDirectories(accountsDir.toPath());
+            byte[] bytes = gson.toJson(d).getBytes(StandardCharsets.UTF_8);
+            long oldSize = target.length();   // 0 if missing
+            if (oldSize >= SHRINK_GUARD_MIN_BYTES && bytes.length < oldSize / 2) {
+                // A save that suddenly loses over half its size is almost never wanted (the usual
+                // cause is an empty collection loaded after a read failure). Keep the old one first.
+                log.warn("Bestiary save {} shrinking {} -> {} bytes; keeping a safety copy",
+                        target, oldSize, bytes.length);
+                keepSafetyCopy(target);
+            }
             Path tmp = target.toPath().resolveSibling(target.getName() + ".tmp");
-            writeDurably(tmp, gson.toJson(d).getBytes(StandardCharsets.UTF_8));
+            writeDurably(tmp, bytes);
             if (target.exists()) {
                 Files.copy(target.toPath(), bak.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 forceToDisk(bak.toPath());
@@ -295,6 +317,26 @@ public class BestiaryStore {
         } catch (IOException e) {
             log.error("Failed to write bestiary store {}", target, e);
             return false;
+        }
+    }
+
+    /**
+     * Copies {@code f} to {@code <name>.safety-<yyyyMMdd-HHmmss>} next to it. Safety copies are never
+     * overwritten or deleted by the plugin, so the data in them can always be restored by hand.
+     */
+    private static void keepSafetyCopy(File f) {
+        if (f == null || !f.exists()) return;
+        try {
+            String stamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
+            File copy = new File(f.getParentFile(), f.getName() + ".safety-" + stamp);
+            for (int n = 1; copy.exists(); n++) {
+                copy = new File(f.getParentFile(), f.getName() + ".safety-" + stamp + "-" + n);
+            }
+            Files.copy(f.toPath(), copy.toPath());
+            forceToDisk(copy.toPath());
+            log.warn("Kept a safety copy of bestiary save {} at {}", f, copy);
+        } catch (IOException e) {
+            log.error("Failed to keep a safety copy of {}", f, e);
         }
     }
 
