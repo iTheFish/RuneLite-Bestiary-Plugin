@@ -798,9 +798,9 @@ public class MonsterRoster {
         b.put("The Smorks",            new int[]{ 1,  1, 66, 56, 56,  5});
         b.put("Moia",                  new int[]{ 1,  1, 59, 80, 80, 10});
         b.put("Dreadnoth the Jellied", new int[]{70, 80, 60, 66, 75, 60});
-        b.put("Dagon'hai Elder",       new int[]{ 1,  1, 30, 87, 78, 30});
-        b.put("Dagon'hai Monk",        new int[]{ 1,  1, 30, 87, 78, 35});
-        b.put("Xarth",                 new int[]{75, 68, 51, 90, 66,  5});
+        b.put("Dagon'hai Elder",       new int[]{ 1,  1, 60, 87, 78, 30});
+        b.put("Dagon'hai Monk",        new int[]{ 1,  1, 60, 87, 78, 35});
+        b.put("Xarth",                 new int[]{75, 68, 51, 85, 66,  5});
         b.put("Ocellus",               new int[]{90, 75, 75, 90, 90, 50});
 
         STAT_BASES = Collections.unmodifiableMap(b);
@@ -1601,15 +1601,15 @@ public class MonsterRoster {
         p.put("Guardian", 1);
 
         // Fractured Archive raid (2026-10-23)
-        p.put("Archive Guardian", 70);
-        p.put("Ezekiel", 90);              // Saradominist justiciar
-        p.put("Bork", 50);
+        p.put("Archive Guardian", 40);
+        p.put("Ezekiel", 40);
+        p.put("Bork", 40);
         p.put("The Smorks", 30);
-        p.put("Moia", 75);
-        p.put("Dreadnoth the Jellied", 60);
-        p.put("Dagon'hai Elder", 70);
-        p.put("Dagon'hai Monk", 55);
-        p.put("Xarth", 90);
+        p.put("Moia", 40);
+        p.put("Dreadnoth the Jellied", 40);
+        p.put("Dagon'hai Elder", 40);
+        p.put("Dagon'hai Monk", 40);
+        p.put("Xarth", 40);
         p.put("Ocellus", 95);              // uses Ancient Curses in phase 4
 
         PRAYER = Collections.unmodifiableMap(p);
