@@ -60,6 +60,16 @@ public class CaptureRateDialog extends JDialog {
             root.add(Box.createVerticalStrut(2));
             root.add(noteRow("★ includes your Level 99 shop catch-rate boost."));
         }
+        if (com.bestiary.model.CatchEvent.isActive(java.time.Instant.now())) {
+            root.add(Box.createVerticalStrut(4));
+            JLabel event = new JLabel("✦ " + com.bestiary.model.CatchEvent.NAME
+                    + " event: raid bosses are a 100% catch until "
+                    + com.bestiary.model.CatchEvent.lastDayLabel() + "!");
+            event.setFont(FontManager.getRunescapeSmallFont());
+            event.setForeground(new Color(255, 215, 0));
+            event.setAlignmentX(LEFT_ALIGNMENT);
+            root.add(event);
+        }
         root.add(Box.createVerticalStrut(14));
 
         root.add(sectionHeader("RARITY ODDS AT YOUR LEVEL"));

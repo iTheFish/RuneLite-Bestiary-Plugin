@@ -1,6 +1,7 @@
 package com.bestiary.service;
 
 import com.bestiary.model.CapturedCreature;
+import com.bestiary.model.CatchEvent;
 import com.bestiary.model.CreatureQuality;
 import com.bestiary.model.CreatureRarity;
 import com.bestiary.model.DifficultyTier;
@@ -82,6 +83,10 @@ public class CaptureService {
         double catchBonus = (catchRateBonusByTier != null && difficulty.ordinal() < catchRateBonusByTier.length)
                 ? catchRateBonusByTier[difficulty.ordinal()] : 0.0;
         double catchRate = calculateCatchRate(captureLevel, difficulty, catchBonus);
+        // Fractured Archive launch event: raid bosses are a guaranteed catch until it ends.
+        if (CatchEvent.guaranteed(npcName, Instant.now())) {
+            catchRate = 1.0;
+        }
         double roll = rng.nextDouble();
 
         log.debug("Capture roll for {} [{}]: roll={} catchRate={}", npcName, difficulty.label,

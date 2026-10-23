@@ -1,6 +1,7 @@
 package com.bestiary.util;
 
 import com.bestiary.model.CapturedCreature;
+import com.bestiary.model.CatchEvent;
 import com.bestiary.model.CreatureRarity;
 import com.bestiary.model.DifficultyTier;
 import com.bestiary.model.MonsterRoster;
@@ -65,6 +66,10 @@ public final class OddsCalculator {
         r.shiny      = c.isShiny();
 
         r.catchChance  = CaptureService.calculateCatchRate(r.level, r.difficulty);
+        // Caught during the Fractured Archive event → the catch really was guaranteed.
+        if (CatchEvent.guaranteed(c.npcName, c.captureTime)) {
+            r.catchChance = 1.0;
+        }
         r.rarityChance = RarityRoller.rarityChance(r.level, r.rarity);
         // Use the shiny bonus that applied to THIS card (at its capture/reroll), not the current one,
         // so a card caught before the Shiny Charm was unlocked still shows its true odds.
