@@ -516,10 +516,10 @@ public class MonsterRoster {
 
         // Fractured Archive raid (2026-10-23)
         a.put("Archive Guardian",      APEX);       // crush melee + ranged rocks + magic laser
-        a.put("Ezekiel",               BATTLEMAGE); // melee cleave + lightning
+        a.put("Ezekiel",               BATTLEMAGE); // lightning-led, melee cleave
         a.put("Bork",                  WARRIOR);    // crush melee
         a.put("The Smorks",            OCCULTIST);  // ranged + magic (cannon crew)
-        a.put("Moia",                  MAGE);       // necromancer, magic
+        a.put("Moia",                  OCCULTIST);  // necromancer, magic + ranged
         a.put("Dreadnoth the Jellied", WARDEN);     // melee slams + ranged projectiles
         a.put("Dagon'hai Elder",       OCCULTIST);  // ranged + surge spells
         a.put("Dagon'hai Monk",        MAGE);       // ritual channelers
@@ -791,16 +791,16 @@ public class MonsterRoster {
         b.put("Vanguard",              new int[]{60, 60, 65, 60, 60, 25});
         b.put("Guardian",              new int[]{60, 65, 50,  1,  1,  5});
 
-        // Fractured Archive raid (2026-10-23) — wiki stats x0.3 (cap 90); Ocellus = phase 3
+        // Fractured Archive raid (2026-10-23) — wiki stats x0.3 (cap 90), user-tuned; Ocellus = phase 3
         b.put("Archive Guardian",      new int[]{75, 72, 78, 75, 84, 40});
-        b.put("Ezekiel",               new int[]{75, 45, 39, 60, 24, 30});
-        b.put("Bork",                  new int[]{60, 60, 90, 27, 60, 10});
-        b.put("The Smorks",            new int[]{ 1,  1, 66, 56, 56, 35});
-        b.put("Moia",                  new int[]{ 1,  1, 59, 90, 60, 40});
-        b.put("Dreadnoth the Jellied", new int[]{84, 86, 38, 66, 75, 15});
+        b.put("Ezekiel",               new int[]{60, 45, 52, 80, 24, 30});
+        b.put("Bork",                  new int[]{60, 60, 75, 27, 60, 40});
+        b.put("The Smorks",            new int[]{ 1,  1, 66, 56, 56,  5});
+        b.put("Moia",                  new int[]{ 1,  1, 59, 80, 80, 10});
+        b.put("Dreadnoth the Jellied", new int[]{70, 80, 60, 66, 75, 60});
         b.put("Dagon'hai Elder",       new int[]{ 1,  1, 30, 87, 78, 30});
         b.put("Dagon'hai Monk",        new int[]{ 1,  1, 30, 87, 78, 35});
-        b.put("Xarth",                 new int[]{75, 68, 51, 90, 66, 45});
+        b.put("Xarth",                 new int[]{75, 68, 51, 90, 66,  5});
         b.put("Ocellus",               new int[]{90, 75, 75, 90, 90, 50});
 
         STAT_BASES = Collections.unmodifiableMap(b);
@@ -1241,14 +1241,13 @@ public class MonsterRoster {
 
         // Fractured Archive raid (2026-10-23)
         s.put("Ezekiel",               HUMAN);
-        s.put("Bork",                  GOBLINOID); // Bandosian ork
         s.put("The Smorks",            GOBLINOID); // tiny Bandosian goblins
         s.put("Dreadnoth the Jellied", DEMON);
         s.put("Dagon'hai Elder",       HUMAN);
         s.put("Dagon'hai Monk",        HUMAN);
         s.put("Xarth",                 DEMON);     // unique tormented demon
         s.put("Ocellus",               DEMON);     // wiki Demon attribute
-        // Archive Guardian (construct) + Moia (half-mahjarrat) → OTHER via fallback.
+        // Archive Guardian (construct), Moia (half-mahjarrat), Bork (ork) → OTHER via fallback.
 
         // All unlisted monsters fall back to OTHER via getSpecies()
         SPECIES = Collections.unmodifiableMap(s);
