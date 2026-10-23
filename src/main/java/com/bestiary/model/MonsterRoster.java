@@ -193,7 +193,11 @@ public class MonsterRoster {
         "Venator", "Frost dragon",
 
         // === CoX additions (2026-09-23) ===
-        "Skeletal Mystic", "Deathly ranger", "Deathly mage", "Vanguard", "Guardian"
+        "Skeletal Mystic", "Deathly ranger", "Deathly mage", "Vanguard", "Guardian",
+
+        // === Fractured Archive raid (2026-10-23) ===
+        "Archive Guardian", "Ezekiel", "Bork", "The Smorks", "Moia",
+        "Dreadnoth the Jellied", "Dagon'hai Elder", "Dagon'hai Monk", "Xarth", "Ocellus"
     );
 
     // -------------------------------------------------------------------------
@@ -360,6 +364,12 @@ public class MonsterRoster {
         d.put("Vanguard",          BOSS);
         d.put("Guardian",          BOSS);
 
+        // Fractured Archive raid (2026-10-23) — all boss-tier raid encounters
+        for (String n : Arrays.asList(
+            "Archive Guardian", "Ezekiel", "Bork", "The Smorks", "Moia",
+            "Dreadnoth the Jellied", "Dagon'hai Elder", "Dagon'hai Monk", "Xarth", "Ocellus"
+        )) { d.put(n, BOSS); }
+
         DIFFICULTY = Collections.unmodifiableMap(d);
     }
 
@@ -503,6 +513,18 @@ public class MonsterRoster {
         a.put("Deathly mage",      MAGE);       // pure magic
         a.put("Vanguard",          APEX);       // tribrid (melee/magic/ranged trio)
         a.put("Guardian",          WARRIOR);    // pickaxe-mined statue; melee
+
+        // Fractured Archive raid (2026-10-23)
+        a.put("Archive Guardian",      APEX);       // crush melee + ranged rocks + magic laser
+        a.put("Ezekiel",               BATTLEMAGE); // lightning-led, melee cleave
+        a.put("Bork",                  WARRIOR);    // crush melee
+        a.put("The Smorks",            OCCULTIST);  // ranged + magic (cannon crew)
+        a.put("Moia",                  OCCULTIST);  // necromancer, magic + ranged
+        a.put("Dreadnoth the Jellied", WARDEN);     // melee slams + ranged projectiles
+        a.put("Dagon'hai Elder",       OCCULTIST);  // ranged + surge spells
+        a.put("Dagon'hai Monk",        MAGE);       // ritual channelers
+        a.put("Xarth",                 APEX);       // magic, then ranged + melee
+        a.put("Ocellus",               APEX);       // tribrid final boss
 
         COMBAT_CLASSES = Collections.unmodifiableMap(a);
     }
@@ -768,6 +790,18 @@ public class MonsterRoster {
         b.put("Deathly mage",          new int[]{ 1,  1, 60, 80,  1, 30});
         b.put("Vanguard",              new int[]{60, 60, 65, 60, 60, 25});
         b.put("Guardian",              new int[]{60, 65, 50,  1,  1,  5});
+
+        // Fractured Archive raid (2026-10-23) — wiki stats x0.3 (cap 90), user-tuned; Ocellus = phase 3
+        b.put("Archive Guardian",      new int[]{75, 72, 78, 75, 84, 40});
+        b.put("Ezekiel",               new int[]{60, 45, 52, 80, 24, 30});
+        b.put("Bork",                  new int[]{60, 60, 75, 27, 60, 40});
+        b.put("The Smorks",            new int[]{ 1,  1, 66, 56, 56,  5});
+        b.put("Moia",                  new int[]{ 1,  1, 59, 80, 80, 10});
+        b.put("Dreadnoth the Jellied", new int[]{70, 80, 60, 66, 75, 60});
+        b.put("Dagon'hai Elder",       new int[]{ 1,  1, 60, 87, 78, 30});
+        b.put("Dagon'hai Monk",        new int[]{ 1,  1, 60, 87, 78, 35});
+        b.put("Xarth",                 new int[]{75, 68, 51, 85, 66,  5});
+        b.put("Ocellus",               new int[]{90, 75, 75, 90, 90, 50});
 
         STAT_BASES = Collections.unmodifiableMap(b);
     }
@@ -1035,6 +1069,17 @@ public class MonsterRoster {
         h.put("Deathly mage",          120);
         h.put("Vanguard",              180);
         h.put("Guardian",              250);
+        // Fractured Archive raid (2026-10-23)
+        h.put("Archive Guardian",      550);    // + shield bar
+        h.put("Ezekiel",              3000);
+        h.put("Bork",                 1500);
+        h.put("The Smorks",            600);
+        h.put("Moia",                  785);
+        h.put("Dreadnoth the Jellied",2100);
+        h.put("Dagon'hai Elder",       640);    // shared pool with the monks
+        h.put("Dagon'hai Monk",        640);
+        h.put("Xarth",                2600);
+        h.put("Ocellus",              5250);    // phase 3 bar (phase 1 = 2500)
         HITPOINTS = Collections.unmodifiableMap(h);
     }
 
@@ -1194,6 +1239,16 @@ public class MonsterRoster {
         // CoX (2026-09-23): Skeletal Mystic → UNDEAD, Deathly ranger/mage → HUMAN (humanoid figures);
         // Vanguard + Guardian are Xerician constructs with no fitting species → OTHER via fallback.
 
+        // Fractured Archive raid (2026-10-23)
+        s.put("Ezekiel",               HUMAN);
+        s.put("The Smorks",            GOBLINOID); // tiny Bandosian goblins
+        s.put("Dreadnoth the Jellied", DEMON);
+        s.put("Dagon'hai Elder",       HUMAN);
+        s.put("Dagon'hai Monk",        HUMAN);
+        s.put("Xarth",                 DEMON);     // unique tormented demon
+        s.put("Ocellus",               DEMON);     // wiki Demon attribute
+        // Archive Guardian (construct), Moia (half-mahjarrat), Bork (ork) → OTHER via fallback.
+
         // All unlisted monsters fall back to OTHER via getSpecies()
         SPECIES = Collections.unmodifiableMap(s);
     }
@@ -1346,7 +1401,9 @@ public class MonsterRoster {
         "Tekton", "Great Olm",
         "Maiden of Sugadinti", "Pestilent Bloat", "Sotetseg", "Xarpus", "Verzik Vitur",
         "Akkha", "Ba-Ba", "Kephri", "Zebak", "Tumeken's Warden", "Elidinis' Warden",
-        "Maggot King"
+        "Maggot King",
+        "Archive Guardian", "Ezekiel", "Bork", "The Smorks", "Moia",   // Fractured Archive
+        "Dreadnoth the Jellied", "Dagon'hai Elder", "Dagon'hai Monk", "Xarth", "Ocellus"
     );
 
     /**
@@ -1542,6 +1599,18 @@ public class MonsterRoster {
         p.put("Deathly mage", 15);
         p.put("Vanguard", 20);
         p.put("Guardian", 1);
+
+        // Fractured Archive raid (2026-10-23)
+        p.put("Archive Guardian", 40);
+        p.put("Ezekiel", 40);
+        p.put("Bork", 40);
+        p.put("The Smorks", 30);
+        p.put("Moia", 40);
+        p.put("Dreadnoth the Jellied", 40);
+        p.put("Dagon'hai Elder", 40);
+        p.put("Dagon'hai Monk", 40);
+        p.put("Xarth", 40);
+        p.put("Ocellus", 95);              // uses Ancient Curses in phase 4
 
         PRAYER = Collections.unmodifiableMap(p);
     }
@@ -1794,6 +1863,17 @@ public class MonsterRoster {
         c.put("Deathly mage",          178);
         c.put("Vanguard",              195);
         c.put("Guardian",              198);
+        // Fractured Archive raid (2026-10-23)
+        c.put("Archive Guardian",      984);
+        c.put("Ezekiel",               984);
+        c.put("Bork",                  871);
+        c.put("The Smorks",            640);
+        c.put("Moia",                 1064);
+        c.put("Dreadnoth the Jellied", 888);
+        c.put("Dagon'hai Elder",       427);
+        c.put("Dagon'hai Monk",        427);
+        c.put("Xarth",                 912);
+        c.put("Ocellus",              1601);   // phase 3
         COMBAT_LEVELS = Collections.unmodifiableMap(c);
     }
 

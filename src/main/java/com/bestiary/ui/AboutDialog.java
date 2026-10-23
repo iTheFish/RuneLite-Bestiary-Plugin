@@ -39,6 +39,13 @@ public class AboutDialog extends JDialog {
 
     // Newest first. Future releases get prepended above v1.0.0.
     private static final Release[] RELEASES = {
+        new Release("v1.1.4", "The Fractured Archive", new String[][]{
+            {"10 new raid bosses", "The Fractured Archive bosses can now be captured: Archive Guardian, "
+                + "Ezekiel, Bork, The Smorks, Moia, Dreadnoth the Jellied, the Dagon'hai Elder and Monk, "
+                + "Xarth and Ocellus."},
+            {"Launch event: 100% catch", "Until 30 November, every Fractured Archive boss you kill is a "
+                + "guaranteed capture. Rarity and shiny still roll as normal, so good luck!"},
+        }),
         new Release("v1.1.3", "Safer saves", new String[][]{
             {"Crash-proof saving", "Your collection is now fully written to disk before it replaces the "
                 + "old save, so a PC crash or power cut can no longer leave you with a blank save."},
