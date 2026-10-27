@@ -39,6 +39,10 @@ public class AboutDialog extends JDialog {
 
     // Newest first. Future releases get prepended above v1.0.0.
     private static final Release[] RELEASES = {
+        new Release("v1.1.5", "Smoother captures", new String[][]{
+            {"No more capture stutter", "Saving a new capture no longer pauses the game, so big "
+                + "collections stay smooth every time you catch something."},
+        }),
         new Release("v1.1.4", "The Fractured Archive", new String[][]{
             {"10 new raid bosses", "The Fractured Archive bosses can now be captured: Archive Guardian, "
                 + "Ezekiel, Bork, The Smorks, Moia, Dreadnoth the Jellied, the Dagon'hai Elder and Monk, "
