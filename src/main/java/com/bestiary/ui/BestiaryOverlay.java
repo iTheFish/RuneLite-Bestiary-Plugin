@@ -431,8 +431,11 @@ public class BestiaryOverlay extends Overlay {
         return new Dimension(w, h);
     }
 
+    // Fonts are cached rather than created every frame. Only touched from render() on the client thread.
+    private final java.util.Map<Integer, Font> fontCache = new java.util.HashMap<>();
+
     private Font getFont(int style, int size) {
-        return new Font(Font.SANS_SERIF, style, size);
+        return fontCache.computeIfAbsent(style * 1000 + size, k -> new Font(Font.SANS_SERIF, style, size));
     }
 
     private void drawCentered(Graphics2D g, String s, int cx, int baselineY) {

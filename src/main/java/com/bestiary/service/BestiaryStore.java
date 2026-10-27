@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Pure-Java JSON persistence for the bestiary (no native dependencies — Plugin Hub safe).
@@ -131,6 +132,13 @@ public class BestiaryStore {
     private File pendingFile;               // guarded by lock
     private File pendingBackup;             // guarded by lock
     private ScheduledFuture<?> scheduled;   // guarded by lock
+    private long pendingSeq;                // guarded by lock
+
+    // Every save request takes the next sequence number at call time. A write that arrives after a
+    // newer one has already landed in the same file is skipped, so a slower background write can
+    // never overwrite fresher data (saves now run on both the caller's thread and the executor).
+    private final AtomicLong saveSeq = new AtomicLong();
+    private final Map<File, Long> lastWrittenSeq = new java.util.HashMap<>();   // guarded by this
 
     @Inject
     public BestiaryStore(Gson gson, ScheduledExecutorService executor) {
@@ -260,9 +268,28 @@ public class BestiaryStore {
             pending = data;
             pendingFile = f;
             pendingBackup = b;
+            pendingSeq = saveSeq.incrementAndGet();
             if (scheduled == null || scheduled.isDone()) {
                 scheduled = executor.schedule(this::flush, DEBOUNCE_MS, TimeUnit.MILLISECONDS);
             }
+        }
+    }
+
+    /**
+     * Immediate save without blocking the caller: the write starts straight away (no debounce) on
+     * the background executor. Used on the game thread for captures, where a synchronous write of a
+     * large collection stalls the client for a visible frame or more.
+     */
+    public void saveSoon(StoreData data) {
+        File f = file, b = backup;   // snapshot the active target as of this call
+        if (f == null) return;       // no active account — nothing to persist
+        synchronized (lock) {
+            pending = data;
+            pendingFile = f;
+            pendingBackup = b;
+            pendingSeq = saveSeq.incrementAndGet();
+            if (scheduled != null) scheduled.cancel(false);   // replace any debounced write with an immediate one
+            scheduled = executor.schedule(this::flush, 0, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -270,22 +297,24 @@ public class BestiaryStore {
     public void saveNow(StoreData data) {
         File f = file, b = backup;   // snapshot the active target as of this call
         if (f == null) return;       // no active account — nothing to persist
+        long seq;
         synchronized (lock) {
             if (scheduled != null) scheduled.cancel(false);
             pending = null;
             pendingFile = null;
             pendingBackup = null;
+            seq = saveSeq.incrementAndGet();
         }
-        writeTo(f, b, data);
+        writeTo(f, b, data, seq);
     }
 
     private void flush() {
-        StoreData d; File f, b;
+        StoreData d; File f, b; long seq;
         synchronized (lock) {
-            d = pending; f = pendingFile; b = pendingBackup;
+            d = pending; f = pendingFile; b = pendingBackup; seq = pendingSeq;
             pending = null; pendingFile = null; pendingBackup = null;
         }
-        if (d != null && f != null) writeTo(f, b, d);
+        if (d != null && f != null) writeTo(f, b, d, seq);
     }
 
     /**
@@ -294,13 +323,13 @@ public class BestiaryStore {
      * buffered data is committed to its own file first.
      */
     private void flushPending() {
-        StoreData d; File f, b;
+        StoreData d; File f, b; long seq;
         synchronized (lock) {
             if (scheduled != null) scheduled.cancel(false);
-            d = pending; f = pendingFile; b = pendingBackup;
+            d = pending; f = pendingFile; b = pendingBackup; seq = pendingSeq;
             pending = null; pendingFile = null; pendingBackup = null;
         }
-        if (d != null && f != null) writeTo(f, b, d);
+        if (d != null && f != null) writeTo(f, b, d, seq);
     }
 
     /**
@@ -310,7 +339,12 @@ public class BestiaryStore {
      * system crash (BSOD / power loss) can persist the rename but not the file's contents, leaving
      * an empty or zero-filled save that silently falls back to the older {@code .bak} on next load.
      */
-    private synchronized boolean writeTo(File target, File bak, StoreData d) {
+    private synchronized boolean writeTo(File target, File bak, StoreData d, long seq) {
+        Long newest = lastWrittenSeq.get(target);
+        if (newest != null && seq < newest) {
+            log.debug("Skipping stale bestiary save for {} (a newer one is already written)", target);
+            return true;
+        }
         try {
             Files.createDirectories(accountsDir.toPath());
             byte[] bytes = gson.toJson(d).getBytes(StandardCharsets.UTF_8);
@@ -335,6 +369,7 @@ public class BestiaryStore {
                 Files.move(tmp, target.toPath(), StandardCopyOption.REPLACE_EXISTING);
             }
             forceDirectoryToDisk(accountsDir.toPath());
+            lastWrittenSeq.put(target, seq);
             return true;
         } catch (IOException e) {
             log.error("Failed to write bestiary store {}", target, e);
@@ -505,7 +540,7 @@ public class BestiaryStore {
      */
     public boolean writeAccountNow(long accountHash, StoreData data) {
         return writeTo(new File(accountsDir, accountHash + ".json"),
-                new File(accountsDir, accountHash + ".json.bak"), data);
+                new File(accountsDir, accountHash + ".json.bak"), data, saveSeq.incrementAndGet());
     }
 
     /** A known account from the registry — accountHash + last-known RSN + last-active epoch. */

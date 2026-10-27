@@ -361,7 +361,9 @@ public class BestiaryDataService {
     public void addCapture(CapturedCreature c) {
         collection.addCapture(c);
         collection.recordLifetimeCapture(c.npcName);   // genuine capture — bump the lifetime counters
-        persistNow();   // a capture is rare + valuable — write immediately
+        // A capture is rare + valuable — write immediately, but on the background executor: this
+        // runs on the game thread, and a synchronous write of a big collection stalls the client.
+        persistSoon();
     }
 
     public void incrementKillCount(String npcName) {
@@ -772,6 +774,11 @@ public class BestiaryDataService {
     /** Debounced snapshot write (coalesces high-frequency mutations). */
     private void persist() {
         store.save(snapshot());
+    }
+
+    /** Immediate (undebounced) snapshot write on the background executor — never blocks the caller. */
+    private void persistSoon() {
+        store.saveSoon(snapshot());
     }
 
     /** Immediate snapshot write. */
