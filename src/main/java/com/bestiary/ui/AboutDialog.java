@@ -39,6 +39,10 @@ public class AboutDialog extends JDialog {
 
     // Newest first. Future releases get prepended above v1.0.0.
     private static final Release[] RELEASES = {
+        new Release("v1.1.6", "Gorillas & TzHaar", new String[][]{
+            {"4 new monsters", "Demonic gorillas can now be captured, along with the TzHaar-Mej, "
+                + "TzHaar-Ket and TzHaar-Xil of Mor Ul Rek."},
+        }),
         new Release("v1.1.5", "Smoother captures", new String[][]{
             {"No more capture stutter", "Saving a new capture no longer pauses the game, so big "
                 + "collections stay smooth every time you catch something."},
