@@ -24,6 +24,7 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.geom.Arc2D;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -1160,23 +1161,30 @@ public class DashboardDialog extends JDialog {
 
     private void exportSingle(JButton btn) {
         BufferedImage img = renderCard(dataService, progressionService, activeView);
-        try {
-            if (com.bestiary.util.PngSaver.save(this, "bestiary_" + activeView.name().toLowerCase() + ".png", img)) {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setSelectedFile(new File(System.getProperty("user.home"),
+                "bestiary_" + activeView.name().toLowerCase() + ".png"));
+        if (chooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            try {
+                ImageIO.write(img, "PNG", chooser.getSelectedFile());
                 flashButton(btn, "✓ Saved!");
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Save failed: " + ex.getMessage());
             }
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Save failed: " + ex.getMessage());
         }
     }
 
     private void exportAll(JButton btn) {
         BufferedImage img = renderAllCard(dataService, progressionService);
-        try {
-            if (com.bestiary.util.PngSaver.save(this, "bestiary_dashboard.png", img)) {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setSelectedFile(new File(System.getProperty("user.home"), "bestiary_dashboard.png"));
+        if (chooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            try {
+                ImageIO.write(img, "PNG", chooser.getSelectedFile());
                 flashButton(btn, "✓ Saved!");
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Save failed: " + ex.getMessage());
             }
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Save failed: " + ex.getMessage());
         }
     }
 

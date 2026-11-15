@@ -13,6 +13,7 @@ import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -240,8 +241,13 @@ public class CardDataDialog extends JDialog {
     }
 
     private void save(BufferedImage img, String suggestedName) {
+        JFileChooser fc = new JFileChooser();
+        fc.setSelectedFile(new File(suggestedName + ".png"));
+        if (fc.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
+        File f = fc.getSelectedFile();
+        if (!f.getName().toLowerCase().endsWith(".png")) f = new File(f.getParentFile(), f.getName() + ".png");
         try {
-            com.bestiary.util.PngSaver.save(this, suggestedName + ".png", img);
+            ImageIO.write(img, "png", f);
         } catch (java.io.IOException ex) {
             /* best effort — ignore */
         }

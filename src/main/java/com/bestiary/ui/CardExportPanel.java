@@ -16,6 +16,7 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -232,12 +233,17 @@ public class CardExportPanel extends JPanel {
     }
 
     private boolean savePng() {
+        JFileChooser chooser = new JFileChooser();
         String fileName = "bestiary_" + npcName.toLowerCase().replace(" ", "_") + ".png";
-        try {
-            return com.bestiary.util.PngSaver.save(this, fileName, renderCard());
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Failed to save: " + ex.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+        chooser.setSelectedFile(new File(System.getProperty("user.home"), fileName));
+        if (chooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            try {
+                ImageIO.write(renderCard(), "PNG", chooser.getSelectedFile());
+                return true;
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Failed to save: " + ex.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            }
         }
         return false;
     }
