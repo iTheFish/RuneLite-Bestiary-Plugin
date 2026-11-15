@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.InputStream;
 
 import javax.imageio.ImageIO;
@@ -13,10 +12,8 @@ import javax.imageio.ImageIO;
  * The Bestiary panel / Plugin Hub icon: the golden "B" crest, bundled as a resource
  * ({@code /com/bestiary/logo.png}) and scaled on demand. This is the single source of truth for
  * both the in-client sidebar button ({@link #render}) and the repo-root {@code icon.png} the
- * Plugin Hub lists ({@link #main}). Replace the bundled PNG and regenerate the file — see {@link #main}.
- *
- * <p>Intentionally free of external dependencies (no logging framework) so {@link #main} can be run
- * standalone from the compiled classes without a runtime classpath.
+ * Plugin Hub lists. After replacing the bundled PNG, regenerate {@code icon.png} with the dev-only
+ * {@code PanelIconExport} tool in {@code src/test} (kept out of the plugin jar).
  */
 public final class PanelIcon {
 
@@ -64,18 +61,5 @@ public final class PanelIcon {
 
         g.dispose();
         return icon;
-    }
-
-    /**
-     * Writes the icon to a PNG so the repo-root {@code icon.png} (the Plugin Hub listing image)
-     * always matches the in-client sidebar icon. Run after replacing the bundled logo:
-     * {@code java -cp build/classes/java/main;build/resources/main com.bestiary.util.PanelIcon icon.png}
-     */
-    public static void main(String[] args) throws Exception {
-        System.setProperty("java.awt.headless", "true");
-        String out = args.length > 0 ? args[0] : "icon.png";
-        // The Plugin Hub caps the listing icon at 48x72px, so render at 48. The in-client sidebar
-        // button doesn't use this file — it calls render(s) at the nav-button size directly.
-        ImageIO.write(render(48), "png", new File(out));
     }
 }
