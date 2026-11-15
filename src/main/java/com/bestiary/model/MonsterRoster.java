@@ -197,7 +197,11 @@ public class MonsterRoster {
 
         // === Fractured Archive raid (2026-10-23) ===
         "Archive Guardian", "Ezekiel", "Bork", "The Smorks", "Moia",
-        "Dreadnoth the Jellied", "Dagon'hai Elder", "Dagon'hai Monk", "Xarth", "Ocellus"
+        "Dreadnoth the Jellied", "Dagon'hai Elder", "Dagon'hai Monk", "Xarth", "Ocellus",
+
+        // === v1.1.6 additions (2026-11-15) ===
+        "Demonic gorilla",
+        "TzHaar-Mej", "TzHaar-Ket", "TzHaar-Xil"
     );
 
     // -------------------------------------------------------------------------
@@ -254,7 +258,8 @@ public class MonsterRoster {
             "Warped tortoise",
             "Mountain troll",
             "Dagannoth",
-            "Greater demon", "Aberrant spectre", "Wyrm"
+            "Greater demon", "Aberrant spectre", "Wyrm",
+            "TzHaar-Mej", "TzHaar-Ket", "TzHaar-Xil"
         )) { d.put(n, MEDIUM); }
 
         // Hard — high slayer level, requires solid stats/gear
@@ -281,7 +286,7 @@ public class MonsterRoster {
             "Adamant dragon", "Rune dragon",
             "Hydra",
             "Smoke devil",
-            "Tormented Demon",
+            "Tormented Demon", "Demonic gorilla",
             "Basilisk knight"
         )) { d.put(n, ELITE); }
 
@@ -525,6 +530,12 @@ public class MonsterRoster {
         a.put("Dagon'hai Monk",        MAGE);       // ritual channelers
         a.put("Xarth",                 APEX);       // magic, then ranged + melee
         a.put("Ocellus",               APEX);       // tribrid final boss
+
+        // v1.1.6 additions (2026-11-15)
+        a.put("Demonic gorilla",       APEX);       // crush + ranged + magic, switches styles
+        a.put("TzHaar-Mej",            BATTLEMAGE); // magic + crush
+        a.put("TzHaar-Ket",            WARRIOR);    // crush melee
+        a.put("TzHaar-Xil",            WARDEN);     // melee + ranged
 
         COMBAT_CLASSES = Collections.unmodifiableMap(a);
     }
@@ -803,6 +814,12 @@ public class MonsterRoster {
         b.put("Xarth",                 new int[]{75, 68, 51, 85, 66,  5});
         b.put("Ocellus",               new int[]{90, 75, 75, 90, 90, 50});
 
+        // v1.1.6 additions (2026-11-15) — wiki stats x0.3 (cap 90); TzHaar-Ket = level 149 version
+        b.put("Demonic gorilla",       new int[]{62, 59, 60, 59, 59, 55});
+        b.put("TzHaar-Mej",            new int[]{24, 24, 24, 36,  1, 15});
+        b.put("TzHaar-Ket",            new int[]{36, 42, 36, 12,  1, 15});
+        b.put("TzHaar-Xil",            new int[]{42, 30, 30, 12, 36, 25});
+
         STAT_BASES = Collections.unmodifiableMap(b);
     }
 
@@ -1080,6 +1097,12 @@ public class MonsterRoster {
         h.put("Dagon'hai Monk",        640);
         h.put("Xarth",                2600);
         h.put("Ocellus",              5250);    // phase 3 bar (phase 1 = 2500)
+
+        // v1.1.6 additions (2026-11-15)
+        h.put("Demonic gorilla",       380);
+        h.put("TzHaar-Mej",            100);
+        h.put("TzHaar-Ket",            140);    // level 149 version (level 221 = 200)
+        h.put("TzHaar-Xil",            120);
         HITPOINTS = Collections.unmodifiableMap(h);
     }
 
@@ -1204,7 +1227,8 @@ public class MonsterRoster {
         )) { s.put(n, REPTILE); }
 
         // TZHAAR — TzHaar-kin and their champions
-        for (String n : Arrays.asList("TzTok-Jad", "TzKal-Zuk")) { s.put(n, TZHAAR); }
+        for (String n : Arrays.asList("TzTok-Jad", "TzKal-Zuk",
+                "TzHaar-Mej", "TzHaar-Ket", "TzHaar-Xil")) { s.put(n, TZHAAR); }
 
         // DAGANNOTH — dagannoth-kin
         for (String n : Arrays.asList(
@@ -1247,6 +1271,7 @@ public class MonsterRoster {
         s.put("Dagon'hai Monk",        HUMAN);
         s.put("Xarth",                 DEMON);     // unique tormented demon
         s.put("Ocellus",               DEMON);     // wiki Demon attribute
+        s.put("Demonic gorilla",       DEMON);     // demon-possessed gorillas (v1.1.6)
         // Archive Guardian (construct), Moia (half-mahjarrat), Bork (ork) → OTHER via fallback.
 
         // All unlisted monsters fall back to OTHER via getSpecies()
@@ -1612,6 +1637,12 @@ public class MonsterRoster {
         p.put("Xarth", 40);
         p.put("Ocellus", 95);              // uses Ancient Curses in phase 4
 
+        // v1.1.6 additions (2026-11-15)
+        p.put("Demonic gorilla", 70);      // switches protection prayers
+        p.put("TzHaar-Mej", 35);           // TzHaar mystics
+        p.put("TzHaar-Ket", 10);
+        p.put("TzHaar-Xil", 10);
+
         PRAYER = Collections.unmodifiableMap(p);
     }
 
@@ -1874,6 +1905,12 @@ public class MonsterRoster {
         c.put("Dagon'hai Monk",        427);
         c.put("Xarth",                 912);
         c.put("Ocellus",              1601);   // phase 3
+
+        // v1.1.6 additions (2026-11-15)
+        c.put("Demonic gorilla",       275);
+        c.put("TzHaar-Mej",            103);
+        c.put("TzHaar-Ket",            149);
+        c.put("TzHaar-Xil",            133);
         COMBAT_LEVELS = Collections.unmodifiableMap(c);
     }
 
