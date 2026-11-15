@@ -15,7 +15,6 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -169,14 +168,9 @@ public class PageExportDialog extends JDialog {
     }
 
     private void saveGrid() {
-        JFileChooser fc = new JFileChooser();
-        fc.setSelectedFile(new File(monsterName.replaceAll("[^a-zA-Z0-9_\\- ]", "") + "_export.png"));
-        fc.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("PNG image", "png"));
-        if (fc.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
-        File out = fc.getSelectedFile();
-        if (!out.getName().toLowerCase().endsWith(".png")) out = new File(out.getPath() + ".png");
         try {
-            ImageIO.write(renderGrid(selectedCols), "PNG", out);
+            com.bestiary.util.PngSaver.save(this,
+                    monsterName.replaceAll("[^a-zA-Z0-9_\\- ]", "") + "_export.png", renderGrid(selectedCols));
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Save failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
